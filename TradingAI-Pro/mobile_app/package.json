@@ -1,0 +1,8 @@
+{
+  "name": "tradingai-mobile",
+  "version": "0.1.0",
+  "description": "React Native or Flutter mobile app for TradingAI-Pro",
+  "main": "src/index.js",
+  "scripts": {},
+  "dependencies": {}
+}

@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+flask
+requests
+python-dotenv
+websockets
