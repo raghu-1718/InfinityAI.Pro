@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api-webhooks/api/**/*.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api-webhooks/api/main.py"
+    }
+  ]
+}
