@@ -1,0 +1,6 @@
+requests
+websockets
+python-dotenv
+
+
+(If you want to use the official broker SDKs, add them here. For Dhan, when you’re ready: dhanhq.)
