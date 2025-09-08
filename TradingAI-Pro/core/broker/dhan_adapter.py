@@ -11,13 +11,15 @@ logger = logging.getLogger(__name__)
 from typing import Any, Callable, Dict, List, Optional
 
 class DhanAdapter:
+    context: 'DhanContext'  # type: ignore
+
     def __init__(self, client_id: str, access_token: str) -> None:
         self.context = DhanContext(client_id, access_token)  # type: ignore
         self.dhan = dhanhq(self.context)  # type: ignore
 
     def get_auth_headers(self) -> Dict[str, str]:
         return {
-            "access-token": self.context.access_token,
+            "access-token":  ,
             "X-Client-Id": self.context.client_id,
         }
 
