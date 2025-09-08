@@ -1,27 +1,23 @@
 from fastapi import APIRouter, Request, HTTPException
 from core.user_manager import get_user_credentials
-from core.strategies.breakout import BreakoutStrategy
-from core.broker.adapter_factory import get_adapter
 from core.trade_logger import log_trade
 from core.telegram_alerts import send_telegram
 
 router = APIRouter()
 
 @router.post("/{user_id}")
-async def webhook_listener(user_id: str, request: Request):
-	data = await request.json()
-
+async def webhook_handler(user_id: str, request: Request):
+	payload = await request.json()
 	creds = get_user_credentials(user_id)
 	if not creds:
 		raise HTTPException(status_code=403, detail="User credentials not found")
-
-	strategy = BreakoutStrategy()
-	decision = strategy.evaluate(data)
-
-	adapter = get_adapter(creds["broker"])
-	result = adapter.execute_trade(decision, creds)
-
-	log_trade(user_id, result)
-	send_telegram(creds["telegram_chat_id"], f"{result['action']} {result['symbol']} via {creds['broker']}")
-
-	return {"status": "success", "result": result}
+	if payload.get("dhanClientId") != creds["client_id"]:
+		raise HTTPException(status_code=400, detail="dhanClientId mismatch")
+	log_trade(user_id, payload)
+	msg = (
+		f"Order Update: {payload.get('orderStatus')} - "
+		f"{payload.get('transactionType')} {payload.get('tradingSymbol')} "
+		f"Qty: {payload.get('quantity')}"
+	)
+	send_telegram(creds.get("telegram_chat_id"), msg)
+	return {"status": "received"}

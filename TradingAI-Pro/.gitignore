@@ -1,3 +1,6 @@
+# Secrets and config
+config/user_store.json
+.env
 # Ignore Python, Node, and environment files
 __pycache__/
 *.pyc
