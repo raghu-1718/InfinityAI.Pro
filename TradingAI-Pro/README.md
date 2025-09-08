@@ -19,9 +19,24 @@ A modular trading automation platform for cloud and local deployment.
    - Run API: `cd api-webhooks && uvicorn api.main:app --reload`.
    - Run Engine: `cd engine && python app/run_engine.py`.
 
-2. **Deploy**:
-   - Vercel: Push to GitHub, connect repo, set env vars in Vercel dashboard.
-   - Engine: Use Docker Compose or deploy to Northflank with the provided workflows.
+## Deploy
+
+### Vercel (API-Webhooks)
+- Import `github.com/Raghu-my/InfinityAI.Pro` into Vercel.
+- Set Root Directory to `api-webhooks`.
+- Add env vars from `config/.env.example`.
+- Deploy automatically on push to `main`.
+
+### Engine (Northflank/Fly.io/Render)
+- Build from `engine/` folder.
+- Use `engine/Dockerfile` or Docker Compose.
+- Mount `config/user_store.json` and `.env` as secrets.
+- Set restart policy to `always`.
+
+### GitHub Actions
+- `infra/github/workflows/deploy-vercel.yml`: Deploys API on changes to `api-webhooks/` or `shared/`.
+- `infra/github/workflows/deploy-engine.yml`: Builds engine image and deploys on changes to `engine/` or `shared/`.
+- Add secrets: `VERCEL_TOKEN`, `NORTHFLANK_API_TOKEN`, etc.
 
 ## Credentials Setup
 
