@@ -2,3 +2,9 @@ requests
 websockets
 python-dotenv
 dhanhq
+numpy
+pandas
+asyncio-mqtt
+aioredis
+sqlalchemy
+alembic
