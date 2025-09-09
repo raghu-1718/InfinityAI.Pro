@@ -2,14 +2,14 @@
   "version": 2,
   "ignoreCommand": "echo 'Force new build' && exit 1",
   "functions": {
-    "api-webhooks/api/**/*.py": {
+    "TradingAI-Pro/api-webhooks/api/**/*.py": {
       "runtime": "python3"
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api-webhooks/api/main.py"
+      "dest": "TradingAI-Pro/api-webhooks/api/main.py"
     }
   ]
 }
