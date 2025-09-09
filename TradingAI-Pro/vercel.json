@@ -3,7 +3,7 @@
   "ignoreCommand": "echo 'Force new build' && exit 1",
   "functions": {
     "api-webhooks/api/**/*.py": {
-      "runtime": "now-python@3.11"
+      "runtime": "@vercel/python"
     }
   },
   "routes": [
