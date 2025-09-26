@@ -1,8 +1,0 @@
-{
-  "name": "tradingai-pro",
-  "version": "0.1.0",
-  "description": "Frontend package for TradingAI-Pro (if applicable)",
-  "main": "index.js",
-  "scripts": {},
-  "dependencies": {}
-}

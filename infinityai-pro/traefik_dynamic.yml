@@ -1,0 +1,64 @@
+http:
+  routers:
+    # Redirect all plain HTTP to HTTPS
+    http-catchall:
+      rule: "HostRegexp(`{any:.+}`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+      service: noop
+
+    # Stable Diffusion on RunPod
+    sd-router:
+      rule: "Host(`ai.infinityai.pro`) && PathPrefix(`/sd`)"
+      entryPoints:
+        - websecure
+      service: sd-service
+      tls:
+        certResolver: myresolver
+
+    # YOLOv8 on RunPod
+    yolo-router:
+      rule: "Host(`ai.infinityai.pro`) && PathPrefix(`/yolo`)"
+      entryPoints:
+        - websecure
+      service: yolo-service
+      tls:
+        certResolver: myresolver
+
+    # Whisper on RunPod
+    whisper-router:
+      rule: "Host(`ai.infinityai.pro`) && PathPrefix(`/whisper`)"
+      entryPoints:
+        - websecure
+      service: whisper-service
+      tls:
+        certResolver: myresolver
+
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+
+  services:
+    noop:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1"
+
+    # Replace with your actual RunPod public endpoints
+    sd-service:
+      loadBalancer:
+        servers:
+          - url: "https://<your-runpod-sd-endpoint>"
+
+    yolo-service:
+      loadBalancer:
+        servers:
+          - url: "https://<your-runpod-yolo-endpoint>"
+
+    whisper-service:
+      loadBalancer:
+        servers:
+          - url: "https://<your-runpod-whisper-endpoint>"

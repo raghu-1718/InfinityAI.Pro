@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  # -------------------- BACKEND --------------------
+  backend:
+    build: ./backend
+    container_name: infinityai-backend
+    restart: always
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.infinityai.pro`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  # -------------------- FRONTEND --------------------
+  frontend:
+    build: ./frontend
+    container_name: infinityai-frontend
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`infinityai.pro`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+  # -------------------- OLLAMA (LLMs) --------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: infinityai-ollama
+    restart: always
+    volumes:
+      - ollama_data:/root/.ollama
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ollama.rule=Host(`ai.infinityai.pro`) && PathPrefix(`/llm`)"
+      - "traefik.http.routers.ollama.entrypoints=websecure"
+      - "traefik.http.services.ollama.loadbalancer.server.port=11434"
+
+  # -------------------- VECTOR DB --------------------
+  vectordb:
+    image: chromadb/chroma:latest
+    container_name: infinityai-vectordb
+    restart: always
+    volumes:
+      - chroma_data:/chroma
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vectordb.rule=Host(`ai.infinityai.pro`) && PathPrefix(`/db`)"
+      - "traefik.http.routers.vectordb.entrypoints=websecure"
+      - "traefik.http.services.vectordb.loadbalancer.server.port=8000"
+
+  # -------------------- TRAEFIK PROXY --------------------
+  proxy:
+    image: traefik:v2.10
+    container_name: infinityai-proxy
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.file.filename=/dynamic.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=raghuyuvi10@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+      - "./traefik_dynamic.yml:/dynamic.yml:ro"
+
+volumes:
+  ollama_data:
+  chroma_data:
+  letsencrypt:

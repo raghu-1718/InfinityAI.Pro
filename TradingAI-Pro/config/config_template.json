@@ -1,4 +1,0 @@
-{
-  "api_url": "http://localhost:8000",
-  "db_url": "sqlite:///tradingai.db"
-}

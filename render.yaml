@@ -1,0 +1,93 @@
+services:
+  # =========================
+  # FRONTEND (React)
+  # =========================
+  - type: web
+    name: infinityai-frontend
+    env: node
+    repo: https://github.com/raghu-1718/InfinityAI.Pro
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    rootDir: infinityai-pro/frontend
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://api.infinityai.pro
+    domains:
+      - infinityai.pro
+
+  # =========================
+  # BACKEND (FastAPI)
+  # =========================
+  - type: web
+    name: infinityai-backend
+    env: python
+    repo: https://github.com/raghu-1718/InfinityAI.Pro
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    rootDir: infinityai-pro/backend
+    envVars:
+      - key: RUNPOD_SD_ENDPOINT
+        sync: false
+      - key: RUNPOD_YOLO_ENDPOINT
+        sync: false
+      - key: RUNPOD_WHISPER_ENDPOINT
+        sync: false
+      - key: RUNPOD_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: DHAN_CLIENT_ID
+        sync: false
+      - key: DHAN_ACCESS_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OLLAMA_BASE_URL
+        value: http://ollama:11434
+      - key: CHROMA_HOST
+        value: chroma
+      - key: CHROMA_PORT
+        value: 8000
+      - key: DATABASE_URL
+        value: sqlite:///./chroma_db/chroma.sqlite3
+    domains:
+      - api.infinityai.pro
+
+  # =========================
+  # OLLAMA (LLMs)
+  # =========================
+  - type: private_service
+    name: ollama
+    env: docker
+    repo: https://github.com/raghu-1718/InfinityAI.Pro
+    branch: main
+    rootDir: infinityai-pro/ollama
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    envVars:
+      - key: OLLAMA_HOST
+        value: 0.0.0.0
+      - key: OLLAMA_PORT
+        value: 11434
+
+  # =========================
+  # CHROMADB (Vector DB)
+  # =========================
+  - type: private_service
+    name: chroma
+    env: docker
+    repo: https://github.com/raghu-1718/InfinityAI.Pro
+    branch: main
+    rootDir: infinityai-pro/chroma
+    dockerfilePath: ./Dockerfile
+    disk:
+      name: chroma-data
+      mountPath: /data
+      sizeGB: 20
+    envVars:
+      - key: CHROMA_HOST
+        value: 0.0.0.0
+      - key: CHROMA_PORT
+        value: 8000
