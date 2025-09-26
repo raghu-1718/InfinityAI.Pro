@@ -11,7 +11,14 @@ app = FastAPI(title="TradingAI Pro API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3002", "http://127.0.0.1:3002"],  # Allow React dev server
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000", 
+        "http://localhost:3002", 
+        "http://127.0.0.1:3002",
+        "https://infinityai.pro",
+        "https://api.infinityai.pro"
+    ],  # Allow React dev server and production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
