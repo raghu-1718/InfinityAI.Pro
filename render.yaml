@@ -2,12 +2,13 @@ services:
   # =========================
   # FRONTEND (React)
   # =========================
-  - type: static_site
+  - type: web
     name: infinityai-frontend
+    env: node
     repo: https://github.com/raghu-1718/InfinityAI.Pro
     branch: main
     buildCommand: npm install && npm run build
-    publishDir: build
+    startCommand: npx serve build -s -l 10000
     rootDir: infinityai-pro/frontend
     envVars:
       - key: REACT_APP_API_URL
