@@ -57,7 +57,7 @@ services:
   # =========================
   # OLLAMA (LLMs)
   # =========================
-  - type: private_service
+  - type: pserv
     name: ollama
     env: docker
     repo: https://github.com/raghu-1718/InfinityAI.Pro
@@ -74,7 +74,7 @@ services:
   # =========================
   # CHROMADB (Vector DB)
   # =========================
-  - type: private_service
+  - type: pserv
     name: chroma
     env: docker
     repo: https://github.com/raghu-1718/InfinityAI.Pro
