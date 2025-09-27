@@ -29,7 +29,10 @@ class Config:
         # NSE indices as backup
         "NIFTY", "BANKNIFTY", "NIFTY_MIDCAP", "NIFTY_NEXT50", "NIFTY_FIN",
         "SENSEX", "BSE_MIDCAP", "BSE_SMALLCAP",
-        "GIFTNIFTY"
+        "GIFTNIFTY",
+        # Crypto trading pairs (CoinSwitch PRO)
+        "BTCINR", "ETHINR", "BNBINR", "ADAINR", "SOLINR", "DOTINR",
+        "MATICINR", "LINKINR", "AVAXINR", "LTCINR", "XRPINR", "DOGEINR"
     ])
 
     LOT_SIZE: Dict[str,int] = field(default_factory=lambda: {"NIFTY":50, "BANKNIFTY":25, "MCX_GOLD_MINI":100})
@@ -45,7 +48,15 @@ class Config:
         "client_secret":"0c7d1fd6-53d0-41e3-9d71-f6b08077e874",
         "data_api_key":"afbecc8d",
         "data_api_secret":"0c7d1fd6-53d0-41e3-9d71-f6b08077e874",
-        "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NTg5NTQ4MDYsImlhdCI6MTc1ODg2ODQwNiwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vaW5maW5pdHlhaS5wcm8vYXBpL2RoYW4vY2FsbGJhY2siLCJkaGFuQ2xpZW50SWQiOiIxMTAxMzAyMTcwIn0.AkNcjigwjCHj6aM1itcLWgpt3Ivkmbqw2apcEDE--mKoNh5cvIXpPm4k8OYgql5-4dEDP23jQL-HAnM-cSYkfw"
+        "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NTkwNDQ0NjcsImlhdCI6MTc1ODk1ODA2NywidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vYXBpLmluZmluaXR5YWkucHJvL2RoYW4vdG9rZW4iLCJkaGFuQ2xpZW50SWQiOiIxMTAxMzAyMTcwIn0.lsyGB43zvpPrHqUjlpHkgW7wko03P64NzRN-02NO-XNL-nKMyOT7d52SBZwricIEswv5IetVrZw7GBTvRtjSQg"
+    })
+
+    COINSWITCH: dict = field(default_factory=lambda: {
+        "enabled": True,
+        "api_key": os.getenv("COINSWITCH_API_KEY", ""),
+        "api_secret": os.getenv("COINSWITCH_API_SECRET", ""),
+        "base_url": "https://api-trading.coinswitch.co",
+        "crypto_symbols": ["BTCINR", "ETHINR", "BNBINR", "ADAINR", "SOLINR", "DOTINR", "MATICINR"]
     })
 
     TRADINGVIEW: dict = field(default_factory=lambda: {"api_key": None, "enabled": True})  # TradingView integration
