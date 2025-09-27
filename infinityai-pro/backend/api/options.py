@@ -16,9 +16,9 @@ class BreakoutStrategy:
             return {"action": "HOLD", "symbol": data.get("symbol"), "reason": "No breakout"}
 
 @router.post("/evaluate")
-def evaluate_breakout(data: dict):
+async def evaluate_breakout(data: dict):
     strategy = BreakoutStrategy()
-    return strategy.evaluate(data)
+    return await strategy.evaluate_async(data)
 
 @router.post("/strategy")
 async def get_options_strategy(signal: str):
