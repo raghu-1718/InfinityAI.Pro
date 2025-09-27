@@ -54,11 +54,14 @@ class AITradingSimulator:
         self.sharpe_ratio_history = []
 
         # Model paths
-        self.rl_model_path = os.path.join(self.config.MODEL_DIR, 'rl_trading_model.pkl')
-        self.performance_log_path = os.path.join(self.config.MODEL_DIR, 'simulation_performance.json')
+        self.rl_model_path = os.path.join(os.path.dirname(self.config.MODEL_PATH), 'rl_trading_model.pkl')
+        self.performance_log_path = os.path.join(os.path.dirname(self.config.TRADE_LOG_CSV), 'simulation_performance.json')
 
         # Ensure directories exist
-        os.makedirs(self.config.MODEL_DIR, exist_ok=True)
+        model_dir = os.path.dirname(self.config.MODEL_PATH)
+        trade_log_dir = os.path.dirname(self.config.TRADE_LOG_CSV)
+        os.makedirs(model_dir, exist_ok=True)
+        os.makedirs(trade_log_dir, exist_ok=True)
         os.makedirs(self.config.BACKTEST_DATA_PATH, exist_ok=True)
 
     async def initialize(self):
@@ -241,7 +244,8 @@ class AITradingSimulator:
                         # Store experience
                         self.remember(state, action, reward, next_state, False)
 
-                        logger.info(".2f"
+                        logger.info(f"💰 {signal} {symbol}: Contracts={contracts}, Premium=₹{premium:.2f}, "
+                                   f"Cost=₹{cost:.2f}, PnL=₹{pnl:.2f}, Equity=₹{self.paper_bot.equity:.2f}")
             except Exception as e:
                 logger.error(f"Error simulating {symbol}: {e}")
                 continue
