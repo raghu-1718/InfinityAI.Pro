@@ -62,6 +62,9 @@ class AIManager:
             "huggingface": {
                 "token": os.getenv("HF_TOKEN", ""),
                 "fallback_enabled": True
+            },
+            "alpha_vantage": {
+                "api_key": os.getenv("ALPHA_VANTAGE_API_KEY", "")
             }
         }
 
@@ -106,6 +109,17 @@ class AIManager:
 
             # Initialize Hugging Face fallback
             self.services['huggingface'] = hf_client
+
+            # Initialize Market Data AI (Alpha Vantage)
+            if self.config['alpha_vantage']['api_key']:
+                from services.market_data_ai import MarketDataAI
+                self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
+                await self.services['market_data'].initialize()
+
+            # Initialize Technical Analysis AI
+            from services.technical_analysis_ai import TechnicalAnalysisAI
+            self.services['technical_analysis'] = TechnicalAnalysisAI()
+            await self.services['technical_analysis'].initialize()
 
             self.initialized = True
             logger.info("✅ All AI services initialized successfully!")
@@ -228,6 +242,36 @@ class AIManager:
         except Exception as e:
             logger.error(f"Error generating trade narration: {e}")
             return {"error": str(e)}
+
+    # Market Data Methods
+    async def get_market_quote(self, symbol: str, exchange: str = "NSE") -> Dict:
+        """Get real-time market quote"""
+        if 'market_data' not in self.services:
+            raise RuntimeError("Market Data AI service not initialized")
+
+        return await self.services['market_data'].get_quote(symbol, exchange)
+
+    async def get_historical_data(self, symbol: str, interval: str = "5min") -> pd.DataFrame:
+        """Get historical market data"""
+        if 'market_data' not in self.services:
+            raise RuntimeError("Market Data AI service not initialized")
+
+        return await self.services['market_data'].get_intraday_data(symbol, interval)
+
+    # Technical Analysis Methods
+    async def analyze_chart_patterns(self, chart_image: bytes, symbol: str = None) -> Dict:
+        """Analyze chart for technical patterns"""
+        if 'technical_analysis' not in self.services:
+            raise RuntimeError("Technical Analysis AI service not initialized")
+
+        return await self.services['technical_analysis'].analyze_chart(chart_image, symbol)
+
+    async def analyze_price_data(self, price_data: pd.DataFrame, symbol: str) -> Dict:
+        """Analyze price data for technical indicators"""
+        if 'technical_analysis' not in self.services:
+            raise RuntimeError("Technical Analysis AI service not initialized")
+
+        return await self.services['technical_analysis'].analyze_price_data(price_data, symbol)
 
     # Health Check
     async def health_check(self) -> Dict:
