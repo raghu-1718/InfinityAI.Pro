@@ -114,13 +114,11 @@ async def analyze_price_data(price_data: Dict, symbol: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Price analysis failed: {str(e)}")
 
-@router.websocket("/ws/chat/{user_id}")
-async def chat_ws(websocket: WebSocket, user_id: str):
-    await websocket.accept()
+@router.get("/health")
+async def ai_health_check():
+    """Check AI services health"""
     try:
-        while True:
-            message = await websocket.receive_text()
-            response = await process_chat_command(message, user_id)
-            await websocket.send_text(response)
-    except WebSocketDisconnect:
-        print(f"Chat disconnected for user {user_id}")
+        health = await ai_manager.health_check()
+        return health
+    except Exception as e:
+        return {"status": "error", "error": str(e), "ai_manager_available": "ai_manager" in globals()}
