@@ -31,7 +31,7 @@ const AIModels: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const apiUrl = process.env.REACT_APP_API_URL || 'https://infinityai-backend.onrender.com';
+  const apiUrl = process.env.REACT_APP_API_URL || 'https://infinityai.pro';
 
   const runSimulation = async (days: number = 1) => {
     setIsSimulating(true);

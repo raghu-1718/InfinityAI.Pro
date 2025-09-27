@@ -6,7 +6,7 @@ const Login: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const handleLogin = async () => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://infinityai-backend.onrender.com';
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://infinityai.pro';
     const response = await fetch(`${apiUrl}/user/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
