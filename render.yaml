@@ -8,13 +8,11 @@ services:
     repo: https://github.com/raghu-1718/InfinityAI.Pro
     branch: main
     buildCommand: npm install && npm run build
-    startCommand: npx serve build -s -l 10000
+    startCommand: npm install -g serve && serve -s build -l 10000
     rootDir: infinityai-pro/frontend
     envVars:
       - key: REACT_APP_API_URL
         value: https://api.infinityai.pro
-    domains:
-      - infinityai.pro
 
   # =========================
   # BACKEND (FastAPI)
@@ -54,8 +52,6 @@ services:
         value: 8000
       - key: DATABASE_URL
         value: sqlite:///./chroma_db/chroma.sqlite3
-    domains:
-      - api.infinityai.pro
 
   # =========================
   # OLLAMA (LLMs)
