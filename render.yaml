@@ -44,6 +44,8 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        value: BD03X0M5F86UW8PP
       - key: OLLAMA_BASE_URL
         value: http://ollama:11434
       - key: CHROMA_HOST
