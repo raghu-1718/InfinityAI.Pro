@@ -25,5 +25,5 @@ echo "📝 If endpoints changed:"
 echo "1. Update in Render Dashboard > Environment"
 echo "2. No redeployment needed!"
 echo ""
-echo "💡 Pro tip: Endpoints usually stay the same when just stopping/starting pods"</content>
+echo "💡 Pro tip: Endpoints usually stay the same when just stopping/starting pods"
 <parameter name="filePath">/workspaces/InfinityAI.Pro/check_endpoints.sh

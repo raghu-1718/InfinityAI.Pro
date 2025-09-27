@@ -19,12 +19,11 @@ services:
   # =========================
   - type: web
     name: infinityai-backend
-    env: python
+    env: docker
     repo: https://github.com/raghu-1718/InfinityAI.Pro
     branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
     rootDir: infinityai-pro/backend
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: RUNPOD_SD_ENDPOINT
         value: https://ga4sxq6i6mrw72-8888.proxy.runpod.net
