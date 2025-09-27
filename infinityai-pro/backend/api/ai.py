@@ -73,14 +73,41 @@ async def whisper_transcription(request: Request):
     endpoint = f"{RUNPOD_WHISPER_ENDPOINT}/transcribe"
     return await proxy_to_runpod(endpoint, request)
 
-@router.get("/quote/{symbol}")
-async def get_market_quote(symbol: str, exchange: str = "NSE"):
+@router.post("/start-simulation")
+async def start_trading_simulation(days: int = 30):
+    """Start AI-powered trading simulation"""
+    try:
+        result = await ai_manager.start_trading_simulation(days)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
+
+@router.post("/simulate-day")
+async def simulate_trading_day(symbols: List[str] = None):
+    """Run one day of AI trading simulation"""
+    try:
+        result = await ai_manager.simulate_trading_day(symbols)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Day simulation failed: {str(e)}")
+
+@router.get("/performance")
+async def get_trading_performance():
+    """Get trading simulation performance metrics"""
+    try:
+        result = await ai_manager.get_trading_performance()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Performance fetch failed: {str(e)}")
+
+@router.get("/realtime-quote/{symbol}")
+async def get_realtime_market_quote(symbol: str):
     """Get real-time market quote"""
     try:
-        quote = await ai_manager.get_market_quote(symbol, exchange)
-        return quote
+        result = await ai_manager.get_realtime_quote(symbol)
+        return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get quote: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Quote fetch failed: {str(e)}")
 
 @router.get("/historical/{symbol}")
 async def get_historical_data(symbol: str, interval: str = "5min"):

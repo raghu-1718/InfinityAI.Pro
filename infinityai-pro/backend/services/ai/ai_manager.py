@@ -122,6 +122,11 @@ class AIManager:
             self.services['technical_analysis'] = TechnicalAnalysisAI()
             await self.services['technical_analysis'].initialize()
 
+            # Initialize AI Trading Simulator
+            from ..ai_trading_simulator import AITradingSimulator
+            self.services['trading_simulator'] = AITradingSimulator()
+            await self.services['trading_simulator'].initialize()
+
             self.initialized = True
             logger.info("✅ All AI services initialized successfully!")
 
@@ -267,12 +272,33 @@ class AIManager:
 
         return await self.services['technical_analysis'].analyze_chart(chart_image, symbol)
 
-    async def analyze_price_data(self, price_data: pd.DataFrame, symbol: str) -> Dict:
-        """Analyze price data for technical indicators"""
-        if 'technical_analysis' not in self.services:
-            raise RuntimeError("Technical Analysis AI service not initialized")
+    async def start_trading_simulation(self, days: int = 30) -> Dict:
+        """Start AI-powered trading simulation"""
+        if 'trading_simulator' not in self.services:
+            raise RuntimeError("Trading Simulator AI service not initialized")
 
-        return await self.services['technical_analysis'].analyze_price_data(price_data, symbol)
+        return await self.services['trading_simulator'].run_continuous_simulation(days)
+
+    async def simulate_trading_day(self, symbols: List[str] = None) -> Dict:
+        """Run one day of AI trading simulation"""
+        if 'trading_simulator' not in self.services:
+            raise RuntimeError("Trading Simulator AI service not initialized")
+
+        return await self.services['trading_simulator'].simulate_trading_day(symbols)
+
+    async def get_trading_performance(self) -> Dict:
+        """Get trading simulation performance metrics"""
+        if 'trading_simulator' not in self.services:
+            raise RuntimeError("Trading Simulator AI service not initialized")
+
+        return self.services['trading_simulator'].get_performance_summary()
+
+    async def get_realtime_quote(self, symbol: str) -> Dict:
+        """Get real-time market quote"""
+        if 'trading_simulator' not in self.services:
+            raise RuntimeError("Trading Simulator AI service not initialized")
+
+        return await self.services['trading_simulator'].get_realtime_quote(symbol)
 
     # Health Check
     async def health_check(self) -> Dict:
