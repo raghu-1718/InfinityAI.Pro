@@ -12,7 +12,7 @@ services:
     rootDir: infinityai-pro/frontend
     envVars:
       - key: REACT_APP_API_URL
-        value: https://api.infinityai.pro
+        value: https://infinityai-backend.onrender.com
 
   # =========================
   # BACKEND (FastAPI)
