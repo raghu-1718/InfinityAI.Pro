@@ -29,9 +29,11 @@ class EmbeddingService:
                 import psutil
                 disk = psutil.disk_usage('/')
                 free_gb = disk.free / (1024**3)
-                
+
                 if free_gb < 1:  # Need at least 1GB free for SBERT
-                    raise Exception(f"Insufficient disk space for SBERT model ({free_gb:.1f}GB free)")
+                    logger.warning(f"Insufficient disk space for SBERT model ({free_gb:.1f}GB free) - using fallback")
+                    self.initialized = True
+                    return
             except ImportError:
                 logger.warning("psutil not available, proceeding without disk check")
 

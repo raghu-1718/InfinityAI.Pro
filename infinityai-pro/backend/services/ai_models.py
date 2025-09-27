@@ -6,12 +6,28 @@ from typing import Dict, List, Any
 import logging
 import pandas as pd
 
-from engine.core.execution.execution_engine import execution_engine
-from engine.core.execution.order_manager import order_manager
-from engine.core.execution.position_manager import position_manager
-from engine.core.execution.risk_manager import risk_manager, RiskLimits
-from engine.core.market_data.feed_manager import feed_manager, MarketTick
-from engine.core.strategies.advanced_breakout import AdvancedBreakoutStrategy
+# Try to import engine modules, but don't fail if they don't exist
+try:
+    from engine.core.execution.execution_engine import execution_engine
+    from engine.core.execution.order_manager import order_manager
+    from engine.core.execution.position_manager import position_manager
+    from engine.core.execution.risk_manager import risk_manager, RiskLimits
+    from engine.core.market_data.feed_manager import feed_manager, MarketTick
+    from engine.core.strategies.advanced_breakout import AdvancedBreakoutStrategy
+    ENGINE_AVAILABLE = True
+except ImportError:
+    logger.warning("Engine modules not available - using fallback implementations")
+    ENGINE_AVAILABLE = False
+    # Create dummy classes/functions for compatibility
+    execution_engine = None
+    order_manager = None
+    position_manager = None
+    risk_manager = None
+    RiskLimits = None
+    feed_manager = None
+    MarketTick = None
+    AdvancedBreakoutStrategy = None
+
 from utils.logger import get_logger
 from data.db import get_user_credentials
 
@@ -415,10 +431,12 @@ class TechnicalAnalysisAI:
 
     def __init__(self):
         self.initialized = False
+        self.logger = logging.getLogger("technical_analysis_ai")
 
     async def initialize(self):
         """Initialize the technical analysis service"""
         self.initialized = True
+        self.logger.info("Technical Analysis AI initialized")
 
     async def analyze_chart(self, chart_image: bytes, symbol: str = None) -> Dict:
         """Analyze chart image for patterns (stub implementation)"""

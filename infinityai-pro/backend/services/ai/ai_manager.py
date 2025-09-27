@@ -85,6 +85,11 @@ class AIManager:
         logger.info("Initializing InfinityAI.Pro Hybrid AI Stack...")
 
         try:
+            # Check disk space first
+            import shutil
+            total, used, free = shutil.disk_usage('/')
+            free_gb = free / (1024**3)
+
             # Import and initialize services
             from .llm_service import LLMService
             from .stt_service import STTService
@@ -92,47 +97,99 @@ class AIManager:
             from .embedding_service import EmbeddingService
             from .huggingface_client import hf_client
 
-            # Initialize LLM (Ollama - Hetzner)
-            self.services['llm'] = LLMService(self.config['ollama'])
-            await self.services['llm'].initialize()
+            # Initialize LLM (Ollama - Hetzner) - lightweight
+            try:
+                self.services['llm'] = LLMService(self.config['ollama'])
+                await self.services['llm'].initialize()
+                logger.info("✅ LLM service initialized")
+            except Exception as e:
+                logger.warning(f"LLM service failed: {e}")
 
-            # Initialize STT (RunPod GPU)
-            self.services['stt'] = STTService(self.config['whisper'])
-            await self.services['stt'].initialize()
+            # Initialize STT (RunPod GPU) - lightweight
+            try:
+                self.services['stt'] = STTService(self.config['whisper'])
+                await self.services['stt'].initialize()
+                logger.info("✅ STT service initialized")
+            except Exception as e:
+                logger.warning(f"STT service failed: {e}")
 
-            # Initialize Vision (RunPod GPU)
-            self.services['vision'] = VisionService(self.config['yolo'], self.config['diffusers'])
-            await self.services['vision'].initialize()
+            # Initialize Vision (RunPod GPU) - check disk space
+            if free_gb > 1.0:  # Need at least 1GB for vision models
+                try:
+                    self.services['vision'] = VisionService(self.config['yolo'], self.config['diffusers'])
+                    await self.services['vision'].initialize()
+                    logger.info("✅ Vision service initialized")
+                except Exception as e:
+                    logger.warning(f"Vision service failed: {e}")
+            else:
+                logger.warning(f"Skipping Vision service - insufficient disk space ({free_gb:.1f}GB free)")
 
-            # Initialize Embeddings (SBERT + Vector DB - Hetzner)
-            self.services['embeddings'] = EmbeddingService(self.config['sbert'], self.config['vector_db'])
-            await self.services['embeddings'].initialize()
+            # Initialize Embeddings (SBERT + Vector DB) - check disk space
+            if free_gb > 2.0:  # Need at least 2GB for embeddings
+                try:
+                    self.services['embeddings'] = EmbeddingService(self.config['sbert'], self.config['vector_db'])
+                    await self.services['embeddings'].initialize()
+                    logger.info("✅ Embeddings service initialized")
+                except Exception as e:
+                    logger.warning(f"Embeddings service failed: {e}")
+            else:
+                logger.warning(f"Skipping Embeddings service - insufficient disk space ({free_gb:.1f}GB free)")
 
-            # Initialize Hugging Face fallback
+            # Initialize Hugging Face fallback - always available
             self.services['huggingface'] = hf_client
+            await self.services['huggingface'].initialize()
+            logger.info("✅ HuggingFace fallback initialized")
 
-            # Initialize Market Data AI (Alpha Vantage)
+            # Initialize Market Data AI (Alpha Vantage + CoinSwitch) - lightweight
             if self.config['alpha_vantage']['api_key']:
-                from ..market_data_ai import MarketDataAI
-                self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
-                await self.services['market_data'].initialize()
+                try:
+                    from ..market_data_ai import MarketDataAI
+                    self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
+                    await self.services['market_data'].initialize()
+                    logger.info("✅ Market Data AI initialized")
+                except Exception as e:
+                    logger.warning(f"Market Data AI failed: {e}")
 
-            # Initialize Technical Analysis AI
-            from ..ai_models import TechnicalAnalysisAI
-            self.services['technical_analysis'] = TechnicalAnalysisAI()
-            await self.services['technical_analysis'].initialize()
+            # Initialize CoinSwitch Crypto Market Data - lightweight
+            if self.config.get('coinswitch', {}).get('enabled', False):
+                try:
+                    from ..broker_coinswitch import CoinSwitchAdapter
+                    coinswitch_config = self.config.get('coinswitch', {})
+                    if coinswitch_config.get('api_key') and coinswitch_config.get('api_secret'):
+                        self.services['crypto_market_data'] = CoinSwitchAdapter(
+                            api_key=coinswitch_config['api_key'],
+                            api_secret=coinswitch_config['api_secret'],
+                            base_url=coinswitch_config.get('base_url', 'https://api-trading.coinswitch.co')
+                        )
+                        logger.info("✅ CoinSwitch crypto market data initialized")
+                except Exception as e:
+                    logger.warning(f"CoinSwitch initialization failed: {e}")
 
-            # Initialize AI Trading Simulator
-            from ..ai_trading_simulator import AITradingSimulator
-            self.services['trading_simulator'] = AITradingSimulator()
-            await self.services['trading_simulator'].initialize()
+            # Initialize Technical Analysis AI - lightweight
+            try:
+                from ..ai_models import TechnicalAnalysisAI
+                self.services['technical_analysis'] = TechnicalAnalysisAI()
+                await self.services['technical_analysis'].initialize()
+                logger.info("✅ Technical Analysis AI initialized")
+            except Exception as e:
+                logger.warning(f"Technical Analysis AI failed: {e}")
+
+            # Initialize AI Trading Simulator - lightweight
+            try:
+                from ..ai_trading_simulator import AITradingSimulator
+                self.services['trading_simulator'] = AITradingSimulator()
+                await self.services['trading_simulator'].initialize()
+                logger.info("✅ AI Trading Simulator initialized")
+            except Exception as e:
+                logger.warning(f"AI Trading Simulator failed: {e}")
 
             self.initialized = True
-            logger.info("✅ All AI services initialized successfully!")
+            logger.info("✅ AI services initialization completed!")
 
         except Exception as e:
             logger.error(f"Failed to initialize AI services: {e}")
-            raise
+            # Don't raise exception - allow partial initialization
+            self.initialized = True
 
     async def close(self):
         """Close all AI services"""
@@ -257,12 +314,87 @@ class AIManager:
 
         return await self.services['market_data'].get_quote(symbol, exchange)
 
-    async def get_historical_data(self, symbol: str, interval: str = "5min") -> pd.DataFrame:
-        """Get historical market data"""
-        if 'market_data' not in self.services:
-            raise RuntimeError("Market Data AI service not initialized")
+    async def get_crypto_quote(self, symbol: str) -> Dict:
+        """Get real-time crypto quote from CoinSwitch"""
+        if 'crypto_market_data' not in self.services:
+            raise RuntimeError("Crypto market data service not initialized")
 
-        return await self.services['market_data'].get_intraday_data(symbol, interval)
+        return await self.services['crypto_market_data'].get_quote_async(symbol)
+
+    async def get_historical_data(self, symbol: str, interval: str = "5min") -> pd.DataFrame:
+        """Get historical market data (supports both traditional and crypto)"""
+        # Check if this is a crypto symbol
+        is_crypto = symbol in self.config.get('coinswitch', {}).get('crypto_symbols', []) or symbol.endswith('INR')
+
+        if is_crypto and 'crypto_market_data' in self.services:
+            return await self.get_crypto_historical_data(symbol, interval)
+        elif 'market_data' in self.services:
+            return await self.services['market_data'].get_intraday_data(symbol, interval)
+        else:
+            raise RuntimeError("No market data service available for symbol type")
+        """Get historical crypto data"""
+        try:
+            # For now, return simulated data since CoinSwitch may not have extensive historical data
+            # In production, you might want to use additional data sources
+            logger.warning(f"Crypto historical data for {symbol} - using simulated data")
+            return await self._generate_crypto_historical_data(symbol, interval)
+        except Exception as e:
+            logger.error(f"Error getting crypto historical data: {e}")
+            return pd.DataFrame()
+
+    async def _generate_crypto_historical_data(self, symbol: str, interval: str = "5min", periods: int = 200) -> pd.DataFrame:
+        """Generate realistic crypto historical data for backtesting"""
+        try:
+            # Get current price from CoinSwitch
+            current_quote = await self.get_crypto_quote(symbol)
+            base_price = current_quote.get('last_price', 100000)  # Default fallback
+
+            # Generate price series with crypto volatility
+            np.random.seed(hash(symbol) % 2**32)
+            returns = np.random.normal(0.0002, 0.01, periods)  # Higher volatility for crypto
+            prices = base_price * np.exp(np.cumsum(returns))
+
+            # Create timestamps
+            now = pd.Timestamp.now()
+            if interval == "5min":
+                timestamps = [now - pd.Timedelta(minutes=5*i) for i in range(periods)][::-1]
+            else:
+                # Default to 5min intervals
+                timestamps = [now - pd.Timedelta(minutes=5*i) for i in range(periods)][::-1]
+
+            # Create OHLCV data
+            high_mult = 1 + np.abs(np.random.normal(0, 0.005, periods))
+            low_mult = 1 - np.abs(np.random.normal(0, 0.005, periods))
+
+            candles = []
+            for i, (timestamp, price) in enumerate(zip(timestamps, prices)):
+                high = price * high_mult[i]
+                low = price * low_mult[i]
+                open_price = price * (1 + np.random.normal(0, 0.002))
+                close = price
+                volume = np.random.randint(100, 10000)  # Crypto volumes
+
+                candles.append({
+                    "datetime": timestamp,
+                    "open": open_price,
+                    "high": max(open_price, high),
+                    "low": min(open_price, low),
+                    "close": close,
+                    "volume": volume
+                })
+
+            df = pd.DataFrame(candles)
+            df.set_index("datetime", inplace=True)
+
+            # Add technical indicators
+            df = featurize(df.reset_index())
+            df.set_index("datetime", inplace=True)
+
+            return df
+
+        except Exception as e:
+            logger.error(f"Error generating crypto historical data: {e}")
+            return pd.DataFrame()
 
     # Technical Analysis Methods
     async def analyze_chart_patterns(self, chart_image: bytes, symbol: str = None) -> Dict:
