@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, HTTPException, File, UploadFile
-from typing import Dict
+from typing import Dict, List, Optional
 from services.chat_service import process_chat_command
 import httpx
 import os
@@ -141,11 +141,70 @@ async def analyze_price_data(price_data: Dict, symbol: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Price analysis failed: {str(e)}")
 
-@router.get("/health")
-async def ai_health_check():
-    """Check AI services health"""
+@router.get("/crypto/quote/{symbol}")
+async def get_crypto_quote(symbol: str):
+    """Get real-time crypto quote from CoinSwitch"""
     try:
-        health = await ai_manager.health_check()
-        return health
+        result = await ai_manager.get_crypto_quote(symbol)
+        return result
     except Exception as e:
-        return {"status": "error", "error": str(e), "ai_manager_available": "ai_manager" in globals()}
+        raise HTTPException(status_code=500, detail=f"Crypto quote fetch failed: {str(e)}")
+
+@router.get("/crypto/historical/{symbol}")
+async def get_crypto_historical_data(symbol: str, interval: str = "5min"):
+    """Get historical crypto market data"""
+    try:
+        data = await ai_manager.get_crypto_historical_data(symbol, interval)
+        if data is not None and not data.empty:
+            return data.to_dict('records')
+        return {"error": "No crypto data available"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get crypto historical data: {str(e)}")
+
+@router.get("/crypto/ticker/{symbol}")
+async def get_crypto_ticker(symbol: str):
+    """Get crypto ticker data from CoinSwitch"""
+    try:
+        if 'crypto_market_data' not in ai_manager.services:
+            raise HTTPException(status_code=503, detail="Crypto market data service not available")
+
+        result = ai_manager.services['crypto_market_data'].get_ticker(symbol)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Crypto ticker fetch failed: {str(e)}")
+
+@router.get("/crypto/depth/{symbol}")
+async def get_crypto_depth(symbol: str, limit: int = 50):
+    """Get crypto order book depth from CoinSwitch"""
+    try:
+        if 'crypto_market_data' not in ai_manager.services:
+            raise HTTPException(status_code=503, detail="Crypto market data service not available")
+
+        result = ai_manager.services['crypto_market_data'].get_depth(symbol, limit)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Crypto depth fetch failed: {str(e)}")
+
+@router.get("/crypto/portfolio")
+async def get_crypto_portfolio():
+    """Get crypto portfolio from CoinSwitch"""
+    try:
+        if 'crypto_market_data' not in ai_manager.services:
+            raise HTTPException(status_code=503, detail="Crypto market data service not available")
+
+        result = ai_manager.services['crypto_market_data'].get_portfolio()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Crypto portfolio fetch failed: {str(e)}")
+
+@router.get("/crypto/orders")
+async def get_crypto_orders(symbol: Optional[str] = None):
+    """Get crypto open orders from CoinSwitch"""
+    try:
+        if 'crypto_market_data' not in ai_manager.services:
+            raise HTTPException(status_code=503, detail="Crypto market data service not available")
+
+        result = ai_manager.services['crypto_market_data'].get_open_orders(symbol)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Crypto orders fetch failed: {str(e)}")

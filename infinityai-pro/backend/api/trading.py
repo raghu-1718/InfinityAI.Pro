@@ -30,18 +30,26 @@ async def place_order(symbol: str, qty: int, order_type: str):
     result = await broker.place_order(symbol, qty, order_type)
     return result
 
-@router.get("/dhan/callback")
-async def dhan_callback(code: str):
-    import requests
+@router.post("/dhan/token")
+async def dhan_token_update(request: dict):
+    """Handle Dhan token refresh webhook"""
     from utils.config import CONFIG
-    response = requests.post("https://api.dhan.co/v2/token", data={
-        "client_id": CONFIG.BROKER["client_id"],
-        "client_secret": CONFIG.BROKER["client_secret"],
-        "code": code,
-        "grant_type": "authorization_code"
-    })
-    token_data = response.json()
-    access_token = token_data.get("access_token")
-    # Update config or save to file/env
-    CONFIG.BROKER["access_token"] = access_token
-    return {"message": "Access token updated", "access_token": access_token}
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Dhan sends the new access token in the request body
+        new_token = request.get("access_token")
+        if not new_token:
+            return {"error": "No access_token provided"}
+
+        # Update the config with new token
+        CONFIG.BROKER["access_token"] = new_token
+
+        logger.info("Dhan access token updated via webhook")
+        return {"message": "Token updated successfully"}
+
+    except Exception as e:
+        logger.error(f"Failed to update Dhan token: {e}")
+        return {"error": str(e)}
