@@ -7,5 +7,5 @@ ENV CHROMA_PORT=8000
 # Expose the port
 EXPOSE 8000
 
-# Start ChromaDB
-CMD ["chroma", "run", "--host", "0.0.0.0", "--port", "8000", "--path", "/data"]
+# Use the default command from the Chroma image
+# The latest Chroma image should start automatically
