@@ -12,6 +12,8 @@ from pathlib import Path
 import json
 from datetime import datetime
 import pandas as pd
+import numpy as np
+from services.model_train import featurize
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ class AIManager:
         self.config = self._load_config()
 
     def _load_config(self) -> Dict:
-        """Load AI configuration"""
+        """Load AI configuration with disk space optimization"""
         return {
             "ollama": {
                 "url": os.getenv("OLLAMA_URL", "http://localhost:11434"),
@@ -35,22 +37,23 @@ class AIManager:
                 "timeout": 60
             },
             "whisper": {
-                "model": os.getenv("WHISPER_MODEL", "base"),
+                "model": os.getenv("WHISPER_MODEL", "tiny"),  # Changed from "base" to "tiny" for smaller size
                 "language": os.getenv("WHISPER_LANGUAGE", "en")
             },
             "diffusers": {
-                "model": os.getenv("DIFFUSERS_MODEL", "stabilityai/stable-diffusion-2-1-base"),
+                "model": os.getenv("DIFFUSERS_MODEL", "stabilityai/sd-turbo"),  # Smaller/faster model
                 "device": "cpu"  # Force CPU to save space
             },
             "yolo": {
-                "model": os.getenv("YOLO_MODEL", "yolov8n.pt"),
+                "model": os.getenv("YOLO_MODEL", "yolov8n.pt"),  # Already smallest variant
                 "conf_threshold": 0.5
             },
             "sbert": {
-                "model": os.getenv("SBERT_MODEL", "all-MiniLM-L6-v2")
+                "model": os.getenv("SBERT_MODEL", "all-MiniLM-L6-v2"),  # Smallest SBERT model
+                "use_gpu": False  # Force CPU
             },
             "vector_db": {
-                "type": os.getenv("VECTOR_DB", "chromadb"),  # weaviate, chromadb, faiss
+                "type": os.getenv("VECTOR_DB", "chromadb"),
                 "url": os.getenv("VECTOR_DB_URL", "http://localhost:8000"),
                 "collection": "infinity_ai_docs"
             },
@@ -64,8 +67,17 @@ class AIManager:
                 "token": os.getenv("HF_TOKEN", ""),
                 "fallback_enabled": True
             },
-            "alpha_vantage": {
-                "api_key": os.getenv("ALPHA_VANTAGE_API_KEY", "")
+            "azure_ai": {
+                "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+                "key": os.getenv("AZURE_OPENAI_KEY", ""),
+                "project": os.getenv("AZURE_AI_PROJECT", ""),
+                "enabled": bool(os.getenv("AZURE_OPENAI_ENDPOINT") and os.getenv("AZURE_OPENAI_KEY"))
+            },
+            "disk_optimization": {
+                "min_free_gb": 0.5,  # Minimum 500MB free for any model loading
+                "vision_min_free_gb": 0.8,  # 800MB for vision models
+                "embeddings_min_free_gb": 1.5,  # 1.5GB for embeddings
+                "diffusion_min_free_gb": 3.0   # 3GB for diffusion models
             }
         }
 
@@ -77,6 +89,63 @@ class AIManager:
         except:
             return False
 
+    async def _initialize_lightweight_services(self):
+        """Initialize only lightweight services when disk space is extremely low"""
+        from .huggingface_client import hf_client
+        
+        # Initialize Hugging Face fallback - always available
+        self.services['huggingface'] = hf_client
+        await self.services['huggingface'].initialize()
+        logger.info("✅ HuggingFace fallback initialized (lightweight mode)")
+
+        # Initialize remaining lightweight services
+        await self._initialize_remaining_services()
+
+    async def _initialize_remaining_services(self):
+        """Initialize remaining lightweight services (market data, technical analysis, etc.)"""
+        # Initialize Market Data AI (Alpha Vantage + CoinSwitch) - lightweight
+        if self.config['alpha_vantage']['api_key']:
+            try:
+                from ..market_data_ai import MarketDataAI
+                self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
+                await self.services['market_data'].initialize()
+                logger.info("✅ Market Data AI initialized")
+            except Exception as e:
+                logger.warning(f"Market Data AI failed: {e}")
+
+        # Initialize CoinSwitch Crypto Market Data - lightweight
+        if self.config.get('coinswitch', {}).get('enabled', False):
+            try:
+                from ..broker_coinswitch import CoinSwitchAdapter
+                coinswitch_config = self.config.get('coinswitch', {})
+                if coinswitch_config.get('api_key') and coinswitch_config.get('api_secret'):
+                    self.services['crypto_market_data'] = CoinSwitchAdapter(
+                        api_key=coinswitch_config['api_key'],
+                        api_secret=coinswitch_config['api_secret'],
+                        base_url=coinswitch_config.get('base_url', 'https://api-trading.coinswitch.co')
+                    )
+                    logger.info("✅ CoinSwitch crypto market data initialized")
+            except Exception as e:
+                logger.warning(f"CoinSwitch initialization failed: {e}")
+
+        # Initialize Technical Analysis AI - lightweight
+        try:
+            from ..ai_models import TechnicalAnalysisAI
+            self.services['technical_analysis'] = TechnicalAnalysisAI()
+            await self.services['technical_analysis'].initialize()
+            logger.info("✅ Technical Analysis AI initialized")
+        except Exception as e:
+            logger.warning(f"Technical Analysis AI failed: {e}")
+
+        # Initialize AI Trading Simulator - lightweight
+        try:
+            from ..ai_trading_simulator import AITradingSimulator
+            self.services['trading_simulator'] = AITradingSimulator()
+            await self.services['trading_simulator'].initialize()
+            logger.info("✅ AI Trading Simulator initialized")
+        except Exception as e:
+            logger.warning(f"AI Trading Simulator failed: {e}")
+
     async def initialize(self):
         """Initialize all AI services"""
         if self.initialized:
@@ -85,17 +154,20 @@ class AIManager:
         logger.info("Initializing InfinityAI.Pro Hybrid AI Stack...")
 
         try:
-            # Check disk space first
+            # Check disk space first with optimized thresholds
             import shutil
             total, used, free = shutil.disk_usage('/')
             free_gb = free / (1024**3)
-
-            # Import and initialize services
-            from .llm_service import LLMService
-            from .stt_service import STTService
-            from .vision_service import VisionService
-            from .embedding_service import EmbeddingService
-            from .huggingface_client import hf_client
+            min_free_gb = self.config['disk_optimization']['min_free_gb']
+            
+            logger.info(f"💾 Disk space check: {free_gb:.1f}GB free (minimum: {min_free_gb}GB)")
+            
+            if free_gb < min_free_gb:
+                logger.warning(f"⚠️  Extremely low disk space ({free_gb:.1f}GB). Skipping all heavy AI services.")
+                # Only initialize lightweight services
+                await self._initialize_lightweight_services()
+                self.initialized = True
+                return
 
             # Initialize LLM (Ollama - Hetzner) - lightweight
             try:
@@ -105,16 +177,21 @@ class AIManager:
             except Exception as e:
                 logger.warning(f"LLM service failed: {e}")
 
-            # Initialize STT (RunPod GPU) - lightweight
-            try:
-                self.services['stt'] = STTService(self.config['whisper'])
-                await self.services['stt'].initialize()
-                logger.info("✅ STT service initialized")
-            except Exception as e:
-                logger.warning(f"STT service failed: {e}")
+            # Initialize STT (RunPod GPU or local Whisper) - check disk space
+            stt_min_free = 0.3  # Whisper tiny needs ~300MB
+            if free_gb > stt_min_free:
+                try:
+                    self.services['stt'] = STTService(self.config['whisper'])
+                    await self.services['stt'].initialize()
+                    logger.info("✅ STT service initialized")
+                except Exception as e:
+                    logger.warning(f"STT service failed: {e}")
+            else:
+                logger.warning(f"Skipping STT service - insufficient disk space ({free_gb:.1f}GB free, need {stt_min_free}GB)")
 
-            # Initialize Vision (RunPod GPU) - check disk space
-            if free_gb > 1.0:  # Need at least 1GB for vision models
+            # Initialize Vision (RunPod GPU or local YOLO) - check disk space
+            vision_min_free = self.config['disk_optimization']['vision_min_free_gb']
+            if free_gb > vision_min_free:
                 try:
                     self.services['vision'] = VisionService(self.config['yolo'], self.config['diffusers'])
                     await self.services['vision'].initialize()
@@ -122,10 +199,11 @@ class AIManager:
                 except Exception as e:
                     logger.warning(f"Vision service failed: {e}")
             else:
-                logger.warning(f"Skipping Vision service - insufficient disk space ({free_gb:.1f}GB free)")
+                logger.warning(f"Skipping Vision service - insufficient disk space ({free_gb:.1f}GB free, need {vision_min_free}GB)")
 
             # Initialize Embeddings (SBERT + Vector DB) - check disk space
-            if free_gb > 2.0:  # Need at least 2GB for embeddings
+            embeddings_min_free = self.config['disk_optimization']['embeddings_min_free_gb']
+            if free_gb > embeddings_min_free:
                 try:
                     self.services['embeddings'] = EmbeddingService(self.config['sbert'], self.config['vector_db'])
                     await self.services['embeddings'].initialize()
@@ -133,56 +211,27 @@ class AIManager:
                 except Exception as e:
                     logger.warning(f"Embeddings service failed: {e}")
             else:
-                logger.warning(f"Skipping Embeddings service - insufficient disk space ({free_gb:.1f}GB free)")
+                logger.warning(f"Skipping Embeddings service - insufficient disk space ({free_gb:.1f}GB free, need {embeddings_min_free}GB)")
 
             # Initialize Hugging Face fallback - always available
             self.services['huggingface'] = hf_client
             await self.services['huggingface'].initialize()
             logger.info("✅ HuggingFace fallback initialized")
 
-            # Initialize Market Data AI (Alpha Vantage + CoinSwitch) - lightweight
-            if self.config['alpha_vantage']['api_key']:
+            # Initialize Azure AI (hybrid cloud fallback)
+            if self.config['azure_ai']['enabled']:
                 try:
-                    from ..market_data_ai import MarketDataAI
-                    self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
-                    await self.services['market_data'].initialize()
-                    logger.info("✅ Market Data AI initialized")
+                    from .azure_ai_client import get_azure_ai_client
+                    self.services['azure_ai'] = await get_azure_ai_client()
+                    logger.info("✅ Azure AI client initialized")
                 except Exception as e:
-                    logger.warning(f"Market Data AI failed: {e}")
+                    logger.warning(f"Azure AI client failed: {e}")
+            else:
+                logger.info("ℹ️  Azure AI not configured - skipping")
 
-            # Initialize CoinSwitch Crypto Market Data - lightweight
-            if self.config.get('coinswitch', {}).get('enabled', False):
-                try:
-                    from ..broker_coinswitch import CoinSwitchAdapter
-                    coinswitch_config = self.config.get('coinswitch', {})
-                    if coinswitch_config.get('api_key') and coinswitch_config.get('api_secret'):
-                        self.services['crypto_market_data'] = CoinSwitchAdapter(
-                            api_key=coinswitch_config['api_key'],
-                            api_secret=coinswitch_config['api_secret'],
-                            base_url=coinswitch_config.get('base_url', 'https://api-trading.coinswitch.co')
-                        )
-                        logger.info("✅ CoinSwitch crypto market data initialized")
-                except Exception as e:
-                    logger.warning(f"CoinSwitch initialization failed: {e}")
-
-            # Initialize Technical Analysis AI - lightweight
-            try:
-                from ..ai_models import TechnicalAnalysisAI
-                self.services['technical_analysis'] = TechnicalAnalysisAI()
-                await self.services['technical_analysis'].initialize()
-                logger.info("✅ Technical Analysis AI initialized")
-            except Exception as e:
-                logger.warning(f"Technical Analysis AI failed: {e}")
-
-            # Initialize AI Trading Simulator - lightweight
-            try:
-                from ..ai_trading_simulator import AITradingSimulator
-                self.services['trading_simulator'] = AITradingSimulator()
-                await self.services['trading_simulator'].initialize()
-                logger.info("✅ AI Trading Simulator initialized")
-            except Exception as e:
-                logger.warning(f"AI Trading Simulator failed: {e}")
-
+            # Initialize remaining services (market data, technical analysis, etc.)
+            await self._initialize_remaining_services()
+            
             self.initialized = True
             logger.info("✅ AI services initialization completed!")
 
@@ -201,11 +250,30 @@ class AIManager:
 
     # LLM Methods
     async def chat(self, message: str, context: Optional[Dict] = None) -> Dict:
-        """Generate chat response using local LLM"""
-        if 'llm' not in self.services:
-            raise RuntimeError("LLM service not initialized")
+        """Generate chat response using local LLM or Azure AI fallback"""
+        # Try local LLM first
+        if 'llm' in self.services:
+            try:
+                return await self.services['llm'].chat(message, context)
+            except Exception as e:
+                logger.warning(f"Local LLM failed, trying Azure AI: {e}")
 
-        return await self.services['llm'].chat(message, context)
+        # Fallback to Azure AI
+        if 'azure_ai' in self.services:
+            try:
+                async with self.services['azure_ai'] as client:
+                    return await client.chat_completion(message)
+            except Exception as e:
+                logger.error(f"Azure AI chat failed: {e}")
+
+        # Final fallback to Hugging Face
+        if 'huggingface' in self.services:
+            try:
+                return await self.services['huggingface'].chat(message, context)
+            except Exception as e:
+                logger.error(f"HuggingFace fallback failed: {e}")
+
+        raise RuntimeError("No LLM service available")
 
     async def generate_strategy(self, signal_data: Dict, market_context: Dict = None) -> Dict:
         """Generate trading strategy using LLM"""
@@ -216,11 +284,23 @@ class AIManager:
 
     # STT Methods
     async def speech_to_text(self, audio_data: bytes, filename: str = None) -> Dict:
-        """Convert speech to text"""
-        if 'stt' not in self.services:
-            raise RuntimeError("STT service not initialized")
+        """Convert speech to text using local or Azure AI"""
+        # Try local STT service first
+        if 'stt' in self.services:
+            try:
+                return await self.services['stt'].transcribe(audio_data, filename)
+            except Exception as e:
+                logger.warning(f"Local STT failed, trying Azure AI: {e}")
 
-        return await self.services['stt'].transcribe(audio_data, filename)
+        # Fallback to Azure AI Whisper
+        if 'azure_ai' in self.services:
+            try:
+                async with self.services['azure_ai'] as client:
+                    return await client.speech_to_text(audio_data)
+            except Exception as e:
+                logger.error(f"Azure AI speech-to-text failed: {e}")
+
+        raise RuntimeError("No speech-to-text service available")
 
     # Vision Methods
     async def detect_objects(self, image_data: bytes, filename: str = None) -> Dict:
@@ -231,19 +311,48 @@ class AIManager:
         return await self.services['vision'].detect_objects(image_data, filename)
 
     async def generate_image(self, prompt: str, **kwargs) -> Dict:
-        """Generate image from text prompt"""
-        if 'vision' not in self.services:
-            raise RuntimeError("Vision service not initialized")
+        """Generate image from text prompt using local or Azure AI"""
+        # Try local vision service first
+        if 'vision' in self.services:
+            try:
+                return await self.services['vision'].generate_image(prompt, **kwargs)
+            except Exception as e:
+                logger.warning(f"Local vision failed, trying Azure AI: {e}")
 
-        return await self.services['vision'].generate_image(prompt, **kwargs)
+        # Fallback to Azure AI DALL-E
+        if 'azure_ai' in self.services:
+            try:
+                async with self.services['azure_ai'] as client:
+                    return await client.generate_image(
+                        prompt,
+                        size=kwargs.get('size', '1024x1024'),
+                        quality=kwargs.get('quality', 'standard'),
+                        style=kwargs.get('style', 'vivid')
+                    )
+            except Exception as e:
+                logger.error(f"Azure AI image generation failed: {e}")
+
+        raise RuntimeError("No image generation service available")
 
     # Embedding Methods
     async def embed_text(self, text: str, metadata: Dict = None) -> Dict:
-        """Generate embeddings for text"""
-        if 'embeddings' not in self.services:
-            raise RuntimeError("Embeddings service not initialized")
+        """Generate embeddings for text using local or Azure AI"""
+        # Try local embeddings service first
+        if 'embeddings' in self.services:
+            try:
+                return await self.services['embeddings'].embed_text(text, metadata)
+            except Exception as e:
+                logger.warning(f"Local embeddings failed, trying Azure AI: {e}")
 
-        return await self.services['embeddings'].embed_text(text, metadata)
+        # Fallback to Azure AI embeddings
+        if 'azure_ai' in self.services:
+            try:
+                async with self.services['azure_ai'] as client:
+                    return await client.generate_embeddings(text)
+            except Exception as e:
+                logger.error(f"Azure AI embeddings failed: {e}")
+
+        raise RuntimeError("No embeddings service available")
 
     async def search_similar(self, query: str, limit: int = 5) -> List[Dict]:
         """Search for similar content using embeddings"""
@@ -443,7 +552,11 @@ class AIManager:
 
         for service_name, service in self.services.items():
             try:
-                health = await service.health_check()
+                if service_name == 'azure_ai':
+                    # Special handling for Azure AI client
+                    health = await service.health_check()
+                else:
+                    health = await service.health_check()
                 health_status["services"][service_name] = health
                 if health.get("status") != "healthy":
                     health_status["overall"] = "degraded"

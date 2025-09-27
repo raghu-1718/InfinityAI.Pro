@@ -455,29 +455,44 @@ class DhanAdapter:
             logger.error(f"❌ Failed to fetch instruments CSV: {e}")
             return None
 
-    def build_option_security_id_map(self, instruments_file="dhan_instruments.csv"):
+    def build_option_security_id_map(self, instruments_file="dhan_instruments.csv.gz"):
         """
-        Parse the instruments CSV and build a mapping of option symbols to security IDs.
+        Parse the instruments CSV (compressed) and build a mapping of option symbols to security IDs.
         Returns a dictionary: {symbol: security_id}
         """
         try:
             import csv
+            import gzip
             
             option_map = {}
             
-            with open(instruments_file, newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                
-                for row in reader:
-                    # Filter for NSE F&O options (OPTIDX = Options Index)
-                    if (row.get("SEM_EXM_EXCH_ID") == "NSE" and 
-                        row.get("SEM_INSTRUMENT_NAME") == "OPTIDX"):
-                        
-                        symbol = row.get("SEM_TRADING_SYMBOL", "").strip()
-                        security_id = row.get("SEM_SMST_SECURITY_ID", "").strip()
-                        
-                        if symbol and security_id:
-                            option_map[symbol] = security_id
+            # Handle both compressed and uncompressed files
+            if instruments_file.endswith('.gz'):
+                with gzip.open(instruments_file, 'rt', newline='', encoding='utf-8') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for row in reader:
+                        # Filter for NSE F&O options (OPTIDX = Options Index)
+                        if (row.get("SEM_EXM_EXCH_ID") == "NSE" and 
+                            row.get("SEM_INSTRUMENT_NAME") == "OPTIDX"):
+                            
+                            symbol = row.get("SEM_TRADING_SYMBOL", "").strip()
+                            security_id = row.get("SEM_SMST_SECURITY_ID", "").strip()
+                            
+                            if symbol and security_id:
+                                option_map[symbol] = security_id
+            else:
+                with open(instruments_file, newline='', encoding='utf-8') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for row in reader:
+                        # Filter for NSE F&O options (OPTIDX = Options Index)
+                        if (row.get("SEM_EXM_EXCH_ID") == "NSE" and 
+                            row.get("SEM_INSTRUMENT_NAME") == "OPTIDX"):
+                            
+                            symbol = row.get("SEM_TRADING_SYMBOL", "").strip()
+                            security_id = row.get("SEM_SMST_SECURITY_ID", "").strip()
+                            
+                            if symbol and security_id:
+                                option_map[symbol] = security_id
             
             logger.info(f"✅ Built option mapping with {len(option_map)} entries")
             return option_map
@@ -486,7 +501,7 @@ class DhanAdapter:
             logger.error(f"❌ Failed to build option mapping: {e}")
             return {}
 
-    def get_option_security_id(self, option_symbol, instruments_file="dhan_instruments.csv"):
+    def get_option_security_id(self, option_symbol, instruments_file="dhan_instruments.csv.gz"):
         """
         Get the security ID for a specific option symbol.
         If not found in cache, refresh the instruments data.
@@ -572,7 +587,7 @@ class DhanAdapter:
         except Exception as e:
             logger.debug(f"Could not generate suggestions: {e}")
 
-    def refresh_instruments_data(self, instruments_file="dhan_instruments.csv"):
+    def refresh_instruments_data(self, instruments_file="dhan_instruments.csv.gz"):
         """
         Refresh the instruments data by fetching the latest CSV and rebuilding the mapping.
         Call this daily to keep option security IDs up to date.
