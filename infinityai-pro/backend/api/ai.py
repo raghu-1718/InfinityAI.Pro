@@ -5,6 +5,9 @@ import httpx
 import os
 import logging
 
+# Import ai_manager after other imports to avoid circular imports
+from services.ai import ai_manager
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 

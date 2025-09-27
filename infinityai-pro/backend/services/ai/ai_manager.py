@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
 import json
 from datetime import datetime
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +113,12 @@ class AIManager:
 
             # Initialize Market Data AI (Alpha Vantage)
             if self.config['alpha_vantage']['api_key']:
-                from services.market_data_ai import MarketDataAI
+                from ..market_data_ai import MarketDataAI
                 self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
                 await self.services['market_data'].initialize()
 
             # Initialize Technical Analysis AI
-            from services.technical_analysis_ai import TechnicalAnalysisAI
+            from ..ai_models import TechnicalAnalysisAI
             self.services['technical_analysis'] = TechnicalAnalysisAI()
             await self.services['technical_analysis'].initialize()
 

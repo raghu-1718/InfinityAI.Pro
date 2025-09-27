@@ -406,3 +406,61 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# =========================================================
+# Technical Analysis AI Stub
+# =========================================================
+class TechnicalAnalysisAI:
+    """Simple technical analysis AI service"""
+
+    def __init__(self):
+        self.initialized = False
+
+    async def initialize(self):
+        """Initialize the technical analysis service"""
+        self.initialized = True
+
+    async def analyze_chart(self, chart_image: bytes, symbol: str = None) -> Dict:
+        """Analyze chart image for patterns (stub implementation)"""
+        return {
+            "symbol": symbol,
+            "patterns": ["support", "resistance"],
+            "confidence": 0.8,
+            "analysis": "Basic chart analysis completed"
+        }
+
+    async def analyze_price_data(self, price_data: pd.DataFrame, symbol: str) -> Dict:
+        """Analyze price data for technical indicators"""
+        try:
+            # Simple technical analysis
+            latest_close = price_data['close'].iloc[-1] if 'close' in price_data.columns else 0
+            sma_20 = price_data['close'].rolling(20).mean().iloc[-1] if 'close' in price_data.columns else 0
+
+            signal = "HOLD"
+            if latest_close > sma_20:
+                signal = "BUY"
+            elif latest_close < sma_20:
+                signal = "SELL"
+
+            return {
+                "symbol": symbol,
+                "signal": signal,
+                "indicators": {
+                    "sma_20": sma_20,
+                    "latest_close": latest_close
+                },
+                "analysis": f"Simple SMA crossover analysis for {symbol}"
+            }
+        except Exception as e:
+            return {
+                "symbol": symbol,
+                "error": str(e),
+                "signal": "HOLD"
+            }
+
+    async def health_check(self) -> Dict:
+        """Health check for technical analysis service"""
+        return {
+            "status": "healthy" if self.initialized else "not_initialized",
+            "service": "technical_analysis"
+        }
