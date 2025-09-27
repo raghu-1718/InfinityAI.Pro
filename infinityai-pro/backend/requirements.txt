@@ -11,12 +11,14 @@ pandas==2.2.0
 numpy==1.26.3
 aiohttp
 python-dateutil
+scikit-learn
 
 # Basic AI Dependencies (lightweight)
-torch>=2.0.0
+# torch and heavy packages will be installed at runtime
 transformers>=4.30.0
-sentence-transformers>=2.2.0
 httpx>=0.25.0
 pillow>=10.0.0
-chromadb>=0.4.0
-openai-whisper>=20240930
+# chromadb>=0.4.0  # Commented out temporarily for space
+# openai-whisper>=20240930  # Commented out temporarily for space
+# torch>=2.0.0  # Will install at runtime
+# sentence-transformers>=2.2.0  # Will install at runtime
