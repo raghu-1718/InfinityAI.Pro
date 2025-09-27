@@ -28,9 +28,15 @@ class VisionService:
         """Initialize YOLO and Diffusers models"""
         try:
             # Initialize YOLO
-            logger.info(f"Loading YOLO model: {self.yolo_config['model']}")
+            model_path = self.yolo_config['model']
+            
+            # Check if it's a URL, download if needed
+            if model_path.startswith('http'):
+                model_path = await self._download_model(model_path, 'yolov8n.pt')
+            
+            logger.info(f"Loading YOLO model: {model_path}")
             from ultralytics import YOLO
-            self.yolo_model = YOLO(self.yolo_config['model'])
+            self.yolo_model = YOLO(model_path)
 
             # Initialize Stable Diffusion (optional - can be heavy)
             try:
@@ -46,8 +52,13 @@ class VisionService:
                     from diffusers import StableDiffusionPipeline
                     import torch
 
+                    model_path = self.diffusers_config['model']
+                    # Check if it's a URL, download if needed
+                    if model_path.startswith('http'):
+                        model_path = await self._download_model(model_path, 'stable_diffusion_model')
+                    
                     self.diffusers_pipe = StableDiffusionPipeline.from_pretrained(
-                        self.diffusers_config['model'],
+                        model_path,
                         torch_dtype=torch.float16 if self.diffusers_config['device'] == 'cuda' else torch.float32
                     )
 
@@ -306,3 +317,30 @@ class VisionService:
                 "status": "error",
                 "error": str(e)
             }
+
+    async def _download_model(self, url: str, filename: str) -> str:
+        """Download model from URL to local cache"""
+        import aiohttp
+        import os
+        from pathlib import Path
+        
+        cache_dir = Path("./model_cache")
+        cache_dir.mkdir(exist_ok=True)
+        local_path = cache_dir / filename
+        
+        # Check if already downloaded
+        if local_path.exists():
+            logger.info(f"Using cached model: {local_path}")
+            return str(local_path)
+        
+        # Download
+        logger.info(f"Downloading model from {url} to {local_path}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    with open(local_path, 'wb') as f:
+                        f.write(await response.read())
+                    logger.info(f"Model downloaded successfully: {local_path}")
+                    return str(local_path)
+                else:
+                    raise Exception(f"Failed to download model: {response.status}")

@@ -38,9 +38,15 @@ class EmbeddingService:
                 logger.warning("psutil not available, proceeding without disk check")
 
             # Initialize SBERT
-            logger.info(f"Loading SBERT model: {self.sbert_config['model']}")
+            model_name = self.sbert_config['model']
+            
+            # Check if it's a URL, download if needed
+            if model_name.startswith('http'):
+                model_name = await self._download_model(model_name, 'sbert_model')
+            
+            logger.info(f"Loading SBERT model: {model_name}")
             from sentence_transformers import SentenceTransformer
-            self.sbert_model = SentenceTransformer(self.sbert_config['model'])
+            self.sbert_model = SentenceTransformer(model_name)
 
             # Initialize vector database
             await self._initialize_vector_db()
@@ -376,3 +382,41 @@ class EmbeddingService:
                 "status": "error",
                 "error": str(e)
             }
+
+    async def _download_model(self, url: str, dirname: str) -> str:
+        """Download and extract model from URL"""
+        import aiohttp
+        import zipfile
+        import os
+        from pathlib import Path
+        
+        cache_dir = Path("./model_cache")
+        cache_dir.mkdir(exist_ok=True)
+        model_dir = cache_dir / dirname
+        
+        # Check if already downloaded
+        if model_dir.exists() and any(model_dir.iterdir()):
+            logger.info(f"Using cached model: {model_dir}")
+            return str(model_dir)
+        
+        # Download
+        zip_path = cache_dir / f"{dirname}.zip"
+        logger.info(f"Downloading model from {url} to {zip_path}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    with open(zip_path, 'wb') as f:
+                        f.write(await response.read())
+                    logger.info(f"Model downloaded, extracting to {model_dir}")
+                    
+                    # Extract
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(model_dir)
+                    
+                    # Remove zip
+                    zip_path.unlink()
+                    
+                    logger.info(f"Model extracted successfully: {model_dir}")
+                    return str(model_dir)
+                else:
+                    raise Exception(f"Failed to download model: {response.status}")

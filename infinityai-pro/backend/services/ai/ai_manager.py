@@ -45,11 +45,11 @@ class AIManager:
                 "device": "cpu"  # Force CPU to save space
             },
             "yolo": {
-                "model": os.getenv("YOLO_MODEL", "yolov8n.pt"),  # Already smallest variant
+                "model": os.getenv("YOLO_MODEL", "yolov8n.pt"),  # Can be URL or local path
                 "conf_threshold": 0.5
             },
             "sbert": {
-                "model": os.getenv("SBERT_MODEL", "all-MiniLM-L6-v2"),  # Smallest SBERT model
+                "model": os.getenv("SBERT_MODEL", "all-MiniLM-L6-v2"),  # Can be URL or HF model name
                 "use_gpu": False  # Force CPU
             },
             "vector_db": {
