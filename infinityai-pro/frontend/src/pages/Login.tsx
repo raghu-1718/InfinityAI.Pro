@@ -6,7 +6,8 @@ const Login: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const handleLogin = async () => {
-    const response = await fetch('http://localhost:8000/user/login', {
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://infinityai-backend.onrender.com';
+    const response = await fetch(`${apiUrl}/user/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -15,6 +16,8 @@ const Login: React.FC = () => {
     if (response.ok) {
       setMessage('Login successful!');
       localStorage.setItem('token', data.token);
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } else {
       setMessage(data.detail);
     }
