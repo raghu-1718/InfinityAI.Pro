@@ -6,7 +6,10 @@ import os
 import logging
 
 # Import ai_manager after other imports to avoid circular imports
-from services.ai import ai_manager
+# from services.ai import ai_manager
+
+# AI Manager temporarily disabled for testing
+AI_MANAGER_AVAILABLE = False
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -76,6 +79,8 @@ async def whisper_transcription(request: Request):
 @router.post("/start-simulation")
 async def start_trading_simulation(days: int = 30):
     """Start AI-powered trading simulation"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         result = await ai_manager.start_trading_simulation(days)
         return result
@@ -85,6 +90,8 @@ async def start_trading_simulation(days: int = 30):
 @router.post("/simulate-day")
 async def simulate_trading_day(symbols: List[str] = None):
     """Run one day of AI trading simulation"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         result = await ai_manager.simulate_trading_day(symbols)
         return result
@@ -94,6 +101,8 @@ async def simulate_trading_day(symbols: List[str] = None):
 @router.get("/performance")
 async def get_trading_performance():
     """Get trading simulation performance metrics"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         result = await ai_manager.get_trading_performance()
         return result
@@ -103,6 +112,8 @@ async def get_trading_performance():
 @router.get("/realtime-quote/{symbol}")
 async def get_realtime_market_quote(symbol: str):
     """Get real-time market quote"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         result = await ai_manager.get_realtime_quote(symbol)
         return result
@@ -112,6 +123,8 @@ async def get_realtime_market_quote(symbol: str):
 @router.get("/historical/{symbol}")
 async def get_historical_data(symbol: str, interval: str = "5min"):
     """Get historical market data"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         data = await ai_manager.get_historical_data(symbol, interval)
         if data is not None:
@@ -123,6 +136,8 @@ async def get_historical_data(symbol: str, interval: str = "5min"):
 @router.post("/analyze-chart")
 async def analyze_chart(file: UploadFile = File(...), symbol: str = None):
     """Analyze chart image for technical patterns"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         chart_data = await file.read()
         result = await ai_manager.analyze_chart_patterns(chart_data, symbol)
@@ -133,6 +148,8 @@ async def analyze_chart(file: UploadFile = File(...), symbol: str = None):
 @router.post("/analyze-price-data")
 async def analyze_price_data(price_data: Dict, symbol: str):
     """Analyze price data for technical indicators"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         import pandas as pd
         df = pd.DataFrame(price_data)
@@ -144,6 +161,8 @@ async def analyze_price_data(price_data: Dict, symbol: str):
 @router.get("/crypto/quote/{symbol}")
 async def get_crypto_quote(symbol: str):
     """Get real-time crypto quote from CoinSwitch"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         result = await ai_manager.get_crypto_quote(symbol)
         return result
@@ -153,6 +172,8 @@ async def get_crypto_quote(symbol: str):
 @router.get("/crypto/historical/{symbol}")
 async def get_crypto_historical_data(symbol: str, interval: str = "5min"):
     """Get historical crypto market data"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         data = await ai_manager.get_crypto_historical_data(symbol, interval)
         if data is not None and not data.empty:
@@ -164,6 +185,8 @@ async def get_crypto_historical_data(symbol: str, interval: str = "5min"):
 @router.get("/crypto/ticker/{symbol}")
 async def get_crypto_ticker(symbol: str):
     """Get crypto ticker data from CoinSwitch"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         if 'crypto_market_data' not in ai_manager.services:
             raise HTTPException(status_code=503, detail="Crypto market data service not available")
@@ -176,6 +199,8 @@ async def get_crypto_ticker(symbol: str):
 @router.get("/crypto/depth/{symbol}")
 async def get_crypto_depth(symbol: str, limit: int = 50):
     """Get crypto order book depth from CoinSwitch"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         if 'crypto_market_data' not in ai_manager.services:
             raise HTTPException(status_code=503, detail="Crypto market data service not available")
@@ -188,6 +213,8 @@ async def get_crypto_depth(symbol: str, limit: int = 50):
 @router.get("/crypto/portfolio")
 async def get_crypto_portfolio():
     """Get crypto portfolio from CoinSwitch"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         if 'crypto_market_data' not in ai_manager.services:
             raise HTTPException(status_code=503, detail="Crypto market data service not available")
@@ -200,6 +227,8 @@ async def get_crypto_portfolio():
 @router.get("/crypto/orders")
 async def get_crypto_orders(symbol: Optional[str] = None):
     """Get crypto open orders from CoinSwitch"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         if 'crypto_market_data' not in ai_manager.services:
             raise HTTPException(status_code=503, detail="Crypto market data service not available")
@@ -213,6 +242,8 @@ async def get_crypto_orders(symbol: Optional[str] = None):
 @router.post("/llm/chat")
 async def llm_chat(request: Dict[str, Any]):
     """Chat with AI using multi-cloud failover"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         message = request.get("message", "")
         if not message:
@@ -233,6 +264,8 @@ async def llm_chat(request: Dict[str, Any]):
 @router.post("/sentiment/analyze")
 async def sentiment_analysis(request: Dict[str, Any]):
     """Analyze sentiment of text using AI"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         text = request.get("text", "")
         if not text:
@@ -253,6 +286,8 @@ async def sentiment_analysis(request: Dict[str, Any]):
 @router.post("/signal/generate")
 async def signal_generation(request: Dict[str, Any]):
     """Generate trading signals using AI"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         symbol = request.get("symbol", "")
         price_data = request.get("price_data", {})
@@ -281,6 +316,8 @@ async def signal_generation(request: Dict[str, Any]):
 @router.post("/risk/assess")
 async def risk_assessment(request: Dict[str, Any]):
     """Assess trading risk using AI"""
+    if not AI_MANAGER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI Manager service temporarily unavailable")
     try:
         symbol = request.get("symbol", "")
         action = request.get("action", "")
