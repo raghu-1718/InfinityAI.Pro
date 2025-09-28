@@ -191,7 +191,7 @@ class AIManager:
 
             # Initialize LLM (Ollama - Hetzner) - lightweight
             try:
-                self.services['llm'] = LLMService(self.config['ollama'])
+                self.services['llm'] = LLMService()
                 await self.services['llm'].initialize()
                 logger.info("✅ LLM service initialized")
             except Exception as e:
@@ -213,7 +213,7 @@ class AIManager:
             vision_min_free = self.config['disk_optimization']['vision_min_free_gb']
             if free_gb > vision_min_free:
                 try:
-                    self.services['vision'] = VisionService(self.config['yolo'], self.config['diffusers'])
+                    self.services['vision'] = VisionService()
                     await self.services['vision'].initialize()
                     logger.info("✅ Vision service initialized")
                 except Exception as e:
