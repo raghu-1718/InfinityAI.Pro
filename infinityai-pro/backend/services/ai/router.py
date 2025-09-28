@@ -97,29 +97,36 @@ class AIRouter:
                 if service_type == "llm":
                     from .llm_service import LLMService
                     service = LLMService()
+                    await service.initialize()
                 elif service_type == "speech":
                     from .speech_service import SpeechService
                     service = SpeechService()
+                    await service.initialize()
                 elif service_type == "vision":
                     from .vision_service import VisionService
                     service = VisionService()
+                    await service.initialize()
                 elif service_type == "diffusion":
                     from .diffusion_service import DiffusionService
                     service = DiffusionService()
+                    await service.initialize()
                 elif service_type == "sentiment":
                     from .sentiment_service import SentimentService
                     service = SentimentService()
+                    await service.initialize()
                 elif service_type == "risk":
                     from .risk_service import RiskService
                     service = RiskService()
+                    await service.initialize()
                 elif service_type == "signal":
                     from .signal_service import SignalService
                     service = SignalService()
+                    await service.initialize()
                 else:
                     raise ValueError(f"Unknown service type: {service_type}")
 
                 # Call the method on the service - try Azure first, then AWS
-                method_func = getattr(service, f"azure_{method}")
+                method_func = getattr(service, f"{provider}_{method}")
                 result = await method_func(**kwargs)
 
                 logger.info(f"Successfully routed {service_type}.{method} via {provider}")
