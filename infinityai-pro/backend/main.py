@@ -66,6 +66,11 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": "2025-09-28T08:50:00Z"}
 
+@app.get("/healthz")
+async def healthz_check():
+    """Health check endpoint for Render"""
+    return {"status": "healthy", "timestamp": "2025-09-28T08:50:00Z"}
+
 @app.get("/")
 async def root():
     """Root endpoint"""
