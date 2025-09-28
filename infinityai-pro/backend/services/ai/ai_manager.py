@@ -15,6 +15,13 @@ import pandas as pd
 import numpy as np
 from services.model_train import featurize
 
+# Import AI service classes
+from .llm_service import LLMService
+from .stt_service import STTService
+from .vision_service import VisionService
+from .embedding_service import EmbeddingService
+from .huggingface_client import hf_client
+
 logger = logging.getLogger(__name__)
 
 class AIManager:
