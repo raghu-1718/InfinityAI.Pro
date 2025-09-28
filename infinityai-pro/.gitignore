@@ -1,0 +1,80 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+render_env_vars.txt
+.render_url
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+verification_report.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Model files (large files)
+*.pt
+*.pkl
+*.h5
+*.pb
+models/*.bin
+models/*.onnx
+
+# Node.js (if needed)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Deployment artifacts
+deploy_*.tar.gz
+deploy_*/</content>
+<parameter name="filePath">/workspaces/InfinityAI.Pro/infinityai-pro/AUTOMATION_COMPLETE.md

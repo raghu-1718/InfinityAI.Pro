@@ -67,4 +67,56 @@ class Config:
     SLIPPAGE_PTS: float = 0.5
     RANDOM_SEED: int = 42
 
+    # Multi-Cloud AI Configuration (Azure Primary, AWS Secondary)
+    # Azure AI (Primary provider - GPU & AI)
+    AZURE_AI_BASE_URL: str = os.getenv("AZURE_AI_BASE_URL", "")
+    AZURE_OPENAI_ENDPOINT: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+    AZURE_OPENAI_KEY: str = os.getenv("AZURE_OPENAI_KEY", "")
+    AZURE_OPENAI_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4-turbo")
+    AZURE_SPEECH_ENDPOINT: str = os.getenv("AZURE_SPEECH_ENDPOINT", "")
+    AZURE_SPEECH_KEY: str = os.getenv("AZURE_SPEECH_KEY", "")
+    AZURE_VISION_ENDPOINT: str = os.getenv("AZURE_VISION_ENDPOINT", "")
+    AZURE_VISION_KEY: str = os.getenv("AZURE_VISION_KEY", "")
+    AZURE_TEXT_ANALYTICS_ENDPOINT: str = os.getenv("AZURE_TEXT_ANALYTICS_ENDPOINT", "")
+    AZURE_TEXT_ANALYTICS_KEY: str = os.getenv("AZURE_TEXT_ANALYTICS_KEY", "")
+    AZURE_ML_ENDPOINT: str = os.getenv("AZURE_ML_ENDPOINT", "")
+    AZURE_ML_KEY: str = os.getenv("AZURE_ML_KEY", "")
+
+    # AWS AI (Secondary provider - GPU & AI)
+    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
+    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    AWS_S3_BUCKET: str = os.getenv("AWS_S3_BUCKET", "infinityai-models")
+    AWS_BEDROCK_MODEL_ID: str = os.getenv("AWS_BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    AWS_SAGEMAKER_ENDPOINT: str = os.getenv("AWS_SAGEMAKER_ENDPOINT", "")
+    AWS_SAGEMAKER_SD_ENDPOINT: str = os.getenv("AWS_SAGEMAKER_SD_ENDPOINT", "")
+    AWS_FRAUD_DETECTOR_ID: str = os.getenv("AWS_FRAUD_DETECTOR_ID", "")
+
+    # Hugging Face (Local AI models)
+    HUGGINGFACE_API_KEY: str = os.getenv("HUGGINGFACE_API_KEY", "")
+    HUGGINGFACE_MODEL_CACHE: str = os.getenv("HUGGINGFACE_MODEL_CACHE", "/tmp/huggingface")
+
+    # Cloud Storage Configuration
+    STORAGE_PROVIDER: str = os.getenv("STORAGE_PROVIDER", "aws")  # aws, azure
+    AZURE_STORAGE_ACCOUNT: str = os.getenv("AZURE_STORAGE_ACCOUNT", "")
+    AZURE_STORAGE_KEY: str = os.getenv("AZURE_STORAGE_KEY", "")
+    AZURE_CONTAINER: str = os.getenv("AZURE_CONTAINER", "infinityai-models")
+
+    # Model URLs (for cloud downloads)
+    YOLO_MODEL_URL: str = os.getenv("YOLO_MODEL_URL", "")
+    EMBEDDING_MODEL_URL: str = os.getenv("EMBEDDING_MODEL_URL", "")
+
+    # Broker Configuration
+    BROKER_TYPE: str = os.getenv("BROKER_TYPE", "dhan")  # dhan or coinswitch
+
+    # Dhan Broker
+    DHAN_BASE_URL: str = os.getenv("DHAN_BASE_URL", "https://api.dhan.co")
+    DHAN_ACCESS_TOKEN: str = os.getenv("DHAN_ACCESS_TOKEN", "")
+    DHAN_CLIENT_ID: str = os.getenv("DHAN_CLIENT_ID", "")
+
+    # CoinSwitch PRO Broker
+    COINSWITCH_BASE_URL: str = os.getenv("COINSWITCH_BASE_URL", "https://api.coinswitch.co")
+    COINSWITCH_API_KEY: str = os.getenv("COINSWITCH_API_KEY", "")
+    COINSWITCH_API_SECRET: str = os.getenv("COINSWITCH_API_SECRET", "")
+
 CONFIG = Config()
