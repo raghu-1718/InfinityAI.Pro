@@ -14,14 +14,27 @@ AI_MANAGER_AVAILABLE = False
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# RunPod endpoints
+# Multi-Cloud AI endpoints (AWS Primary, Azure Secondary)
+from utils.config import CONFIG
+
+# AWS SageMaker endpoints (Primary GPU provider)
+AWS_SAGEMAKER_SD_ENDPOINT = CONFIG.AWS_SAGEMAKER_ENDPOINT or ""
+AWS_SAGEMAKER_YOLO_ENDPOINT = CONFIG.AWS_SAGEMAKER_ENDPOINT or ""  # Same endpoint, different models
+AWS_SAGEMAKER_WHISPER_ENDPOINT = CONFIG.AWS_SAGEMAKER_ENDPOINT or ""  # Same endpoint, different models
+
+# Azure ML endpoints (Secondary GPU provider)
+AZURE_ML_SD_ENDPOINT = CONFIG.AZURE_ML_ENDPOINT or ""
+AZURE_ML_YOLO_ENDPOINT = CONFIG.AZURE_ML_ENDPOINT or ""
+AZURE_ML_WHISPER_ENDPOINT = CONFIG.AZURE_ML_ENDPOINT or ""
+
+# Legacy RunPod endpoints (for backward compatibility)
 RUNPOD_SD_ENDPOINT = os.getenv("RUNPOD_SD_ENDPOINT", "")
 RUNPOD_YOLO_ENDPOINT = os.getenv("RUNPOD_YOLO_ENDPOINT", "")
 RUNPOD_WHISPER_ENDPOINT = os.getenv("RUNPOD_WHISPER_ENDPOINT", "")
 RUNPOD_API_KEY = os.getenv("RUNPOD_API_KEY", "")
 
 async def proxy_to_runpod(endpoint: str, request: Request):
-    """Proxy request to RunPod endpoint"""
+    """Proxy request to RunPod endpoint (legacy)"""
     if not endpoint:
         raise HTTPException(status_code=503, detail="RunPod endpoint not configured")
 
@@ -58,23 +71,158 @@ async def proxy_to_runpod(endpoint: str, request: Request):
         logger.error(f"RunPod proxy error: {e}")
         raise HTTPException(status_code=500, detail="AI service temporarily unavailable")
 
+async def proxy_to_aws_sagemaker(endpoint: str, request: Request, model_type: str = "default"):
+    """Proxy request to AWS SageMaker endpoint"""
+    if not endpoint:
+        raise HTTPException(status_code=503, detail="AWS SageMaker endpoint not configured")
+
+    try:
+        import boto3
+        import json
+
+        # Initialize SageMaker runtime client
+        sagemaker_runtime = boto3.client(
+            'sagemaker-runtime',
+            region_name=CONFIG.AWS_REGION,
+            aws_access_key_id=CONFIG.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=CONFIG.AWS_SECRET_ACCESS_KEY
+        )
+
+        # Handle different content types
+        content_type = request.headers.get("content-type", "")
+
+        if "multipart/form-data" in content_type:
+            # For file uploads (YOLO, Whisper)
+            form_data = await request.form()
+            payload = {}
+
+            for key, value in form_data.items():
+                if hasattr(value, 'filename'):  # It's a file
+                    payload[key] = await value.read()
+                else:  # It's form data
+                    payload[key] = value
+
+            # Convert to JSON for SageMaker
+            payload_json = json.dumps(payload)
+        else:
+            # For JSON requests (Stable Diffusion)
+            payload = await request.json()
+            payload_json = json.dumps(payload)
+
+        # Call SageMaker endpoint
+        response = sagemaker_runtime.invoke_endpoint(
+            EndpointName=endpoint.split('/')[-1],  # Extract endpoint name from URL
+            ContentType='application/json',
+            Body=payload_json
+        )
+
+        # Parse response
+        result = json.loads(response['Body'].read().decode())
+        return result
+
+    except Exception as e:
+        logger.error(f"AWS SageMaker proxy error: {e}")
+        raise HTTPException(status_code=500, detail="AWS AI service temporarily unavailable")
+
+async def proxy_to_azure_ml(endpoint: str, request: Request, model_type: str = "default"):
+    """Proxy request to Azure ML endpoint"""
+    if not endpoint:
+        raise HTTPException(status_code=503, detail="Azure ML endpoint not configured")
+
+    try:
+        # Handle different content types
+        content_type = request.headers.get("content-type", "")
+
+        headers = {
+            "Authorization": f"Bearer {CONFIG.AZURE_ML_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        if "multipart/form-data" in content_type:
+            # For file uploads (YOLO, Whisper)
+            form_data = await request.form()
+            payload = {}
+
+            for key, value in form_data.items():
+                if hasattr(value, 'filename'):  # It's a file
+                    # Convert file to base64 for Azure ML
+                    import base64
+                    file_data = await value.read()
+                    payload[key] = base64.b64encode(file_data).decode('utf-8')
+                else:  # It's form data
+                    payload[key] = value
+        else:
+            # For JSON requests (Stable Diffusion)
+            payload = await request.json()
+
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.post(endpoint, json=payload, headers=headers)
+            return response.json()
+
+    except Exception as e:
+        logger.error(f"Azure ML proxy error: {e}")
+        raise HTTPException(status_code=500, detail="Azure AI service temporarily unavailable")
+
+async def proxy_to_multi_cloud_ai(request: Request, model_type: str = "sd"):
+    """Multi-cloud AI proxy with failover (AWS Primary, Azure Secondary, RunPod Fallback)"""
+    endpoints = {
+        "sd": [
+            (AWS_SAGEMAKER_SD_ENDPOINT, "aws", "sagemaker"),
+            (AZURE_ML_SD_ENDPOINT, "azure", "ml"),
+            (f"{RUNPOD_SD_ENDPOINT}/sdapi/v1/txt2img", "runpod", "legacy")
+        ],
+        "yolo": [
+            (AWS_SAGEMAKER_YOLO_ENDPOINT, "aws", "sagemaker"),
+            (AZURE_ML_YOLO_ENDPOINT, "azure", "ml"),
+            (f"{RUNPOD_YOLO_ENDPOINT}/detect", "runpod", "legacy")
+        ],
+        "whisper": [
+            (AWS_SAGEMAKER_WHISPER_ENDPOINT, "aws", "sagemaker"),
+            (AZURE_ML_WHISPER_ENDPOINT, "azure", "ml"),
+            (f"{RUNPOD_WHISPER_ENDPOINT}/transcribe", "runpod", "legacy")
+        ]
+    }
+
+    for endpoint, provider, service_type in endpoints.get(model_type, []):
+        if not endpoint:
+            continue
+
+        try:
+            if provider == "aws" and service_type == "sagemaker":
+                result = await proxy_to_aws_sagemaker(endpoint, request, model_type)
+            elif provider == "azure" and service_type == "ml":
+                result = await proxy_to_azure_ml(endpoint, request, model_type)
+            elif provider == "runpod":
+                result = await proxy_to_runpod(endpoint, request)
+            else:
+                continue
+
+            # Add metadata about which provider was used
+            result["_provider"] = provider
+            result["_service"] = service_type
+            return result
+
+        except Exception as e:
+            logger.warning(f"{provider.upper()} {service_type} failed for {model_type}: {e}")
+            continue
+
+    # All providers failed
+    raise HTTPException(status_code=503, detail="All AI service providers temporarily unavailable")
+
 @router.post("/sd")
 async def stable_diffusion(request: Request):
-    """Proxy to Stable Diffusion on RunPod"""
-    endpoint = f"{RUNPOD_SD_ENDPOINT}/sdapi/v1/txt2img"
-    return await proxy_to_runpod(endpoint, request)
+    """Proxy to Stable Diffusion using multi-cloud AI (AWS Primary, Azure Secondary, RunPod Fallback)"""
+    return await proxy_to_multi_cloud_ai(request, "sd")
 
 @router.post("/yolo")
 async def yolo_detection(request: Request):
-    """Proxy to YOLO object detection on RunPod"""
-    endpoint = f"{RUNPOD_YOLO_ENDPOINT}/detect"
-    return await proxy_to_runpod(endpoint, request)
+    """Proxy to YOLO object detection using multi-cloud AI (AWS Primary, Azure Secondary, RunPod Fallback)"""
+    return await proxy_to_multi_cloud_ai(request, "yolo")
 
 @router.post("/whisper")
 async def whisper_transcription(request: Request):
-    """Proxy to Whisper STT on RunPod"""
-    endpoint = f"{RUNPOD_WHISPER_ENDPOINT}/transcribe"
-    return await proxy_to_runpod(endpoint, request)
+    """Proxy to Whisper STT using multi-cloud AI (AWS Primary, Azure Secondary, RunPod Fallback)"""
+    return await proxy_to_multi_cloud_ai(request, "whisper")
 
 @router.post("/start-simulation")
 async def start_trading_simulation(days: int = 30):

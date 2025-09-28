@@ -9,7 +9,7 @@ InfinityAI.Pro is a production-grade, event-driven AI trading platform supportin
 - **AI Chat Assistant**: Natural language commands for trading operations
 - **Multi-Broker Support**: Dhan API integration with extensible architecture
 - **Risk Management**: Automated position sizing and stop-loss mechanisms
-- **GPU-Accelerated AI**: RunPod integration for high-performance AI services
+- **GPU-Accelerated AI**: AWS SageMaker/Azure ML integration for high-performance AI services
 
 ### 🎨 Enhanced Dashboard
 - **Modern UI**: Clean, professional interface built with React & TypeScript
@@ -42,14 +42,14 @@ This script will:
 - ✅ Deploy to Render using Blueprint
 - ✅ Configure custom domains (infinityai.pro, api.infinityai.pro)
 - ✅ Set up environment variables
-- ✅ Configure RunPod GPU endpoints
+- ✅ Configure AWS SageMaker/Azure ML GPU endpoints
 
 ### Manual Setup
 
 #### 1. Prerequisites
 - Render account (https://render.com)
 - Domain: infinityai.pro configured
-- RunPod account for GPU services
+- AWS account with SageMaker access or Azure account with ML Studio access for GPU services
 - API keys for trading platforms
 
 #### 2. Render Deployment
@@ -71,11 +71,12 @@ OPENAI_API_KEY=your_openai_key
 PERPLEXITY_API_KEY=your_perplexity_key
 HUGGINGFACE_API_KEY=your_huggingface_key
 
-# GPU Services (RunPod)
-RUNPOD_SD_ENDPOINT=https://your-runpod-sd-endpoint.runpod.net
-RUNPOD_YOLO_ENDPOINT=https://your-runpod-yolo-endpoint.runpod.net
-RUNPOD_WHISPER_ENDPOINT=https://your-runpod-whisper-endpoint.runpod.net
-RUNPOD_API_KEY=your_runpod_api_key
+# GPU Services (AWS SageMaker/Azure ML)
+AWS_SAGEMAKER_ENDPOINT=https://your-sagemaker-endpoint.amazonaws.com
+AZURE_ML_ENDPOINT=https://your-azure-ml-endpoint.azure.com
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AZURE_ML_KEY=your_azure_ml_key
 
 # Notifications
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
@@ -102,7 +103,7 @@ TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
 - **Backend**: Python FastAPI with async processing
 - **Frontend**: React 18 with TypeScript and Tailwind CSS
 - **UI Components**: Recharts for data visualization, Heroicons for icons
-- **AI Services**: Ollama (LLMs), ChromaDB (Vectors), RunPod (GPU)
+- **AI Services**: Ollama (LLMs), ChromaDB (Vectors), AWS SageMaker/Azure ML (GPU)
 - **Database**: ChromaDB for vector storage, SQLite for metadata
 - **Deployment**: Render (Web Services + Private Services)
 - **Domain**: infinityai.pro
@@ -186,7 +187,8 @@ TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
 ## 📞 Support
 
 - **Render**: Render documentation and support
-- **RunPod**: RunPod GPU documentation
+- **AWS SageMaker**: AWS SageMaker documentation
+- **Azure ML**: Azure Machine Learning documentation
 - **Trading API**: Dhan API documentation
 - **AI Services**: Hugging Face, OpenAI documentation
 

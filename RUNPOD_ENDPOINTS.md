@@ -1,24 +1,41 @@
-# RunPod Endpoint Management
+# RunPod Endpoint Management (DEPRECATED)
 
-## Current Endpoints (as of Sep 27, 2025):
+⚠️ **This file is deprecated.** InfinityAI.Pro has migrated from RunPod to AWS SageMaker and Azure ML for GPU services.
+
+## Migration Information
+
+The system now uses multi-cloud AI with the following priority:
+1. **AWS SageMaker** (Primary GPU provider)
+2. **Azure ML** (Secondary GPU provider)
+3. **RunPod** (Legacy fallback - still supported but deprecated)
+
+## Legacy RunPod Endpoints (No longer used)
+
 - Stable Diffusion: https://ga4sxq6i6mrw72-8888.proxy.runpod.net
 - YOLO: https://s2415wou493ooq-8888.proxy.runpod.net
 - Whisper: https://wmca1dz5qqm7kn-8888.proxy.runpod.net
 
-## Endpoint Stability:
-✅ Endpoints typically remain the same when stopping/starting pods
-✅ Same pod ID = same endpoint (99% of the time)
-⚠️  May change if pod is terminated/recreated or hardware reassigned
+## New Configuration
 
-## Update Process:
-1. Start pods in RunPod console
-2. Check if endpoints changed
-3. If changed: Update in Render dashboard (no redeployment needed)
-4. If same: No action required
+Update your environment variables to use AWS/Azure instead:
 
-## Quick Endpoint Check:
-After starting pods, visit:
-- https://runpod.io/console/pods
-- Copy new endpoints if different
-- Update Render environment variables</content>
+```bash
+# AWS SageMaker (Primary)
+AWS_SAGEMAKER_ENDPOINT=https://your-sagemaker-endpoint.amazonaws.com
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+
+# Azure ML (Secondary)
+AZURE_ML_ENDPOINT=https://your-azure-ml-endpoint.azure.com
+AZURE_ML_KEY=your_azure_ml_key
+```
+
+## Migration Steps
+
+1. Deploy your models to AWS SageMaker or Azure ML
+2. Update environment variables
+3. Test the new endpoints
+4. Remove RunPod dependencies
+
+For detailed setup instructions, see the main README.md.</content>
 <parameter name="filePath">/workspaces/InfinityAI.Pro/RUNPOD_ENDPOINTS.md

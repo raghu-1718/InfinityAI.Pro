@@ -6,6 +6,7 @@ from api.trading import router as trading_router
 from api.options import router as options_router
 from api.ai import router as ai_router
 from api.user import router as user_router
+from api.storage import router as storage_router
 # Import ai_manager after other imports to avoid circular imports
 # from services.ai import ai_manager
 import asyncio
@@ -60,6 +61,7 @@ app.include_router(trading_router, prefix="/trading")
 app.include_router(options_router, prefix="/options")
 app.include_router(ai_router, prefix="/ai")
 app.include_router(user_router, prefix="/user")
+app.include_router(storage_router, prefix="/storage")
 
 @app.get("/health")
 async def health_check():

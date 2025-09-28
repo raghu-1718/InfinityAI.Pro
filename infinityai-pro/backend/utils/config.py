@@ -39,7 +39,7 @@ class Config:
     MIN_OPTION_PREMIUM: float = 50.0
     TP_MULTIPLIER: float = 1.5
     MODEL_PATH: str = "models/lightgbm_small.pkl"
-    BACKTEST_DATA_PATH: str = "data/backtest_5m/"  # expects CSVs per symbol
+    BACKTEST_DATA_PATH: str = "backend/data/backtest_5m/"  # expects CSVs per symbol
     PAPER_MODE: bool = False  # ⚠️ LIVE TRADING ENABLED
 
     BROKER: dict = field(default_factory=lambda: {
