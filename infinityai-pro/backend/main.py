@@ -23,7 +23,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize AI Manager: {e}")
         # Don't crash the app, just log the error
-        pass
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
 
     yield
 
