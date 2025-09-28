@@ -28,9 +28,9 @@ boto3>=1.28.0  # AWS SDK
 azure-storage-blob>=12.17.0  # Azure Blob Storage
 openai>=1.0.0  # OpenAI SDK (supports Azure OpenAI)
 azure-cognitiveservices-speech>=1.32.1  # Azure Speech
-azure-ai-vision>=0.15.0  # Azure Vision
-azure-ai-textanalytics>=5.3.0  # Azure Text Analytics
-azure-ai-ml>=1.11.0  # Azure ML
+# azure-ai-vision>=0.15.0  # Commented out - package not available
+# azure-ai-textanalytics>=5.3.0  # Commented out - may have compatibility issues
+# azure-ai-ml>=1.11.0  # Commented out - may have compatibility issues
 
 # Hugging Face for Local AI Models
 transformers>=4.30.0  # Hugging Face transformers
