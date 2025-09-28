@@ -61,10 +61,10 @@ app.include_router(options_router, prefix="/options")
 app.include_router(ai_router, prefix="/ai")
 app.include_router(user_router, prefix="/user")
 
-@app.get("/health")
-async def health_check():
-    """Basic health check endpoint"""
-    return {"status": "healthy", "service": "InfinityAI.Pro Backend"}
+@app.get("/test")
+async def test_endpoint():
+    """Simple test endpoint"""
+    return {"message": "Test endpoint working", "status": "ok"}
 
 @app.get("/")
 async def root():
