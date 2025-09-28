@@ -1,0 +1,18 @@
+# DhanHQ API URLs Configuration
+# Update these in your Dhan Dashboard when setting up API Keys
+
+## Redirect URL (OAuth Callback)
+# This is where Dhan redirects after OAuth authentication
+https://yourdomain.com/dhan/oauth/callback
+
+## Postback URL (Webhook/Notification URL)  
+# This is where Dhan sends order updates, trade confirmations, etc.
+https://yourdomain.com/dhan/webhook
+
+## Alternative for local development:
+# Redirect URL: http://localhost:8000/dhan/oauth/callback
+# Postback URL: http://localhost:8000/dhan/webhook
+
+## For production deployment:
+# Replace 'yourdomain.com' with your actual domain
+# Ensure HTTPS is enabled for security

@@ -1,0 +1,54 @@
+# 🚨 CRITICAL: Dhan API URLs to Configure in Dashboard
+# Login to https://web.dhan.co → DhanHQ Trading APIs → API Keys
+# Update these URLs when creating/editing your API key
+
+═══════════════════════════════════════════════════════════════
+🎯 REQUIRED URLS FOR INFINITYAI.PRO
+═══════════════════════════════════════════════════════════════
+
+📍 REDIRECT URL (OAuth Callback):
+https://yourdomain.com/dhan/oauth/callback
+
+📍 POSTBACK URL (Webhook):
+https://yourdomain.com/dhan/webhook
+
+═══════════════════════════════════════════════════════════════
+🧪 FOR LOCAL DEVELOPMENT/TESTING:
+═══════════════════════════════════════════════════════════════
+
+📍 REDIRECT URL:
+http://localhost:8000/dhan/oauth/callback
+
+📍 POSTBACK URL:
+http://localhost:8000/dhan/webhook
+
+═══════════════════════════════════════════════════════════════
+📋 CONFIGURATION STEPS:
+═══════════════════════════════════════════════════════════════
+
+1. Login to Dhan Web: https://web.dhan.co
+2. Go to: DhanHQ Trading APIs → API Keys
+3. Create New API Key or Edit Existing
+4. In "Redirect URLs" section, add:
+   - https://yourdomain.com/dhan/oauth/callback
+5. In "Webhook URLs" section, add:
+   - https://yourdomain.com/dhan/webhook
+6. Save the API key configuration
+
+═══════════════════════════════════════════════════════════════
+⚠️  IMPORTANT NOTES:
+═══════════════════════════════════════════════════════════════
+
+• Replace 'yourdomain.com' with your actual domain
+• For production: Use HTTPS URLs only
+• For development: Use HTTP localhost URLs
+• Webhook URL receives order updates and trade confirmations
+• Redirect URL handles OAuth authentication flow
+
+═══════════════════════════════════════════════════════════════
+🔧 TECHNICAL DETAILS:
+═══════════════════════════════════════════════════════════════
+
+Redirect URL: Handles OAuth 2.0 authorization code flow
+Postback URL: Receives real-time order/trade notifications
+Both URLs must be accessible from Dhan's servers

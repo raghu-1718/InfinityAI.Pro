@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import Trading from './pages/Trading.tsx';
-import AIModels from './pages/AIModels.tsx';
-import Risk from './pages/Risk.tsx';
+import Login from './pages/Login';
+import Dashboard from './components/Dashboard';
+import Trading from './pages/Trading';
+import AIModels from './pages/AIModels';
+import Risk from './pages/Risk';
 
 function App() {
   return (
