@@ -11,8 +11,8 @@ from typing import Dict, Optional, Any, List
 from datetime import datetime
 import numpy as np
 import pandas as pd
-from ..utils.config import Config
-from ..utils.logger import get_logger
+from utils.config import Config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

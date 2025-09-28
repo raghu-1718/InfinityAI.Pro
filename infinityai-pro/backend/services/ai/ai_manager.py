@@ -109,7 +109,7 @@ class AIManager:
         # Initialize Market Data AI (Alpha Vantage + CoinSwitch) - lightweight
         if self.config['alpha_vantage']['api_key']:
             try:
-                from ..market_data_ai import MarketDataAI
+                from servicesmarket_data_ai import MarketDataAI
                 self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
                 await self.services['market_data'].initialize()
                 logger.info("✅ Market Data AI initialized")
@@ -119,7 +119,7 @@ class AIManager:
         # Initialize CoinSwitch Crypto Market Data - lightweight
         if self.config.get('coinswitch', {}).get('enabled', False):
             try:
-                from ..broker_coinswitch import CoinSwitchAdapter
+                from servicesbroker_coinswitch import CoinSwitchAdapter
                 coinswitch_config = self.config.get('coinswitch', {})
                 if coinswitch_config.get('api_key') and coinswitch_config.get('api_secret'):
                     self.services['crypto_market_data'] = CoinSwitchAdapter(
@@ -133,7 +133,7 @@ class AIManager:
 
         # Initialize Technical Analysis AI - lightweight
         try:
-            from ..ai_models import TechnicalAnalysisAI
+            from servicesai_models import TechnicalAnalysisAI
             self.services['technical_analysis'] = TechnicalAnalysisAI()
             await self.services['technical_analysis'].initialize()
             logger.info("✅ Technical Analysis AI initialized")
@@ -142,7 +142,7 @@ class AIManager:
 
         # Initialize AI Trading Simulator - lightweight
         try:
-            from ..ai_trading_simulator import AITradingSimulator
+            from servicesai_trading_simulator import AITradingSimulator
             self.services['trading_simulator'] = AITradingSimulator()
             await self.services['trading_simulator'].initialize()
             logger.info("✅ AI Trading Simulator initialized")

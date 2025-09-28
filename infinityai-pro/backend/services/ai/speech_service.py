@@ -11,8 +11,8 @@ from typing import Dict, Optional, Any, Tuple
 from datetime import datetime
 import base64
 import io
-from ..utils.config import Config
-from ..utils.logger import get_logger
+from utils.config import Config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

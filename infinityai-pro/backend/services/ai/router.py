@@ -8,8 +8,8 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import aiohttp
-from ..utils.config import Config
-from ..utils.logger import get_logger
+from utils.config import Config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
