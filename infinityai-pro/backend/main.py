@@ -6,7 +6,8 @@ from api.trading import router as trading_router
 from api.options import router as options_router
 from api.ai import router as ai_router
 from api.user import router as user_router
-from services.ai import ai_manager
+# Import ai_manager after other imports to avoid circular imports
+# from services.ai import ai_manager
 import asyncio
 import logging
 
