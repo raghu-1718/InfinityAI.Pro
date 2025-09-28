@@ -32,7 +32,7 @@ class DeploymentVerifier:
             # Azure AI (Primary)
             "AZURE_OPENAI_ENDPOINT": [],
             "AZURE_OPENAI_KEY": [],
-            "AZURE_OPENAI_DEPLOYMENT": ["gpt-4-turbo"],
+            "AZURE_OPENAI_DEPLOYMENT": ["gpt-4o"],
             "AZURE_SPEECH_ENDPOINT": [],
             "AZURE_SPEECH_KEY": [],
             "AZURE_VISION_ENDPOINT": [],
