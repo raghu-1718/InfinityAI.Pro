@@ -1,6 +1,32 @@
 # InfinityAI.Pro
 InfinityAI.Pro is a production-grade, event-driven AI trading platform supporting live market data, async trading, and AI chatbot integration for automated, scalable financial operations
 
+## ✨ Features
+
+### 🎯 Core Features
+- **AI-Powered Trading**: Advanced algorithms with machine learning predictions
+- **Real-Time Dashboard**: Modern, responsive trading interface with live updates
+- **AI Chat Assistant**: Natural language commands for trading operations
+- **Multi-Broker Support**: Dhan API integration with extensible architecture
+- **Risk Management**: Automated position sizing and stop-loss mechanisms
+- **GPU-Accelerated AI**: RunPod integration for high-performance AI services
+
+### 🎨 Enhanced Dashboard
+- **Modern UI**: Clean, professional interface built with React & TypeScript
+- **Real-Time Metrics**: Live portfolio value, P&L, win rates, and active trades
+- **Interactive Charts**: Portfolio performance visualization with Recharts
+- **Asset Allocation**: Pie charts and detailed position tracking
+- **Market Data**: Real-time indices and trading statistics
+- **Responsive Design**: Mobile-friendly sidebar navigation
+- **AI Chat Integration**: Built-in chatbot for platform guidance
+
+### 🤖 AI Services
+- **Stable Diffusion**: GPU-accelerated image generation
+- **YOLO Object Detection**: Real-time visual analysis
+- **Whisper Speech-to-Text**: Voice command processing
+- **LLM Integration**: OpenAI GPT and Perplexity AI
+- **Vector Search**: ChromaDB for semantic document retrieval
+
 ## 🚀 Quick Start
 
 ### Automated Setup (Recommended)
@@ -73,13 +99,21 @@ TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
 - **Web Dashboard**: Real-time trading interface
 
 ### Technology Stack
-- **Backend**: Python FastAPI
-- **Frontend**: React TypeScript
+- **Backend**: Python FastAPI with async processing
+- **Frontend**: React 18 with TypeScript and Tailwind CSS
+- **UI Components**: Recharts for data visualization, Heroicons for icons
 - **AI Services**: Ollama (LLMs), ChromaDB (Vectors), RunPod (GPU)
-- **Database**: ChromaDB for vector storage
+- **Database**: ChromaDB for vector storage, SQLite for metadata
 - **Deployment**: Render (Web Services + Private Services)
 - **Domain**: infinityai.pro
 - **Notifications**: Telegram Bot API, SendGrid, Twilio WhatsApp
+
+### Dashboard Components
+- **TradingMetrics**: Real-time portfolio metrics and performance indicators
+- **PortfolioOverview**: Interactive charts, asset allocation, and positions table
+- **MarketData**: Live market indices and trading statistics
+- **ChatBot**: AI-powered conversational interface for platform assistance
+- **Navigation**: Responsive sidebar with route-based navigation
 
 ## 📡 API Endpoints
 
@@ -97,6 +131,13 @@ TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
 - `GET /trading/status` - Trading engine status
 - `POST /trading/execute` - Execute trade
 - `GET /trading/portfolio` - Portfolio data
+- `GET /trading/market-data` - Real-time market indices
+
+### Frontend Features
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Real-Time Updates**: WebSocket integration for live data
+- **Interactive Charts**: Portfolio performance and market data visualization
+- **AI Chat Integration**: Seamless chatbot experience within dashboard
 
 ## 🔧 Configuration
 
@@ -151,12 +192,15 @@ TWILIO_WHATSAPP_NUMBER=your_whatsapp_number
 
 ## 📈 Roadmap
 
+- [x] **Real-time charting** - Interactive portfolio and market data visualization
+- [x] **Modern dashboard UI** - Responsive design with sidebar navigation
+- [x] **AI chat integration** - Built-in chatbot for platform assistance
+- [x] **Portfolio analytics** - Real-time metrics and performance tracking
 - [ ] Multi-broker support (Zerodha, Upstox)
 - [ ] Advanced AI strategies (ML-based predictions)
 - [ ] Mobile app enhancements
-- [ ] Real-time charting
-- [ ] Portfolio analytics
 - [ ] Risk management dashboard
+- [ ] Advanced notification channels
 
 ---
 
