@@ -83,6 +83,16 @@ class AIManager:
                 "project": os.getenv("AZURE_AI_PROJECT", ""),
                 "enabled": bool(os.getenv("AZURE_OPENAI_ENDPOINT") and os.getenv("AZURE_OPENAI_KEY"))
             },
+            "alpha_vantage": {
+                "api_key": os.getenv("ALPHA_VANTAGE_API_KEY", "")
+            },
+            "coinswitch": {
+                "enabled": bool(os.getenv("COINSWITCH_API_KEY") and os.getenv("COINSWITCH_API_SECRET")),
+                "api_key": os.getenv("COINSWITCH_API_KEY", ""),
+                "api_secret": os.getenv("COINSWITCH_API_SECRET", ""),
+                "base_url": os.getenv("COINSWITCH_BASE_URL", "https://api-trading.coinswitch.co"),
+                "crypto_symbols": ["BTCINR", "ETHINR", "ADAINR", "SOLINR", "DOTINR"]
+            },
             "disk_optimization": {
                 "min_free_gb": 0.5,  # Minimum 500MB free for any model loading
                 "vision_min_free_gb": 0.8,  # 800MB for vision models
