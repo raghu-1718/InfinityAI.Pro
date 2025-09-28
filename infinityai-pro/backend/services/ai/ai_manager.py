@@ -116,7 +116,7 @@ class AIManager:
         # Initialize Market Data AI (Alpha Vantage + CoinSwitch) - lightweight
         if self.config['alpha_vantage']['api_key']:
             try:
-                from servicesmarket_data_ai import MarketDataAI
+                from ..market_data_ai import MarketDataAI
                 self.services['market_data'] = MarketDataAI(self.config['alpha_vantage']['api_key'])
                 await self.services['market_data'].initialize()
                 logger.info("✅ Market Data AI initialized")
@@ -126,7 +126,7 @@ class AIManager:
         # Initialize CoinSwitch Crypto Market Data - lightweight
         if self.config.get('coinswitch', {}).get('enabled', False):
             try:
-                from servicesbroker_coinswitch import CoinSwitchAdapter
+                from ..broker_coinswitch import CoinSwitchAdapter
                 coinswitch_config = self.config.get('coinswitch', {})
                 if coinswitch_config.get('api_key') and coinswitch_config.get('api_secret'):
                     self.services['crypto_market_data'] = CoinSwitchAdapter(
@@ -140,7 +140,7 @@ class AIManager:
 
         # Initialize Technical Analysis AI - lightweight
         try:
-            from servicesai_models import TechnicalAnalysisAI
+            from .ai_models import TechnicalAnalysisAI
             self.services['technical_analysis'] = TechnicalAnalysisAI()
             await self.services['technical_analysis'].initialize()
             logger.info("✅ Technical Analysis AI initialized")
@@ -149,7 +149,7 @@ class AIManager:
 
         # Initialize AI Trading Simulator - lightweight
         try:
-            from servicesai_trading_simulator import AITradingSimulator
+            from .ai_trading_simulator import AITradingSimulator
             self.services['trading_simulator'] = AITradingSimulator()
             await self.services['trading_simulator'].initialize()
             logger.info("✅ AI Trading Simulator initialized")
@@ -451,6 +451,8 @@ class AIManager:
             return await self.services['market_data'].get_intraday_data(symbol, interval)
         else:
             raise RuntimeError("No market data service available for symbol type")
+
+    async def get_crypto_historical_data(self, symbol: str, interval: str = "5min") -> pd.DataFrame:
         """Get historical crypto data"""
         try:
             # For now, return simulated data since CoinSwitch may not have extensive historical data
@@ -522,6 +524,38 @@ class AIManager:
             raise RuntimeError("Technical Analysis AI service not initialized")
 
         return await self.services['technical_analysis'].analyze_chart(chart_image, symbol)
+
+    async def analyze_price_data(self, df: pd.DataFrame, symbol: str) -> Dict:
+        """Analyze price data for technical indicators and patterns"""
+        try:
+            # Use technical analysis service if available
+            if 'technical_analysis' in self.services:
+                return await self.services['technical_analysis'].analyze_price_data(df, symbol)
+            
+            # Fallback to basic analysis using LLM
+            analysis_prompt = f"""
+            Analyze the following price data for {symbol} and provide technical analysis:
+
+            Recent prices:
+            {df.tail(20).to_string()}
+
+            Provide:
+            1. Current trend (bullish/bearish/neutral)
+            2. Key support/resistance levels
+            3. Technical indicators (RSI, MACD, moving averages)
+            4. Trading signals
+            """
+
+            llm_response = await self.chat(analysis_prompt)
+            
+            return {
+                "symbol": symbol,
+                "analysis": llm_response,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing price data: {e}")
+            return {"error": str(e)}
 
     async def start_trading_simulation(self, days: int = 30) -> Dict:
         """Start AI-powered trading simulation"""
