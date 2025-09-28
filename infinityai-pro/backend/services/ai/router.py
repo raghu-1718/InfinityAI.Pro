@@ -49,8 +49,9 @@ class AIRouter:
         # Perform health check
         try:
             if provider == "azure":
-                # Check Azure health via OpenAI endpoint
-                async with self.session.get(f"{self.config.AZURE_OPENAI_ENDPOINT}/openai/models?api-version=2023-05-15",
+                # Check Azure health via OpenAI deployments endpoint
+                deployments_url = f"{self.config.AZURE_OPENAI_ENDPOINT}/openai/deployments?api-version=2023-05-15"
+                async with self.session.get(deployments_url,
                                           headers={"api-key": self.config.AZURE_OPENAI_KEY}) as resp:
                     is_healthy = resp.status == 200
             elif provider == "aws":
