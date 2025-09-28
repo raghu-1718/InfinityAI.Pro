@@ -6,7 +6,7 @@ services:
       pip install --no-cache-dir -r requirements-basic.txt && \
       pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
       pip install --no-cache-dir sentence-transformers chromadb openai-whisper
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.3
