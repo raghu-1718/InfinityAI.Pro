@@ -1,0 +1,76 @@
+services:
+  - type: web
+    name: infinityai-backend
+    runtime: python3
+    buildCommand: |
+      pip install --no-cache-dir -r requirements-basic.txt && \
+      pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+      pip install --no-cache-dir sentence-transformers chromadb openai-whisper
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: DB_URL
+        value: sqlite:///./chroma_db/chroma.sqlite3
+      - key: SECRET_KEY
+        value: supersecret
+      - key: OPENAI_API_KEY
+        fromSecret: openai-api-key
+      - key: HF_TOKEN
+        fromSecret: huggingface-token
+      - key: RUNPOD_API_KEY
+        fromSecret: runpod-api-key
+      - key: ALPHA_VANTAGE_API_KEY
+        fromSecret: alpha-vantage-key
+      - key: VECTOR_DB_URL
+        value: https://chroma-yqnp.onrender.com
+      - key: OLLAMA_URL
+        value: https://ollama-gyg4.onrender.com
+      - key: FRONTEND_URL
+        value: https://infinityai-frontend.onrender.com
+    healthCheckPath: /health
+    disk:
+      name: chroma-data
+      mountPath: /opt/render/project/src/chroma_db
+      sizeGB: 10
+
+  - type: web
+    name: infinityai-frontend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://infinityai-backend.onrender.com
+      - key: NODE_ENV
+        value: production
+
+  - type: pserv
+    name: chroma
+    runtime: docker
+    dockerfilePath: ./vectordb.Dockerfile
+    dockerContext: .
+    envVars:
+      - key: CHROMA_SERVER_HOST
+        value: 0.0.0.0
+      - key: CHROMA_SERVER_HTTP_PORT
+        value: 8000
+    disk:
+      name: chroma-data
+      mountPath: /chroma
+      sizeGB: 10
+
+  - type: pserv
+    name: ollama
+    runtime: docker
+    dockerfilePath: ./ollama.Dockerfile
+    dockerContext: .
+    envVars:
+      - key: OLLAMA_HOST
+        value: 0.0.0.0
+      - key: OLLAMA_PORT
+        value: 11434
+    disk:
+      name: ollama-data
+      mountPath: /root/.ollama
+      sizeGB: 10
