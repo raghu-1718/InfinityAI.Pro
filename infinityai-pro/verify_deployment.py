@@ -93,22 +93,23 @@ class DeploymentVerifier:
         return all_set, missing_vars, set_vars
 
     def test_health_endpoints(self) -> Dict[str, bool]:
-        """Test all health endpoints."""
-        endpoints = {
-            'main': '/health',
-            'ai_router': '/ai/health',
-            'llm': '/ai/llm/health',
-            'vision': '/ai/vision/health',
-            'sentiment': '/ai/sentiment/health',
-            'risk': '/ai/risk/health',
-            'execution': '/ai/execution/health',
+        """Test basic health and status endpoints."""
+        tests = {
+            'main': '/',
+            'health': '/health',
+            'ai_router': '/ai/',
+            'llm': '/ai/llm/',
+            'vision': '/ai/vision/',
+            'sentiment': '/ai/sentiment/',
+            'risk': '/ai/risk/',
+            'execution': '/ai/execution/'
         }
 
         results = {}
 
         print("🏥 Testing Health Endpoints...\n")
 
-        for name, endpoint in endpoints.items():
+        for name, endpoint in tests.items():
             try:
                 url = f"{self.base_url}{endpoint}"
                 response = self.session.get(url)
@@ -206,9 +207,9 @@ class DeploymentVerifier:
     def test_trading_endpoints(self) -> Dict[str, bool]:
         """Test trading-related endpoints."""
         tests = {
-            'portfolio': '/api/user/portfolio',
-            'orders': '/api/trading/orders',
-            'positions': '/api/trading/positions'
+            'user_profile': '/user/profile',
+            'trading_status': '/trading/status',
+            'user_login': '/user/login'
         }
 
         results = {}
@@ -218,7 +219,13 @@ class DeploymentVerifier:
         for name, endpoint in tests.items():
             try:
                 url = f"{self.base_url}{endpoint}"
-                response = self.session.get(url)
+                
+                if name == 'user_login':
+                    # POST request for login
+                    response = self.session.post(url, json={"username": "admin", "password": "password123"})
+                else:
+                    # GET request for others
+                    response = self.session.get(url)
 
                 if response.status_code in [200, 401]:  # 401 is OK if not authenticated
                     print(f"✅ {name}: {response.status_code}")
