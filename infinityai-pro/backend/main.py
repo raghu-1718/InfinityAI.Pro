@@ -18,8 +18,9 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         logger.info("Initializing AI Manager...")
-        await ai_manager.initialize()
-        logger.info("AI Manager initialized successfully")
+        # Temporarily disable AI manager initialization for testing
+        # await ai_manager.initialize()
+        logger.info("AI Manager initialization skipped for testing")
     except Exception as e:
         logger.error(f"Failed to initialize AI Manager: {e}")
         # Don't crash the app, just log the error
@@ -30,8 +31,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     try:
-        await ai_manager.close()
-        logger.info("AI Manager closed successfully")
+        # await ai_manager.close()
+        logger.info("AI Manager close skipped for testing")
     except Exception as e:
         logger.error(f"Error closing AI Manager: {e}")
 
