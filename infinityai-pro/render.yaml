@@ -2,10 +2,7 @@ services:
   - type: web
     name: infinityai-backend
     runtime: python3
-    buildCommand: |
-      pip install --no-cache-dir -r requirements-basic.txt && \
-      pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
-      pip install --no-cache-dir sentence-transformers chromadb openai-whisper
+    buildCommand: pip install -r requirements.txt
     startCommand: PYTHONPATH=/opt/render/project/src uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
