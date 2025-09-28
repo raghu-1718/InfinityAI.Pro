@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "infinityai-pro/frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://infinityai-backend-production.up.railway.app/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "infinityai-pro/frontend/$1"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://infinityai-backend-production.up.railway.app"
+  },
+  "buildCommand": "cd infinityai-pro/frontend && npm install && npm run build",
+  "outputDirectory": "infinityai-pro/frontend/build"
+}
