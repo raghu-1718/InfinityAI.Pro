@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, HTTPException, File, UploadFile
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from services.chat_service import process_chat_command
 import httpx
 import os
