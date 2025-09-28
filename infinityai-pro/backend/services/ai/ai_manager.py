@@ -27,6 +27,9 @@ class AIManager:
         self.services = {}
         self.initialized = False
         self.config = self._load_config()
+        # Initialize AI router for multi-cloud failover
+        from .router import AIRouter
+        self.ai_router = AIRouter()
 
     def _load_config(self) -> Dict:
         """Load AI configuration with disk space optimization"""

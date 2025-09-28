@@ -208,3 +208,104 @@ async def get_crypto_orders(symbol: Optional[str] = None):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Crypto orders fetch failed: {str(e)}")
+
+# AI Service Endpoints using AI Router
+@router.post("/llm/chat")
+async def llm_chat(request: Dict[str, Any]):
+    """Chat with AI using multi-cloud failover"""
+    try:
+        message = request.get("message", "")
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+
+        async with ai_manager.ai_router as router:
+            response = await router.ask_llm(message)
+
+        return {
+            "response": response,
+            "provider": "azure",  # Primary provider
+            "timestamp": "2025-01-28T10:00:00Z"
+        }
+    except Exception as e:
+        logger.error(f"LLM chat failed: {e}")
+        raise HTTPException(status_code=500, detail=f"AI chat failed: {str(e)}")
+
+@router.post("/sentiment/analyze")
+async def sentiment_analysis(request: Dict[str, Any]):
+    """Analyze sentiment of text using AI"""
+    try:
+        text = request.get("text", "")
+        if not text:
+            raise HTTPException(status_code=400, detail="Text is required")
+
+        async with ai_manager.ai_router as router:
+            result = await router.analyze_sentiment(text)
+
+        return {
+            "sentiment": result.get("sentiment", "neutral"),
+            "confidence": result.get("confidence", 0.5),
+            "text": text
+        }
+    except Exception as e:
+        logger.error(f"Sentiment analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")
+
+@router.post("/signal/generate")
+async def signal_generation(request: Dict[str, Any]):
+    """Generate trading signals using AI"""
+    try:
+        symbol = request.get("symbol", "")
+        price_data = request.get("price_data", {})
+
+        if not symbol or not price_data:
+            raise HTTPException(status_code=400, detail="Symbol and price_data are required")
+
+        market_data = {
+            "symbol": symbol,
+            "price_data": price_data
+        }
+
+        async with ai_manager.ai_router as router:
+            result = await router.generate_signal(market_data)
+
+        return {
+            "signal": result.get("signal", "HOLD"),
+            "score": result.get("score", 0.5),
+            "symbol": symbol,
+            "analysis": result.get("analysis", "")
+        }
+    except Exception as e:
+        logger.error(f"Signal generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Signal generation failed: {str(e)}")
+
+@router.post("/risk/assess")
+async def risk_assessment(request: Dict[str, Any]):
+    """Assess trading risk using AI"""
+    try:
+        symbol = request.get("symbol", "")
+        action = request.get("action", "")
+        quantity = request.get("quantity", 0)
+        price = request.get("price", 0)
+
+        if not all([symbol, action, quantity, price]):
+            raise HTTPException(status_code=400, detail="Symbol, action, quantity, and price are required")
+
+        trade_data = {
+            "symbol": symbol,
+            "action": action,
+            "quantity": quantity,
+            "price": price
+        }
+
+        async with ai_manager.ai_router as router:
+            result = await router.assess_risk(trade_data)
+
+        return {
+            "risk_score": result.get("risk_score", 0.5),
+            "approved": result.get("approved", False),
+            "reasoning": result.get("reasoning", ""),
+            "symbol": symbol
+        }
+    except Exception as e:
+        logger.error(f"Risk assessment failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Risk assessment failed: {str(e)}")
