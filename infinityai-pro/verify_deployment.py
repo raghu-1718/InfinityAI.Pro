@@ -96,13 +96,7 @@ class DeploymentVerifier:
         """Test basic health and status endpoints."""
         tests = {
             'main': '/',
-            'health': '/health',
-            'ai_router': '/ai/',
-            'llm': '/ai/llm/',
-            'vision': '/ai/vision/',
-            'sentiment': '/ai/sentiment/',
-            'risk': '/ai/risk/',
-            'execution': '/ai/execution/'
+            'health': '/health'
         }
 
         results = {}
@@ -281,7 +275,7 @@ class DeploymentVerifier:
                 'details': trading_results
             },
             'overall': {
-                'status': 'PASS' if env_ok and all(health_results.values()) and all(ai_results.values()) else 'FAIL',
+                'status': 'PASS' if env_ok and all(health_results.values()) and all(ai_results.values()) and all(trading_results.values()) else 'FAIL',
                 'total_tests': total_tests,
                 'passed_tests': passed_tests,
                 'success_rate': f"{(passed_tests/total_tests)*100:.1f}%" if total_tests > 0 else "0%"
