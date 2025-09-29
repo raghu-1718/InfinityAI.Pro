@@ -49,12 +49,13 @@ app.add_middleware(
         "http://localhost:3002", 
         "http://127.0.0.1:3002",
         "https://infinityai.pro",
+        "https://www.infinityai.pro",
         "https://api.infinityai.pro",
         "https://infinityai-frontend.onrender.com",
         "https://frontend-38jexw06p-infinityaipro.vercel.app",
         "https://*.vercel.app",
         "https://infinityaipro.vercel.app"
-    ],  # Allow React dev server and production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
