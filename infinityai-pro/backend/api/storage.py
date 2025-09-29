@@ -4,10 +4,11 @@ Storage API endpoints for cloud storage operations
 """
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import os
 import tempfile
 from services.backup_service import backup_service
+from services.cloud_storage_service import cloud_storage_service
 
 router = APIRouter()
 

@@ -8,8 +8,8 @@ import os
 import logging
 from typing import Optional, BinaryIO, Dict, Any
 from abc import ABC, abstractmethod
-from ..utils.config import Config
-from ..utils.logger import get_logger
+from utils.config import Config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

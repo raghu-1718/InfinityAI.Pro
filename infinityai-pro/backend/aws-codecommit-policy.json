@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:ListRepositories",
+        "codecommit:ListBranches",
+        "codecommit:ListTagsForResource",
+        "codecommit:GetRepository",
+        "codecommit:GetBranch",
+        "codecommit:GetCommit",
+        "codecommit:GetTree",
+        "codecommit:GetBlob",
+        "codecommit:GetReferences",
+        "codecommit:GetObjectIdentifier",
+        "codecommit:BatchGetRepositories",
+        "codecommit:GitPull",
+        "codecommit:GitPush",
+        "codecommit:CreateBranch",
+        "codecommit:CreateCommit",
+        "codecommit:DeleteBranch",
+        "codecommit:GetUploadArchiveStatus",
+        "codecommit:UploadArchive",
+        "codecommit:CancelUploadArchive"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

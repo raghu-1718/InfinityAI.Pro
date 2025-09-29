@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ListFoundationModels",
+        "bedrock:GetFoundationModel",
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ListCustomModels",
+        "bedrock:GetCustomModel",
+        "bedrock:CreateModelCustomizationJob",
+        "bedrock:GetModelCustomizationJob",
+        "bedrock:ListModelCustomizationJobs",
+        "bedrock:StopModelCustomizationJob",
+        "bedrock:ListProvisionedModelThroughputs",
+        "bedrock:GetProvisionedModelThroughput",
+        "bedrock:CreateProvisionedModelThroughput",
+        "bedrock:UpdateProvisionedModelThroughput",
+        "bedrock:DeleteProvisionedModelThroughput"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
