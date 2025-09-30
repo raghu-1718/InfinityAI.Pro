@@ -67,3 +67,14 @@ sentence-transformers==2.2.2
 # Additional ML packages
 matplotlib==3.8.2
 seaborn==0.13.0
+
+# Database and Caching
+redis==6.4.0
+cassandra-driver==3.29.2
+
+# Azure Services
+azure-keyvault-secrets==4.8.0
+azure-identity==1.16.1
+
+# Financial Data
+yfinance==0.2.65
