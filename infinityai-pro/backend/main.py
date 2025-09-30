@@ -159,7 +159,7 @@ async def health_check():
     
     # Check Market Data providers
     try:
-        market_status = get_status()
+        market_status = market_data_status()
         health_status["services"]["market_data"] = {"status": "healthy", "providers": market_status}
     except Exception as e:
         health_status["services"]["market_data"] = {"status": "error", "error": str(e)}
