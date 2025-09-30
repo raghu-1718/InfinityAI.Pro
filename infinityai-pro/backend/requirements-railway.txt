@@ -35,7 +35,7 @@ lightgbm==4.1.0
 xgboost==2.0.2
 
 # Hugging Face (CPU-only)
-transformers==4.36.2
+transformers==4.53.0
 tokenizers==0.15.0
 
 # Image processing
