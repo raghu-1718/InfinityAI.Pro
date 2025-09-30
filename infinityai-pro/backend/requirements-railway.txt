@@ -57,7 +57,7 @@ scipy==1.11.4
 
 # Lightweight PyTorch (CPU-only for Railway)
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2+cpu
+torch==2.7.1+cpu
 torchvision==0.16.2+cpu
 torchaudio==2.1.2+cpu
 
