@@ -2,20 +2,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio
+import logging
+
+# Import existing API routers
 from api.trading import router as trading_router
 from api.options import router as options_router
 from api.ai import router as ai_router
 from api.user import router as user_router
 from api.storage import router as storage_router
 from api.keys import router as keys_router
-# Import ai_manager after other imports to avoid circular imports
-# from services.ai import ai_manager
-import asyncio
-import logging
-# Import new services
+
+# Import new authentication and broker management
+from app.auth import router as auth_router
+from app.brokers import router as brokers_router
+from app.database import init_db_pool, close_db_pool, create_tables, get_database_health
+from app.crypto import get_crypto_health
+
+# Import existing services
 from services.cache.redis_service import health_check as redis_health_check
 from services.security.azure_keyvault import initialize_key_vault, health_check as keyvault_health_check
-from services.database.connection_pool import initialize_database, health_check as db_health_check
+from services.database.connection_pool import initialize_database as init_existing_db, health_check as existing_db_health_check
 from services.market_data.fallback_service import get_status as market_data_status
 
 logger = logging.getLogger(__name__)
@@ -27,11 +34,21 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🚀 Initializing InfinityAI.Pro services...")
         
+        # Initialize PostgreSQL database pool for auth/broker management
+        logger.info("Initializing PostgreSQL database pool...")
+        await init_db_pool()
+        
+        # Create database tables if they don't exist
+        logger.info("Creating database tables...")
+        await create_tables()
+        
         # Initialize Azure Key Vault
+        logger.info("Initializing Azure Key Vault...")
         await initialize_key_vault()
         
-        # Initialize Database
-        await initialize_database()
+        # Initialize existing database services
+        logger.info("Initializing existing database services...")
+        await init_existing_db()
         
         # Temporarily disable AI manager initialization for testing
         # await ai_manager.initialize()
@@ -48,8 +65,13 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     try:
-        # await ai_manager.close()
         logger.info("🔄 Shutting down services...")
+        
+        # Close PostgreSQL database pool
+        await close_db_pool()
+        
+        # await ai_manager.close()
+        logger.info("✅ All services shut down successfully")
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
 
@@ -76,12 +98,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include existing API routers
 app.include_router(trading_router, prefix="/trading")
 app.include_router(options_router, prefix="/options")
 app.include_router(ai_router, prefix="/ai")
 app.include_router(user_router, prefix="/user")
 app.include_router(storage_router, prefix="/storage")
 app.include_router(keys_router, prefix="/keys")
+
+# Include new authentication and broker management routers
+app.include_router(auth_router)
+app.include_router(brokers_router)
 
 @app.get("/health")
 async def health_check():
@@ -91,9 +118,23 @@ async def health_check():
     health_status = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0",
+        "version": "2.0.0",
         "services": {}
     }
+    
+    # Check PostgreSQL database (new auth/broker system)
+    try:
+        pg_status = await get_database_health()
+        health_status["services"]["postgresql"] = pg_status
+    except Exception as e:
+        health_status["services"]["postgresql"] = {"status": "error", "error": str(e)}
+    
+    # Check cryptography system
+    try:
+        crypto_status = get_crypto_health()
+        health_status["services"]["cryptography"] = crypto_status
+    except Exception as e:
+        health_status["services"]["cryptography"] = {"status": "error", "error": str(e)}
     
     # Check Redis cache
     try:
@@ -109,12 +150,12 @@ async def health_check():
     except Exception as e:
         health_status["services"]["keyvault"] = {"status": "error", "error": str(e)}
     
-    # Check Database
+    # Check existing database (Cassandra)
     try:
-        db_status = await db_health_check()
-        health_status["services"]["database"] = db_status
+        existing_db_status = await existing_db_health_check()
+        health_status["services"]["cassandra"] = existing_db_status
     except Exception as e:
-        health_status["services"]["database"] = {"status": "error", "error": str(e)}
+        health_status["services"]["cassandra"] = {"status": "error", "error": str(e)}
     
     # Check Market Data providers
     try:
@@ -124,11 +165,15 @@ async def health_check():
         health_status["services"]["market_data"] = {"status": "error", "error": str(e)}
     
     # Determine overall status
-    service_statuses = [service.get("status") for service in health_status["services"].values()]
+    service_statuses = []
+    for service in health_status["services"].values():
+        if isinstance(service, dict):
+            service_statuses.append(service.get("status"))
+    
     if any(status == "unhealthy" for status in service_statuses):
         health_status["status"] = "degraded"
     elif any(status == "error" for status in service_statuses):
-        health_status["status"] = "warning"
+        health_status["status"] = "degraded"
     
     return health_status
 

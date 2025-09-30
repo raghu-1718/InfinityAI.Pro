@@ -1,0 +1,235 @@
+version: "3.8"
+
+services:
+  # PostgreSQL database for user authentication and broker connections
+  postgres:
+    image: postgres:15-alpine
+    container_name: infinityai_postgres
+    environment:
+      POSTGRES_USER: infinityai
+      POSTGRES_PASSWORD: infinityai_dev_pass
+      POSTGRES_DB: infinityai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infinityai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - infinityai_network
+
+  # Redis for Celery message broker and caching
+  redis:
+    image: redis:7-alpine
+    container_name: infinityai_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - infinityai_network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infinityai_backend
+    environment:
+      # Database
+      DATABASE_URL: postgresql://infinityai:infinityai_dev_pass@postgres:5432/infinityai
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # Celery
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/1
+      
+      # JWT and Security
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      FERNET_KEY: dev_fernet_key_change_in_production  # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      
+      # Development flags
+      DEBUG: "true"
+      ENVIRONMENT: "development"
+      
+      # Disable external services for local dev
+      AZURE_KEYVAULT_URL: ""
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+      - ./backend/models:/app/models
+      - ./backend/trade_logs:/app/trade_logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - infinityai_network
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        python -c 'import time; import psycopg2; 
+        for i in range(30): 
+          try: 
+            psycopg2.connect(\"postgresql://infinityai:infinityai_dev_pass@postgres:5432/infinityai\"); 
+            print(\"Database is ready!\"); 
+            break; 
+          except: 
+            print(f\"Waiting for database... ({i+1}/30)\"); 
+            time.sleep(2);' &&
+        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infinityai_celery_worker
+    environment:
+      # Same environment as backend
+      DATABASE_URL: postgresql://infinityai:infinityai_dev_pass@postgres:5432/infinityai
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/1
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      FERNET_KEY: dev_fernet_key_change_in_production
+      DEBUG: "true"
+      ENVIRONMENT: "development"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - infinityai_network
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 10 &&
+        python -m app.celery_worker
+      "
+
+  # Celery Beat (Periodic Tasks Scheduler)
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infinityai_celery_beat
+    environment:
+      DATABASE_URL: postgresql://infinityai:infinityai_dev_pass@postgres:5432/infinityai
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/1
+      JWT_SECRET: dev_jwt_secret_change_in_production
+      FERNET_KEY: dev_fernet_key_change_in_production
+      DEBUG: "true"
+      ENVIRONMENT: "development"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - infinityai_network
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 15 &&
+        celery -A app.tasks beat --loglevel=info
+      "
+
+  # Celery Flower (Monitoring)
+  celery_flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infinityai_celery_flower
+    environment:
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/1
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - infinityai_network
+    command: celery -A app.tasks flower --port=5555
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: infinityai_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - infinityai_network
+    command: npm run dev
+
+  # pgAdmin (Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: infinityai_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@infinityai.pro
+      PGADMIN_DEFAULT_PASSWORD: pgadmin_dev_pass
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - infinityai_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  infinityai_network:
+    driver: bridge
