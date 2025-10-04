@@ -3,9 +3,10 @@ InfinityAI.Pro - Advanced AI Trading Platform
 GPU-accelerated multi-cloud trading system
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import uvicorn
 import logging
 import asyncio
@@ -93,49 +94,40 @@ app.add_middleware(
 from api.dual_engine_analysis import router as dual_engine_router
 from api.chatbot_api import router as chatbot_router
 from api.ultra_ai_api import router as ultra_ai_router
+from api.dhan_api import router as dhan_router
+from api.ai_realtime_analysis import router as ai_analysis_router
 
 # Include all routers
 app.include_router(analysis_router)
 app.include_router(dual_engine_router)
 app.include_router(chatbot_router)
 app.include_router(ultra_ai_router)
+app.include_router(dhan_router)
+app.include_router(ai_analysis_router)
 app.include_router(health_router)
 app.include_router(market_router)
 app.include_router(orders_router)
 app.include_router(risk_router)
 app.include_router(ws_router)
 
-# Root endpoint
+# Mount static files for React frontend
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Root endpoint - serve React app
 @app.get("/")
 async def root():
-    """Root endpoint with platform information"""
-    return {
-        "platform": "InfinityAI.Pro",
-        "version": "2.0.0",
-        "description": "Advanced AI Trading Platform with GPU Acceleration",
-        "features": [
-            "Multi-cloud AI integration (Azure, AWS, Vercel)",
-            "GPU-accelerated analysis with 90%+ accuracy",
-            "Real-time market data from multiple sources",
-            "Advanced risk management and portfolio optimization",
-            "Live trading with automated execution",
-            "WebSocket real-time communication"
-        ],
-        "ai_models": {
-            "financial_analysis": "GPT-4 Turbo (Azure GPU)",
-            "pattern_recognition": "YOLO v8 (AWS SageMaker)",
-            "sentiment_analysis": "BERT Financial (AWS GPU)",
-            "prediction": "Transformer XL (Multi-cloud)",
-            "risk_assessment": "Monte Carlo Ensemble (Multi-GPU)"
-        },
-        "endpoints": {
-            "advanced_analysis": "/api/advanced-analysis",
-            "best_models": "/api/best-ai-models",
-            "health": "/health",
-            "websocket": "/ws/{user_id}"
-        },
-        "status": "🚀 Ready for Advanced Trading"
-    }
+    """Root endpoint - serve React app"""
+    try:
+        return FileResponse('static/index.html')
+    except FileNotFoundError:
+        # Fallback API info if React app not found
+        return {
+            "platform": "InfinityAI.Pro",
+            "version": "2.0.0",
+            "description": "Advanced AI Trading Platform with GPU Acceleration",
+            "status": "🚀 Ready for Advanced Trading",
+            "message": "React frontend not found. API endpoints are working."
+        }
 
 # WebSocket endpoint for real-time communication
 @app.websocket("/ws/{user_id}")
@@ -220,6 +212,29 @@ async def health_check():
             "websocket": "operational"
         }
     }
+
+# Catch-all route for React SPA (only for frontend routes)
+@app.get("/{catchall:path}")
+async def serve_react_app(request: Request, catchall: str):
+    """Serve React app for frontend routes only"""
+    # Exclude all API routes and special FastAPI paths
+    excluded_paths = [
+        'api/', 'docs', 'openapi.json', 'redoc', 'health', 'ws/',
+        'ai/', 'dhan/', 'static/'
+    ]
+    
+    # Check if this is an excluded route
+    for excluded in excluded_paths:
+        if catchall.startswith(excluded):
+            # Let FastAPI handle 404 naturally
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Not found")
+    
+    # Serve the React app's index.html for all other routes (frontend routes)
+    try:
+        return FileResponse('static/index.html')
+    except FileNotFoundError:
+        return {"message": "React app not found. Run the frontend build first."}
 
 if __name__ == "__main__":
     # Run the application
