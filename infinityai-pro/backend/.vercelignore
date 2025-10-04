@@ -1,0 +1,99 @@
+# Terraform
+.terraform*
+terraform.tfstate*
+*.tfvars
+*.auto.tfvars
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data files
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Large files
+*.tar.gz
+*.zip
+*.rar
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.cache
+
+# Kubernetes
+kubernetes/
+k8s/
+
+# Monitoring
+monitoring/
+
+# Documentation
+docs/
+*.md
+README.md
+
+# Scripts
+scripts/
+*.ps1
+*.sh
+
+# Frontend files (should be in separate project)
+frontend/
+static/
