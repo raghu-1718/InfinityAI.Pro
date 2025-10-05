@@ -1,0 +1,60 @@
+{
+  "SystemInfo": {
+    "PowerShell": {
+      "Major": 7,
+      "Minor": 5,
+      "Patch": 3,
+      "PreReleaseLabel": null,
+      "BuildLabel": null
+    },
+    "OS": "Win32NT Microsoft Windows 10.0.26220",
+    "Machine": "RAGHU"
+  },
+  "ResourceUsage": {
+    "Memory": 94.96,
+    "CPU": 29.75,
+    "GPU": [],
+    "Docker": []
+  },
+  "Recommendations": [
+    "Consider adding NVIDIA GPU for 5-10x AI inference speedup",
+    "Some trading services are not healthy - check logs and restart if needed",
+    "High memory usage detected - consider scaling or optimizing"
+  ],
+  "Timestamp": "2025-10-04 10:55:54",
+  "GPUCapabilities": {
+    "CUDAVersion": "N/A",
+    "DriverVersion": "N/A",
+    "HasGPU": false,
+    "MemoryTotal": 0,
+    "GPUName": "None",
+    "ComputeCapability": "N/A",
+    "GPUCount": 0
+  },
+  "ServiceHealth": [
+    {
+      "Status": "Healthy",
+      "Name": "API Gateway",
+      "ResponseTime": 97,
+      "Error": null
+    },
+    {
+      "Status": "Error",
+      "Name": "Engine A",
+      "ResponseTime": 0,
+      "Error": "An error occurred while sending the request."
+    },
+    {
+      "Status": "Error",
+      "Name": "Engine B",
+      "ResponseTime": 0,
+      "Error": "An error occurred while sending the request."
+    },
+    {
+      "Status": "Error",
+      "Name": "Engine C",
+      "ResponseTime": 0,
+      "Error": "An error occurred while sending the request."
+    }
+  ]
+}

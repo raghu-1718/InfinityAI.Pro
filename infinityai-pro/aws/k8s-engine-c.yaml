@@ -1,0 +1,803 @@
+# InfinityAI.Pro - AWS EKS Deployment for Engine C (Portfolio Management & Trading)
+# Enhanced with AWS-specific services and security features
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infinityai-aws
+  labels:
+    app.kubernetes.io/name: infinityai
+    app.kubernetes.io/component: engine-c
+    cloud.provider: aws
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-c-config
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    component: portfolio-trading
+data:
+  ENVIRONMENT: "production"
+  CLOUD_PROVIDER: "aws"
+  ENGINE_NAME: "engine-c"
+  LOG_LEVEL: "INFO"
+  AWS_REGION: "us-west-2"
+  AWS_ACCOUNT_ID: "placeholder"
+  # Database configuration (RDS)
+  DATABASE_URL: "postgresql://infinityai_admin:password@infinityai-pro-prod.cluster-xyz.us-west-2.rds.amazonaws.com:5432/infinityai"
+  DATABASE_POOL_SIZE: "20"
+  DATABASE_TIMEOUT: "30"
+  # Redis configuration (ElastiCache)
+  REDIS_URL: "redis://infinityai-pro-prod.xyz.cache.amazonaws.com:6379"
+  REDIS_CLUSTER_MODE: "enabled"
+  # Kafka configuration (MSK)
+  KAFKA_BOOTSTRAP_SERVERS: "infinityai-pro-prod-kafka.xyz.kafka.us-west-2.amazonaws.com:9092"
+  KAFKA_SECURITY_PROTOCOL: "SASL_SSL"
+  KAFKA_SASL_MECHANISM: "AWS_MSK_IAM"
+  # S3 configuration
+  S3_BUCKET_NAME: "infinityai-pro-prod-portfolio-data"
+  S3_REGION: "us-west-2"
+  # AWS services
+  AWS_SQS_QUEUE_URL: "https://sqs.us-west-2.amazonaws.com/placeholder/infinityai-portfolio-queue"
+  AWS_SNS_TOPIC_ARN: "arn:aws:sns:us-west-2:placeholder:infinityai-portfolio-notifications"
+  AWS_EVENTBRIDGE_BUS: "infinityai-pro-events"
+  # Cross-cloud communication
+  AZURE_ENGINE_A_URL: "https://api.azure.infinityai.pro/engine-a"
+  GCP_ENGINE_B_URL: "https://api.gcp.infinityai.pro/engine-b"
+  VERCEL_ENGINE_D_URL: "https://api.vercel.infinityai.pro/engine-d"
+  # Portfolio management settings
+  MAX_PORTFOLIO_VALUE: "1000000"
+  RISK_MANAGEMENT_ENABLED: "true"
+  COMPLIANCE_MODE: "strict"
+  POSITION_SIZE_LIMIT: "10000"
+  STOP_LOSS_ENABLED: "true"
+  TAKE_PROFIT_ENABLED: "true"
+  # Trading settings
+  BROKER_APIS_ENABLED: "zerodha,upstox,angelone,demo"
+  ORDER_VALIDATION: "enabled"
+  TRADE_MONITORING: "enabled"
+  RISK_ALERTS: "enabled"
+  # Performance settings
+  MAX_CONCURRENT_REQUESTS: "100"
+  REQUEST_TIMEOUT: "60"
+  CIRCUIT_BREAKER_ENABLED: "true"
+  RATE_LIMITING: "enabled"
+  # Monitoring
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: engine-c-secrets
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+type: Opaque
+stringData:
+  # Database credentials
+  DATABASE_PASSWORD: "infinityai_secure_pass"
+  DATABASE_SSL_CERT: "placeholder-ssl-cert"
+  # Redis auth
+  REDIS_PASSWORD: "placeholder-redis-auth-token"
+  # AWS credentials (managed by IAM roles)
+  AWS_ACCESS_KEY_ID: "placeholder-access-key"
+  AWS_SECRET_ACCESS_KEY: "placeholder-secret-key"
+  # Broker API keys
+  ZERODHA_API_KEY: "placeholder-zerodha-key"
+  ZERODHA_API_SECRET: "placeholder-zerodha-secret"
+  UPSTOX_API_KEY: "placeholder-upstox-key"
+  UPSTOX_API_SECRET: "placeholder-upstox-secret"
+  ANGELONE_API_KEY: "placeholder-angelone-key"
+  ANGELONE_API_SECRET: "placeholder-angelone-secret"
+  # JWT secrets
+  JWT_SECRET_KEY: "your-super-secret-jwt-key-change-in-production"
+  # Encryption keys
+  ENCRYPTION_KEY: "placeholder-encryption-key"
+  # Cross-cloud authentication
+  AZURE_CLIENT_SECRET: "placeholder-azure-secret"
+  GCP_SERVICE_ACCOUNT_KEY: "placeholder-gcp-key"
+  VERCEL_TOKEN: "placeholder-vercel-token"
+  # External API keys
+  ALPHA_VANTAGE_API_KEY: "placeholder-alpha-vantage"
+  POLYGON_API_KEY: "placeholder-polygon-key"
+  # Webhook secrets
+  WEBHOOK_SECRET: "placeholder-webhook-secret"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: engine-c-sa
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::placeholder:role/infinityai-engine-c-role"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: infinityai-aws
+  name: engine-c-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "configmaps", "secrets", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: engine-c-rolebinding
+  namespace: infinityai-aws
+subjects:
+- kind: ServiceAccount
+  name: engine-c-sa
+  namespace: infinityai-aws
+roleRef:
+  kind: Role
+  name: engine-c-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-c-deployment
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    component: portfolio-trading
+    version: v1.0.0
+    cloud: aws
+spec:
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: engine-c
+  template:
+    metadata:
+      labels:
+        app: engine-c
+        component: portfolio-trading
+        version: v1.0.0
+        cloud: aws
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8003"
+        prometheus.io/path: "/metrics"
+        # AWS specific annotations
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      serviceAccountName: engine-c-sa
+      nodeSelector:
+        workload-type: portfolio-management
+        engine: engine-c
+        node-type: compute-optimized
+      tolerations:
+      - key: "engine-c"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - engine-c
+            topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karpenter.sh/capacity-type
+                operator: In
+                values:
+                - on-demand
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      initContainers:
+      - name: init-db-migration
+        image: "placeholder.dkr.ecr.us-west-2.amazonaws.com/infinityai/engine-c:latest"
+        command: ["python", "-m", "alembic", "upgrade", "head"]
+        envFrom:
+        - configMapRef:
+            name: engine-c-config
+        - secretRef:
+            name: engine-c-secrets
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      containers:
+      - name: engine-c
+        image: "placeholder.dkr.ecr.us-west-2.amazonaws.com/infinityai/engine-c:latest"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8003
+          name: http
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        - containerPort: 9090
+          name: health
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "8003"
+        - name: METRICS_PORT
+          value: "8080"
+        - name: HEALTH_PORT
+          value: "9090"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: AWS_REGION
+          value: "us-west-2"
+        envFrom:
+        - configMapRef:
+            name: engine-c-config
+        - secretRef:
+            name: engine-c-secrets
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+            ephemeral-storage: 5Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+            ephemeral-storage: 20Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 45
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 30
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /tmp
+        - name: app-cache
+          mountPath: /app/cache
+        - name: aws-iam-token
+          mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+          readOnly: true
+        - name: ssl-certs
+          mountPath: /etc/ssl/certs
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_BIND_SERVICE
+      # Sidecar for AWS X-Ray tracing
+      - name: xray-daemon
+        image: amazon/aws-xray-daemon:latest
+        ports:
+        - containerPort: 2000
+          protocol: UDP
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: AWS_REGION
+          value: "us-west-2"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 10001
+      # CloudWatch logging sidecar
+      - name: cloudwatch-agent
+        image: amazon/cloudwatch-agent:latest
+        env:
+        - name: CW_CONFIG_CONTENT
+          value: |
+            {
+              "logs": {
+                "logs_collected": {
+                  "files": {
+                    "collect_list": [
+                      {
+                        "file_path": "/var/log/engine-c/*.log",
+                        "log_group_name": "/aws/eks/infinityai-pro/engine-c",
+                        "log_stream_name": "{pod_name}"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - name: log-storage
+          mountPath: /var/log/engine-c
+      volumes:
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: app-cache
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: log-storage
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: aws-iam-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 86400
+              audience: sts.amazonaws.com
+      - name: ssl-certs
+        secret:
+          secretName: engine-c-secrets
+          items:
+          - key: DATABASE_SSL_CERT
+            path: database.crt
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 120
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsUser: 10001
+        fsGroupChangePolicy: "OnRootMismatch"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: engine-c-service
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    component: portfolio-trading
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "6"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+spec:
+  type: LoadBalancer
+  selector:
+    app: engine-c
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8003
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8003
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: health
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  sessionAffinity: None
+  loadBalancerSourceRanges:
+  - 10.0.0.0/16   # AWS VPC range
+  - 10.1.0.0/16   # Azure VNet range (for cross-cloud)
+  - 10.2.0.0/16   # GCP VPC range (for cross-cloud)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: engine-c-internal
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    service-type: internal
+spec:
+  type: ClusterIP
+  selector:
+    app: engine-c
+  ports:
+  - name: http
+    port: 8003
+    targetPort: 8003
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: engine-c-hpa
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: engine-c-deployment
+  minReplicas: 4
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "150"
+  - type: Pods
+    pods:
+      metric:
+        name: portfolio_operations_per_second
+      target:
+        type: AverageValue
+        averageValue: "50"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 4
+        periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: engine-c-pdb
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: engine-c
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engine-c-network-policy
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+spec:
+  podSelector:
+    matchLabels:
+      app: engine-c
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          name: infinityai-aws
+    - podSelector:
+        matchLabels:
+          app: engine-a
+    - podSelector:
+        matchLabels:
+          app: engine-b
+    - podSelector:
+        matchLabels:
+          app: engine-d
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8003
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS
+    - protocol: TCP
+      port: 80   # HTTP
+    - protocol: TCP
+      port: 5432 # PostgreSQL (RDS)
+    - protocol: TCP
+      port: 6379 # Redis (ElastiCache)
+    - protocol: TCP
+      port: 9092 # Kafka (MSK)
+    - protocol: UDP
+      port: 53   # DNS
+    - protocol: UDP
+      port: 2000 # X-Ray daemon
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: engine-c-ingress
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-west-2:placeholder:certificate/placeholder"
+    alb.ingress.kubernetes.io/backend-protocol: "HTTP"
+    alb.ingress.kubernetes.io/healthcheck-path: "/health"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "10"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/load-balancer-attributes: |
+      idle_timeout.timeout_seconds=300,
+      routing.http2.enabled=true,
+      access_logs.s3.enabled=true,
+      access_logs.s3.bucket=infinityai-pro-alb-logs,
+      access_logs.s3.prefix=engine-c
+    alb.ingress.kubernetes.io/target-group-attributes: |
+      deregistration_delay.timeout_seconds=30,
+      stickiness.enabled=false
+    # WAF association
+    alb.ingress.kubernetes.io/wafv2-acl-arn: "arn:aws:wafv2:us-west-2:placeholder:regional/webacl/infinityai-pro-waf/placeholder"
+spec:
+  tls:
+  - hosts:
+    - engine-c.aws.infinityai.pro
+    - api.aws.infinityai.pro
+    secretName: infinityai-tls-secret
+  rules:
+  - host: engine-c.aws.infinityai.pro
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: engine-c-service
+            port:
+              number: 80
+  - host: api.aws.infinityai.pro
+    http:
+      paths:
+      - path: /engine-c
+        pathType: Prefix
+        backend:
+          service:
+            name: engine-c-service
+            port:
+              number: 80
+---
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: engine-c-service-monitor
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: engine-c
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod_name
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node_name
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: kubernetes_namespace
+    - targetLabel: cloud_provider
+      replacement: aws
+    - targetLabel: engine
+      replacement: engine-c
+    - targetLabel: region
+      replacement: us-west-2
+---
+# PrometheusRule for alerting
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: engine-c-alerts
+  namespace: infinityai-aws
+  labels:
+    app: engine-c
+    monitoring: prometheus
+spec:
+  groups:
+  - name: engine-c.rules
+    rules:
+    - alert: EngineCHighCPU
+      expr: rate(container_cpu_usage_seconds_total{container="engine-c"}[5m]) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        engine: engine-c
+        cloud: aws
+      annotations:
+        summary: "Engine C high CPU usage"
+        description: "Engine C CPU usage is above 80% for more than 5 minutes"
+        runbook_url: "https://runbooks.infinityai.pro/engine-c/high-cpu"
+    - alert: EngineCHighMemory
+      expr: container_memory_usage_bytes{container="engine-c"} / container_spec_memory_limit_bytes{container="engine-c"} > 0.9
+      for: 5m
+      labels:
+        severity: warning
+        engine: engine-c
+        cloud: aws
+      annotations:
+        summary: "Engine C high memory usage"
+        description: "Engine C memory usage is above 90% for more than 5 minutes"
+    - alert: EngineCPodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total{container="engine-c"}[15m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+        engine: engine-c
+        cloud: aws
+      annotations:
+        summary: "Engine C pod crash looping"
+        description: "Engine C pod is crash looping"
+    - alert: EngineCDatabaseConnectionFailure
+      expr: increase(engine_c_database_connection_failures_total[5m]) > 5
+      for: 2m
+      labels:
+        severity: critical
+        engine: engine-c
+        cloud: aws
+      annotations:
+        summary: "Engine C database connection failures"
+        description: "Engine C is experiencing database connection failures"
+---
+# Kubernetes CronJob for portfolio rebalancing
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: portfolio-rebalancer
+  namespace: infinityai-aws
+  labels:
+    app: portfolio-rebalancer
+    component: engine-c
+spec:
+  schedule: "0 9 * * 1-5"  # 9 AM on weekdays
+  timezone: "America/New_York"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: engine-c-sa
+          containers:
+          - name: rebalancer
+            image: "placeholder.dkr.ecr.us-west-2.amazonaws.com/infinityai/engine-c:latest"
+            command: ["python", "-m", "portfolio.rebalancer"]
+            envFrom:
+            - configMapRef:
+                name: engine-c-config
+            - secretRef:
+                name: engine-c-secrets
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                cpu: 2000m
+                memory: 4Gi
+          restartPolicy: OnFailure
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1

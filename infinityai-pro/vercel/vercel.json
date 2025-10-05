@@ -1,0 +1,59 @@
+{
+  "functions": {
+    "api/engine-d/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": "/api/engine-d/index.ts"
+    },
+    {
+      "source": "/engine-d/(.*)",
+      "destination": "/api/engine-d/index.ts"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/engine-d/index.ts"
+    },
+    {
+      "source": "/chat",
+      "destination": "/api/engine-d/index.ts"
+    },
+    {
+      "source": "/analysis",
+      "destination": "/api/engine-d/index.ts"
+    },
+    {
+      "source": "/portfolio",
+      "destination": "/api/engine-d/index.ts"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/health",
+      "statusCode": 307
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, X-User-ID, X-Request-ID"
+        }
+      ]
+    }
+  ]
+}

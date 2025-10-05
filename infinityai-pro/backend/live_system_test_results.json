@@ -1,0 +1,98 @@
+{
+  "test_run_start": "2025-10-05T02:14:34.438870",
+  "frontend_tests": {
+    "accessibility": {
+      "success": false,
+      "message": "Error accessing frontend: HTTPSConnectionPool(host='infinityai.pro', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'infinityai.pro'. (_ssl.c:992)\")))",
+      "timestamp": "2025-10-05T02:14:34.859867",
+      "response_time_ms": null,
+      "data": null
+    }
+  },
+  "backend_tests": {
+    "health": {
+      "success": false,
+      "message": "Error accessing backend health: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /health (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000217E5CF11D0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "timestamp": "2025-10-05T02:14:38.072268",
+      "response_time_ms": null,
+      "data": null
+    },
+    "ssl": {
+      "success": false,
+      "message": "Error testing SSL: HTTPSConnectionPool(host='infinityai.pro', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'infinityai.pro'. (_ssl.c:992)\")))",
+      "timestamp": "2025-10-05T02:14:38.488453",
+      "response_time_ms": null,
+      "data": null
+    }
+  },
+  "api_tests": {
+    "/": {
+      "success": false,
+      "message": "Error: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5CF26D0>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.086403",
+      "response_time_ms": null,
+      "data": null
+    },
+    "/docs": {
+      "success": false,
+      "message": "Error: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /docs (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5CF3CD0>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.087985",
+      "response_time_ms": null,
+      "data": null
+    },
+    "/api/engines/status": {
+      "success": false,
+      "message": "Error: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /api/engines/status (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5CF5210>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.087985",
+      "response_time_ms": null,
+      "data": null
+    },
+    "/api/trading/status": {
+      "success": false,
+      "message": "Error: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /api/trading/status (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5CF66D0>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.087985",
+      "response_time_ms": null,
+      "data": null
+    },
+    "/api/ai/chat": {
+      "success": false,
+      "message": "Error: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /api/ai/chat (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5CF7A90>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.092777",
+      "response_time_ms": null,
+      "data": null
+    }
+  },
+  "integration_tests": {
+    "ai_chat": {
+      "success": false,
+      "message": "Error testing AI chat: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /api/ai/chat (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5D04D90>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.092777",
+      "response_time_ms": null,
+      "data": null
+    },
+    "trading": {
+      "success": false,
+      "message": "Error testing trading API: HTTPSConnectionPool(host='api.infinityai.pro', port=443): Max retries exceeded with url: /api/trading/portfolio (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x00000217E5D05FD0>: Failed to resolve 'api.infinityai.pro' ([Errno 11001] getaddrinfo failed)\"))",
+      "timestamp": "2025-10-05T02:14:38.092777",
+      "response_time_ms": null,
+      "data": null
+    }
+  },
+  "performance_tests": {
+    "response_times": {
+      "success": false,
+      "message": "Could not measure performance - no successful requests",
+      "timestamp": "2025-10-05T02:14:38.103967",
+      "response_time_ms": null,
+      "data": null
+    }
+  },
+  "errors": [],
+  "test_run_end": "2025-10-05T02:14:38.488453",
+  "summary": {
+    "total_tests": 11,
+    "passed_tests": 0,
+    "failed_tests": 11,
+    "success_rate": 0.0
+  }
+}

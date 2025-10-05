@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-b
+  namespace: infinityai
+  labels:
+    app: engine-b
+    component: ai-ml-gpu
+    version: v1.0.0
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # GPU nodes typically need Recreate strategy
+  selector:
+    matchLabels:
+      app: engine-b
+  template:
+    metadata:
+      labels:
+        app: engine-b
+        component: ai-ml-gpu
+        version: v1.0.0
+    spec:
+      serviceAccountName: infinityai-service-account
+      containers:
+      - name: engine-b
+        image: infinityai/engine-b:latest
+        ports:
+        - containerPort: 8002
+          name: http
+        env:
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: infinityai-config
+              key: ENVIRONMENT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: infinityai-config
+              key: LOG_LEVEL
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: infinityai-config
+              key: KAFKA_BOOTSTRAP_SERVERS
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: infinityai-config
+              key: REDIS_URL
+        - name: MODEL_CACHE_DIR
+          value: "/app/models"
+        - name: PYTORCH_CUDA_ALLOC_CONF
+          value: "max_split_size_mb:128"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+            nvidia.com/gpu: 1
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+            nvidia.com/gpu: 1
+        volumeMounts:
+        - name: models-storage
+          mountPath: /app/models
+        - name: cache-storage
+          mountPath: /app/cache
+        - name: shm-volume
+          mountPath: /dev/shm
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 60
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: engine-b-models-pvc
+      - name: cache-storage
+        persistentVolumeClaim:
+          claimName: engine-b-cache-pvc
+      - name: shm-volume
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+      nodeSelector:
+        role: gpu
+        nvidia.com/gpu: present
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Equal"
+        value: "present"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: engine-b-service
+  namespace: infinityai
+  labels:
+    app: engine-b
+    component: ai-ml-gpu
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8002
+    targetPort: 8002
+    protocol: TCP
+    name: http
+  selector:
+    app: engine-b
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: engine-b-models-pvc
+  namespace: infinityai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: gp2
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: engine-b-cache-pvc
+  namespace: infinityai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: gp2
+---
+# Horizontal Pod Autoscaler for Engine B (GPU-aware)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: engine-b-hpa
+  namespace: infinityai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: engine-b
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

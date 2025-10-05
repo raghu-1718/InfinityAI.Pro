@@ -1,0 +1,70 @@
+{
+    "family": "infinityai-engine-d",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "1024",
+    "memory": "2048",
+    "executionRoleArn": "arn:aws:iam::152687308610:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+        {
+            "name": "infinityai-engine-d",
+            "image": "152687308610.dkr.ecr.us-east-1.amazonaws.com/infinityai-pro-backend:infinityai-engine-d",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 8004,
+                    "protocol": "tcp"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/infinityai-engine-d",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "environment": [
+                {
+                    "name": "PORT",
+                    "value": "8004"
+                },
+                {
+                    "name": "ENGINE_A_URL",
+                    "value": "https://infinityai-engine-a.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
+                },
+                {
+                    "name": "ENGINE_B_URL",
+                    "value": "https://infinityai-engine-b-573866363639.us-central1.run.app"
+                },
+                {
+                    "name": "ENGINE_C_URL",
+                    "value": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c"
+                },
+                {
+                    "name": "DHAN_CLIENT_ID",
+                    "value": "1101302170"
+                },
+                {
+                    "name": "DHAN_API_KEY",
+                    "value": "50286eaf"
+                },
+                {
+                    "name": "DHAN_API_SECRET",
+                    "value": "0a15b056-d926-4fd7-b55a-b4440345b9ca"
+                },
+                {
+                    "name": "DHAN_ACCESS_TOKEN",
+                    "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTkzIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NTk3MjU0NzYsImlhdCI6MTc1OTYzOTA3NiwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vYXBpLmluZmluaXR5YWkucHJvL2F1dGgvZGhhbi9wb3N0YmFjayIsImRoYW5DbGllbnRJZCI6IjExMDEzMDIxNzAifQ.8KAYgQVWnhk9M5M8Br9cI9QV5RGDOBsiCXN5yaytHDduh61GI2BGzvGImNP5VSGsq3EDJeaRlSOdqcafSsptWg"
+                }
+            ],
+            "healthCheck": {
+                "command": ["CMD-SHELL", "curl -f http://localhost:8004/health || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
+            }
+        }
+    ]
+}
