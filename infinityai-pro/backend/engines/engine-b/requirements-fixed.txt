@@ -8,7 +8,7 @@ gunicorn==21.2.0
 
 # Database drivers
 asyncpg==0.29.0
-redis==4.6.0
+aioredis==2.0.1
 
 # Kafka client
 aiokafka==0.9.0
@@ -45,4 +45,3 @@ asyncio-mqtt==0.13.0
 # Testing (optional, for development)
 pytest==7.4.3
 pytest-asyncio==0.21.1
-cryptography==41.0.7

@@ -1,0 +1,7 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest', '-f', 'backend/engines/engine-b/Dockerfile', '.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest']
+images:
+- 'gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest'

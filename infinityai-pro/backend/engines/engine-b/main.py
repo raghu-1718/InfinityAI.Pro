@@ -10,6 +10,7 @@ GPU-accelerated AI consumer for processing market signals with:
 - Signal confidence scoring
 """
 
+import os
 import asyncio
 import json
 import time
@@ -23,7 +24,7 @@ import numpy as np
 import pandas as pd
 from enum import Enum
 
-import aioredis
+import redis
 import asyncpg
 import torch
 import torch.nn as nn
@@ -53,7 +54,7 @@ settings = get_settings()
 # Global state
 kafka_consumer: Optional[AIOKafkaConsumer] = None
 kafka_producer: Optional[AIOKafkaProducer] = None
-redis_client: Optional[aioredis.Redis] = None
+redis_client: Optional[redis.Redis] = None
 postgres_pool: Optional[asyncpg.Pool] = None
 metrics_collector: Optional[MetricsCollector] = None
 
@@ -825,7 +826,7 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize Redis (optional)
         try:
-            redis_client = await aioredis.from_url(settings.REDIS_URL)
+            redis_client = redis.from_url(settings.REDIS_URL)
             try:
                 await redis_client.ping()
                 logger.info("Redis connection established")
@@ -963,7 +964,7 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", 8000)),
         log_level="info",
         access_log=True
     )

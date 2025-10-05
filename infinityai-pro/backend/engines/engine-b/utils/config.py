@@ -8,7 +8,8 @@ and validation for all Engine C settings.
 
 import os
 from typing import Optional, List
-from pydantic import BaseSettings, validator
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
@@ -117,7 +118,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
         
-    @validator("KAFKA_BOOTSTRAP_SERVERS")
+    @field_validator("KAFKA_BOOTSTRAP_SERVERS")
+    @classmethod
     def validate_kafka_servers(cls, v):
         """Validate Kafka bootstrap servers format"""
         if not v or not isinstance(v, str):
@@ -130,7 +132,8 @@ class Settings(BaseSettings):
         
         return v
     
-    @validator("DATABASE_URL", "TIMESCALE_URL", "REDIS_URL")
+    @field_validator("DATABASE_URL", "TIMESCALE_URL", "REDIS_URL")
+    @classmethod
     def validate_database_urls(cls, v):
         """Validate database connection URLs"""
         if not v or not isinstance(v, str):
@@ -141,7 +144,8 @@ class Settings(BaseSettings):
         
         return v
     
-    @validator("DHAN_ACCESS_TOKEN")
+    @field_validator("DHAN_ACCESS_TOKEN")
+    @classmethod
     def validate_dhan_token(cls, v):
         """Validate Dhan access token (can be empty for development)"""
         if not isinstance(v, str):
@@ -149,7 +153,8 @@ class Settings(BaseSettings):
         
         return v
     
-    @validator("LOG_LEVEL")
+    @field_validator("LOG_LEVEL")
+    @classmethod
     def validate_log_level(cls, v):
         """Validate logging level"""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -158,7 +163,8 @@ class Settings(BaseSettings):
         
         return v.upper()
     
-    @validator("ENVIRONMENT")
+    @field_validator("ENVIRONMENT")
+    @classmethod
     def validate_environment(cls, v):
         """Validate environment setting"""
         valid_environments = ["development", "staging", "production"]
@@ -167,7 +173,8 @@ class Settings(BaseSettings):
         
         return v.lower()
     
-    @validator("DEFAULT_DAILY_MAX_LOSS", "DEFAULT_POSITION_LIMIT")
+    @field_validator("DEFAULT_DAILY_MAX_LOSS", "DEFAULT_POSITION_LIMIT")
+    @classmethod
     def validate_positive_numbers(cls, v):
         """Validate positive numbers for financial limits"""
         if v <= 0:
@@ -175,7 +182,8 @@ class Settings(BaseSettings):
         
         return v
     
-    @validator("DEFAULT_MAX_POSITION_SIZE_PERCENT", "DEFAULT_SYMBOL_EXPOSURE_LIMIT")
+    @field_validator("DEFAULT_MAX_POSITION_SIZE_PERCENT", "DEFAULT_SYMBOL_EXPOSURE_LIMIT")
+    @classmethod
     def validate_percentages(cls, v):
         """Validate percentage values"""
         if not (0 < v <= 100):

@@ -1,0 +1,247 @@
+# 🛡️ InfinityAI.Pro .gitignore
+# Multi-Cloud Trading Platform - Git Ignore Configuration
+
+# ============================================================================
+# Node.js & Frontend Dependencies
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Package management
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ============================================================================
+# Python Dependencies & Virtual Environments  
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+.ENV/
+
+# ============================================================================
+# Environment & Configuration Files
+# ============================================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Secrets and credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+**/secrets/
+**/credentials/
+
+# ============================================================================
+# IDE & Editor Files
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================================
+# Build & Deployment Artifacts
+# ============================================================================
+# Frontend builds
+frontend/build/
+frontend/dist/
+frontend/.vercel/
+
+# Python builds
+*.egg-info/
+dist/
+build/
+
+# Docker
+.dockerignore
+
+# ============================================================================
+# Logs & Temporary Files
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# ============================================================================
+# Cloud Provider Specific
+# ============================================================================
+# Vercel (deprecated/removed)
+vercel/
+.vercel/
+
+# AWS
+.aws/
+aws-exports.js
+
+# Google Cloud
+.gcloud/
+gcp-credentials.json
+
+# Azure
+.azure/
+
+# ============================================================================
+# Database & Cache
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+.cache/
+.parcel-cache/
+
+# ============================================================================
+# Testing & Performance
+# ============================================================================
+# Test results
+test-results/
+coverage/
+.nyc_output/
+
+# Performance test results
+performance-results/
+load-test-results/
+
+# ============================================================================
+# Documentation Build Artifacts
+# ============================================================================
+docs/_build/
+docs/site/
+
+# ============================================================================
+# Backup & Archive Files
+# ============================================================================
+*.backup
+*.bak
+*.tmp
+*.orig
+
+# ============================================================================
+# OS Generated Files
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ============================================================================
+# Project Specific
+# ============================================================================
+# Historical deployment files (archived)
+*DEPLOYMENT*.md
+*PERFORMANCE*.md
+*test_results.json
+gpu-performance-report-*.json
+live_*_test_results.json
+
+# Keep current analysis reports
+!COMPLETE_ARCHITECTURE_ANALYSIS.md
+!FINAL_COMPREHENSIVE_ANALYSIS_REPORT.md
+!CLEANUP_OPTIMIZATION_STRATEGY.md
+!COMPLETION_REPORT.md
+
+# Temporary fix files
+*-fix.ps1
+*-fix/
+*-temp-fix.json
+
+# ============================================================================
+# CI/CD & Deployment
+# ============================================================================
+# Keep CI/CD configuration files
+!.github/
+!cloudbuild.yaml
+!docker-compose*.yml
+!Dockerfile*
+!*.tf
+!*.yml
+!*.yaml
+
+# Exclude deployment secrets
+deploy-secrets/
+deployment-keys/
+
+# ============================================================================
+# KEEP - Essential Project Files
+# ============================================================================
+# Core application files
+!backend/engines/*/main.py
+!backend/engines/*/requirements.txt
+!backend/engines/*/Dockerfile*
+!frontend/src/
+!frontend/public/
+!frontend/package.json
+
+# Infrastructure files
+!aws/
+!azure/
+!gcp/
+!k8s/
+!infra/
+
+# Documentation
+!docs/
+!README.md
+!*.md
+
+# Configuration files
+!load-balancer-config.json
+!multi-cloud-config.json
+
+# Scripts
+!scripts/

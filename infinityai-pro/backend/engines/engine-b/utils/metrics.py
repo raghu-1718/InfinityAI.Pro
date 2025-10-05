@@ -15,7 +15,7 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict
 import logging
 
-import aioredis
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class HistogramBucket:
 class MetricsCollector:
     """Metrics collection with Redis backend"""
     
-    def __init__(self, redis_client: aioredis.Redis, retention_days: int = 7):
+    def __init__(self, redis_client: redis.Redis, retention_days: int = 7):
         self.redis = redis_client
         self.retention_days = retention_days
         self.retention_seconds = retention_days * 24 * 3600
