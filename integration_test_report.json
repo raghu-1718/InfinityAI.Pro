@@ -1,0 +1,231 @@
+{
+  "test_summary": {
+    "total_tests": 10,
+    "passed_tests": 4,
+    "failed_tests": 6,
+    "success_rate": 40.0,
+    "overall_status": "\u274c SYSTEM ISSUES"
+  },
+  "test_details": [
+    {
+      "name": "Frontend Azure Accessibility",
+      "success": false,
+      "execution_time": 1.2192480564117432,
+      "details": {
+        "success": false,
+        "status_code": 404,
+        "error": "HTTP 404",
+        "url": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net"
+      },
+      "timestamp": "2025-10-05T20:04:51.099611"
+    },
+    {
+      "name": "Frontend Vercel Accessibility",
+      "success": true,
+      "execution_time": 0.4789116382598877,
+      "details": {
+        "success": true,
+        "status_code": 200,
+        "response_time": "N/A",
+        "content_checks": {
+          "has_react": false,
+          "has_infinityai": true,
+          "has_trading": true,
+          "has_scripts": true,
+          "has_styles": true
+        },
+        "content_length": 3184,
+        "url": "https://infinityai-pro-frontend-n53xfzqol-infinityaipro.vercel.app"
+      },
+      "timestamp": "2025-10-05T20:04:51.578522"
+    },
+    {
+      "name": "Backend Azure Health",
+      "success": true,
+      "execution_time": 0.8219363689422607,
+      "details": {
+        "success": true,
+        "status_code": 200,
+        "health_data": {
+          "status": "healthy",
+          "platform": "InfinityAI.Pro",
+          "version": "2.0.0",
+          "gpu_enabled": true,
+          "services": {
+            "ai_engine": "operational",
+            "market_data": "operational",
+            "live_trader": "operational",
+            "websocket": "operational"
+          }
+        },
+        "service": "Unknown",
+        "status": "healthy",
+        "url": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/health"
+      },
+      "timestamp": "2025-10-05T20:04:52.400459"
+    },
+    {
+      "name": "Engine D Vercel Health",
+      "success": false,
+      "execution_time": 2.009709119796753,
+      "details": {
+        "success": false,
+        "status_code": 500,
+        "error": "HTTP 500",
+        "url": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app/health"
+      },
+      "timestamp": "2025-10-05T20:04:54.410168"
+    },
+    {
+      "name": "Backend Azure API Endpoints",
+      "success": true,
+      "execution_time": 2.0524024963378906,
+      "details": {
+        "success": true,
+        "successful_endpoints": 4,
+        "total_endpoints": 4,
+        "endpoint_results": [
+          {
+            "path": "/health",
+            "status_code": 200,
+            "success": true,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/api/health",
+            "status_code": 200,
+            "success": true,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/docs",
+            "status_code": 200,
+            "success": true,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/api/v1/health",
+            "status_code": 404,
+            "success": true,
+            "response_time": "N/A"
+          }
+        ],
+        "base_url": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
+      },
+      "timestamp": "2025-10-05T20:04:56.463089"
+    },
+    {
+      "name": "Engine D Vercel API Endpoints",
+      "success": true,
+      "execution_time": 1.3827710151672363,
+      "details": {
+        "success": true,
+        "successful_endpoints": 2,
+        "total_endpoints": 4,
+        "endpoint_results": [
+          {
+            "path": "/health",
+            "status_code": 500,
+            "success": false,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/api/health",
+            "status_code": 404,
+            "success": true,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/docs",
+            "status_code": 404,
+            "success": true,
+            "response_time": "N/A"
+          },
+          {
+            "path": "/api/v1/health",
+            "status_code": 500,
+            "success": false,
+            "response_time": "N/A"
+          }
+        ],
+        "base_url": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app"
+      },
+      "timestamp": "2025-10-05T20:04:57.845860"
+    },
+    {
+      "name": "AI Chatbot Functionality",
+      "success": false,
+      "execution_time": 2.0273468494415283,
+      "details": {
+        "success": false,
+        "successful_chats": 0,
+        "total_chats": 3,
+        "chat_results": [
+          {
+            "message": "Hello, how are you?",
+            "success": false,
+            "status_code": 500,
+            "error": "HTTP 500"
+          },
+          {
+            "message": "What's my portfolio?",
+            "success": false,
+            "status_code": 500,
+            "error": "HTTP 500"
+          },
+          {
+            "message": "Analyze AAPL",
+            "success": false,
+            "status_code": 500,
+            "error": "HTTP 500"
+          }
+        ],
+        "chatbot_url": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app/chat"
+      },
+      "timestamp": "2025-10-05T20:04:59.873207"
+    },
+    {
+      "name": "WebSocket Connection Test",
+      "success": false,
+      "execution_time": 0.5770220756530762,
+      "details": {
+        "success": false,
+        "ws_url": "wss://infinity-backend-9z59tyitb-infinityaipro.vercel.app/ws/integration_test",
+        "error": "server rejected WebSocket connection: HTTP 404",
+        "connection_established": false
+      },
+      "timestamp": "2025-10-05T20:05:00.450229"
+    },
+    {
+      "name": "Cross-Engine Communication",
+      "success": false,
+      "execution_time": 0.5576076507568359,
+      "details": {
+        "success": false,
+        "status_code": 500,
+        "error": "HTTP 500"
+      },
+      "timestamp": "2025-10-05T20:05:01.007837"
+    },
+    {
+      "name": "AWS Load Balancer Health",
+      "success": false,
+      "execution_time": 3.171254873275757,
+      "details": {
+        "success": false,
+        "error": "Cannot connect to host infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:80 ssl:default [The remote computer refused the network connection]",
+        "alb_url": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com/health",
+        "alb_responsive": false
+      },
+      "timestamp": "2025-10-05T20:05:04.180110"
+    }
+  ],
+  "urls_tested": {
+    "frontend_azure": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
+    "backend_azure": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
+    "engine_d_vercel": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app",
+    "frontend_vercel": "https://infinityai-pro-frontend-n53xfzqol-infinityaipro.vercel.app",
+    "aws_alb": "infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com"
+  },
+  "timestamp": "2025-10-05T20:05:04.184634"
+}

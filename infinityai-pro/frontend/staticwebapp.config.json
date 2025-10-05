@@ -1,0 +1,24 @@
+{
+  "routes": [
+    {
+      "route": "/api/*",
+      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/api/*"
+    },
+    {
+      "route": "/health",
+      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/health"
+    },
+    {
+      "route": "/ws/*",
+      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/ws/*"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  },
+  "globalHeaders": {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  }
+}

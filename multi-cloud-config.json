@@ -1,0 +1,85 @@
+{
+  "deployment_architecture": "multi-cloud",
+  "version": "2.0.0",
+  "timestamp": "2025-10-05T14:45:00Z",
+  "clouds": {
+    "azure": {
+      "enabled": true,
+      "region": "eastus",
+      "services": {
+        "engine_a": {
+          "type": "container_app",
+          "endpoint": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
+          "health_endpoint": "/health",
+          "status": "healthy",
+          "function": "market_data_ingestion"
+        },
+        "frontend": {
+          "type": "static_web_app",
+          "endpoint": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
+          "status": "needs_redeployment",
+          "function": "user_interface"
+        }
+      }
+    },
+    "aws": {
+      "enabled": true,
+      "region": "us-east-1",
+      "services": {
+        "engine_c": {
+          "type": "ecs_container",
+          "cluster": "infinityai-pro-cluster",
+          "service": "engine-c-service", 
+          "port": 8002,
+          "function": "trade_execution"
+        },
+        "engine_d": {
+          "type": "ecs_container",
+          "cluster": "infinityai-pro-cluster",
+          "service": "engine-d-service",
+          "port": 8000,
+          "function": "ai_chatbot_assistant"
+        },
+        "load_balancer": {
+          "type": "application_load_balancer",
+          "dns": "infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com",
+          "status": "connection_refused"
+        }
+      }
+    },
+    "google_cloud": {
+      "enabled": true,
+      "region": "us-central1",
+      "services": {
+        "engine_b": {
+          "type": "gke_container",
+          "cluster": "infinityai-engine-b-cluster",
+          "service": "engine-b-service",
+          "port": 8001,
+          "function": "ai_ml_gpu_processing"
+        }
+      }
+    }
+  },
+  "communication": {
+    "inter_cloud_routing": {
+      "azure_to_aws": "direct_https",
+      "azure_to_gcp": "direct_https", 
+      "aws_to_gcp": "direct_https"
+    },
+    "load_balancing": {
+      "strategy": "round_robin",
+      "health_checks": true,
+      "failover": true
+    }
+  },
+  "removed_services": {
+    "vercel": {
+      "reason": "eliminated_per_user_request",
+      "former_endpoints": [
+        "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app",
+        "https://infinityai-pro-frontend-n53xfzqol-infinityaipro.vercel.app"
+      ]
+    }
+  }
+}
