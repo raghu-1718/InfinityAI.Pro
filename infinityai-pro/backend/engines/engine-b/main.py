@@ -162,14 +162,33 @@ class PositionalEncoding(nn.Module):
 class EnsembleAIProcessor:
     """Ensemble AI processor with multiple models"""
     
-    def __init__(self, device='cuda' if torch.cuda.is_available() else 'cpu'):
-        self.device = device
+    def __init__(self, device=None):
+        # Enhanced GPU detection and configuration
+        if device is None:
+            use_gpu = os.getenv('USE_GPU', 'true').lower() == 'true'
+            if use_gpu and torch.cuda.is_available():
+                self.device = torch.device('cuda:0')
+                # Set memory growth and optimization
+                torch.cuda.empty_cache()
+                logger.info(f"GPU initialized: {torch.cuda.get_device_name(0)}")
+                logger.info(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+            else:
+                self.device = torch.device('cpu')
+                logger.info("Using CPU device")
+        else:
+            self.device = torch.device(device)
+            
         self.models = {}
         self.scalers = {}
         self.feature_windows = {}
         self.model_weights = {}
         
-        logger.info(f"Initializing AI processor on device: {device}")
+        logger.info(f"AI processor initialized on device: {self.device}")
+        
+        # Enable GPU optimizations if available
+        if self.device.type == 'cuda':
+            torch.backends.cudnn.benchmark = True
+            torch.backends.cudnn.enabled = True
         
     async def initialize_models(self):
         """Initialize all AI models"""

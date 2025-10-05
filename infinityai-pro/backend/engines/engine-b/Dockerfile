@@ -1,22 +1,29 @@
 # Engine B - AI Signal Processing Service
 # InfinityAI.Pro Trading Platform
-# Multi-stage Docker build with CPU support (no CUDA)
+# Multi-stage Docker build with GPU support for Google Cloud
 
 ARG PYTHON_VERSION=3.11
 ARG BUILD_DATE
 ARG GIT_COMMIT
 ARG VERSION=1.0.0
 
-# Build stage
-FROM python:${PYTHON_VERSION}-slim as builder
+# Build stage with GPU support
+FROM nvidia/cuda:11.8-devel-ubuntu20.04 as builder
 
 # Set build arguments
 ARG BUILD_DATE
 ARG GIT_COMMIT
 ARG VERSION
 
-# Install system dependencies for building
+# Avoid interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3.11-distutils \
+    python3-pip \
     build-essential \
     gcc \
     g++ \
@@ -39,15 +46,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY requirements.txt .
 
-# Install PyTorch CPU-only version
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch with CUDA support for GPU acceleration
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir torch==2.1.1+cu118 torchvision==0.16.1+cu118 torchaudio==0.14.1+cu118 --index-url https://download.pytorch.org/whl/cu118
 
 # Install other requirements
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Production stage
-FROM python:${PYTHON_VERSION}-slim as production
+RUN pip3 install --no-cache-dir -r requirements.txt# Production stage
+FROM nvidia/cuda:11.8-runtime-ubuntu20.04 as production
 
 # Set build arguments
 ARG BUILD_DATE
@@ -57,13 +62,15 @@ ARG VERSION
 # Add labels for metadata
 LABEL maintainer="InfinityAI.Pro Team" \
       version="${VERSION}" \
-      description="Engine B - AI Signal Processing Service (CPU)" \
+      description="Engine B - AI Signal Processing Service (GPU-Accelerated)" \
       build-date="${BUILD_DATE}" \
       git-commit="${GIT_COMMIT}" \
-      component="ai-signal-processing"
+      component="ai-signal-processing-gpu"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
     libopenblas0-pthread \
     liblapack3 \
     libgomp1 \
@@ -93,8 +100,18 @@ RUN mkdir -p /app/logs /app/data /app/tmp /app/models && \
 # Switch to non-root user
 USER infinityai
 
-# Set environment variables
-ENV PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 INFINITYAI_ENV=production LOG_LEVEL=INFO API_HOST=0.0.0.0 API_PORT=8000 USE_GPU=false
+# Set environment variables for GPU
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    INFINITYAI_ENV=production \
+    LOG_LEVEL=INFO \
+    API_HOST=0.0.0.0 \
+    API_PORT=8000 \
+    USE_GPU=true \
+    CUDA_VISIBLE_DEVICES=0 \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
