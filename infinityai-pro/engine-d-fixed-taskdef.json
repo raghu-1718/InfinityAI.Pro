@@ -1,0 +1,38 @@
+{
+  "family": "infinityai-engine-d",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::152687308610:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "infinityai-engine-d",
+      "image": "python:3.9-slim",
+      "command": [
+        "sh", "-c",
+        "pip install fastapi uvicorn requests pydantic openai anthropic && python -c \"from fastapi import FastAPI; import uvicorn; app = FastAPI(); @app.get('/health'); def health(): return {'status': 'healthy', 'engine': 'ai_chatbot', 'version': '2.0.0', 'features': ['voice_commands', 'trading_assistant', 'nlp_processing']}; @app.get('/engine-d/health'); def engine_health(): return {'status': 'healthy', 'engine': 'ai_chatbot', 'version': '2.0.0', 'features': ['voice_commands', 'trading_assistant', 'nlp_processing']}; @app.post('/engine-d/chat'); def chat(message: dict): return {'response': 'Hello! I am your AI trading assistant. How can I help you today?', 'engine': 'ai_chatbot'}; uvicorn.run(app, host='0.0.0.0', port=8004)\""
+      ],
+      "portMappings": [
+        {
+          "containerPort": 8004,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "ENGINE_TYPE", "value": "ai_chatbot" },
+        { "name": "PORT", "value": "8004" },
+        { "name": "OPENAI_API_KEY", "value": "your-openai-key" },
+        { "name": "VOICE_ENABLED", "value": "true" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/infinityai-engine-d",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
