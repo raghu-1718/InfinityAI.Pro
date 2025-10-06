@@ -1,0 +1,888 @@
+{
+  "summary": {
+    "total_tests": 81,
+    "success_rate": 77.77777777777779,
+    "critical_issues": true,
+    "dhan_working": true
+  },
+  "detailed_results": [
+    {
+      "timestamp": "2025-10-06T08:06:58.343317",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 933,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:06:59.193146",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 846,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:00.056148",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 860,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:00.912861",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 854,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:01.745693",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 829,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:02.598925",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 850,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:02.760962",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 156,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:02.888363",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 124,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:03.050022",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 158,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:33.912522",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 858,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:34.762381",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 847,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:35.636054",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 870,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:36.502063",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 863,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:37.336773",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 831,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:38.190652",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 850,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:38.351588",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 158,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:38.491269",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 137,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:07:38.623261",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 129,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:09.540700",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 904,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:10.405945",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 865,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:11.277841",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 868,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:12.128244",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 845,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:12.984067",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 852,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:13.884219",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 897,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:14.044088",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 157,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:14.170581",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 121,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:14.347935",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 173,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:45.190928",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 837,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:46.042629",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 850,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:46.875271",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 829,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:47.720528",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 842,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:48.556210",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 833,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:49.760517",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 1200,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:50.087774",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 324,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:50.196291",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 107,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:08:50.338978",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 140,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:21.189046",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 845,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:22.020152",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 825,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:22.871939",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 849,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:23.733814",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 857,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:24.606773",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 870,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:25.484485",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 874,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:25.629618",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 141,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:25.764040",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 131,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:25.910699",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 143,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:56.801065",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 884,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:57.712667",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 905,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:58.585014",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 869,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:09:59.435846",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 846,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:00.293140",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 855,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:01.133974",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 836,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:01.297689",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 159,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:01.423246",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 121,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:01.646082",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 221,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:32.517592",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 866,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:33.380907",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 860,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:34.237187",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 854,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:35.091382",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 851,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:35.948980",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 853,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:36.823943",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 872,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:36.975179",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 147,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:37.107190",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 127,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:10:37.254829",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 143,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:08.084418",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 825,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:08.919933",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 832,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:09.764760",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 841,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:10.635729",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 868,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:11.472350",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 833,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:12.310293",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 835,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:12.457220",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 143,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:12.584808",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 124,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:12.740778",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 152,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:43.633245",
+      "test": "App Health",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 889,
+      "details": {
+        "status_code": 200,
+        "content_length": 206,
+        "first_100_chars": "{\"status\":\"healthy\",\"platform\":\"InfinityAI.Pro\",\"version\":\"2.0.0\",\"gpu_enabled\":true,\"services\":{\"ai"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:44.515355",
+      "test": "Frontend HTML",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 877,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:45.405807",
+      "test": "JS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 884,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:46.277558",
+      "test": "CSS Bundle",
+      "status": "\u274c FAILED",
+      "response_time_ms": 868,
+      "details": {
+        "status_code": 404,
+        "error": "{\"detail\":\"Not Found\"}"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:47.156698",
+      "test": "Dashboard",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 876,
+      "details": {
+        "status_code": 200,
+        "content_length": 881,
+        "first_100_chars": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"/favicon.ico\"/><m"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:48.068657",
+      "test": "API Docs",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 909,
+      "details": {
+        "status_code": 200,
+        "content_length": 969,
+        "first_100_chars": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:48.621193",
+      "test": "Dhan Holdings",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 549,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:48.826002",
+      "test": "Dhan Positions",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 201,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    },
+    {
+      "timestamp": "2025-10-06T08:11:48.969548",
+      "test": "Dhan Orders",
+      "status": "\u2705 SUCCESS",
+      "response_time_ms": 141,
+      "details": {
+        "status_code": 200,
+        "content_length": 2,
+        "first_100_chars": "[]"
+      }
+    }
+  ],
+  "test_config": {
+    "base_url": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
+    "start_time": "2025-10-06T08:06:57.409000",
+    "end_time": "2025-10-06T08:12:18.995841"
+  }
+}

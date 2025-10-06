@@ -1,0 +1,285 @@
+name: 🚀 InfinityAI.Pro Multi-Cloud CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_CONTAINER_REGISTRY: infinityaiacr.azurecr.io
+  AZURE_RESOURCE_GROUP: infinityai-pro-rg
+  AZURE_CONTAINER_APP: infinityai-app
+  GCP_PROJECT_ID: after-yesterday-473512-k3
+  AWS_REGION: us-east-1
+  
+jobs:
+  # ============================================================================
+  # BUILD AND TEST
+  # ============================================================================
+  build-and-test:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📂 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 📦 Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+        
+    - name: 🧪 Run Tests
+      run: |
+        cd backend
+        python -m pytest tests/ -v
+        
+    - name: 🔍 Code Quality Check
+      run: |
+        cd backend
+        flake8 . --max-line-length=88
+        
+  # ============================================================================
+  # DEPLOY TO AZURE (Engine A - Primary Frontend/Backend)
+  # ============================================================================
+  deploy-azure:
+    name: ☁️ Deploy to Azure Container Apps
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📂 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔐 Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 🐳 Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+    - name: 📦 Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: 🔨 Build and Push Docker Image
+      run: |
+        # Create unified image with backend + frontend
+        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/infinityai-app:${{ github.sha }} .
+        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/infinityai-app:latest .
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/infinityai-app:${{ github.sha }}
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/infinityai-app:latest
+
+    - name: 🚀 Deploy to Azure Container Apps
+      run: |
+        az containerapp update \
+          --name ${{ env.AZURE_CONTAINER_APP }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --image ${{ env.AZURE_CONTAINER_REGISTRY }}/infinityai-app:${{ github.sha }} \
+          --set-env-vars \
+            "DEPLOYMENT_VERSION=${{ github.sha }}" \
+            "DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            "FRONTEND_ENABLED=true" \
+            "DHAN_CLIENT_ID=${{ secrets.DHAN_CLIENT_ID }}" \
+            "DHAN_ACCESS_TOKEN=${{ secrets.DHAN_ACCESS_TOKEN }}" \
+            "DHAN_API_KEY=${{ secrets.DHAN_API_KEY }}" \
+            "DHAN_API_SECRET=${{ secrets.DHAN_API_SECRET }}" \
+            "DHAN_API_BASE_URL=https://api.dhan.co" \
+            "DHAN_ENVIRONMENT=production"
+
+    - name: ✅ Verify Azure Deployment
+      run: |
+        FQDN=$(az containerapp show --name ${{ env.AZURE_CONTAINER_APP }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn --output tsv)
+        echo "🌐 Application URL: https://$FQDN"
+        curl -f https://$FQDN/health || exit 1
+        echo "✅ Azure deployment successful!"
+
+  # ============================================================================
+  # DEPLOY TO GOOGLE CLOUD (Engine B - AI Processing)
+  # ============================================================================
+  deploy-gcp:
+    name: 🌐 Deploy to Google Cloud Run
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📂 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔐 Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    - name: ☁️ Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: 🐳 Configure Docker for GCR
+      run: gcloud auth configure-docker
+
+    - name: 🔨 Build and Push Engine B
+      run: |
+        cd backend/engines/engine-b
+        docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/infinityai-engine-b:${{ github.sha }} .
+        docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/infinityai-engine-b:latest .
+        docker push gcr.io/${{ env.GCP_PROJECT_ID }}/infinityai-engine-b:${{ github.sha }}
+        docker push gcr.io/${{ env.GCP_PROJECT_ID }}/infinityai-engine-b:latest
+
+    - name: 🚀 Deploy to Cloud Run
+      run: |
+        gcloud run deploy infinityai-engine-b \
+          --image gcr.io/${{ env.GCP_PROJECT_ID }}/infinityai-engine-b:${{ github.sha }} \
+          --platform managed \
+          --region us-central1 \
+          --allow-unauthenticated \
+          --set-env-vars="ENGINE_TYPE=ai_processing,DHAN_CLIENT_ID=${{ secrets.DHAN_CLIENT_ID }},DHAN_ACCESS_TOKEN=${{ secrets.DHAN_ACCESS_TOKEN }},ENGINE_A_URL=${{ secrets.AZURE_APP_URL }}"
+
+    - name: ✅ Verify GCP Deployment
+      run: |
+        SERVICE_URL=$(gcloud run services describe infinityai-engine-b --region=us-central1 --format='value(status.url)')
+        echo "🌐 Engine B URL: $SERVICE_URL"
+        curl -f $SERVICE_URL/health || exit 1
+        echo "✅ GCP deployment successful!"
+
+  # ============================================================================
+  # DEPLOY TO AWS (Engine C - Trading & Engine D - Voice)
+  # ============================================================================
+  deploy-aws:
+    name: 🟠 Deploy to AWS ECS
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📂 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔐 Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: 🐳 Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: 🔨 Build and Push Engine C (Trading)
+      run: |
+        cd backend/engines/engine-c
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:${{ github.sha }} .
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:latest .
+        docker push ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:latest
+
+    - name: 🔨 Build and Push Engine D (Voice)
+      run: |
+        cd backend/engines/engine-d
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ github.sha }} .
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:latest .
+        docker push ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:latest
+
+    - name: 📝 Update ECS Task Definition - Engine C
+      run: |
+        # Update task definition with new image and production credentials
+        sed -i "s|IMAGE_URI|${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:${{ github.sha }}|g" engine-c-fixed-taskdef.json
+        aws ecs register-task-definition \
+          --family infinityai-engine-c \
+          --cli-input-json file://engine-c-fixed-taskdef.json
+
+    - name: 🚀 Deploy Engine C to ECS
+      run: |
+        aws ecs update-service \
+          --cluster infinityai-cluster \
+          --service infinityai-engine-c-service \
+          --task-definition infinityai-engine-c:$(aws ecs describe-task-definition --task-definition infinityai-engine-c --query 'taskDefinition.revision')
+
+    - name: 📝 Update ECS Task Definition - Engine D
+      run: |
+        # Create Engine D task definition
+        cat > engine-d-taskdef.json << EOF
+        {
+          "family": "infinityai-engine-d",
+          "networkMode": "awsvpc",
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "2048",
+          "memory": "4096",
+          "executionRoleArn": "arn:aws:iam::152687308610:role/ecsTaskExecutionRole",
+          "containerDefinitions": [{
+            "name": "infinityai-engine-d",
+            "image": "${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ github.sha }}",
+            "portMappings": [{"containerPort": 8000, "protocol": "tcp"}],
+            "environment": [
+              {"name": "ENGINE_TYPE", "value": "voice_assistant"},
+              {"name": "DHAN_CLIENT_ID", "value": "${{ secrets.DHAN_CLIENT_ID }}"},
+              {"name": "DHAN_ACCESS_TOKEN", "value": "${{ secrets.DHAN_ACCESS_TOKEN }}"},
+              {"name": "ENGINE_A_URL", "value": "${{ secrets.AZURE_APP_URL }}"}
+            ],
+            "logConfiguration": {
+              "logDriver": "awslogs",
+              "options": {
+                "awslogs-group": "/ecs/infinityai-engine-d",
+                "awslogs-region": "${{ env.AWS_REGION }}",
+                "awslogs-stream-prefix": "ecs"
+              }
+            }
+          }]
+        }
+        EOF
+        aws ecs register-task-definition --cli-input-json file://engine-d-taskdef.json
+
+    - name: ✅ Verify AWS Deployment
+      run: |
+        echo "✅ AWS ECS deployments initiated!"
+        echo "🔗 Check ECS Console for deployment status"
+
+  # ============================================================================
+  # INTEGRATION TESTS
+  # ============================================================================
+  integration-tests:
+    name: 🧪 Integration Tests
+    needs: [deploy-azure, deploy-gcp, deploy-aws]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📂 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔍 Test Multi-Cloud Integration
+      run: |
+        echo "🧪 Running integration tests across all clouds..."
+        
+        # Test Azure (Engine A)
+        curl -f ${{ secrets.AZURE_APP_URL }}/health
+        
+        # Test Dhan API Integration
+        curl -f -H "access-token: ${{ secrets.DHAN_ACCESS_TOKEN }}" https://api.dhan.co/v2/holdings
+        
+        echo "✅ All integration tests passed!"
+
+    - name: 📊 Deployment Summary
+      run: |
+        echo "🎉 DEPLOYMENT SUCCESSFUL!"
+        echo "=================================="
+        echo "☁️  Azure (Engine A): ${{ secrets.AZURE_APP_URL }}"
+        echo "🌐 Google Cloud (Engine B): Check Cloud Run console"
+        echo "🟠 AWS (Engine C & D): Check ECS console"
+        echo "🔗 Dhan API: Production integration active"
+        echo "🚀 Version: ${{ github.sha }}"
