@@ -25,14 +25,17 @@ InfinityAI.Pro is the world's most advanced AI trading platform, combining **18+
 ## 🚀 **Quick Start**
 
 ### **1. CI/CD Deployment (Recommended)**
+📚 **[Complete CI/CD Documentation](CICD-DOCS-INDEX.md)** - Start here for automated deployment!
+
 ```bash
 # Automated deployment to Azure, AWS, and Google Cloud
-# See CI-CD-SETUP-GUIDE.md for complete instructions
+# Quick 5-minute setup guide: QUICK-START-CICD.md
 
-# Quick setup:
-1. Configure GitHub Secrets (see SECRETS-QUICK-REFERENCE.md)
-2. Push to main branch - automatic deployment to all clouds
-3. Monitor deployment in GitHub Actions tab
+# Quick setup steps:
+1. Run: ./validate-cicd-setup.sh
+2. Configure GitHub Secrets (see SECRETS-QUICK-REFERENCE.md)
+3. Push to main branch - automatic deployment to all clouds!
+4. Monitor deployment in GitHub Actions tab
 ```
 
 ### **2. Live Platform Access**
