@@ -1,10 +1,27 @@
 from fastapi import APIRouter, Request, HTTPException
+from services.kill_switch import is_enabled, set_enabled, get_consecutive_failures, reset_failures
 
-router = APIRouter()
+router = APIRouter(prefix="/api/trading", tags=["Trading"])
 
 @router.get("/status")
 def get_trading_status():
-    return {"status": "Trading API active"}
+    return {
+        "status": "Trading API active",
+        "kill_switch_enabled": is_enabled(),
+        "consecutive_failures": get_consecutive_failures()
+    }
+
+
+@router.post("/enable")
+async def enable_trading():
+    set_enabled(True)
+    return {"ok": True, "message": "Trading enabled"}
+
+
+@router.post("/disable")
+async def disable_trading():
+    set_enabled(False)
+    return {"ok": True, "message": "Trading disabled"}
 
 @router.post("/signal")
 async def get_signal(symbol: str):

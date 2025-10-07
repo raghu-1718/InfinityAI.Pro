@@ -1,0 +1,50 @@
+# Multi-Cloud Ultra Aggressive Trading Cloud Build
+steps:
+  # Build the multi-cloud container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-f', 'Dockerfile.multi-cloud',
+      '-t', 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:$BUILD_ID',
+      '-t', 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:latest',
+      '.'
+    ]
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:$BUILD_ID']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:latest']
+
+  # Deploy multi-cloud ultra aggressive system
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run', 'deploy', 'infinityai-multi-cloud-ultra',
+      '--image', 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:$BUILD_ID',
+      '--region', 'us-central1',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--port', '8080',
+      '--memory', '4Gi',
+      '--cpu', '2',
+      '--concurrency', '100',
+      '--max-instances', '10',
+      '--min-instances', '1',
+      '--set-env-vars', 'ULTRA_AGGRESSIVE_MODE=true,REAL_BALANCE=16083.22,TARGET_BALANCE=32166.44',
+      '--set-env-vars', 'AZURE_ENGINE_A_URL=https://infinityai-engine-a.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io',
+      '--set-env-vars', 'GCP_ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app',
+      '--set-env-vars', 'ULTRA_AGGRESSIVE_URL=https://infinityai-ultra-aggressive-573866363639.us-central1.run.app',
+      '--set-env-vars', 'DHAN_CLIENT_ID=1101302170,DHAN_API_KEY=a1196f5b',
+      '--timeout', '900'
+    ]
+
+images:
+  - 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/infinityai-multi-cloud-ultra:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: '1200s'

@@ -1,0 +1,184 @@
+name: Deploy InfinityAI Live Trading System
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'ultra_aggressive_trader.py'
+      - 'integrated_live_trader.py'
+      - 'backend/**'
+      - '.github/workflows/deploy-live-trading.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: infinityai-app
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+
+jobs:
+  test-trading-system:
+    name: Test Live Trading System
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Test trading modules
+      run: |
+        python -c "import integrated_live_trader; print('✅ Live trader module imported')"
+        python -c "import ultra_aggressive_trader; print('✅ Ultra aggressive trader imported')"
+    
+    - name: Validate configuration
+      run: |
+        python -c "
+        import os
+        from ultra_aggressive_trader import UltraAggressiveTrader
+        trader = UltraAggressiveTrader()
+        print('✅ Trading system initialized successfully')
+        "
+
+  deploy-azure:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: test-trading-system
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Build and Deploy to Azure Container Apps
+      run: |
+        # Build the container image
+        az acr build \
+          --registry infinityaiacr \
+          --image infinityai-live-trader:${{ github.sha }} \
+          --image infinityai-live-trader:latest \
+          --file Dockerfile .
+        
+        # Update container app with new image
+        az containerapp update \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group infinityai-rg \
+          --image infinityaiacr.azurecr.io/infinityai-live-trader:latest \
+          --set-env-vars \
+            "LIVE_TRADING_ENABLED=true" \
+            "ULTRA_AGGRESSIVE_MODE=true" \
+            "AUTO_EXECUTE=true" \
+            "CAPITAL_DOUBLING_TARGET=true"
+
+  deploy-aws-engines:
+    name: Deploy AWS Trading Engines
+    runs-on: ubuntu-latest
+    needs: test-trading-system
+    environment: production
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and push Engine C (Trading Execution)
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        # Build Engine C with ultra aggressive trader
+        docker build -f aws/engine-c/Dockerfile \
+          -t $ECR_REGISTRY/infinityai-pro-backend:infinityai-engine-c \
+          --build-arg TRADING_MODE=ultra_aggressive .
+        
+        docker push $ECR_REGISTRY/infinityai-pro-backend:infinityai-engine-c
+        
+        # Update ECS service
+        aws ecs update-service \
+          --cluster infinityai-pro-cluster \
+          --service infinityai-engine-c-service \
+          --force-new-deployment
+
+    - name: Build and push Engine D (Voice Assistant)
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        # Build Engine D
+        docker build -f aws/engine-d/Dockerfile \
+          -t $ECR_REGISTRY/infinityai-pro-backend:infinityai-engine-d .
+        
+        docker push $ECR_REGISTRY/infinityai-pro-backend:infinityai-engine-d
+        
+        # Update ECS service
+        aws ecs update-service \
+          --cluster infinityai-pro-cluster \
+          --service infinityai-engine-d-service \
+          --force-new-deployment
+
+  activate-live-trading:
+    name: Activate Live Trading System
+    runs-on: ubuntu-latest
+    needs: [deploy-azure, deploy-aws-engines]
+    environment: production
+    
+    steps:
+    - name: Activate Ultra Aggressive Trading
+      run: |
+        # Wait for deployments to stabilize
+        sleep 60
+        
+        # Activate ultra aggressive trading via API
+        curl -X POST "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/api/trading/activate-ultra-aggressive" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "mode": "ultra_aggressive",
+            "capital_doubling": true,
+            "immediate_execution": true,
+            "confirmation_required": false
+          }'
+        
+        # Verify system status
+        curl -f "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/api/trading/status"
+
+  notification:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [activate-live-trading]
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      run: |
+        if [ "${{ needs.activate-live-trading.result }}" == "success" ]; then
+          echo "🚀 LIVE TRADING SYSTEM DEPLOYED SUCCESSFULLY!"
+          echo "🔥 Ultra Aggressive Mode: ACTIVE"
+          echo "💰 Capital Doubling Target: ENABLED"
+          echo "⚡ Immediate Execution: OPERATIONAL"
+        else
+          echo "❌ DEPLOYMENT FAILED - Check logs"
+        fi
