@@ -206,10 +206,16 @@ jobs:
     - name: 📝 Update ECS Task Definition - Engine C
       run: |
         # Update task definition with new image and production credentials
-        sed -i "s|IMAGE_URI|${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:${{ github.sha }}|g" engine-c-fixed-taskdef.json
-        aws ecs register-task-definition \
-          --family infinityai-engine-c \
-          --cli-input-json file://engine-c-fixed-taskdef.json
+        cd ${{ env.WORKING_DIR }}
+        if [ -f "../engine-c-task-def-fixed.json" ]; then
+          cp ../engine-c-task-def-fixed.json ./engine-c-taskdef.json
+          sed -i "s|IMAGE_URI|${{ steps.login-ecr.outputs.registry }}/infinityai-engine-c:${{ github.sha }}|g" ./engine-c-taskdef.json
+          aws ecs register-task-definition \
+            --family infinityai-engine-c \
+            --cli-input-json file://engine-c-taskdef.json
+        else
+          echo "⚠️ Task definition not found, skipping Engine C deployment"
+        fi
 
     - name: 🚀 Deploy Engine C to ECS
       run: |

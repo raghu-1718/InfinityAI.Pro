@@ -6,6 +6,9 @@
 [![API Status](https://img.shields.io/badge/API-api.infinityai.pro-green)](https://api.infinityai.pro)
 [![Accuracy](https://img.shields.io/badge/Accuracy-99.8%25-brightgreen)](https://github.com/yourusername/InfinityAI.Pro)
 [![Win Rate](https://img.shields.io/badge/Win%20Rate-90--97%25-success)](https://github.com/yourusername/InfinityAI.Pro)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-Multi--Cloud-blue)](https://github.com/raghu-1718/InfinityAI.Pro/blob/main/QUICK-START-CICD.md)
+
+> **🚀 NEW:** [One-Click Multi-Cloud Deployment](QUICK-START-CICD.md) - Deploy to Azure, AWS & GCP in 5 minutes!
 
 ## 🎯 **Platform Overview**
 
