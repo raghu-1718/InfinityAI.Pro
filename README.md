@@ -21,7 +21,18 @@ InfinityAI.Pro is the world's most advanced AI trading platform, combining **18+
 
 ## 🚀 **Quick Start**
 
-### **1. Live Platform Access**
+### **1. CI/CD Deployment (Recommended)**
+```bash
+# Automated deployment to Azure, AWS, and Google Cloud
+# See CI-CD-SETUP-GUIDE.md for complete instructions
+
+# Quick setup:
+1. Configure GitHub Secrets (see SECRETS-QUICK-REFERENCE.md)
+2. Push to main branch - automatic deployment to all clouds
+3. Monitor deployment in GitHub Actions tab
+```
+
+### **2. Live Platform Access**
 ```bash
 # Frontend Dashboard
 https://infinityai.pro
@@ -33,7 +44,7 @@ https://api.infinityai.pro
 https://infinityai.pro/advanced
 ```
 
-### **2. Local Development**
+### **3. Local Development**
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/InfinityAI.Pro.git
@@ -51,7 +62,7 @@ npm install && npm start
 python integration_test.py
 ```
 
-### **3. GPU Infrastructure Deployment**
+### **4. GPU Infrastructure Deployment**
 ```bash
 # Deploy multi-cloud GPU infrastructure
 chmod +x gpu-acceleration/deploy-gpu-infrastructure.sh
@@ -367,6 +378,29 @@ git push origin feature-branch
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🚀 **Multi-Cloud CI/CD Deployment**
+
+InfinityAI.Pro uses automated GitHub Actions workflows for continuous deployment across multiple cloud providers:
+
+### **Deployment Architecture**
+- **Azure Container Apps**: Frontend & Engine A (Primary application)
+- **Google Cloud Run**: Engine B (AI/ML Processing)
+- **AWS ECS**: Engines C & D (Trading & Voice Assistant)
+
+### **Setup CI/CD**
+1. **Configure Secrets**: See [SECRETS-QUICK-REFERENCE.md](SECRETS-QUICK-REFERENCE.md)
+2. **Complete Guide**: See [CI-CD-SETUP-GUIDE.md](CI-CD-SETUP-GUIDE.md)
+3. **Push to Deploy**: Every push to `main` triggers automatic deployment
+
+### **Workflow Features**
+✅ Automated testing and linting  
+✅ Multi-stage Docker builds  
+✅ Parallel cloud deployments  
+✅ Health checks and validation  
+✅ Integration testing across clouds  
+
+**Workflow Location**: `.github/workflows/multi-cloud-cicd.yml`
 
 ## ⚠️ **Disclaimer**
 
