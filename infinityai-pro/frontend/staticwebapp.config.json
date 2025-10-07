@@ -2,15 +2,15 @@
   "routes": [
     {
       "route": "/api/*",
-      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/api/*"
+      "rewrite": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/api/*"
     },
     {
       "route": "/health",
-      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/health"
+      "rewrite": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/health"
     },
     {
       "route": "/ws/*",
-      "rewrite": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/ws/*"
+      "rewrite": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/ws/*"
     }
   ],
   "navigationFallback": {

@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 # Your Application URLs
-BASE_URL = "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
+BASE_URL = "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
 DHAN_CLIENT_ID = "2508215064"
 
 # Test endpoints

@@ -2,12 +2,11 @@
 export const API_CONFIG = {
   "api": {
     "base_urls": {
-      "primary": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "engine_a": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "engine_a_alt": "https://infinityai-engine-a--0000006.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "engine_b": "https://engine-b-service-infinityai.run.app",
-      "engine_c": "https://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8002", 
-      "engine_d": "https://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8000"
+            "primary": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
+            "engine_a": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+            "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app",
+            "engine_c": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+            "engine_d": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
     },
     "endpoints": {
       "health": "/health",
@@ -16,11 +15,11 @@ export const API_CONFIG = {
       "trading": "/api/trading",
       "websocket": "/ws"
     },
-    "fallback_strategy": "azure_primary"
+        "fallback_strategy": "aws_primary"
   },
   "deployment": {
     "environment": "production",
-    "clouds": ["azure", "aws", "gcp"],
+        "clouds": ["aws", "gcp"],
     "eliminated": ["vercel"],
     "last_updated": "2025-10-05T14:50:00Z"
   }
@@ -72,8 +71,8 @@ export const testAllEndpoints = async () => {
 export const getHealthyEndpoint = async () => {
     const testResults = await testAllEndpoints();
     
-    // Priority order: primary (Azure) -> engine_a_alt -> others
-    const priority = ['primary', 'engine_a_alt', 'engine_a', 'engine_b', 'engine_c', 'engine_d'];
+    // Priority order: primary (AWS Engine D) -> engine_d -> engine_c -> engine_a -> engine_b
+    const priority = ['primary', 'engine_d', 'engine_c', 'engine_a', 'engine_b'];
     
     for (const service of priority) {
         if (testResults[service]?.healthy) {

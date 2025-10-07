@@ -4,7 +4,7 @@
 Clear-Host
 Write-Host "🚀 InfinityAI.Pro Multi-Cloud Fix & Deployment Script" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Green
-Write-Host "This script will eliminate Vercel and fix your AWS, Azure, and GCP deployments"
+Write-Host "This script will eliminate Vercel and fix your AWS and GCP deployments"
 Write-Host ""
 
 # Function to check if command exists
@@ -30,7 +30,7 @@ function Write-Status {
 
 # Check prerequisites
 Write-Host "🔍 Checking prerequisites..." -ForegroundColor Yellow
-Write-Status (Test-CommandExists "az") "Azure CLI found"
+Write-Status $false "Azure CLI not required (removed)"
 Write-Status (Test-CommandExists "aws") "AWS CLI found"
 Write-Status (Test-CommandExists "gcloud") "Google Cloud CLI found"
 Write-Status (Test-CommandExists "python") "Python found"
@@ -38,7 +38,7 @@ Write-Status (Test-CommandExists "docker") "Docker found"
 
 Write-Host ""
 Write-Host "📋 Available Fix Operations:" -ForegroundColor Cyan
-Write-Host "1. Fix Azure Static Web App (Frontend)"
+Write-Host "1. Frontend (AWS S3/CloudFront)"
 Write-Host "2. Fix AWS ECS Services (Engines C & D)"
 Write-Host "3. Deploy GCP Engine B"
 Write-Host "4. Update frontend configuration (eliminate Vercel)"
@@ -50,18 +50,8 @@ $choice = Read-Host "Enter your choice (1-6)"
 
 switch ($choice) {
     "1" {
-        Write-Host "🔵 Fixing Azure Static Web App..." -ForegroundColor Blue
-        Write-Host "Current working Azure endpoints:" -ForegroundColor Green
-        Write-Host "  ✅ Engine A: https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
-        Write-Host "  ✅ Engine A Alt: https://infinityai-engine-a--0000006.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
-        Write-Host ""
-        Write-Host "Azure CLI Commands to run:" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "# Delete old Static Web App" -ForegroundColor Gray
-        Write-Host "az staticwebapp delete --name brave-ocean-09e85cd10 --resource-group infinityai-rg --yes" -ForegroundColor White
-        Write-Host ""
-        Write-Host "# Create new Static Web App" -ForegroundColor Gray  
-        Write-Host "az staticwebapp create --name infinityai-frontend-prod --resource-group infinityai-rg --source ./infinityai-pro/frontend --location centralus --branch main" -ForegroundColor White
+        Write-Host "� Frontend is hosted on AWS S3 (and optional CloudFront)." -ForegroundColor Cyan
+        Write-Host "Use scripts/deploy_frontend_aws.ps1 to sync and optionally set CloudFront later." -ForegroundColor Yellow
     }
     
     "2" {
@@ -96,10 +86,7 @@ switch ($choice) {
         Write-Host "  ✅ infinityai-pro/frontend/staticwebapp.config.json" -ForegroundColor Green
         Write-Host "  ✅ infinityai-pro/frontend/src/config/api-config.js" -ForegroundColor Green
         Write-Host ""
-        Write-Host "The frontend now points to:" -ForegroundColor Cyan
-        Write-Host "  - Primary: Azure Container App (working)" -ForegroundColor Green
-        Write-Host "  - Fallback: Azure Container App Alt (working)" -ForegroundColor Green
-        Write-Host "  - Vercel endpoints: ELIMINATED" -ForegroundColor Red
+    Write-Host "The frontend now points to Engine D (AWS) as single backend. Vercel eliminated." -ForegroundColor Cyan
     }
     
     "5" {
@@ -132,11 +119,7 @@ switch ($choice) {
         Write-Host ""
         
         # Step 3
-        Write-Host "Step 3/5: 🔵 Azure Frontend Fix Commands" -ForegroundColor Blue
-        Write-Host "Run this command to fix your Azure Static Web App:" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host "az staticwebapp create --name infinityai-frontend-prod --resource-group infinityai-rg --source ./infinityai-pro/frontend --location centralus --branch main" -ForegroundColor White
-        Write-Host ""
+    # Azure frontend removed
         
         # Step 4
         Write-Host "Step 4/5: 🟠 AWS ECS Fix Commands" -ForegroundColor DarkYellow
@@ -153,14 +136,13 @@ switch ($choice) {
         Write-Host ""
         
         Write-Host "🎯 Summary of Changes Made:" -ForegroundColor Magenta
-        Write-Host "✅ Vercel dependencies eliminated" -ForegroundColor Green
-        Write-Host "✅ Frontend configured for multi-cloud" -ForegroundColor Green
-        Write-Host "✅ Azure endpoints working (Engine A)" -ForegroundColor Green
+    Write-Host "✅ Vercel dependencies eliminated" -ForegroundColor Green
+    Write-Host "✅ Frontend configured to Engine D (AWS)" -ForegroundColor Green
         Write-Host "⚠️ AWS ECS needs manual restart" -ForegroundColor Yellow
         Write-Host "⚠️ GCP Engine B needs deployment" -ForegroundColor Yellow
         Write-Host ""
         Write-Host "📄 Generated files:" -ForegroundColor Cyan
-        Write-Host "  - azure_frontend_fix.sh"
+    # Azure helper removed
         Write-Host "  - aws_ecs_fix.sh"
         Write-Host "  - gcp_engine_b_deploy.sh"
         Write-Host "  - multi-cloud-config.json"

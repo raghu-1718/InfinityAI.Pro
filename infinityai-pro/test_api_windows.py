@@ -18,7 +18,7 @@ def test_chatbot():
     
     try:
         response = requests.post(
-            "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/api/chatbot/chat",
+            "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/api/chatbot/chat",
             json=payload,
             timeout=15
         )
@@ -42,7 +42,7 @@ def test_health():
     
     try:
         response = requests.get(
-            "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io/health",
+            "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/health",
             timeout=10
         )
         
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     print("🎯 Access your application at:")
     print("📱 https://infinity-ai-9utba60h7-infinityaipro.vercel.app")
     print("🔗 https://infinityai.pro (if DNS is ready)")
-    print("🛠️ API: https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io")
+    print("🛠️ API: http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d")

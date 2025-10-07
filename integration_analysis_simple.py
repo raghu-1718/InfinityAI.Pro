@@ -11,11 +11,11 @@ from datetime import datetime
 
 # Current Live URLs from deployment reports
 URLS = {
-    "frontend_azure": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
-    "backend_azure": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-    "engine_d_vercel": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app",
-    "frontend_vercel": "https://infinityai-pro-frontend-n53xfzqol-infinityaipro.vercel.app",
-    "local_backend": "http://localhost:8000"
+    "frontend_aws": "http://infinityai-pro-frontend.s3-website-us-east-1.amazonaws.com",
+    "engine_d_alb": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
+    "engine_c_alb": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+    "engine_a_gcp": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+    "engine_b_gcp": "https://infinityai-engine-b-573866363639.us-central1.run.app"
 }
 
 def test_url(name, url):

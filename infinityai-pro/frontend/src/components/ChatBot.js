@@ -18,7 +18,10 @@ import {
   Send,
   SmartToy,
   Person,
-  Clear
+  Clear,
+  Notifications,
+  AccountBalance,
+  TrendingUp
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 

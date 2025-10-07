@@ -645,6 +645,72 @@ async def health_check():
         }
     }
 
+# ALB path alias for Engine D
+@app.get("/engine-d/health")
+async def health_check_alias():
+    return await health_check()
+
+@app.get("/dashboard/summary")
+async def dashboard_summary():
+    """Aggregate status for frontend: engine health, portfolio availability, ultra mode status (proxied)."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            # Engine C system status
+            sys_status = None
+            try:
+                r = await client.get(f"{ENGINE_C_URL}/status")
+                if r.status_code == 200:
+                    sys_status = r.json()
+            except Exception:
+                pass
+            # Build summary
+            return {
+                "engine_d": "healthy",
+                "engine_c_status": sys_status or {"status": "unknown"},
+                "ultra_aggressive_mode": False,
+                "app_health": "healthy" if sys_status else "degraded"
+            }
+    except Exception:
+        return {
+            "engine_d": "healthy",
+            "engine_c_status": {"status": "unreachable"},
+            "ultra_aggressive_mode": False,
+            "app_health": "degraded"
+        }
+
+@app.post("/ultra/toggle")
+async def ultra_toggle(mode: bool):
+    """Proxy toggle of ultra mode to Engine C so frontend can call single backend (Engine D)."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.post(f"{ENGINE_C_URL}/ultra/toggle", params={"mode": str(bool(mode)).lower()})
+            return r.json() if r.status_code == 200 else {"status": "error"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/trading/start")
+async def trading_start():
+    """Enable live trading by clearing Engine C global kill switch."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            # Deactivate GLOBAL kill switch
+            r = await client.delete(f"{ENGINE_C_URL}/kill-switch/GLOBAL")
+            ok = r.status_code == 200
+            return {"status": "ok" if ok else "error"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+@app.post("/trading/stop")
+async def trading_stop(reason: str = "user_request"):
+    """Disable live trading by activating Engine C global kill switch."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.post(f"{ENGINE_C_URL}/kill-switch/GLOBAL", json={"switch_type":"GLOBAL","reason": reason})
+            ok = r.status_code == 200
+            return {"status": "ok" if ok else "error"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.post("/chat")
 async def chat_endpoint(chat_message: ChatMessage):
     """Main chat endpoint"""

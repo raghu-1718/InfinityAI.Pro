@@ -11,6 +11,7 @@ Responsibilities:
 """
 
 import asyncio
+import os
 import json
 import time
 import logging
@@ -22,15 +23,16 @@ from contextlib import asynccontextmanager
 import pandas as pd
 import numpy as np
 import websockets
-import aioredis
-import asyncpg
-from aiokafka import AIOKafkaProducer
-from aiokafka.errors import KafkaError
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+import redis.asyncio as aioredis  # type: ignore
+import asyncpg  # type: ignore
+from aiokafka import AIOKafkaProducer  # type: ignore
+from aiokafka.errors import KafkaError  # type: ignore
+from fastapi import FastAPI, HTTPException  # type: ignore
+import httpx  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+import uvicorn  # type: ignore
 
-# Configuration
+# Configuration / Utilities (module-local utils package)
 from utils.config import get_settings
 from utils.logging_config import setup_logging
 from utils.metrics import MetricsCollector
@@ -46,9 +48,10 @@ settings = get_settings()
 kafka_producer: Optional[AIOKafkaProducer] = None
 redis_client: Optional[aioredis.Redis] = None
 postgres_pool: Optional[asyncpg.Pool] = None
-metrics_collector: MetricsCollector = None
-circuit_breaker: CircuitBreaker = None
-backoff_strategy: ExponentialBackoff = None
+metrics_collector: Optional[MetricsCollector] = None
+circuit_breaker: Optional[CircuitBreaker] = None
+backoff_strategy: Optional[ExponentialBackoff] = None
+ENGINE_B_URL = os.getenv("ENGINE_B_URL")
 
 # Event Bus Topics
 KAFKA_TOPICS = {
@@ -88,7 +91,7 @@ class Signal:
     quantity: Optional[int] = None
     strategy_name: str = "engine-a-v1"
     engine_name: str = "ENGINE_A"
-    metadata: Dict[str, Any] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -154,9 +157,9 @@ class TechnicalIndicators:
         std = np.std(prices)
         
         return {
-            'upper': sma + (std_dev * std),
-            'middle': sma,
-            'lower': sma - (std_dev * std)
+            'upper': float(sma + (std_dev * std)),
+            'middle': float(sma),
+            'lower': float(sma - (std_dev * std))
         }
     
     def generate_signals(self, symbol: str, current_price: float) -> List[Signal]:
@@ -169,7 +172,7 @@ class TechnicalIndicators:
         ema_slow = self.calculate_ema(symbol, 21)
         bb_bands = self.calculate_bollinger_bands(symbol)
         
-        if not all([rsi, ema_fast, ema_slow, bb_bands]):
+        if rsi is None or ema_fast is None or ema_slow is None or bb_bands is None:
             return signals
             
         current_time = time.time()
@@ -220,9 +223,11 @@ class TechnicalIndicators:
             signals.append(signal)
         
         # EMA crossover signals
-        if len(self.price_history[symbol]) >= 2:
-            prev_ema_fast = self.calculate_ema(symbol[:-1], 9) if len(symbol) > 1 else ema_fast
-            prev_ema_slow = self.calculate_ema(symbol[:-1], 21) if len(symbol) > 1 else ema_slow
+        if len(self.price_history[symbol]) >= 22:  # ensure enough data for previous EMA comparison
+            # Compute previous EMAs using all but last price
+            prev_prices = np.array(self.price_history[symbol][:-1])
+            prev_ema_fast = float(pd.Series(prev_prices).ewm(span=9).mean().iloc[-1])
+            prev_ema_slow = float(pd.Series(prev_prices).ewm(span=21).mean().iloc[-1])
             
             # Bullish crossover
             if (ema_fast > ema_slow and 
@@ -275,7 +280,7 @@ class LocalBuffer:
         try:
             if not os.path.exists(self.buffer_file):
                 return 0
-                
+            
             replayed_count = 0
             with open(self.buffer_file, 'r') as f:
                 for line in f:
@@ -361,7 +366,8 @@ async def publish_signal_with_retry(signal: Signal, max_retries: int = 3):
             # Record success metrics
             if metrics_collector:
                 await metrics_collector.increment('signals_published_total', tags={'symbol': signal.symbol})
-                await metrics_collector.record_latency('signal_publish_latency', time.time() - signal.timestamp)
+                # Record latency in milliseconds
+                await metrics_collector.timing('signal_publish_latency', (time.time() - signal.timestamp) * 1000.0)
             
             logger.debug(f"Published signal {signal.signal_id} for {signal.symbol}")
             return True
@@ -385,6 +391,16 @@ async def publish_signal_with_retry(signal: Signal, max_retries: int = 3):
             
         except Exception as e:
             logger.error(f"Unexpected error publishing signal: {e}")
+            # Try HTTP fallback to Engine B if configured
+            if ENGINE_B_URL:
+                try:
+                    async with httpx.AsyncClient(timeout=5.0) as client:
+                        resp = await client.post(f"{ENGINE_B_URL}/ingest/signal", json=signal.to_dict())
+                        if resp.status_code < 300:
+                            logger.info("Signal forwarded to Engine B via HTTP fallback")
+                            return True
+                except Exception as he:
+                    logger.warning(f"HTTP fallback failed: {he}")
             await local_buffer.store_signal(signal)
             return False
     
@@ -544,53 +560,83 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Engine A - Market Data Ingestion Service")
     
+    # Initialize components (keep startup fast for serverless)
     try:
-        # Initialize components
         await local_buffer.initialize()
-        
-        # Initialize Redis
-redis_client = None
-try:
-    redis_client = redis.from_url(REDIS_URL)
-    redis_client.ping()
-except redis.exceptions.ConnectionError as e:
-    logger.warning(f"Could not connect to Redis: {e}")
-        await redis_client.ping()
-        logger.info("Redis connection established")
-        
-        # Initialize PostgreSQL
-        postgres_pool = await asyncpg.create_pool(settings.DATABASE_URL)
-        logger.info("PostgreSQL connection pool created")
-        
-        # Initialize metrics collector
+    except Exception as e:
+        logger.warning(f"Local buffer init failed (continuing): {e}")
+
+    # Initialize Redis (non-fatal if unavailable) with small timeout
+    redis_client = None
+    try:
+        if settings and getattr(settings, 'REDIS_URL', None):
+            redis_client = aioredis.from_url(settings.REDIS_URL)
+            try:
+                await asyncio.wait_for(redis_client.ping(), timeout=1.0)
+                logger.info("Redis connection established")
+            except Exception as re:
+                logger.warning(f"Redis ping failed (continuing): {re}")
+        else:
+            logger.info("REDIS_URL not configured; proceeding without Redis")
+    except Exception as e:
+        logger.warning(f"Could not connect to Redis (continuing): {e}")
+    
+    # Initialize PostgreSQL (optional on serverless) with small timeout
+    postgres_pool = None
+    try:
+        if settings and getattr(settings, 'DATABASE_URL', None):
+            try:
+                postgres_pool = await asyncio.wait_for(asyncpg.create_pool(settings.DATABASE_URL), timeout=2.0)
+                logger.info("PostgreSQL connection pool created")
+            except Exception as pe:
+                logger.warning(f"PostgreSQL init timeout/failure (continuing): {pe}")
+    except Exception as e:
+        logger.warning(f"PostgreSQL init failed (continuing): {e}")
+    
+    # Initialize metrics collector (works even if redis_client is None)
+    try:
         metrics_collector = MetricsCollector(redis_client)
-        
-        # Initialize circuit breaker
+    except Exception as e:
+        logger.warning(f"Metrics collector init failed (continuing): {e}")
+        metrics_collector = None
+    
+    # Initialize circuit breaker
+    try:
         circuit_breaker = CircuitBreaker(
             failure_threshold=5,
             recovery_timeout=60,
             half_open_max_calls=3
         )
-        
-        # Initialize Kafka producer
-        await initialize_kafka_producer()
-        
-        # Replay any buffered signals
-        await local_buffer.replay_buffered_signals()
-        
-        # Start background tasks
+    except Exception as e:
+        logger.warning(f"Circuit breaker init failed (continuing): {e}")
+        circuit_breaker = None
+    
+    # Initialize Kafka producer in background to avoid blocking startup
+    try:
+        asyncio.create_task(initialize_kafka_producer())
+    except Exception as e:
+        logger.warning(f"Kafka producer background init failed (continuing): {e}")
+        kafka_producer = None
+    
+    # Replay any buffered signals in background (non-blocking)
+    try:
+        asyncio.create_task(local_buffer.replay_buffered_signals())
+    except Exception as e:
+        logger.warning(f"Scheduling replay buffered signals failed (continuing): {e}")
+    
+    # Start background tasks
+    try:
         asyncio.create_task(dhan_websocket_listener())
         asyncio.create_task(send_heartbeat())
-        
-        logger.info("Engine A initialized successfully")
-        
-        yield
-        
     except Exception as e:
-        logger.error(f"Engine A startup failed: {e}")
-        raise
+        logger.warning(f"Failed to start background tasks (continuing): {e}")
     
-    finally:
+    logger.info("Engine A initialized (degraded mode possible)")
+    
+    # Yield control to application so server can start listening immediately
+    yield
+    
+    try:
         # Shutdown
         logger.info("Shutting down Engine A")
         
@@ -602,6 +648,8 @@ except redis.exceptions.ConnectionError as e:
             await postgres_pool.close()
         
         logger.info("Engine A shutdown completed")
+    except Exception as e:
+        logger.warning(f"Error during shutdown: {e}")
 
 # FastAPI app
 app = FastAPI(

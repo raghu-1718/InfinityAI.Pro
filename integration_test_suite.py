@@ -24,11 +24,12 @@ class InfinityAIIntegrationTester:
     def __init__(self):
         # Current deployment URLs
         self.urls = {
-            "frontend_azure": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
-            "backend_azure": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-            "engine_d_vercel": "https://infinity-backend-9z59tyitb-infinityaipro.vercel.app",
-            "frontend_vercel": "https://infinityai-pro-frontend-n53xfzqol-infinityaipro.vercel.app",
-            "aws_alb": "infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com"
+            "frontend_aws": "http://infinityai-pro-frontend.s3-website-us-east-1.amazonaws.com",
+            "engine_d_alb": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
+            "engine_c_alb": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+            "engine_a_gcp": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+            "engine_b_gcp": "https://infinityai-engine-b-573866363639.us-central1.run.app",
+            "aws_alb": "infinityai-alb-124143296.us-east-1.elb.amazonaws.com"
         }
         
         # Test results
@@ -225,7 +226,7 @@ class InfinityAIIntegrationTester:
     
     async def test_chatbot_functionality(self) -> Dict[str, Any]:
         """Test AI chatbot functionality"""
-        chatbot_url = f"{self.urls['engine_d_vercel']}/chat"
+        chatbot_url = f"{self.urls['engine_d_alb']}/chat"
         
         test_messages = [
             {"message": "Hello, how are you?", "expected_response_contains": ["hello", "hi", "help"]},
@@ -291,8 +292,8 @@ class InfinityAIIntegrationTester:
     
     async def test_websocket_connection(self) -> Dict[str, Any]:
         """Test WebSocket connectivity"""
-        # Try WebSocket connection to Engine D
-        ws_url = self.urls["engine_d_vercel"].replace("https://", "wss://") + "/ws/integration_test"
+        # Try WebSocket connection to Engine D via ALB
+        ws_url = self.urls["engine_d_alb"].replace("http://", "ws://") + "/ws/integration_test"
         
         try:
             async with websockets.connect(ws_url, timeout=10) as websocket:
@@ -336,7 +337,7 @@ class InfinityAIIntegrationTester:
     async def test_cross_engine_communication(self) -> Dict[str, Any]:
         """Test communication between engines"""
         # Test if Engine D can communicate with other engines
-        engine_d_url = f"{self.urls['engine_d_vercel']}/chat"
+        engine_d_url = f"{self.urls['engine_d_alb']}/chat"
         
         # Send a message that should trigger cross-engine communication
         payload = {
@@ -383,7 +384,7 @@ class InfinityAIIntegrationTester:
     
     async def test_load_balancer_health(self) -> Dict[str, Any]:
         """Test AWS Load Balancer health"""
-        alb_url = f"http://{self.urls['aws_alb']}/health"
+        alb_url = f"http://{self.urls['aws_alb']}/engine-d/health"
         
         try:
             async with self.session.get(alb_url) as response:
@@ -407,43 +408,25 @@ class InfinityAIIntegrationTester:
         logger.info("🚀 Starting InfinityAI.Pro Comprehensive Integration Tests")
         logger.info("=" * 80)
         
-        # Test 1: Frontend Accessibility
+        # Test 1: Frontend Accessibility (AWS S3 Website)
         await self.run_test(
-            "Frontend Azure Accessibility",
+            "Frontend AWS S3 Accessibility",
             self.test_frontend_accessibility,
-            "frontend_azure"
-        )
-        
-        await self.run_test(
-            "Frontend Vercel Accessibility", 
-            self.test_frontend_accessibility,
-            "frontend_vercel"
+            "frontend_aws"
         )
         
         # Test 2: Backend Health Checks
         await self.run_test(
-            "Backend Azure Health",
+            "Engine D ALB Health",
             self.test_backend_health,
-            "backend_azure"
-        )
-        
-        await self.run_test(
-            "Engine D Vercel Health",
-            self.test_backend_health,
-            "engine_d_vercel"
+            "engine_d_alb"
         )
         
         # Test 3: API Endpoint Testing
         await self.run_test(
-            "Backend Azure API Endpoints",
+            "Engine D API Endpoints (ALB)",
             self.test_api_endpoints,
-            "backend_azure"
-        )
-        
-        await self.run_test(
-            "Engine D Vercel API Endpoints",
-            self.test_api_endpoints,
-            "engine_d_vercel"
+            "engine_d_alb"
         )
         
         # Test 4: AI Chatbot Functionality

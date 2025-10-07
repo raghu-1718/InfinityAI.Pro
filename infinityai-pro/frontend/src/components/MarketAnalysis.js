@@ -20,14 +20,20 @@ import {
   IconButton,
   Alert,
   LinearProgress,
-  Divider
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   TrendingUp,
   TrendingDown,
   Refresh,
   Timeline,
-  Assessment
+  Assessment,
+  ShowChart,
+  Insights
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -36,7 +42,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  BarChart,
+  Bar
 } from 'recharts';
 
 const MarketAnalysis = ({ apiUrl }) => {

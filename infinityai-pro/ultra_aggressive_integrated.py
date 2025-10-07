@@ -31,10 +31,10 @@ logger = logging.getLogger(__name__)
 
 # Engine URLs for integration - REAL ENDPOINTS
 ENGINE_URLS = {
-    "engine_a": os.getenv("ENGINE_A_URL", "https://infinityai-engine-a.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"),
+    "engine_a": os.getenv("ENGINE_A_URL", "https://infinityai-engine-a-573866363639.us-central1.run.app"),
     "engine_b": os.getenv("ENGINE_B_URL", "https://infinityai-engine-b-573866363639.us-central1.run.app"), 
-    "engine_c": os.getenv("ENGINE_C_URL", "https://infinityai-engine-c.amazonaws.com"),
-    "engine_d": os.getenv("ENGINE_D_URL", "https://infinityai-engine-d.amazonaws.com")
+    "engine_c": os.getenv("ENGINE_C_URL", "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c"),
+    "engine_d": os.getenv("ENGINE_D_URL", "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d")
 }
 
 # Dhan API Configuration - REAL CREDENTIALS

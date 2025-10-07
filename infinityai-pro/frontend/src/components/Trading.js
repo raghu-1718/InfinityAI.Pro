@@ -38,7 +38,10 @@ import {
   Send,
   Cancel,
   History,
-  Refresh
+  Refresh,
+  CheckCircle,
+  ErrorOutline,
+  Schedule
 } from '@mui/icons-material';
 
 const Trading = ({ apiUrl, userId }) => {

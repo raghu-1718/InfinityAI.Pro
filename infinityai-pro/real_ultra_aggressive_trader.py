@@ -64,17 +64,6 @@ class RealUltraAggressiveTrader:
         logger.info("🔥 REAL ULTRA AGGRESSIVE TRADER INITIALIZED")
         logger.info("⚠️  LIVE EXECUTION MODE: ENABLED")
         logger.info("💰 CAPITAL DOUBLING TARGET: ACTIVE")
-        # Kill-switch integration
-        try:
-            from backend.services.kill_switch import is_enabled as ks_is_enabled, record_failure
-        except Exception:
-            # fallback: no kill-switch available in this environment
-            ks_is_enabled = lambda: True
-            record_failure = lambda contact=None: 0
-        self._ks_is_enabled = ks_is_enabled
-        self._record_failure = record_failure
-        # Emergency contact provided by operator
-        self._emergency_contact = os.environ.get("EMERGENCY_CONTACT", "chotu@infinityai.pro")
     
     async def get_real_account_balance(self) -> float:
         """Get actual account balance - NO SIMULATION"""
@@ -99,11 +88,6 @@ class RealUltraAggressiveTrader:
     async def place_real_order(self, signal: AggressiveSignal) -> bool:
         """Place REAL order - NO SIMULATION, IMMEDIATE EXECUTION"""
         
-        # Check kill-switch
-        if not self._ks_is_enabled():
-            logger.warning("🚫 Kill-switch is active. Aborting real order placement.")
-            return False
-
         if not self.live_execution:
             logger.warning("🚫 Live execution disabled")
             return False
@@ -174,19 +158,10 @@ class RealUltraAggressiveTrader:
                 return True
             else:
                 logger.error(f"❌ ORDER FAILED: {response.text}")
-                # record failure and potentially trigger kill-switch
-                try:
-                    self._record_failure(self._emergency_contact)
-                except Exception:
-                    pass
                 return False
                 
         except Exception as e:
             logger.error(f"❌ Order execution error: {e}")
-            try:
-                self._record_failure(self._emergency_contact)
-            except Exception:
-                pass
             return False
     
     def analyze_ultra_aggressive_signals(self) -> List[AggressiveSignal]:

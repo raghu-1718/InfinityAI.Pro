@@ -23,7 +23,12 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Save,
@@ -39,7 +44,8 @@ import {
   Palette,
   AccountCircle,
   ApiSharp,
-  Storage
+  Storage,
+  Speed
 } from '@mui/icons-material';
 
 const Settings = ({ apiUrl, userId }) => {
@@ -123,7 +129,6 @@ const Settings = ({ apiUrl, userId }) => {
     { value: 'iex_cloud', label: 'IEX Cloud' },
     { value: 'finnhub', label: 'Finnhub' },
     { value: 'openai', label: 'OpenAI' },
-    { value: 'azure_openai', label: 'Azure OpenAI' },
     { value: 'anthropic', label: 'Anthropic Claude' }
   ];
 

@@ -893,6 +893,11 @@ async def health_check():
     
     return status
 
+# ALB path alias for Engine C health
+@app.get("/engine-c/health")
+async def health_check_alias():
+    return await health_check()
+
 @app.post("/internal/submit_trade")
 async def submit_trade_internal(trade_request: TradeRequestModel):
     """Internal API for trade submission"""
@@ -966,6 +971,65 @@ async def get_metrics():
         raise HTTPException(status_code=503, detail="Metrics collector not initialized")
     
     return await metrics_collector.get_all_metrics()
+
+@app.get("/status")
+async def get_system_status():
+    """Get overall system status aggregated from dependencies"""
+    try:
+        status = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "engines": {},
+            "services": {}
+        }
+        # Probe Engine A and B if URLs are provided via env (optional wiring)
+        engine_a_url = os.getenv("ENGINE_A_URL")
+        engine_b_url = os.getenv("ENGINE_B_URL")
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            if engine_a_url:
+                try:
+                    ra = await client.get(f"{engine_a_url}/health")
+                    status["engines"]["engine_a"] = ra.json() if ra.status_code == 200 else {"status": "error"}
+                except Exception:
+                    status["engines"]["engine_a"] = {"status": "unreachable"}
+            if engine_b_url:
+                try:
+                    rb = await client.get(f"{engine_b_url}/health")
+                    status["engines"]["engine_b"] = rb.json() if rb.status_code == 200 else {"status": "error"}
+                except Exception:
+                    status["engines"]["engine_b"] = {"status": "unreachable"}
+        # Local services
+        status["services"]["redis"] = {"status": "connected" if redis_client else "unknown"}
+        status["services"]["database"] = {"status": "connected" if postgres_pool else "unknown"}
+        return status
+    except Exception:
+        return {"status": "error"}
+
+@app.get("/engine-c/status")
+async def get_system_status_alias():
+    return await get_system_status()
+
+@app.get("/dashboard/summary")
+async def dashboard_summary():
+    s = await get_system_status()
+    overall = "healthy" if all((v.get("status") == "healthy" or v.get("status") == True)
+                                 for v in s.get("engines", {}).values()) else "degraded"
+    return {
+        "app_health": overall,
+        "engines": s.get("engines", {}),
+        "services": s.get("services", {})
+    }
+
+@app.get("/engine-c/dashboard/summary")
+async def dashboard_summary_alias():
+    return await dashboard_summary()
+
+ULTRA_MODE = os.getenv("ULTRA_AGGRESSIVE_MODE", "false").lower() == "true"
+
+@app.post("/ultra/toggle")
+async def toggle_ultra(mode: bool):
+    global ULTRA_MODE
+    ULTRA_MODE = bool(mode)
+    return {"status": "ok", "ultra_aggressive_mode": ULTRA_MODE}
 
 @app.post("/circuit-breaker/{breaker_type}/reset")
 async def reset_circuit_breaker(breaker_type: str):

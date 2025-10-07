@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libffi-dev \
     libcurl4-openssl-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -66,6 +67,8 @@ WORKDIR /app
 # Copy Python packages from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+# Ensure dynamic libs path
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 
 # Copy application code
 COPY . .
@@ -87,35 +90,7 @@ USER infinityai
 # Expose port
 EXPOSE 8000
 
-# Default command for production
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-config /app/utils/logging_config.json"]
+# Default command for production (use app logging setup; no external log-config file)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
 
-# Development stage (for debugging)
-FROM production as development
-
-# Switch back to root for development tools
-USER root
-
-# Install development dependencies
-RUN pip install --no-cache-dir \
-    pytest \
-    pytest-asyncio \
-    pytest-mock \
-    black \
-    isort \
-    mypy \
-    flake8 \
-    debugpy
-
-# Install additional development tools
-RUN apt-get update && apt-get install -y \
-    vim \
-    git \
-    htop \
-    && rm -rf /var/lib/apt/lists/*
-
-# Switch back to app user
-USER infinityai
-
-# Development command
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+# Note: Development stage removed to ensure production image is built by default.

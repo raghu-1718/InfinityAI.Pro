@@ -50,6 +50,7 @@ ENGINE_A_URL = os.getenv("ENGINE_A_URL", "http://localhost:8001")
 ENGINE_B_URL = os.getenv("ENGINE_B_URL", "http://localhost:8002")
 ENGINE_D_URL = os.getenv("ENGINE_D_URL", "http://localhost:8004")
 JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
+ULTRA_MODE = os.getenv("ULTRA_AGGRESSIVE_MODE", "false").lower() == "true"
 
 # Initialize connections
 redis_client = redis.from_url(REDIS_URL)
@@ -495,6 +496,11 @@ async def health_check():
         "version": "1.0.0"
     }
 
+# ALB path alias
+@app.get("/engine-c/health")
+async def health_check_alias():
+    return await health_check()
+
 @app.post("/tokens/register")
 async def register_broker_token(token_data: TokenRegistration):
     """Register broker token for user"""
@@ -603,6 +609,32 @@ async def get_orders(user_id: str, limit: int = 50):
 async def get_system_status():
     """Get overall system status"""
     return await orchestration_service.get_system_status()
+
+@app.get("/engine-c/status")
+async def get_system_status_alias():
+    return await get_system_status()
+
+@app.get("/dashboard/summary")
+async def dashboard_summary():
+    """Summarized health/status for frontend: engines, ultra mode, app health."""
+    status = await orchestration_service.get_system_status()
+    return {
+        "app_health": "healthy" if all((v.get("status") == "healthy" or v.get("status") == True) for v in status.get("engines", {}).values()) else "degraded",
+        "ultra_aggressive_mode": ULTRA_MODE,
+        "engines": status.get("engines", {}),
+        "services": status.get("services", {})
+    }
+
+@app.get("/engine-c/dashboard/summary")
+async def dashboard_summary_alias():
+    return await dashboard_summary()
+
+@app.post("/ultra/toggle")
+async def toggle_ultra(mode: bool):
+    """Toggle ultra aggressive mode on/off."""
+    global ULTRA_MODE
+    ULTRA_MODE = bool(mode)
+    return {"status": "ok", "ultra_aggressive_mode": ULTRA_MODE}
 
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):

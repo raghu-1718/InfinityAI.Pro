@@ -979,6 +979,50 @@ async def get_metrics():
     
     return await metrics_collector.get_all_metrics()
 
+# --- HTTP ingestion for signals when Kafka is unavailable ---
+class IngestSignal(BaseModel):
+    symbol: str
+    timestamp: float
+    signal_type: str
+    confidence: float
+    price: float
+    volume: int = 0
+    indicators: Dict[str, float] = {}
+    metadata: Dict[str, Any] = {}
+
+@app.post("/ingest/signal")
+async def ingest_signal(signal: IngestSignal):
+    """HTTP endpoint to ingest a market signal if Kafka is not reachable.
+    Processes through AI pipeline and returns AI signal payload.
+    """
+    try:
+        market_signal = MarketSignal(
+            symbol=signal.symbol,
+            timestamp=signal.timestamp,
+            signal_type=signal.signal_type,
+            confidence=signal.confidence,
+            price=signal.price,
+            volume=signal.volume,
+            indicators=signal.indicators,
+            metadata=signal.metadata
+        )
+        # Try to get historical data; if unavailable, use empty DataFrame
+        hist = await get_historical_data(market_signal.symbol)
+        if ai_processor is None:
+            # Fallback without AI
+            await publish_fallback_signal(market_signal)
+            return {"status": "accepted", "mode": "fallback"}
+        ai_sig = await ai_processor.process_signal(market_signal, hist)
+        # Publish if producer available
+        try:
+            await publish_ai_signal(ai_sig)
+        except Exception:
+            pass
+        return {"status": "accepted", "mode": "ai", "ai_signal": asdict(ai_sig)}
+    except Exception as e:
+        logger.error(f"HTTP ingest failed: {e}")
+        raise HTTPException(status_code=500, detail="ingest_failed")
+
 if __name__ == "__main__":
     uvicorn.run(
         app,

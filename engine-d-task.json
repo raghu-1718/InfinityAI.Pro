@@ -1,0 +1,50 @@
+{
+  "family": "infinityai-engine-d",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::152687308610:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "infinityai-engine-d",
+      "image": "152687308610.dkr.ecr.us-east-1.amazonaws.com/infinityai-pro-backend:infinityai-engine-d",
+      "portMappings": [
+        {
+          "protocol": "tcp",
+          "containerPort": 8004
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "value": "8004",
+          "name": "PORT"
+        },
+        {
+          "value": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+          "name": "ENGINE_A_URL"
+        },
+        {
+          "value": "https://infinityai-engine-b-573866363639.us-central1.run.app",
+          "name": "ENGINE_B_URL"
+        },
+        {
+          "value": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+          "name": "ENGINE_C_URL"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8004/health || exit 1"
+        ],
+        "retries": 3,
+        "timeout": 5,
+        "interval": 30
+      }
+    }
+  ]
+}

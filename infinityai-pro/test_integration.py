@@ -13,9 +13,9 @@ from datetime import datetime
 # Engine endpoints
 ENGINES = {
     "engine_a": {
-        "name": "Market Data Ingestion (Azure)",
-        "endpoint": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-        "cloud": "Azure"
+    "name": "Engine D via ALB",
+    "endpoint": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
+    "cloud": "AWS"
     },
     "engine_b": {
         "name": "AI Signal Processing (GCP)",

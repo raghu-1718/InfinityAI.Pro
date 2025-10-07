@@ -18,7 +18,11 @@ import {
   TrendingUp,
   AccountBalance,
   Notifications,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  SmartToy,
+  Timeline,
+  Chat,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 
 import Portfolio from './components/Portfolio';

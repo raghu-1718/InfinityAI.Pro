@@ -1,0 +1,104 @@
+{
+  "timestamp": "2025-10-07T14:23:08.051363",
+  "analysis_type": "NIFTY_OPTIONS_ANALYSIS",
+  "market_data": {
+    "symbol": "NIFTY 50",
+    "data_points": 30,
+    "analysis_period": "1 month"
+  },
+  "technical_indicators": {
+    "current_price": 22253.07,
+    "previous_price": 22348.62,
+    "price_change": -95.55,
+    "price_change_pct": -0.43,
+    "sma_20": 23634.37,
+    "sma_50": NaN,
+    "rsi": 23.7,
+    "macd": -539.3,
+    "macd_signal": -443.17,
+    "macd_histogram": -96.12,
+    "upper_bb": 25831.53,
+    "lower_bb": 21437.22,
+    "volatility": 19.48
+  },
+  "trend_analysis": {
+    "trend": "BEARISH",
+    "confidence": 85,
+    "trend_score": -2.5,
+    "signals": [
+      "Price below 20-day MA",
+      "20-day MA below 50-day MA (bearish)",
+      "Oversold (RSI < 30)",
+      "MACD below signal (bearish)"
+    ]
+  },
+  "options_recommendations": [
+    {
+      "symbol": "NIFTY07OCT22450PE",
+      "type": "PUT",
+      "action": "BUY",
+      "strike": 22450,
+      "spot_price": 22253.07,
+      "estimated_premium": 11185.61,
+      "confidence": 50.9,
+      "reasoning": "Bearish trend supports put buying. Strike near current price with good protection.",
+      "risk_level": "MEDIUM",
+      "potential_profit": "\u20b927964.04 (if NIFTY moves down 2%)",
+      "stop_loss": "\u20b93355.68 (30% loss)"
+    },
+    {
+      "symbol": "NIFTY07OCT22400PE",
+      "type": "PUT",
+      "action": "BUY",
+      "strike": 22400,
+      "spot_price": 22253.07,
+      "estimated_premium": 11170.61,
+      "confidence": 50.7,
+      "reasoning": "Bearish trend supports put buying. Strike near current price with good protection.",
+      "risk_level": "MEDIUM",
+      "potential_profit": "\u20b927926.54 (if NIFTY moves down 2%)",
+      "stop_loss": "\u20b93351.18 (30% loss)"
+    },
+    {
+      "symbol": "NIFTY07OCT22350PE",
+      "type": "PUT",
+      "action": "BUY",
+      "strike": 22350,
+      "spot_price": 22253.07,
+      "estimated_premium": 11155.61,
+      "confidence": 50.4,
+      "reasoning": "Bearish trend supports put buying. Strike near current price with good protection.",
+      "risk_level": "MEDIUM",
+      "potential_profit": "\u20b927889.04 (if NIFTY moves down 2%)",
+      "stop_loss": "\u20b93346.68 (30% loss)"
+    },
+    {
+      "symbol": "NIFTY07OCT22300PE",
+      "type": "PUT",
+      "action": "BUY",
+      "strike": 22300,
+      "spot_price": 22253.07,
+      "estimated_premium": 11140.61,
+      "confidence": 50.2,
+      "reasoning": "Bearish trend supports put buying. Strike near current price with good protection.",
+      "risk_level": "MEDIUM",
+      "potential_profit": "\u20b927851.54 (if NIFTY moves down 2%)",
+      "stop_loss": "\u20b93342.18 (30% loss)"
+    },
+    {
+      "symbol": "NIFTY07OCT22250PE",
+      "type": "PUT",
+      "action": "BUY",
+      "strike": 22250,
+      "spot_price": 22253.07,
+      "estimated_premium": 11125.61,
+      "confidence": 50.0,
+      "reasoning": "Bearish trend supports put buying. Strike near current price with good protection.",
+      "risk_level": "MEDIUM",
+      "potential_profit": "\u20b927814.04 (if NIFTY moves down 2%)",
+      "stop_loss": "\u20b93337.68 (30% loss)"
+    }
+  ],
+  "disclaimer": "\u26a0\ufe0f PAPER TRADING ANALYSIS ONLY - Not financial advice. Always do your own research.",
+  "risk_warning": "Options trading involves substantial risk of loss. Past performance does not guarantee future results."
+}

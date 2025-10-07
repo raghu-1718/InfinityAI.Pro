@@ -148,6 +148,7 @@ const Portfolio = ({ apiUrl, userId }) => {
     return value >= 0 ? <TrendingUp /> : <TrendingDown />;
   };
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 // Prepare data for charts
   const prepareAllocationData = () => {
     return positions.map(pos => ({

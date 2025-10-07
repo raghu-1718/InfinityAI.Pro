@@ -5,29 +5,9 @@
   "last_health_check": "2025-10-06T17:30:00Z",
   "clouds": {
     "azure": {
-      "enabled": true,
-      "region": "eastus",
-      "services": {
-        "engine_a": {
-          "type": "container_app",
-          "endpoint": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-          "health_endpoint": "/health",
-          "status": "operational",
-          "function": "market_data_ingestion",
-          "last_health_check": "healthy",
-          "connections": {
-            "engine_b": "https://infinityai-engine-b-bprmddefsa-uc.a.run.app",
-            "engine_c": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
-            "engine_d": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
-          }
-        },
-        "frontend": {
-          "type": "static_web_app",
-          "endpoint": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
-          "status": "needs_redeployment",
-          "function": "user_interface"
-        }
-      }
+      "enabled": false,
+      "region": null,
+      "services": {}
     },
     "aws": {
       "enabled": true,
@@ -36,7 +16,7 @@
         "engine_c": {
           "type": "ecs_container",
           "cluster": "infinityai-pro-cluster",
-          "service": "infinityai-engine-c-service", 
+          "service": "infinityai-engine-c-service",
           "port": 8003,
           "private_ip": "172.31.28.133",
           "endpoint": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
@@ -51,8 +31,8 @@
             "Health checks failing due to incorrect container image"
           ],
           "connections": {
-            "engine_a": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-            "engine_b": "https://infinityai-engine-b-bprmddefsa-uc.a.run.app"
+            "engine_a": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+            "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app"
           }
         },
         "engine_d": {
@@ -72,8 +52,8 @@
             "Load balancer listener has no routing rules"
           ],
           "connections": {
-            "engine_a": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-            "engine_b": "https://infinityai-engine-b-bprmddefsa-uc.a.run.app"
+            "engine_a": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+            "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app"
           }
         },
         "load_balancer": {
@@ -104,12 +84,26 @@
       "enabled": true,
       "region": "us-central1",
       "services": {
+        "engine_a": {
+          "type": "cloud_run",
+          "service": "infinityai-engine-a",
+          "port": 8000,
+          "endpoint": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+          "health_endpoint": "/health",
+          "status": "operational",
+          "function": "market_data_ingestion",
+          "connections": {
+            "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app",
+            "engine_c": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+            "engine_d": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
+          }
+        },
         "engine_b": {
           "type": "cloud_run",
           "service": "infinityai-engine-b",
           "port": 8000,
           "endpoint": "https://infinityai-engine-b-573866363639.us-central1.run.app",
-          "health_endpoint": "/health", 
+          "health_endpoint": "/health",
           "status": "operational",
           "function": "ai_ml_gpu_processing",
           "latest_revision": "infinityai-engine-b-00017-59d",
@@ -126,7 +120,7 @@
             "Multiple import fixes in main.py, config.py, metrics.py"
           ],
           "connections": {
-            "engine_a": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
+            "engine_a": "https://infinityai-engine-a-573866363639.us-central1.run.app",
             "engine_c": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
             "engine_d": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
           }
@@ -136,14 +130,12 @@
   },
   "communication": {
     "inter_cloud_routing": {
-      "azure_to_aws": "direct_https",
-      "azure_to_gcp": "direct_https", 
       "aws_to_gcp": "direct_https"
     },
     "load_balancing": {
-      "strategy": "round_robin",
+  "strategy": "round_robin",
       "health_checks": true,
-      "failover": true
+  "failover": true
     }
   },
   "infrastructure_summary": {
@@ -153,7 +145,7 @@
     "critical_issues": [],
     "status": "all_engines_operational",
     "load_balancer_integration": "configured",
-    "multi_cloud_deployment": "fully_functional",
+    "multi_cloud_deployment": "aws+gcp",
     "production_ready": true,
     "last_verified": "2025-10-06T22:01:13Z"
   },
@@ -163,14 +155,14 @@
       "status": "completed",
       "permissions_applied": [
         "elasticloadbalancing:CreateRule",
-        "elasticloadbalancing:ModifyRule", 
+        "elasticloadbalancing:ModifyRule",
         "elasticloadbalancing:ModifyTargetGroup",
         "elasticloadbalancing:ModifyListener"
       ],
       "result": "load_balancer_routing_operational"
     },
     "aws_security_groups": {
-      "status": "completed", 
+      "status": "completed",
       "issue": "ALB to ECS communication blocked",
       "result": "security_groups_fixed_engines_accessible"
     },
@@ -179,11 +171,7 @@
       "issue": "Missing cryptography dependency causing startup failures",
       "result": "container_rebuilt_and_deployed_successfully"
     },
-    "azure_connectivity": {
-      "status": "completed",
-      "issue": "Connectivity timeouts resolved",
-      "result": "engine_a_operational"
-    }
+    "azure_connectivity": null
   },
   "removed_services": {
     "vercel": {

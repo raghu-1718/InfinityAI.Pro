@@ -39,12 +39,12 @@ COPY . .
 RUN chown -R infinityai:infinityai /app
 USER infinityai
 
-# Health check
+# Health check (honor PORT if provided)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
+    CMD bash -c 'curl -f http://127.0.0.1:${PORT:-8000}/health || exit 1'
 
-# Expose port
-EXPOSE 8002
+# Expose default port (Cloud Run may ignore EXPOSE but keep for clarity)
+EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "1"]
+# Run the application (honor $PORT, default 8000)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]

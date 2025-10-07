@@ -1,13 +1,12 @@
 {
   "test_summary": {
-    "total_tests": 8,
-    "passed_tests": 2,
-    "failed_tests": 6,
-    "success_rate": 25.0,
-    "execution_time": 41.53656530380249,
-    "overall_status": "\u274c SYSTEM ISSUES",
+    "total_tests": 4,
+    "passed_tests": 4,
+    "failed_tests": 0,
+    "success_rate": 100.0,
+    "execution_time": 1.7848381996154785,
+    "overall_status": "\u2705 SYSTEM HEALTHY",
     "clouds_tested": [
-      "azure",
       "aws",
       "gcp"
     ],
@@ -15,125 +14,73 @@
   },
   "test_details": [
     {
-      "name": "Azure Engine A Health",
-      "cloud": "azure",
-      "service": "engine_a",
+      "name": "AWS ALB (Engine D)",
       "success": true,
       "status_code": 200,
-      "response_time": 0.8591370582580566,
-      "content": {
-        "status": "healthy",
-        "platform": "InfinityAI.Pro",
-        "version": "2.0.0",
-        "gpu_enabled": true,
-        "services": {
-          "ai_engine": "operational",
-          "market_data": "operational",
-          "live_trader": "operational",
-          "websocket": "operational"
-        }
-      },
-      "endpoint": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "timestamp": "2025-10-05T14:47:01.639736"
-    },
-    {
-      "name": "Azure Engine A Alternative",
-      "cloud": "azure",
-      "service": "engine_a_alt",
-      "success": true,
-      "status_code": 200,
-      "response_time": 0.8048546314239502,
-      "content": {
-        "status": "healthy",
-        "engine": "A",
-        "provider": "Azure",
-        "timestamp": "2025-10-05T14:47:02.542634",
-        "services": {
-          "text_analytics": false,
-          "blob_storage": false
-        }
-      },
-      "endpoint": "https://infinityai-engine-a--0000006.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "timestamp": "2025-10-05T14:47:02.445647"
-    },
-    {
-      "name": "Azure Frontend Accessibility",
-      "cloud": "azure",
-      "service": "static_web_app",
-      "success": false,
-      "status_code": 404,
-      "execution_time": 1.0791780948638916,
-      "endpoint": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net",
-      "timestamp": "2025-10-05T14:47:03.525741"
-    },
-    {
-      "name": "AWS Load Balancer Health",
+      "response_time": 0.4825096130371094,
+      "content": "Engine D - AI Chatbot Assistant",
+      "endpoint": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
       "cloud": "aws",
-      "service": "application_load_balancer",
-      "success": false,
-      "error": "Cannot connect to host infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:80 ssl:default [The remote computer refused the network connection]",
-      "endpoint": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com",
-      "timestamp": "2025-10-05T14:47:06.753282"
+      "service": "alb_engine_d",
+      "timestamp": "2025-10-07T19:40:21.795460+00:00"
     },
     {
-      "name": "AWS Engine C Health",
+      "name": "AWS Engine C",
+      "success": true,
+      "status_code": 200,
+      "response_time": 0.4330587387084961,
+      "content": "Engine C - Trade Execution Working!",
+      "endpoint": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
       "cloud": "aws",
       "service": "engine_c",
-      "success": false,
-      "error": "Timeout",
-      "timeout": 10,
-      "endpoint": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8002",
-      "timestamp": "2025-10-05T14:47:17.322247"
+      "timestamp": "2025-10-07T19:40:22.229866+00:00"
     },
     {
-      "name": "AWS Engine D Health",
+      "name": "AWS Engine D",
+      "success": true,
+      "status_code": 200,
+      "response_time": 0.455402135848999,
+      "content": "Engine D - AI Chatbot Assistant",
+      "endpoint": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
       "cloud": "aws",
       "service": "engine_d",
-      "success": false,
-      "error": "Timeout",
-      "timeout": 10,
-      "endpoint": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8000",
-      "timestamp": "2025-10-05T14:47:27.311402"
+      "timestamp": "2025-10-07T19:40:22.685268+00:00"
     },
     {
-      "name": "GCP Engine B Health",
+      "name": "GCP Engine B",
+      "success": true,
+      "status_code": 200,
+      "response_time": 0.3699362277984619,
+      "content": {
+        "status": "healthy",
+        "service": "Engine B - AI/ML GPU",
+        "timestamp": "2025-10-07T19:40:22.973115+00:00",
+        "version": "1.0.0",
+        "gpu_info": {
+          "available": false,
+          "device_count": 0,
+          "current_device": "cpu"
+        }
+      },
+      "endpoint": "https://infinityai-engine-b-573866363639.us-central1.run.app",
       "cloud": "gcp",
       "service": "engine_b",
-      "success": false,
-      "error": "Cannot connect to host engine-b-service.infinityai.pro:443 ssl:default [getaddrinfo failed]",
-      "endpoint": "https://engine-b-service.infinityai.pro",
-      "timestamp": "2025-10-05T14:47:27.320626"
-    },
-    {
-      "name": "Azure to AWS Communication",
-      "cloud": "multi-cloud",
-      "service": "cross_cloud_comm",
-      "success": false,
-      "error": "",
-      "timestamp": "2025-10-05T14:47:42.315405"
+      "timestamp": "2025-10-07T19:40:23.061108+00:00"
     }
   ],
   "endpoints_tested": {
-    "azure": {
-      "engine_a": "https://infinityai-app--0000036.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "engine_a_alt": "https://infinityai-engine-a--0000006.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-      "frontend": "https://brave-ocean-09e85cd10-preview.centralus.2.azurestaticapps.net"
-    },
     "aws": {
-      "load_balancer": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com",
-      "engine_c": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8002",
-      "engine_d": "http://infinityai-pro-alb-1978325793.us-east-1.elb.amazonaws.com:8000"
+      "load_balancer": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com",
+      "engine_c": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+      "engine_d": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
     },
     "gcp": {
-      "engine_b": "https://engine-b-service.infinityai.pro"
+      "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app"
     }
   },
   "recommendations": [
-    "\ud83d\udd35 Azure: Fix Container Apps deployment or redeploy Static Web App",
-    "\ud83d\udfe0 AWS: Check ECS services, Load Balancer target groups, and security groups",
-    "\ud83d\udd34 GCP: Verify Engine B deployment and update endpoint configuration",
-    "\ud83c\udf10 Multi-Cloud: Update API routing and authentication between clouds",
-    "\u2705 Vercel successfully eliminated from architecture"
+    "\u2705 Vercel successfully eliminated from architecture",
+    "\u2705 Azure removed; topology is AWS (C/D) + GCP (A/B)"
   ],
-  "timestamp": "2025-10-05T14:47:42.315405"
+  "timestamp": "2025-10-07T19:40:23.061108+00:00"
 }

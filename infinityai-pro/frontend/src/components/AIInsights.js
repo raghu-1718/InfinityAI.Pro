@@ -22,7 +22,9 @@ import {
   List,
   ListItem,
   Divider,
-  Avatar
+  Avatar,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   TrendingUp,
@@ -115,7 +117,6 @@ useEffect(() => {
 
   const fetchAIInsights = async () => {
     try {
-      setLoading(true);
       const response = await fetch(`${apiUrl.replace('8003', '8002')}/insights`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

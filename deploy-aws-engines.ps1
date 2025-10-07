@@ -161,25 +161,31 @@ try {
     
     # Create Engine C service
     Write-Host "🔧 Creating Engine C service..." -ForegroundColor Cyan
-    aws ecs create-service `
-        --cluster $Cluster `
-        --service-name "engine-c-service" `
-        --task-definition "engine-c" `
-        --desired-count 1 `
-        --launch-type "FARGATE" `
-        --network-configuration "awsvpcConfiguration={subnets=[$($SubnetList[0]),$($SubnetList[1])],assignPublicIp=ENABLED}" `
-        --region $Region
+    $engineCArgs = @(
+        "ecs","create-service",
+        "--cluster", $Cluster,
+        "--service-name", "engine-c-service",
+        "--task-definition", "engine-c",
+        "--desired-count", "1",
+        "--launch-type", "FARGATE",
+        "--network-configuration", "awsvpcConfiguration={subnets=[$($SubnetList[0]),$($SubnetList[1])],assignPublicIp=ENABLED}",
+        "--region", $Region
+    )
+    aws @engineCArgs
     
     # Create Engine D service
     Write-Host "🤖 Creating Engine D service..." -ForegroundColor Cyan
-    aws ecs create-service `
-        --cluster $Cluster `
-        --service-name "engine-d-service" `
-        --task-definition "engine-d" `
-        --desired-count 1 `
-        --launch-type "FARGATE" `
-        --network-configuration "awsvpcConfiguration={subnets=[$($SubnetList[0]),$($SubnetList[1])],assignPublicIp=ENABLED}" `
-        --region $Region
+    $engineDArgs = @(
+        "ecs","create-service",
+        "--cluster", $Cluster,
+        "--service-name", "engine-d-service",
+        "--task-definition", "engine-d",
+        "--desired-count", "1",
+        "--launch-type", "FARGATE",
+        "--network-configuration", "awsvpcConfiguration={subnets=[$($SubnetList[0]),$($SubnetList[1])],assignPublicIp=ENABLED}",
+        "--region", $Region
+    )
+    aws @engineDArgs
     
     Write-Host "✅ ECS services created successfully!" -ForegroundColor Green
 }
@@ -192,7 +198,9 @@ Write-Host "`n📊 Checking service status..." -ForegroundColor Cyan
 Start-Sleep -Seconds 10
 
 try {
-    $Services = aws ecs describe-services --cluster $Cluster --services "engine-c-service" "engine-d-service" --region $Region | ConvertFrom-Json
+    $descArgs = @("ecs","describe-services","--cluster", $Cluster, "--services", "engine-c-service", "engine-d-service", "--region", $Region, "--output","json")
+    $json = aws @descArgs
+    $Services = $json | ConvertFrom-Json
     
     foreach ($Service in $Services.services) {
         $ServiceName = $Service.serviceName

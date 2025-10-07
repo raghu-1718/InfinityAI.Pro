@@ -43,17 +43,30 @@ app.add_middleware(
 )
 
 # Configuration
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+REDIS_URL = os.getenv("REDIS_URL", "")
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
 MODEL_STORAGE_PATH = os.getenv("MODEL_STORAGE_PATH", "/app/models")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Initialize connections
-redis_client = redis.from_url(REDIS_URL)
-kafka_producer = KafkaProducer(
-    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+redis_client = None
+try:
+    if REDIS_URL:
+        redis_client = redis.from_url(REDIS_URL)
+except Exception as e:
+    logger.warning(f"Redis init skipped: {e}")
+
+kafka_producer = None
+try:
+    if KAFKA_BOOTSTRAP_SERVERS:
+        kafka_producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+    else:
+        logger.info("Kafka bootstrap not provided; running without Kafka producer")
+except Exception as e:
+    logger.warning(f"Kafka init skipped: {e}")
 
 # Ensure model directory exists
 os.makedirs(MODEL_STORAGE_PATH, exist_ok=True)
@@ -291,12 +304,13 @@ class AIModelService:
             }
             
             # Send training completion message to Kafka
-            kafka_producer.send("model_training", {
-                "model_name": request.model_name,
-                "status": "completed",
-                "accuracy": accuracy,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            })
+            if kafka_producer:
+                kafka_producer.send("model_training", {
+                    "model_name": request.model_name,
+                    "status": "completed",
+                    "accuracy": accuracy,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
             
             logger.info(f"Training completed for {request.model_name} with accuracy: {accuracy:.4f}")
             
@@ -369,11 +383,12 @@ class AIModelService:
                 })
             
             # Send inference results to Kafka
-            kafka_producer.send("inference_results", {
-                "model_name": model_name,
-                "results": results,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            })
+            if kafka_producer:
+                kafka_producer.send("inference_results", {
+                    "model_name": model_name,
+                    "results": results,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
             
             logger.info(f"Inference completed for {model_name}: {len(results)} predictions")
             
@@ -577,5 +592,5 @@ async def get_gpu_status():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "8080"))
+    port = int(os.getenv("PORT", "8000"))
     uvicorn.run(app, host="0.0.0.0", port=port)

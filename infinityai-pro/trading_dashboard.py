@@ -271,7 +271,7 @@ class TradingDashboard:
         self.display_ai_recommendations()
         
         print("\n" + "🌟" * 50)
-        print("🚀 Dashboard URL: https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io")
+    print("🚀 Dashboard URL: http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d")
         print("🌟" * 50)
 
 if __name__ == "__main__":
