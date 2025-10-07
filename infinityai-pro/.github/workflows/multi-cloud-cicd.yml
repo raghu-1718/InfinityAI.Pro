@@ -224,7 +224,7 @@ jobs:
           "containerDefinitions": [{
             "name": "infinityai-engine-d",
             "image": "${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ github.sha }}",
-            "portMappings": [{"containerPort": 8000, "protocol": "tcp"}],
+            "portMappings": [{"containerPort": 8004, "protocol": "tcp"}],
             "environment": [
               {"name": "ENGINE_TYPE", "value": "voice_assistant"},
               {"name": "DHAN_CLIENT_ID", "value": "${{ secrets.DHAN_CLIENT_ID }}"},

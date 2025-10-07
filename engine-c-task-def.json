@@ -7,8 +7,8 @@
             "cpu": 0,
             "portMappings": [
                 {
-                    "containerPort": 8000,
-                    "hostPort": 8000,
+                    "containerPort": 8003,
+                    "hostPort": 8003,
                     "protocol": "tcp"
                 }
             ],
@@ -16,7 +16,7 @@
             "command": [
                 "sh",
                 "-c",
-                "echo 'server { listen 8000; location /health { return 200 \"healthy\"; add_header Content-Type text/plain; } location / { return 200 \"Engine C - Trade Execution\"; add_header Content-Type text/plain; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+                "echo 'server { listen 8003; location /health { return 200 \"healthy\"; add_header Content-Type text/plain; } location / { return 200 \"Engine C - Trade Execution\"; add_header Content-Type text/plain; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
             ],
             "environment": [],
             "mountPoints": [],
