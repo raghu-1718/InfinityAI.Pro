@@ -7,7 +7,6 @@ import {
   Typography,
   TextField,
   Autocomplete,
-  Button,
   Tabs,
   Tab,
   Table,
@@ -19,11 +18,6 @@ import {
   Paper,
   Chip,
   IconButton,
-  Tooltip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   LinearProgress,
   Divider
@@ -32,27 +26,17 @@ import {
   TrendingUp,
   TrendingDown,
   Refresh,
-  ShowChart,
   Timeline,
-  Assessment,
-  Insights,
-  FilterList,
-  Search
+  Assessment
 } from '@mui/icons-material';
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  CandlestickChart,
-  ReferenceLine
+  ResponsiveContainer
 } from 'recharts';
 
 const MarketAnalysis = ({ apiUrl }) => {
@@ -88,20 +72,20 @@ const MarketAnalysis = ({ apiUrl }) => {
     { label: '5Y', value: '5Y' }
   ];
 
-  useEffect(() => {
+useEffect(() => {
     setSymbolSuggestions(popularSymbols);
     fetchMarketOverview();
     fetchTopMovers();
     fetchSectorPerformance();
     fetchEconomicEvents();
-  }, []);
+  }, [fetchMarketOverview, fetchTopMovers, fetchSectorPerformance, fetchEconomicEvents]);
 
-  useEffect(() => {
+useEffect(() => {
     if (selectedSymbol) {
       fetchChartData();
       fetchTechnicalIndicators();
     }
-  }, [selectedSymbol, timeframe]);
+  }, [selectedSymbol, timeframe, fetchChartData, fetchTechnicalIndicators]);
 
   const fetchChartData = async () => {
     try {

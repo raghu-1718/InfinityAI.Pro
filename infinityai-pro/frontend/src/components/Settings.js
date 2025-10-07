@@ -16,16 +16,6 @@ import {
   Tabs,
   Tab,
   Alert,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
   Paper,
   Table,
@@ -49,8 +39,7 @@ import {
   Palette,
   AccountCircle,
   ApiSharp,
-  Storage,
-  Speed
+  Storage
 } from '@mui/icons-material';
 
 const Settings = ({ apiUrl, userId }) => {
@@ -151,9 +140,9 @@ const Settings = ({ apiUrl, userId }) => {
     'Australia/Sydney'
   ];
 
-  useEffect(() => {
+useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [fetchSettings]);
 
   const fetchSettings = async () => {
     try {
@@ -329,12 +318,6 @@ const Settings = ({ apiUrl, userId }) => {
     }));
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
-  };
 
   return (
     <Box sx={{ p: 3 }}>

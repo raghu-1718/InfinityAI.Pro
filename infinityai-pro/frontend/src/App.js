@@ -11,19 +11,12 @@ import {
   Box,
   Tabs,
   Tab,
-  Button,
   Alert,
-  CircularProgress,
-  Chip,
-  LinearProgress
+  Chip
 } from '@mui/material';
 import {
   TrendingUp,
   AccountBalance,
-  SmartToy,
-  Timeline,
-  Chat,
-  Settings as SettingsIcon,
   Notifications,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
@@ -57,10 +50,10 @@ function TabPanel({ children, value, index, ...other }) {
 
 function App() {
   const [currentTab, setCurrentTab] = useState(0);
-  const [user, setUser] = useState({ id: 'demo-user', name: 'Demo User' });
+const [user] = useState({ id: 'demo-user', name: 'Demo User' });
   const [systemStatus, setSystemStatus] = useState('loading');
   const [notifications, setNotifications] = useState([]);
-  const [marketData, setMarketData] = useState({});
+const [marketData] = useState({});
 
   useEffect(() => {
     // Check system status on load

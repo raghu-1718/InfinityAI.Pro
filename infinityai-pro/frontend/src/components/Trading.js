@@ -38,12 +38,7 @@ import {
   Send,
   Cancel,
   History,
-  Refresh,
-  ShowChart,
-  AttachMoney,
-  Schedule,
-  CheckCircle,
-  ErrorOutline
+  Refresh
 } from '@mui/icons-material';
 
 const Trading = ({ apiUrl, userId }) => {
@@ -75,11 +70,11 @@ const Trading = ({ apiUrl, userId }) => {
   ];
 
   // Fetch data on component mount
-  useEffect(() => {
+useEffect(() => {
     fetchOrders();
     fetchPositions();
     connectWebSocket();
-  }, []);
+  }, [connectWebSocket, fetchOrders, fetchPositions]);
 
   // Connect to WebSocket for real-time updates
   const connectWebSocket = useCallback(() => {

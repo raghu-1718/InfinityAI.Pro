@@ -28,11 +28,10 @@ import {
   TrendingDown,
   Refresh,
   AccountBalance,
-  ShowChart,
   Info,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 const Portfolio = ({ apiUrl, userId }) => {
   const [portfolioData, setPortfolioData] = useState(null);
@@ -149,12 +148,12 @@ const Portfolio = ({ apiUrl, userId }) => {
     return value >= 0 ? <TrendingUp /> : <TrendingDown />;
   };
 
-  // Prepare data for charts
+// Prepare data for charts
   const prepareAllocationData = () => {
     return positions.map(pos => ({
       name: pos.symbol,
       value: pos.market_value,
-      percentage: ((pos.market_value / portfolioData?.total_value) * 100).toFixed(1)
+      percentage: ((pos.market_value / (portfolioData?.total_value || 1)) * 100).toFixed(1)
     }));
   };
 
@@ -172,7 +171,7 @@ const Portfolio = ({ apiUrl, userId }) => {
     return Object.keys(sectorMap).map(sector => ({
       name: sector,
       value: sectorMap[sector],
-      percentage: ((sectorMap[sector] / portfolioData?.total_value) * 100).toFixed(1)
+      percentage: ((sectorMap[sector] / (portfolioData?.total_value || 1)) * 100).toFixed(1)
     }));
   };
 
@@ -181,11 +180,11 @@ const Portfolio = ({ apiUrl, userId }) => {
       symbol: pos.symbol,
       dailyPnL: pos.unrealized_pnl_daily || 0,
       totalPnL: pos.unrealized_pnl || 0,
-      dailyReturn: ((pos.unrealized_pnl_daily || 0) / pos.market_value * 100).toFixed(2)
+      dailyReturn: pos.market_value ? ((pos.unrealized_pnl_daily || 0) / pos.market_value * 100).toFixed(2) : '0.00'
     }));
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
+  // removed unused Chart imports--Clean for ESLint
 
   if (loading) {
     return (

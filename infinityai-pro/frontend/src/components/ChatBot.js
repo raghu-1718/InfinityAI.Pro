@@ -7,7 +7,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
   Avatar,
   Chip,
   CircularProgress,
@@ -19,11 +18,7 @@ import {
   Send,
   SmartToy,
   Person,
-  TrendingUp,
-  AccountBalance,
-  Notifications,
-  Clear,
-  VolumeUp
+  Clear
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 
@@ -46,7 +41,7 @@ const ChatBot = ({ userId, apiUrl }) => {
   const wsRef = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
+useEffect(() => {
     // Connect to WebSocket for real-time chat
     connectWebSocket();
     
@@ -55,7 +50,7 @@ const ChatBot = ({ userId, apiUrl }) => {
         wsRef.current.close();
       }
     };
-  }, [userId]);
+  }, [userId, connectWebSocket]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive

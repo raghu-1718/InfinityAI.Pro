@@ -5,7 +5,6 @@ import {
   CardContent,
   Grid,
   Typography,
-  Button,
   Chip,
   LinearProgress,
   Alert,
@@ -22,43 +21,29 @@ import {
   Tab,
   List,
   ListItem,
-  ListItemText,
-  ListItemIcon,
   Divider,
   Avatar
 } from '@mui/material';
 import {
   TrendingUp,
-  TrendingDown,
   Psychology,
   Analytics,
-  Speed,
   Refresh,
-  CheckCircle,
   Warning,
-  Error,
   Info,
   SmartToy,
   Memory,
   Timeline,
-  Assessment,
-  Insights
+  Assessment
 } from '@mui/icons-material';
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
 
 const AIInsights = ({ apiUrl, userId }) => {
@@ -72,13 +57,13 @@ const AIInsights = ({ apiUrl, userId }) => {
   const [error, setError] = useState(null);
   const [ws, setWs] = useState(null);
 
-  useEffect(() => {
+useEffect(() => {
     fetchAIInsights();
     fetchModelStatus();
     fetchPerformanceMetrics();
     fetchPredictions();
     connectWebSocket();
-  }, []);
+  }, [connectWebSocket, fetchAIInsights, fetchModelStatus, fetchPerformanceMetrics, fetchPredictions]);
 
   // Connect to WebSocket for real-time AI updates
   const connectWebSocket = useCallback(() => {
