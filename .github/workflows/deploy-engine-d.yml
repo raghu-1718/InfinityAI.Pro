@@ -13,6 +13,8 @@ env:
   TASK_FAMILY: infinityai-engine-d
   CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
   ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 jobs:
   build-and-deploy:
@@ -27,6 +29,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
