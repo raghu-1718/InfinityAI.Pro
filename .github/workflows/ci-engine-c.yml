@@ -1,0 +1,30 @@
+name: Engine C CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infinityai-pro/backend/engines/engine-c/**'
+      - '.github/workflows/ci-engine-c.yml'
+  pull_request:
+    paths:
+      - 'infinityai-pro/backend/engines/engine-c/**'
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+      - name: Install light deps
+        working-directory: infinityai-pro/backend/engines/engine-c
+        run: |
+          if [ -f requirements.txt ]; then grep -E '^(fastapi|uvicorn|pydantic|httpx)' requirements.txt > req.txt || true; fi
+          pip install --no-cache-dir -r req.txt || true
+          python -c "import sys,types;[sys.modules.setdefault(m,types.ModuleType(m)) for m in ['aiokafka','asyncpg','aioredis','redis']];print('Stub modules prepared')"
+      - name: Import smoke
+        working-directory: infinityai-pro/backend/engines/engine-c
+        run: python -c "import sys;\ntry:\n import main; print('Engine C import OK (light mode)')\nexcept Exception as e:\n print('Engine C import failed:', e); sys.exit(1)"
