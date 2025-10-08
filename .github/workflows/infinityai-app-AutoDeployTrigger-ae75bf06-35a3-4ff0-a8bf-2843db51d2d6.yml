@@ -1,20 +1,14 @@
-name: Trigger auto deployment for infinityai-app
+name: Trigger auto deployment for infinityai-app (DISABLED)
 
-# When this action will be executed
+# Legacy Azure Container Apps workflow — disabled for AWS+GCP architecture.
+# Kept for reference; manual dispatch allowed but job is guarded to never run.
 on:
-  # Automatically trigger it when detected changes in repo
-  push:
-    branches: 
-      [ main ]
-    paths:
-    - '**'
-    - '.github/workflows/infinityai-app-AutoDeployTrigger-ae75bf06-35a3-4ff0-a8bf-2843db51d2d6.yml'
-
-  # Allow manual trigger 
-  workflow_dispatch:      
+  # Manual trigger only
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
+    if: ${{ false }} # disabled
     runs-on: ubuntu-latest
     permissions: 
       id-token: write #This is required for requesting the OIDC JWT Token
