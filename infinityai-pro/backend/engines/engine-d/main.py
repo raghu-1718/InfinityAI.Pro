@@ -11,15 +11,22 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import re
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
 import redis
-from kafka import KafkaConsumer, KafkaProducer
+try:
+    from kafka import KafkaConsumer, KafkaProducer
+    _kafka_available = True
+except Exception as _e:
+    _kafka_available = False
+    KafkaConsumer = None  # type: ignore
+    KafkaProducer = None  # type: ignore
 import openai
+# Heavy NLP models can slow startup; guard with env flag
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import nltk
 from textblob import TextBlob
@@ -42,9 +49,18 @@ app.add_middleware(
 # Configuration
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-ENGINE_A_URL = os.getenv("ENGINE_A_URL", "http://localhost:8001")
-ENGINE_B_URL = os.getenv("ENGINE_B_URL", "http://localhost:8002")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "http://localhost:8003")
+ENGINE_A_URL = os.getenv(
+    "ENGINE_A_URL",
+    "https://infinityai-engine-a-573866363639.us-central1.run.app"
+)
+ENGINE_B_URL = os.getenv(
+    "ENGINE_B_URL",
+    "https://infinityai-engine-b-573866363639.us-central1.run.app"
+)
+ENGINE_C_URL = os.getenv(
+    "ENGINE_C_URL",
+    "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c"
+)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 INVESTING_COM_API_KEY = os.getenv("INVESTING_COM_API_KEY", "")
 
@@ -55,31 +71,42 @@ try:
     redis_client.ping()
 except redis.exceptions.ConnectionError as e:
     logger.warning(f"Could not connect to Redis: {e}")
-kafka_producer = KafkaProducer(
-    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+kafka_producer = None
+if _kafka_available:
+    try:
+        kafka_producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+    except Exception as e:
+        logger.warning(f"Kafka producer unavailable: {e}")
 
-# Initialize AI models
-try:
-    # Financial sentiment analysis model
-    sentiment_model = pipeline(
-        "sentiment-analysis",
-        model="ProsusAI/finbert",
-        tokenizer="ProsusAI/finbert"
-    )
-    
-    # News summarization model
-    summarizer = pipeline(
-        "summarization",
-        model="facebook/bart-large-cnn"
-    )
-    
-    logger.info("AI models loaded successfully")
-except Exception as e:
-    logger.warning(f"AI models not loaded: {e}")
-    sentiment_model = None
-    summarizer = None
+# Initialize AI models (optional)
+ENABLE_TRANSFORMERS = os.getenv("ENABLE_TRANSFORMERS", "false").lower() == "true"
+sentiment_model = None
+summarizer = None
+if ENABLE_TRANSFORMERS:
+    try:
+        # Financial sentiment analysis model
+        sentiment_model = pipeline(
+            "sentiment-analysis",
+            model="ProsusAI/finbert",
+            tokenizer="ProsusAI/finbert"
+        )
+
+        # News summarization model
+        summarizer = pipeline(
+            "summarization",
+            model="facebook/bart-large-cnn"
+        )
+
+        logger.info("AI models loaded successfully")
+    except Exception as e:
+        logger.warning(f"AI models not loaded: {e}")
+        sentiment_model = None
+        summarizer = None
+else:
+    logger.info("Transformers disabled (ENABLE_TRANSFORMERS=false); starting without heavy models")
 
 # OpenAI client
 if OPENAI_API_KEY:
@@ -650,6 +677,252 @@ async def health_check():
 async def health_check_alias():
     return await health_check()
 
+
+# -----------------------------
+# System status aggregate (/status)
+# -----------------------------
+async def _ping(url: str, timeout: float = 5.0) -> Dict[str, Any]:
+    start = datetime.now()
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            r = await client.get(url)
+        latency = (datetime.now() - start).total_seconds() * 1000
+        if r.status_code == 200:
+            body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {"raw": r.text}
+            return {"status": "healthy", "latency_ms": round(latency, 1), "details": body}
+        return {"status": "unhealthy", "latency_ms": round(latency, 1), "code": r.status_code}
+    except Exception as e:
+        latency = (datetime.now() - start).total_seconds() * 1000
+        return {"status": "unreachable", "latency_ms": round(latency, 1), "error": str(e)}
+
+
+@app.get("/status")
+@app.get("/engine-d/status")
+async def system_status():
+    """Aggregate health for A/B/C/D so frontend can render system banners."""
+    results = {}
+    # Engine D self status from in-process call to avoid port/prefix confusion
+    try:
+        self_health = await health_check()
+        results["engine_d"] = {"status": "healthy", "details": self_health}
+    except Exception as e:
+        results["engine_d"] = {"status": "unreachable", "error": str(e)}
+    # Ping upstreams
+    results["engine_a"] = await _ping(f"{ENGINE_A_URL}/health")
+    results["engine_b"] = await _ping(f"{ENGINE_B_URL}/health")
+    results["engine_c"] = await _ping(f"{ENGINE_C_URL}/health")
+
+    overall = "healthy" if all(v.get("status") == "healthy" for v in results.values()) else "degraded"
+    return {
+        "status": overall,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "engines": results,
+    }
+
+
+# -----------------------------
+# Proxy utilities
+# -----------------------------
+async def _proxy_request(method: str, target_url: str, request: Request, json_body: Optional[dict] = None, params: Optional[dict] = None):
+    headers = {}
+    # Forward minimal auth header if present
+    auth = request.headers.get("authorization")
+    if auth:
+        headers["authorization"] = auth
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.request(method.upper(), target_url, headers=headers, json=json_body, params=params)
+        # Return JSON if possible, else raw text
+        content_type = r.headers.get("content-type", "")
+        if content_type.startswith("application/json"):
+            return r.json()
+        return {"status_code": r.status_code, "text": r.text}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Upstream proxy error: {str(e)}")
+
+
+# -----------------------------
+# Engine C proxies (trading & portfolio)
+# -----------------------------
+@app.get("/portfolio")
+@app.get("/engine-d/portfolio")
+async def proxy_portfolio(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_C_URL}/portfolio", request)
+
+
+@app.get("/quote/{symbol}")
+@app.get("/engine-d/quote/{symbol}")
+async def proxy_quote(symbol: str, request: Request):
+    return await _proxy_request("GET", f"{ENGINE_C_URL}/quote/{symbol}", request)
+
+
+@app.get("/orders")
+@app.get("/engine-d/orders")
+async def proxy_orders_get(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_C_URL}/orders", request)
+
+
+@app.post("/orders")
+@app.post("/engine-d/orders")
+async def proxy_orders_post(request: Request):
+    body = await request.json()
+    return await _proxy_request("POST", f"{ENGINE_C_URL}/orders", request, json_body=body)
+
+
+@app.delete("/orders/{order_id}")
+@app.delete("/engine-d/orders/{order_id}")
+async def proxy_orders_delete(order_id: str, request: Request):
+    return await _proxy_request("DELETE", f"{ENGINE_C_URL}/orders/{order_id}", request)
+
+
+# -----------------------------
+# Engine A proxies (market data & analysis)
+# -----------------------------
+@app.get("/chart/{symbol}")
+@app.get("/engine-d/chart/{symbol}")
+async def proxy_chart(symbol: str, request: Request, timeframe: Optional[str] = None):
+    params = {"timeframe": timeframe} if timeframe else None
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/chart/{symbol}", request, params=params)
+
+
+@app.get("/technical/{symbol}")
+@app.get("/engine-d/technical/{symbol}")
+async def proxy_technical(symbol: str, request: Request):
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/technical/{symbol}", request)
+
+
+@app.get("/market/overview")
+@app.get("/engine-d/market/overview")
+async def proxy_market_overview(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/market/overview", request)
+
+
+@app.get("/market/movers")
+@app.get("/engine-d/market/movers")
+async def proxy_market_movers(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/market/movers", request)
+
+
+@app.get("/market/sectors")
+@app.get("/engine-d/market/sectors")
+async def proxy_market_sectors(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/market/sectors", request)
+
+
+@app.get("/economic/events")
+@app.get("/engine-d/economic/events")
+async def proxy_economic_events(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_A_URL}/economic/events", request)
+
+
+# -----------------------------
+# Engine B proxies (AI insights)
+# -----------------------------
+@app.get("/insights")
+@app.get("/engine-d/insights")
+async def proxy_ai_insights(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_B_URL}/insights", request)
+
+
+@app.get("/models/status")
+@app.get("/engine-d/models/status")
+async def proxy_models_status(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_B_URL}/models/status", request)
+
+
+@app.get("/performance")
+@app.get("/engine-d/performance")
+async def proxy_performance(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_B_URL}/performance", request)
+
+
+@app.get("/predictions")
+@app.get("/engine-d/predictions")
+async def proxy_predictions(request: Request):
+    return await _proxy_request("GET", f"{ENGINE_B_URL}/predictions", request)
+
+
+# -----------------------------
+# Minimal in-memory user settings API (to satisfy UI calls)
+# -----------------------------
+_user_store = {
+    "settings": {
+        "profile": {"firstName": "", "lastName": "", "email": "", "phone": "", "timezone": "America/New_York"},
+        "trading": {
+            "defaultOrderType": "market",
+            "defaultTimeInForce": "day",
+            "riskLimits": {"maxPositionSize": 100000, "maxDailyLoss": 5000, "maxOrderValue": 50000},
+            "notifications": {"orderFills": True, "priceAlerts": True, "accountUpdates": True, "aiSignals": True}
+        },
+        "theme": {"mode": "light", "primaryColor": "#1976d2", "fontSize": "medium"},
+        "ai": {
+            "modelPreferences": {"riskTolerance": "moderate", "tradingStyle": "balanced", "enableAutoTrading": False, "maxAutoTradeSize": 1000},
+            "notifications": {"aiInsights": True, "modelUpdates": True, "performanceAlerts": True}
+        }
+    },
+    "brokers": [],
+    "apiKeys": []
+}
+
+
+@app.get("/user/settings")
+@app.get("/engine-d/user/settings")
+async def get_user_settings():
+    return {"settings": _user_store["settings"]}
+
+
+@app.put("/user/settings")
+@app.put("/engine-d/user/settings")
+async def update_user_settings(payload: Dict[str, Any]):
+    # Shallow merge for simplicity
+    _user_store["settings"].update(payload)
+    return {"status": "ok", "settings": _user_store["settings"]}
+
+
+@app.get("/user/brokers")
+@app.get("/engine-d/user/brokers")
+async def list_brokers():
+    return {"brokers": _user_store["brokers"]}
+
+
+@app.post("/user/brokers")
+@app.post("/engine-d/user/brokers")
+async def add_broker(broker: Dict[str, Any]):
+    broker_id = len(_user_store["brokers"]) + 1
+    broker["id"] = broker_id
+    broker.setdefault("status", "Connected")
+    _user_store["brokers"].append(broker)
+    return {"broker": broker}
+
+
+@app.delete("/user/brokers/{broker_id}")
+@app.delete("/engine-d/user/brokers/{broker_id}")
+async def delete_broker(broker_id: int):
+    _user_store["brokers"] = [b for b in _user_store["brokers"] if b.get("id") != broker_id]
+    return {"status": "ok", "brokers": _user_store["brokers"]}
+
+
+@app.get("/user/api-keys")
+@app.get("/engine-d/user/api-keys")
+async def list_api_keys():
+    return {"apiKeys": _user_store["apiKeys"]}
+
+
+@app.post("/user/api-keys")
+@app.post("/engine-d/user/api-keys")
+async def add_api_key(api_key: Dict[str, Any]):
+    key_id = len(_user_store["apiKeys"]) + 1
+    api_key["id"] = key_id
+    _user_store["apiKeys"].append(api_key)
+    return {"apiKey": api_key}
+
+
+@app.delete("/user/api-keys/{key_id}")
+@app.delete("/engine-d/user/api-keys/{key_id}")
+async def delete_api_key(key_id: int):
+    _user_store["apiKeys"] = [k for k in _user_store["apiKeys"] if k.get("id") != key_id]
+    return {"status": "ok", "apiKeys": _user_store["apiKeys"]}
+
 @app.get("/dashboard/summary")
 async def dashboard_summary():
     """Aggregate status for frontend: engine health, portfolio availability, ultra mode status (proxied)."""
@@ -769,34 +1042,39 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
 
+
+# WebSocket alias for ALB path prefix
+@app.websocket("/engine-d/ws/{user_id}")
+async def websocket_endpoint_alias(websocket: WebSocket, user_id: str):
+    await websocket_endpoint(websocket, user_id)
+
 # Background task for processing real-time events
 async def process_real_time_events():
     """Background task to process real-time market events and notify users"""
-    consumer = KafkaConsumer(
-        'market_data',
-        'news_sentiment', 
-        'inference_results',
-        'order_updates',
-        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
-        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
-    )
-    
+    if not _kafka_available:
+        logger.info("Kafka not available; skipping real-time consumer loop.")
+        return
+    try:
+        consumer = KafkaConsumer(
+            'market_data',
+            'news_sentiment', 
+            'inference_results',
+            'order_updates',
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS.split(','),
+            value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+        )
+    except Exception as e:
+        logger.warning(f"Kafka consumer unavailable: {e}")
+        return
     for message in consumer:
         try:
             event_data = message.value
-            
             if message.topic == 'market_data':
-                # Process market data events
                 await process_market_event(event_data)
-            
             elif message.topic == 'inference_results':
-                # Process AI prediction events
                 await process_ai_signal_event(event_data)
-            
             elif message.topic == 'order_updates':
-                # Process order execution events
                 await process_order_event(event_data)
-                
         except Exception as e:
             logger.error(f"Error processing real-time event: {e}")
 

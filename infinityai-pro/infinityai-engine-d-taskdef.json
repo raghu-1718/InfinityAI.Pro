@@ -30,8 +30,12 @@
                     "value": "8004"
                 },
                 {
+                    "name": "ENABLE_TRANSFORMERS",
+                    "value": "false"
+                },
+                {
                     "name": "ENGINE_A_URL",
-                    "value": "https://infinityai-engine-a.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
+                    "value": "https://infinityai-engine-a-573866363639.us-central1.run.app"
                 },
                 {
                     "name": "ENGINE_B_URL",
