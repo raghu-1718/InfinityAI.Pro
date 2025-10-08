@@ -1,1 +1,40 @@
 .vercel
+# Node / Frontend
+node_modules/
+**/node_modules/
+**/.cache/
+**/build/
+**/dist/
+**/.next/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+.env.*
+
+# Logs & temp
+*.log
+logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Generated reports/artifacts
+scripts/todays-analysis.json
+scripts/verify-results*.json
+cloud_health_report.json
+integration_test_report.json
+multi_cloud_integration_report.json
+
+# Local secrets (use AWS Secrets Manager instead)
+dhan_credentials_secure.json
+
+# Editors/OS
+.vscode/
+.idea/
