@@ -7,8 +7,8 @@ ARG BUILD_DATE
 ARG GIT_COMMIT
 ARG VERSION=1.0.0
 
-# Build stage with GPU support
-FROM nvidia/cuda:11.8-devel-ubuntu20.04 as builder
+# Build stage with GPU support (PyTorch CUDA 11.8 + cuDNN)
+FROM pytorch/pytorch:2.1.1-cuda11.8-cudnn8-devel as builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -20,10 +20,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3.11-dev \
-    python3.11-distutils \
-    python3-pip \
     build-essential \
     gcc \
     g++ \
@@ -46,13 +42,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY requirements.txt .
 
-# Install PyTorch with CUDA support for GPU acceleration
+# Install Python dependencies (torch is preinstalled in base image)
 RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip3 install --no-cache-dir torch==2.1.1+cu118 torchvision==0.16.1+cu118 torchaudio==0.14.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+    pip3 install --no-cache-dir -r requirements.txt
 
-# Install other requirements
-RUN pip3 install --no-cache-dir -r requirements.txt# Production stage
-FROM nvidia/cuda:11.8-runtime-ubuntu20.04 as production
+# Production stage (PyTorch CUDA runtime)
+FROM pytorch/pytorch:2.1.1-cuda11.8-cudnn8-runtime as production
 
 # Set build arguments
 ARG BUILD_DATE
@@ -69,8 +64,6 @@ LABEL maintainer="InfinityAI.Pro Team" \
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3-pip \
     libopenblas0-pthread \
     liblapack3 \
     libgomp1 \

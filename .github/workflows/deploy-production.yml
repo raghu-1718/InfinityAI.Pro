@@ -77,11 +77,17 @@ jobs:
             echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
             exit 0
           fi
+          # Add GPU flags and minimum resources for Engine B
+          GPU_FLAGS=""
+          if [ "${{ matrix.service_name }}" = "infinityai-engine-b" ]; then
+            GPU_FLAGS="--gpu 1 --gpu-type nvidia-l4 --cpu 4 --memory 16Gi"
+          fi
           gcloud run deploy '${{ matrix.service_name }}' \
             --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}' \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            $GPU_FLAGS
 
   #########################################
   # DEPLOY ENGINES C & D to AWS ECS
