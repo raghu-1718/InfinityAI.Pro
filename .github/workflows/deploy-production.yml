@@ -137,11 +137,13 @@ jobs:
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Download task definition
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           aws ecs describe-task-definition --task-definition ${{ matrix.task_family }} --query taskDefinition > task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
@@ -225,9 +227,12 @@ jobs:
     name: Deployment Summary
     runs-on: ubuntu-latest
     needs: [deploy-gcp-engines, deploy-aws-engines, deploy-frontend-aws]
+    if: always()
     steps:
-      - name: Report Success
+      - name: Report Result
         run: |
-          echo "✅✅✅"
-          echo "All components deployed successfully to AWS and GCP!"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Completed validation without performing cloud actions."
+          fi
+          echo "✅ Workflow completed (status aggregation may include skipped steps)."
           echo "Application URL: https://infinityai.pro"
