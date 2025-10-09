@@ -54,6 +54,11 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/setup-gcloud@v2'
 
+      - name: Configure Docker auth for Artifact Registry
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        run: |
+          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
       - name: Build & Push (GCP)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
@@ -61,8 +66,9 @@ jobs:
             echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
             exit 0
           fi
-          gcloud builds submit '${{ matrix.context }}' \
-            --tag '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}'
+          IMAGE='${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}'
+          docker build -t "$IMAGE" -f "${{ matrix.context }}/Dockerfile" "${{ matrix.context }}"
+          docker push "$IMAGE"
 
       - name: Deploy (Cloud Run)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -197,8 +203,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: infinityai-pro/frontend/package-lock.json
 
       - name: Build Frontend
         if: "${{ github.event.inputs.dry_run != 'true' }}"
