@@ -8,7 +8,7 @@ ARG GIT_COMMIT
 ARG VERSION=1.0.0
 
 # Build stage with GPU support (PyTorch CUDA 11.8 + cuDNN)
-FROM pytorch/pytorch:2.1.1-cuda11.8-cudnn8-devel as builder
+FROM pytorch/pytorch:2.1.2-cuda11.8-cudnn8-devel as builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -47,7 +47,7 @@ RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
     pip3 install --no-cache-dir -r requirements.txt
 
 # Production stage (PyTorch CUDA runtime)
-FROM pytorch/pytorch:2.1.1-cuda11.8-cudnn8-runtime as production
+FROM pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime as production
 
 # Set build arguments
 ARG BUILD_DATE

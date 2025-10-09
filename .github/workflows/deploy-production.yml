@@ -214,7 +214,11 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         working-directory: infinityai-pro/frontend
         run: |
-          npm ci
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
           npm run build
 
       - name: Deploy to S3
