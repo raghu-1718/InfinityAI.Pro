@@ -75,7 +75,7 @@ RUN mkdir -p /app/logs /app/data /app/tmp && \
 USER infinityai
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     INFINITYAI_ENV=production \
