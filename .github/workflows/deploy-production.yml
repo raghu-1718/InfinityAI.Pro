@@ -28,10 +28,10 @@ jobs:
         include:
           - engine: engine-a-market-data
             service_name: infinityai-engine-a
-            context: engines/engine-a-market-data
+            context: infinityai-pro/backend/engines/engine-a
           - engine: engine-b-ai-ml
             service_name: infinityai-engine-b
-            context: engines/engine-b-ai-ml
+            context: infinityai-pro/backend/engines/engine-b
           - engine: engine-ultra-aggressive
             service_name: infinityai-ultra-aggressive
             context: engines/engine-ultra-aggressive
@@ -88,17 +88,17 @@ jobs:
         engine: [engine-c-execution, engine-d-chatbot]
         include:
           - engine: engine-c-execution
-            container_name: engine-c-execution
+            container_name: infinityai-engine-c
             service_name: infinityai-engine-c-service
             task_family: infinityai-engine-c
-            service_name_secret: ECS_SERVICE_NAME_C
-            context: engines/engine-c-execution
+            context: infinityai-pro/backend/engines/engine-c
+            ecr_repo: infinityai-engine-c
           - engine: engine-d-chatbot
-            container_name: engine-d-chatbot
+            container_name: infinityai-engine-d
             service_name: infinityai-engine-d-service
             task_family: infinityai-engine-d
-            service_name_secret: ECS_SERVICE_NAME_D
-            context: engines/engine-d-chatbot
+            context: infinityai-pro/backend/engines/engine-d
+            ecr_repo: infinityai-engine-d
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,11 +119,19 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repository exists
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        env:
+          ECR_REPOSITORY: ${{ matrix.ecr_repo }}
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
+          aws ecr create-repository --repository-name "$ECR_REPOSITORY"
+
       - name: Build, tag, and push image to ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: infinityai-${{ matrix.engine }} # normalized repository name
+          ECR_REPOSITORY: ${{ matrix.ecr_repo }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
@@ -190,18 +198,18 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend/web-app/package-lock.json
+          cache-dependency-path: infinityai-pro/frontend/package-lock.json
 
       - name: Build Frontend
         if: "${{ github.event.inputs.dry_run != 'true' }}"
-        working-directory: frontend/web-app
+        working-directory: infinityai-pro/frontend
         run: |
           npm ci
           npm run build
 
       - name: Deploy to S3
         if: "${{ github.event.inputs.dry_run != 'true' }}"
-        working-directory: frontend/web-app
+        working-directory: infinityai-pro/frontend
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would sync build/ to S3 bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }}"
