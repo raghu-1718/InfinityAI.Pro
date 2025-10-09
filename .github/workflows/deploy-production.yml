@@ -45,19 +45,29 @@ jobs:
 
       - name: Authenticate to Google Cloud
         if: "${{ github.event.inputs.dry_run != 'true' }}"
+        id: gcp-auth
         uses: 'google-github-actions/auth@v2'
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
+          export_environment_variables: true
+          token_format: 'access_token'
+          access_token_lifetime: '3600s'
 
       - name: Set up Cloud SDK
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/setup-gcloud@v2'
 
-      - name: Configure Docker auth for Artifact Registry
+      - name: Docker login to Artifact Registry
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+          ACCESS_TOKEN="${{ steps.gcp-auth.outputs.access_token }}"
+          if [ -z "$ACCESS_TOKEN" ]; then
+            ACCESS_TOKEN="$(gcloud auth print-access-token)"
+          fi
+          echo "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build & Push (GCP)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -219,6 +229,7 @@ jobs:
           else
             npm install
           fi
+          export CI=false
           npm run build
 
       - name: Deploy to S3
