@@ -39,16 +39,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Dry Run Notice (GCP Job)
+        if: "${{ github.event.inputs.dry_run == 'true' }}"
+        run: echo "[DRY RUN] Skipping GCP auth & deployment for ${{ matrix.service_name }}"
+
       - name: Authenticate to Google Cloud
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/auth@v2'
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Build & Push (GCP)
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
@@ -58,6 +65,7 @@ jobs:
             --tag '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}'
 
       - name: Deploy (Cloud Run)
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
@@ -95,13 +103,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Dry Run Notice (AWS ECS Job)
+        if: "${{ github.event.inputs.dry_run == 'true' }}"
+        run: echo "[DRY RUN] Skipping AWS auth & ECS deployment for ${{ matrix.engine }}"
+
       - name: Configure AWS credentials
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
@@ -111,6 +125,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: infinityai-${{ matrix.engine }} # normalized repository name
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would build and push image for ${{ matrix.engine }} to ECR"
@@ -156,13 +171,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Dry Run Notice (Frontend)
+        if: "${{ github.event.inputs.dry_run == 'true' }}"
+        run: echo "[DRY RUN] Skipping AWS auth & frontend deployment"
+
       - name: Configure AWS credentials
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Node.js
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -170,12 +191,14 @@ jobs:
           cache-dependency-path: frontend/web-app/package-lock.json
 
       - name: Build Frontend
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         working-directory: frontend/web-app
         run: |
           npm ci
           npm run build
 
       - name: Deploy to S3
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         working-directory: frontend/web-app
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
@@ -185,6 +208,7 @@ jobs:
           aws s3 sync build/ s3://${{ secrets.AWS_S3_BUCKET_FRONTEND }} --delete
 
       - name: Invalidate CloudFront Cache
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would invalidate CloudFront distribution ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}"
