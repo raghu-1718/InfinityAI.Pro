@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import re
+from contextlib import suppress
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +27,9 @@ except Exception as _e:
     KafkaConsumer = None  # type: ignore
     KafkaProducer = None  # type: ignore
 import openai
+with suppress(ImportError):
+    import boto3  # type: ignore
+    from botocore.exceptions import ClientError  # type: ignore
 # Heavy NLP models can slow startup; guard with env flag
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import nltk
@@ -63,6 +67,9 @@ ENGINE_C_URL = os.getenv(
 )
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 INVESTING_COM_API_KEY = os.getenv("INVESTING_COM_API_KEY", "")
+ADMIN_DASHBOARD_API_KEY = os.getenv("ADMIN_DASHBOARD_API_KEY", "")  # API key protecting admin endpoints
+DHAN_DAILY_SECRET_NAME = os.getenv("DHAN_DAILY_SECRET_NAME", "DHAN_DAILY_ACCESS_TOKEN")
+DHAN_MASTER_SECRET_NAME = os.getenv("DHAN_MASTER_SECRET_NAME", "DHAN_MASTER_ACCESS_TOKEN")
 
 # Initialize connections
 redis_client = None
@@ -625,6 +632,44 @@ Type your question naturally - I'll understand! 😊
             "data": None
         }
 
+# -----------------------------
+# AWS Secrets Manager helpers (optional)
+# -----------------------------
+def _boto3_client(service: str):
+    try:
+        import boto3  # type: ignore
+        return boto3.client(service)
+    except Exception:
+        return None
+
+def fetch_secret_value(name: str) -> Optional[str]:
+    client = _boto3_client('secretsmanager')
+    if not client:
+        return None
+    try:
+        resp = client.get_secret_value(SecretId=name)
+        return resp.get('SecretString')
+    except Exception:
+        return None
+
+def put_secret_value(name: str, value: str) -> bool:
+    client = _boto3_client('secretsmanager')
+    if not client:
+        return False
+    try:
+        # Try update, fall back to create
+        try:
+            client.put_secret_value(SecretId=name, SecretString=value)
+            return True
+        except ClientError as ce:  # type: ignore
+            if getattr(ce, 'response', {}).get('Error', {}).get('Code') == 'ResourceNotFoundException':
+                client.create_secret(Name=name, SecretString=value)
+                return True
+            raise
+    except Exception as e:  # pragma: no cover - best effort
+        logger.warning(f"Failed to store secret {name}: {e}")
+        return False
+
 # Initialize trading assistant
 trading_assistant = TradingAssistant()
 
@@ -717,6 +762,43 @@ async def system_status():
         "status": overall,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "engines": results,
+    }
+
+# -----------------------------
+# Admin: Update DHAN daily token (protected)
+# -----------------------------
+@app.post("/engine-d/admin/update-token")
+async def update_dhan_daily_token(request: Request):
+    """Update the DHAN daily access token.
+
+    Protection: requires header `x-admin-api-key` == ADMIN_DASHBOARD_API_KEY.
+    Body JSON: {"daily_token": "<newtoken>"}
+    Behavior: stores new token in AWS Secrets Manager (DHAN_DAILY_SECRET_NAME) if boto3 available; otherwise caches in process.
+    Returns: status and storage strategy.
+    """
+    if not ADMIN_DASHBOARD_API_KEY:
+        raise HTTPException(status_code=500, detail="Admin API key not configured")
+    supplied = request.headers.get("x-admin-api-key")
+    if supplied != ADMIN_DASHBOARD_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    daily_token = body.get("daily_token")
+    if not daily_token or not isinstance(daily_token, str):
+        raise HTTPException(status_code=400, detail="daily_token required")
+
+    stored = put_secret_value(DHAN_DAILY_SECRET_NAME, daily_token)
+    storage = "aws_secrets_manager" if stored else "in_memory"
+    if not stored:
+        # Fallback: in-memory cache (NOT persistent)
+        os.environ['DHAN_DAILY_ACCESS_TOKEN_CACHE'] = daily_token
+    return {
+        "status": "ok",
+        "storage": storage,
+        "secret_name": DHAN_DAILY_SECRET_NAME,
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 

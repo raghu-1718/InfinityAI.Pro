@@ -7,6 +7,10 @@ on:
         description: 'Image tag for all engine containers (e.g., latest, git sha)'
         required: true
         default: 'latest'
+      dry_run:
+        description: 'Set to true to run validation without deploying (string true/false to avoid 422 bug)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: read
@@ -17,11 +21,20 @@ jobs:
   # DEPLOY ENGINES A & B to GCP CLOUD RUN
   #########################################
   deploy-gcp-engines:
-    name: Deploy Engines A & B to GCP
+    name: Deploy Engines A, B & Ultra to GCP
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        engine: [engine-a-market-data, engine-b-ai-ml]
+        include:
+          - engine: engine-a-market-data
+            service_name: infinityai-engine-a
+            context: engines/engine-a-market-data
+          - engine: engine-b-ai-ml
+            service_name: infinityai-engine-b
+            context: engines/engine-b-ai-ml
+          - engine: engine-ultra-aggressive
+            service_name: infinityai-ultra-aggressive
+            context: engines/engine-ultra-aggressive
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,15 +48,23 @@ jobs:
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v2'
 
-      - name: Build and Push to Google Artifact Registry
-        run: |-
-          gcloud builds submit 'engines/${{ matrix.engine }}' \
-            --tag '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/infinityai-${{ matrix.engine }}:${{ github.event.inputs.image_tag }}'
+      - name: Build & Push (GCP)
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
+            exit 0
+          fi
+          gcloud builds submit '${{ matrix.context }}' \
+            --tag '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}'
 
-      - name: Deploy to Cloud Run
-        run: |-
-          gcloud run deploy 'infinityai-${{ matrix.engine }}' \
-            --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/infinityai-${{ matrix.engine }}:${{ github.event.inputs.image_tag }}' \
+      - name: Deploy (Cloud Run)
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
+            exit 0
+          fi
+          gcloud run deploy '${{ matrix.service_name }}' \
+            --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}' \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated
@@ -60,12 +81,16 @@ jobs:
         include:
           - engine: engine-c-execution
             container_name: engine-c-execution
+            service_name: infinityai-engine-c-service
             task_family: infinityai-engine-c
             service_name_secret: ECS_SERVICE_NAME_C
+            context: engines/engine-c-execution
           - engine: engine-d-chatbot
             container_name: engine-d-chatbot
+            service_name: infinityai-engine-d-service
             task_family: infinityai-engine-d
             service_name_secret: ECS_SERVICE_NAME_D
+            context: engines/engine-d-chatbot
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,10 +109,15 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: infinityai-${{ matrix.engine }}
+          ECR_REPOSITORY: infinityai-${{ matrix.engine }} # normalized repository name
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f engines/${{ matrix.engine }}/Dockerfile engines/${{ matrix.engine }}
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would build and push image for ${{ matrix.engine }} to ECR"
+            echo "image=dry-run-image" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
@@ -104,12 +134,17 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ secrets[matrix.service_name_secret] }}
+          service: ${{ matrix.service_name }}
           cluster: ${{ secrets.ECS_CLUSTER_NAME }}
           wait-for-service-stability: true
+
+      - name: Dry Run Notice
+        if: "${{ github.event.inputs.dry_run == 'true' }}"
+        run: echo "[DRY RUN] Would deploy task definition for service ${{ matrix.service_name }}"
 
   #########################################
   # DEPLOY FRONTEND TO AWS S3/CLOUDFRONT
@@ -143,10 +178,18 @@ jobs:
       - name: Deploy to S3
         working-directory: frontend/web-app
         run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would sync build/ to S3 bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }}"
+            exit 0
+          fi
           aws s3 sync build/ s3://${{ secrets.AWS_S3_BUCKET_FRONTEND }} --delete
 
       - name: Invalidate CloudFront Cache
         run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would invalidate CloudFront distribution ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}"
+            exit 0
+          fi
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
@@ -164,4 +207,3 @@ jobs:
           echo "✅✅✅"
           echo "All components deployed successfully to AWS and GCP!"
           echo "Application URL: https://infinityai.pro"
-
