@@ -1,0 +1,40 @@
+name: CI Ultra Aggressive Engine
+
+on:
+  pull_request:
+    paths:
+      - 'engines/engine-ultra-aggressive/**'
+      - '.github/workflows/ci-engine-ultra-aggressive.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'engines/engine-ultra-aggressive/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: |
+            engines/engine-ultra-aggressive/requirements.txt
+      - name: Install minimal deps
+        working-directory: engines/engine-ultra-aggressive
+        run: |
+          pip install --no-cache-dir -r requirements.txt
+      - name: Import smoke test
+        working-directory: engines/engine-ultra-aggressive
+        run: |
+          python - <<'PY'
+import importlib, sys
+print('Attempting import of ultra_aggressive_main ...')
+import ultra_aggressive_main
+print('Imported ultra_aggressive_main: OK')
+PY

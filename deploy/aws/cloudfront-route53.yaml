@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  InfinityAI.Pro - CloudFront + Route 53 for infinityai.pro
+  - Provisions ACM cert (DNS validated), CloudFront distribution with two origins (S3 website for frontend, ALB for APIs)
+  - Creates Route53 alias A/AAAA records for apex and www to CloudFront
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: infinityai.pro
+    Description: Apex domain name to configure (must exist as a public Route 53 hosted zone)
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route 53 Hosted Zone ID for the apex domain
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name hosting the frontend (static website enabled)
+  S3WebsiteDomainName:
+    Type: String
+    Description: Full S3 website endpoint domain (e.g., infinityai-pro-frontend.s3-website-us-east-1.amazonaws.com)
+  ALBDomainName:
+    Type: String
+    Description: Public DNS name of the Application Load Balancer (e.g., infinityai-alb-XXXX.us-east-1.elb.amazonaws.com)
+  WwwAlias:
+    Type: String
+    Default: www.infinityai.pro
+    Description: The www subdomain to point at CloudFront (CNAMES added to cert as SAN)
+
+Mappings: {}
+
+Conditions: {}
+
+Resources:
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Ref WwwAlias
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: !Ref WwwAlias
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Project
+          Value: InfinityAI.Pro
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: InfinityAI.Pro CDN for frontend and APIs
+        Aliases:
+          - !Ref DomainName
+          - !Ref WwwAlias
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+
+        Origins:
+          # S3 static website origin for frontend (public website endpoint)
+          - Id: S3WebsiteOrigin
+            DomainName: !Ref S3WebsiteDomainName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+            OriginShield:
+              Enabled: false
+
+          # ALB origin for API paths (/engine-c/*, /engine-d/*)
+          - Id: AlbApiOrigin
+            DomainName: !Ref ALBDomainName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+            OriginShield:
+              Enabled: false
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3WebsiteOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # CORS-With-SecurityHeaders-Policy
+
+        CacheBehaviors:
+          # Route API calls to ALB; disable caching for APIs
+          - PathPattern: 'engine-c/*'
+            TargetOriginId: AlbApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD, OPTIONS]
+            CachePolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # CachingDisabled
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+
+          - PathPattern: 'engine-d/*'
+            TargetOriginId: AlbApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD, OPTIONS]
+            CachePolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+
+          # WebSocket upgrade paths (CloudFront passes through without caching)
+          - PathPattern: 'engine-*/ws*'
+            TargetOriginId: AlbApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachedMethods: [GET, HEAD, OPTIONS]
+            CachePolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  DnsRecordApexA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID (global)
+
+  DnsRecordApexAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+  DnsRecordWwwA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref WwwAlias
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+  DnsRecordWwwAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref WwwAlias
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+Outputs:
+  DistributionId:
+    Value: !Ref CloudFrontDistribution
+  DistributionDomain:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  CertificateArn:
+    Value: !Ref Certificate

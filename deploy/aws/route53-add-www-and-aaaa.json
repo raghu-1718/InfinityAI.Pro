@@ -1,0 +1,40 @@
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "infinityai.pro.",
+        "Type": "AAAA",
+        "AliasTarget": {
+          "DNSName": "d24jfsjs5f17rj.cloudfront.net.",
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "EvaluateTargetHealth": false
+        }
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "www.infinityai.pro.",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": "d24jfsjs5f17rj.cloudfront.net.",
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "EvaluateTargetHealth": false
+        }
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "www.infinityai.pro.",
+        "Type": "AAAA",
+        "AliasTarget": {
+          "DNSName": "d24jfsjs5f17rj.cloudfront.net.",
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "EvaluateTargetHealth": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+# InfinityAI.Pro Multi-Cloud Data Flow Configuration
+# AWS Engine C & D + Google Engine A & B Integration
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: infinityai-multi-cloud-config
+data:
+  # AWS Infrastructure (Engines C & D)
+  aws:
+    region: us-east-1
+    engines:
+      engine-c:
+        service: trading-engine
+        endpoint: /engine-c
+        capabilities:
+          - order_execution
+          - portfolio_management
+          - risk_management
+          - dhan_integration
+        websocket: /engine-c/ws/trading
+      engine-d:
+        service: orchestration-engine
+        endpoint: /engine-d
+        capabilities:
+          - user_management
+          - authentication
+          - data_aggregation
+          - api_gateway
+        websocket: /engine-d/ws
+    
+  # Google Cloud Infrastructure (Engines A & B)
+  gcp:
+    region: us-central1
+    engines:
+      engine-a:
+        service: ai-inference-engine
+        endpoint: 
+        capabilities:
+          - gpt4_inference
+          - claude3_inference
+          - gemini_inference
+          - quantum_lstm
+        models:
+          - gpt-4-turbo
+          - claude-3-opus
+          - gemini-ultra
+          - quantum-transformer
+      engine-b:
+        service: ai-analytics-engine
+        endpoint: 
+        capabilities:
+          - market_analysis
+          - sentiment_analysis
+          - pattern_recognition
+          - performance_metrics
+        models:
+          - bert-financial
+          - yolo-v8
+          - transformer-xl
+          - monte-carlo
+
+  # Data Flow Routing
+  data_flow:
+    # Frontend -> Engine D (AWS) -> Multi-Cloud Distribution
+    frontend_requests:
+      primary: engine-d
+      fallback: engine-c
+      
+    # AI Processing Flow
+    ai_requests:
+      inference: engine-a  # Google Cloud Run
+      analytics: engine-b  # Google Cloud Run
+      aggregation: engine-d  # AWS ALB
+      
+    # Trading Flow
+    trading_requests:
+      execution: engine-c  # AWS ALB
+      validation: engine-d  # AWS ALB
+      ai_signals: engine-b  # Google Cloud Run
+      
+    # WebSocket Routing
+    websockets:
+      chat: engine-d
+      trading: engine-c
+      ai_insights: engine-d
+      
+  # Load Balancing Strategy
+  load_balancing:
+    strategy: weighted_round_robin
+    weights:
+      aws: 60  # Primary for trading & user management
+      gcp: 40  # Primary for AI processing
+      
+  # Failover Configuration
+  failover:
+    aws_to_gcp:
+      enabled: true
+      threshold: 3_failures
+      timeout: 5s
+    gcp_to_aws:
+      enabled: true
+      threshold: 3_failures
+      timeout: 5s
+      
+  # Cross-Cloud Communication
+  inter_cloud:
+    protocol: https
+    authentication: bearer_token
+    encryption: tls_1_3
+    compression: gzip
+    
+  # Performance Optimization
+  optimization:
+    caching:
+      enabled: true
+      ttl: 300s
+      redis_cluster: aws
+    cdn:
+      provider: cloudfront
+      edge_locations: global
+    compression:
+      enabled: true
+      algorithms: [gzip, brotli]

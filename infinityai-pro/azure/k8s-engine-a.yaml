@@ -1,0 +1,597 @@
+# InfinityAI.Pro - Azure AKS Deployment for Engine A (Data Ingestion)
+# Optimized for high-throughput financial data processing on Azure
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infinityai-azure
+  labels:
+    app.kubernetes.io/name: infinityai
+    app.kubernetes.io/component: engine-a
+    cloud.provider: azure
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-a-config
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+    component: data-ingestion
+data:
+  ENVIRONMENT: "production"
+  CLOUD_PROVIDER: "azure"
+  ENGINE_NAME: "engine-a"
+  LOG_LEVEL: "INFO"
+  REDIS_URL: "redis://redis-infinityai-pro-prod.redis.cache.windows.net:6380"
+  KAFKA_BOOTSTRAP_SERVERS: "sb-infinityai-pro-prod.servicebus.windows.net:9093"
+  DATABASE_URL: "postgresql://infinityai_admin@psql-infinityai-pro-prod:password@psql-infinityai-pro-prod.postgres.database.azure.com:5432/infinityai"
+  STORAGE_ACCOUNT_URL: "https://sainfinityaiproprod.dfs.core.windows.net"
+  MARKET_DATA_PROVIDERS: "yfinance,alpha_vantage,finnhub,iex_cloud"
+  DATA_LAKE_CONTAINER: "raw-market-data"
+  PROCESSED_DATA_CONTAINER: "processed-market-data"
+  MAX_CONCURRENT_REQUESTS: "50"
+  BATCH_SIZE: "1000"
+  ENABLE_CACHING: "true"
+  CACHE_TTL: "300"
+  ENABLE_COMPRESSION: "true"
+  # Azure-specific configurations
+  AZURE_SUBSCRIPTION_ID: "placeholder"
+  AZURE_TENANT_ID: "placeholder"
+  AZURE_RESOURCE_GROUP: "rg-infinityai-pro-prod"
+  AZURE_STORAGE_ACCOUNT: "sainfinityaiproprod"
+  AZURE_SERVICEBUS_NAMESPACE: "sb-infinityai-pro-prod"
+  AZURE_EVENTGRID_TOPIC: "egt-infinityai-pro-prod"
+  # Cross-cloud communication
+  AWS_ENGINE_C_URL: "https://api.aws.infinityai.pro/engine-c"
+  GCP_ENGINE_B_URL: "https://api.gcp.infinityai.pro/engine-b"
+  VERCEL_ENGINE_D_URL: "https://api.vercel.infinityai.pro/engine-d"
+  # Financial data sources
+  ALPHA_VANTAGE_RATE_LIMIT: "5"
+  FINNHUB_RATE_LIMIT: "60"
+  IEX_CLOUD_RATE_LIMIT: "100"
+  MARKET_HOURS_START: "09:30"
+  MARKET_HOURS_END: "16:00"
+  TIMEZONE: "America/New_York"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: engine-a-secrets
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+type: Opaque
+stringData:
+  DATABASE_PASSWORD: "infinityai_secure_pass"
+  REDIS_PASSWORD: "redis-primary-key-placeholder"
+  ALPHA_VANTAGE_API_KEY: "your-alpha-vantage-key"
+  FINNHUB_API_KEY: "your-finnhub-key"
+  IEX_CLOUD_API_KEY: "your-iex-cloud-key"
+  AZURE_CLIENT_SECRET: "azure-service-principal-secret"
+  AZURE_STORAGE_KEY: "azure-storage-account-key"
+  SERVICEBUS_CONNECTION_STRING: "Endpoint=sb://sb-infinityai-pro-prod.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=placeholder"
+  EVENTGRID_ACCESS_KEY: "eventgrid-access-key-placeholder"
+  # Cross-cloud authentication
+  AWS_ACCESS_KEY_ID: "aws-access-key-placeholder"
+  AWS_SECRET_ACCESS_KEY: "aws-secret-key-placeholder"
+  GCP_SERVICE_ACCOUNT_KEY: "gcp-service-account-json-placeholder"
+  VERCEL_TOKEN: "vercel-api-token-placeholder"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: engine-a-sa
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+  annotations:
+    azure.workload.identity/client-id: "placeholder-client-id"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: infinityai-azure
+  name: engine-a-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: engine-a-rolebinding
+  namespace: infinityai-azure
+subjects:
+- kind: ServiceAccount
+  name: engine-a-sa
+  namespace: infinityai-azure
+roleRef:
+  kind: Role
+  name: engine-a-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engine-a-deployment
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+    component: data-ingestion
+    version: v1.0.0
+    cloud: azure
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: engine-a
+  template:
+    metadata:
+      labels:
+        app: engine-a
+        component: data-ingestion
+        version: v1.0.0
+        cloud: azure
+      annotations:
+        azure.workload.identity/use: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: engine-a-sa
+      nodeSelector:
+        workload-type: data-ingestion
+        engine: engine-a
+      tolerations:
+      - key: "engine-a"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - engine-a
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-type
+                operator: In
+                values:
+                - compute-optimized
+      containers:
+      - name: engine-a
+        image: acrinfinityaiproprod.azurecr.io/infinityai/engine-a:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: http
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "8001"
+        - name: METRICS_PORT
+          value: "8080"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        envFrom:
+        - configMapRef:
+            name: engine-a-config
+        - secretRef:
+            name: engine-a-secrets
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+            ephemeral-storage: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+            ephemeral-storage: 10Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /tmp
+        - name: cache-storage
+          mountPath: /app/cache
+        - name: azure-config
+          mountPath: /etc/azure
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          capabilities:
+            drop:
+            - ALL
+      # Sidecar for Azure monitoring
+      - name: azure-monitor-agent
+        image: mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05262021
+        env:
+        - name: AKS_RESOURCE_ID
+          value: "/subscriptions/placeholder/resourceGroups/rg-infinityai-pro-prod/providers/Microsoft.ContainerService/managedClusters/aks-infinityai-pro-prod"
+        - name: AKS_REGION
+          value: "eastus"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - name: azure-monitor-config
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: cache-storage
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: azure-config
+        secret:
+          secretName: engine-a-secrets
+          items:
+          - key: AZURE_CLIENT_SECRET
+            path: client-secret
+          - key: AZURE_STORAGE_KEY
+            path: storage-key
+      - name: azure-monitor-config
+        configMap:
+          name: engine-a-config
+          items:
+          - key: ENVIRONMENT
+            path: environment
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsUser: 10001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: engine-a-service
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+    component: data-ingestion
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "snet-aks-prod"
+spec:
+  type: LoadBalancer
+  selector:
+    app: engine-a
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8001
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8001
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: None
+  loadBalancerSourceRanges:
+  - 10.1.0.0/16  # Azure VNet range
+  - 10.0.0.0/16  # AWS VPC range (for cross-cloud)
+  - 10.2.0.0/16  # GCP VPC range (for cross-cloud)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: engine-a-nodeport
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+    service-type: nodeport
+spec:
+  type: NodePort
+  selector:
+    app: engine-a
+  ports:
+  - name: http
+    port: 8001
+    targetPort: 8001
+    nodePort: 30001
+    protocol: TCP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: engine-a-hpa
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: engine-a-deployment
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "100"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: engine-a-pdb
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: engine-a
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: engine-a-network-policy
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+spec:
+  podSelector:
+    matchLabels:
+      app: engine-a
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          name: infinityai-azure
+    - podSelector:
+        matchLabels:
+          app: engine-b
+    - podSelector:
+        matchLabels:
+          app: engine-c
+    - podSelector:
+        matchLabels:
+          app: engine-d
+    ports:
+    - protocol: TCP
+      port: 8001
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS
+    - protocol: TCP
+      port: 80   # HTTP
+    - protocol: TCP
+      port: 5432 # PostgreSQL
+    - protocol: TCP
+      port: 6380 # Redis (Azure)
+    - protocol: TCP
+      port: 9093 # Service Bus
+    - protocol: UDP
+      port: 53   # DNS
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-a-nginx-config
+  namespace: infinityai-azure
+data:
+  default.conf: |
+    upstream engine-a {
+        server engine-a-service:80;
+        keepalive 32;
+    }
+    
+    server {
+        listen 80;
+        server_name engine-a.azure.infinityai.pro;
+        
+        location /health {
+            proxy_pass http://engine-a/health;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        location /api/v1/ {
+            proxy_pass http://engine-a/api/v1/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 300s;
+        }
+        
+        location /metrics {
+            proxy_pass http://engine-a:8080/metrics;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+---
+# Azure Application Gateway Ingress Controller (AGIC) configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: engine-a-ingress
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/connection-draining: "true"
+    appgw.ingress.kubernetes.io/connection-draining-timeout: "60"
+    appgw.ingress.kubernetes.io/cookie-based-affinity: "false"
+    appgw.ingress.kubernetes.io/request-timeout: "300"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    appgw.ingress.kubernetes.io/health-probe-path: "/health"
+    appgw.ingress.kubernetes.io/health-probe-interval: "30"
+    appgw.ingress.kubernetes.io/health-probe-timeout: "10"
+    appgw.ingress.kubernetes.io/health-probe-unhealthy-threshold: "3"
+spec:
+  tls:
+  - hosts:
+    - engine-a.azure.infinityai.pro
+    - api.azure.infinityai.pro
+    secretName: infinityai-tls-secret
+  rules:
+  - host: engine-a.azure.infinityai.pro
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: engine-a-service
+            port:
+              number: 80
+  - host: api.azure.infinityai.pro
+    http:
+      paths:
+      - path: /engine-a
+        pathType: Prefix
+        backend:
+          service:
+            name: engine-a-service
+            port:
+              number: 80
+---
+# Azure Monitor ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: engine-a-service-monitor
+  namespace: infinityai-azure
+  labels:
+    app: engine-a
+    monitoring: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: engine-a
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod_name
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node_name
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: kubernetes_namespace
+    - targetLabel: cloud_provider
+      replacement: azure
+    - targetLabel: engine
+      replacement: engine-a
