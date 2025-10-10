@@ -60,6 +60,15 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/setup-gcloud@v2'
 
+      - name: Ensure Artifact Registry repository exists
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        run: |
+          gcloud artifacts repositories describe infinityai-repo --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
+          gcloud artifacts repositories create infinityai-repo \
+            --repository-format=docker \
+            --location=${{ secrets.GCP_REGION }} \
+            --description="InfinityAI Docker repository"
+
       - name: Docker login to Artifact Registry
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
@@ -224,11 +233,12 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         working-directory: infinityai-pro/frontend
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          set -e # Exit immediately if a command exits with a non-zero status.
+          echo "INFO: Cleaning up node_modules and package-lock.json"
+          rm -rf node_modules package-lock.json
+          echo "INFO: Running npm install"
+          npm install
+          echo "INFO: Running npm run build with CI=false"
           export CI=false
           npm run build
 
