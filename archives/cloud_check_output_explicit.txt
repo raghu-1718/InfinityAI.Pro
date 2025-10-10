@@ -1,6 +1,0 @@
-ParserError: C:\Users\Raghu\InfinityAI.Pro\scripts\run_cloud_checks.ps1:54:11
-Line |
-  54 |      "Port $p:" | Out-File $log -Append
-     |            ~~~
-     | Variable reference is not valid. ':' was not followed by a valid variable name
-     | character. Consider using ${} to delimit the name.
