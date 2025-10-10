@@ -61,33 +61,20 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Ensure Artifact Registry repository exists
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          gcloud artifacts repositories describe infinityai-repo --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
-          gcloud artifacts repositories create infinityai-repo \
+          gcloud artifacts repositories describe ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
+          gcloud artifacts repositories create ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} \
             --repository-format=docker \
             --location=${{ secrets.GCP_REGION }} \
             --description="InfinityAI Docker repository"
 
       - name: Docker login to Artifact Registry
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: |
-          ACCESS_TOKEN="${{ steps.gcp-auth.outputs.access_token }}"
-          if [ -z "$ACCESS_TOKEN" ]; then
-            ACCESS_TOKEN="$(gcloud auth print-access-token)"
-          fi
-          echo "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
+        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build & Push (GCP)
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
-            exit 0
-          fi
-          IMAGE='${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}'
-          docker build -t "$IMAGE" -f "${{ matrix.context }}/Dockerfile" "${{ matrix.context }}"
-          docker push "$IMAGE"
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Deploy (Cloud Run)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -190,6 +177,7 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
+        id: deploy-ecs-task
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
@@ -197,10 +185,15 @@ jobs:
           service: ${{ matrix.service_name }}
           cluster: ${{ secrets.ECS_CLUSTER_NAME }}
           wait-for-service-stability: true
+          wait-for-minutes: 30 # Increased timeout
 
-      - name: Dry Run Notice
-        if: "${{ github.event.inputs.dry_run == 'true' }}"
-        run: echo "[DRY RUN] Would deploy task definition for service ${{ matrix.service_name }}"
+      - name: Report ECS deployment failure
+        if: failure() && steps.deploy-ecs-task.outcome == 'failure'
+        run: |
+          echo "::error::ECS deployment for ${{ matrix.ecs_service }} failed."
+          echo "Fetching last 200 service events for debugging..."
+          aws ecs describe-services --cluster ${{ matrix.ecs_cluster }} --services ${{ matrix.ecs_service }} --query 'services[0].events' --output text | head -n 200
+        shell: bash
 
   #########################################
   # DEPLOY FRONTEND TO AWS S3/CLOUDFRONT
@@ -230,10 +223,8 @@ jobs:
           node-version: '20'
 
       - name: Build Frontend
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        working-directory: infinityai-pro/frontend
         run: |
-          set -e # Exit immediately if a command exits with a non-zero status.
+          set -e
           echo "INFO: Cleaning up node_modules and package-lock.json"
           rm -rf node_modules package-lock.json
           echo "INFO: Running npm install"
@@ -241,6 +232,16 @@ jobs:
           echo "INFO: Running npm run build with CI=false"
           export CI=false
           npm run build
+        working-directory: ./infinityai-pro/frontend
+
+      - name: Create S3 bucket if it doesn't exist
+        run: |
+          aws s3api head-bucket --bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} 2>/dev/null || \
+          aws s3api create-bucket --bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} --region ${{ secrets.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
       - name: Deploy to S3
         if: "${{ github.event.inputs.dry_run != 'true' }}"
