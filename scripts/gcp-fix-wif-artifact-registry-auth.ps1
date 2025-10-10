@@ -106,7 +106,20 @@ Write-Host "[Optional] If deploying with a different runtime service account, gr
 Write-Host "Example: gcloud iam service-accounts add-iam-policy-binding RUNTIME_SA --member=serviceAccount:${ServiceAccountEmail} --role=roles/iam.serviceAccountUser" -ForegroundColor DarkYellow
 
 Write-Host "\nDone. Current IAM policy on ${ServiceAccountEmail}:" -ForegroundColor Green
-Exec "gcloud iam service-accounts get-iam-policy $ServiceAccountEmail --format=json | jq . 2>$null || gcloud iam service-accounts get-iam-policy $ServiceAccountEmail"
+try {
+  $policyJson = & gcloud iam service-accounts get-iam-policy $ServiceAccountEmail --format=json
+  # Pretty print if jq is available; otherwise just print JSON
+  $jqPath = (Get-Command jq -ErrorAction SilentlyContinue).Path
+  if ($jqPath) {
+    $policyJson | & $jqPath .
+  } else {
+    $policyJson
+  }
+}
+catch {
+  Write-Warning "Could not fetch policy in JSON format. Showing text output. $_"
+  & gcloud iam service-accounts get-iam-policy $ServiceAccountEmail
+}
 
 Write-Host "\nNext steps:" -ForegroundColor Green
 Write-Host "  - Re-run the GitHub Actions Deploy Production workflow." -ForegroundColor Green

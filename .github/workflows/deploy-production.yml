@@ -21,23 +21,34 @@ jobs:
   # DEPLOY ENGINES A & B to GCP CLOUD RUN
   #########################################
   deploy-gcp-engines:
-    name: Deploy Engines A, B & Ultra to GCP
+    name: "Deploy Engine: ${{ matrix.engine }}"
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - engine: engine-a-market-data
             service_name: infinityai-engine-a
-            context: infinityai-pro/backend/engines/engine-a
+            image_name: infinityai-engine-a
+            context: backend/engines/engine-a
+            dockerfile: backend/engines/engine-a/Dockerfile
           - engine: engine-b-ai-ml
             service_name: infinityai-engine-b
-            context: infinityai-pro/backend/engines/engine-b
+            image_name: infinityai-engine-b
+            context: backend/engines/engine-b
+            dockerfile: backend/engines/engine-b/Dockerfile
           - engine: engine-ultra-aggressive
             service_name: infinityai-ultra-aggressive
-            context: engines/engine-ultra-aggressive
+            image_name: infinityai-ultra-aggressive
+            context: backend/engines/engine-ultra-aggressive
+            dockerfile: backend/engines/engine-ultra-aggressive/Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Define SHA short
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Dry Run Notice (GCP Job)
         if: "${{ github.event.inputs.dry_run == 'true' }}"
@@ -61,35 +72,34 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Ensure Artifact Registry repository exists
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          gcloud artifacts repositories describe ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
-          gcloud artifacts repositories create ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} \
+          gcloud artifacts repositories describe infinityai-repo --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
+          gcloud artifacts repositories create infinityai-repo \
             --repository-format=docker \
             --location=${{ secrets.GCP_REGION }} \
             --description="InfinityAI Docker repository"
 
       - name: Docker login to Artifact Registry
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build & Push (GCP)
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Deploy (Cloud Run)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
-            exit 0
-          fi
           # Add GPU flags and minimum resources for Engine B
           GPU_FLAGS=""
           if [ "${{ matrix.service_name }}" = "infinityai-engine-b" ]; then
             GPU_FLAGS="--gpu 1 --gpu-type nvidia-l4 --cpu 4 --memory 16Gi"
           fi
           gcloud run deploy '${{ matrix.service_name }}' \
-            --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}' \
+            --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}' \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
@@ -109,13 +119,13 @@ jobs:
             container_name: infinityai-engine-c
             service_name: infinityai-engine-c-service
             task_family: infinityai-engine-c
-            context: infinityai-pro/backend/engines/engine-c
+            context: backend/engines/engine-c
             ecr_repo: infinityai-engine-c
           - engine: engine-d-chatbot
             container_name: infinityai-engine-d
             service_name: infinityai-engine-d-service
             task_family: infinityai-engine-d
-            context: infinityai-pro/backend/engines/engine-d
+            context: backend/engines/engine-d
             ecr_repo: infinityai-engine-d
     steps:
       - name: Checkout
@@ -232,7 +242,7 @@ jobs:
           echo "INFO: Running npm run build with CI=false"
           export CI=false
           npm run build
-        working-directory: ./infinityai-pro/frontend
+        working-directory: ./frontend/web
 
       - name: Create S3 bucket if it doesn't exist
         run: |
