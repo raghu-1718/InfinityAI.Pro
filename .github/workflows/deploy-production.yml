@@ -236,12 +236,16 @@ jobs:
 
       - name: Create S3 bucket if it doesn't exist
         run: |
-          aws s3api head-bucket --bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} 2>/dev/null || \
-          aws s3api create-bucket --bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} --region ${{ secrets.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          if aws s3api head-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" 2>/dev/null; then
+            echo "Bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} already exists."
+          else
+            echo "Bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} does not exist. Creating it in region ${{ secrets.AWS_REGION }}..."
+            if [ "${{ secrets.AWS_REGION }}" = "us-east-1" ]; then
+              aws s3api create-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" --region "${{ secrets.AWS_REGION }}"
+            else
+              aws s3api create-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" --region "${{ secrets.AWS_REGION }}" --create-bucket-configuration LocationConstraint="${{ secrets.AWS_REGION }}"
+            fi
+          fi
 
       - name: Deploy to S3
         if: "${{ github.event.inputs.dry_run != 'true' }}"
