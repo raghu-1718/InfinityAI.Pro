@@ -34,7 +34,7 @@ $results.CloudRun = $crState
 # ECS services
 Out-Section "ECS"
 try {
-  $ecs = aws ecs describe-services --cluster $Cluster --services ($EcsServices -join ' ') --query 'services[].{service:serviceName,taskDef:taskDefinition,desired:desiredCount,running:runningCount,status:status}' --output json | ConvertFrom-Json
+  $ecs = aws ecs describe-services --cluster $Cluster --services $EcsServices --query 'services[].{service:serviceName,taskDef:taskDefinition,desired:desiredCount,running:runningCount,status:status}' --output json | ConvertFrom-Json
   foreach($s in $ecs){
     $ok = ($s.running -eq $s.desired)
     if($ok){
