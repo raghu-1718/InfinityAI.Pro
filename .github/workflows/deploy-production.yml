@@ -92,8 +92,8 @@ jobs:
       - name: Build & Push (GCP)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Deploy (Cloud Run)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -104,7 +104,7 @@ jobs:
             GPU_FLAGS="--gpu 1 --gpu-type nvidia-l4 --cpu 4 --memory 16Gi"
           fi
           gcloud run deploy ${{ matrix.service_name }} \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
@@ -206,8 +206,8 @@ jobs:
         if: failure()
         env:
           ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-          ECS_SERVICE: ${{ matrix.ecs-service }}
-          ENGINE_NAME: ${{ matrix.engine-name }}
+          ECS_SERVICE: ${{ matrix.service_name }}
+          ENGINE_NAME: ${{ matrix.engine }}
         run: |
           echo "::error::ECS deployment for $ENGINE_NAME failed."
           echo "Fetching last 200 service events for debugging..."
