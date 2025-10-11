@@ -71,6 +71,10 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         uses: 'google-github-actions/setup-gcloud@v2'
 
+      - name: List files for debugging
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        run: ls -R
+
       - name: Ensure Artifact Registry repository exists
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
@@ -151,6 +155,10 @@ jobs:
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: List files for debugging
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        run: ls -R
 
       - name: Ensure ECR repository exists
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -239,6 +247,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: List files for debugging
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        run: ls -R
+        working-directory: ./frontend/web
 
       - name: Build Frontend
         if: "${{ github.event.inputs.dry_run != 'true' }}"
