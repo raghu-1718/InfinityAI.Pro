@@ -61,28 +61,24 @@ jobs:
       - name: Install deps (light)
         working-directory: infinityai-pro/backend/engines/engine-b
         run: |
-          if [ -f requirements.txt ]; then 
-            grep -E '^(fastapi|uvicorn|pydantic|numpy|pandas|scikit-learn|httpx|redis|asyncpg|aiokafka|transformers)' requirements.txt > req-lite.txt || true
-            pip install --no-cache-dir -r req-lite.txt || true
-            python - <<'PY'
-import sys, types
-for m in ['torch','transformers']:
-    if m not in sys.modules:
-        sys.modules[m]=types.ModuleType(m)
-PY
-          fi
+          python - <<'PY'
+          import sys, types
+          for m in ['torch','transformers']:
+              if m not in sys.modules:
+                  sys.modules[m]=types.ModuleType(m)
+          PY
       - name: Import smoke test
         working-directory: infinityai-pro/backend/engines/engine-b
         env:
           USE_GPU: 'false'
         run: |
           python - <<'PY'
-try:
-    import main
-    print('Engine B import OK')
-except Exception as e:
-    print('Engine B import soft-fail (non-fatal):', e)
-PY
+          try:
+              import main
+              print('Engine B import OK')
+          except Exception as e:
+              print('Engine B import soft-fail (non-fatal):', e)
+          PY
 
 
   engine-c:
@@ -110,12 +106,12 @@ PY
         working-directory: infinityai-pro/backend/engines/engine-c
         run: |
           python - <<'PY'
-try:
-    import main
-    print('Engine C import OK')
-except Exception as e:
-    print('Engine C import soft-fail (non-fatal):', e)
-PY
+          try:
+              import main
+              print('Engine C import OK')
+          except Exception as e:
+              print('Engine C import soft-fail (non-fatal):', e)
+          PY
 
   engine-d:
     name: Engine D (Aggregator) Build
