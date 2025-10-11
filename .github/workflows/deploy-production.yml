@@ -74,11 +74,16 @@ jobs:
       - name: Ensure Artifact Registry repository exists
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          gcloud artifacts repositories describe infinityai-repo --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1 || \
-          gcloud artifacts repositories create infinityai-repo \
-            --repository-format=docker \
-            --location=${{ secrets.GCP_REGION }} \
-            --description="InfinityAI Docker repository"
+          if ! gcloud artifacts repositories describe ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }} --quiet; then
+            echo "Artifact Registry repository '${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}' not found, creating it..."
+            gcloud artifacts repositories create ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} \
+              --repository-format=docker \
+              --location=${{ secrets.GCP_REGION }} \
+              --project=${{ secrets.GCP_PROJECT_ID }} \
+              --description="InfinityAI Docker repository"
+          else
+            echo "Artifact Registry repository '${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}' already exists."
+          fi
 
       - name: Docker login to Artifact Registry
         if: "${{ github.event.inputs.dry_run != 'true' }}"
@@ -98,8 +103,8 @@ jobs:
           if [ "${{ matrix.service_name }}" = "infinityai-engine-b" ]; then
             GPU_FLAGS="--gpu 1 --gpu-type nvidia-l4 --cpu 4 --memory 16Gi"
           fi
-          gcloud run deploy '${{ matrix.service_name }}' \
-            --image '${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}' \
+          gcloud run deploy ${{ matrix.service_name }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
@@ -198,12 +203,15 @@ jobs:
           wait-for-minutes: 30 # Increased timeout
 
       - name: Report ECS deployment failure
-        if: failure() && steps.deploy-ecs-task.outcome == 'failure'
+        if: failure()
+        env:
+          ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+          ECS_SERVICE: ${{ matrix.ecs-service }}
+          ENGINE_NAME: ${{ matrix.engine-name }}
         run: |
-          echo "::error::ECS deployment for ${{ matrix.ecs_service }} failed."
+          echo "::error::ECS deployment for $ENGINE_NAME failed."
           echo "Fetching last 200 service events for debugging..."
-          aws ecs describe-services --cluster ${{ matrix.ecs_cluster }} --services ${{ matrix.ecs_service }} --query 'services[0].events' --output text | head -n 200
-        shell: bash
+          aws ecs describe-services --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE" --query 'services[0].events' --output text | head -n 200
 
   #########################################
   # DEPLOY FRONTEND TO AWS S3/CLOUDFRONT
@@ -233,11 +241,10 @@ jobs:
           node-version: '20'
 
       - name: Build Frontend
+        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
           set -e
-          echo "INFO: Cleaning up node_modules and package-lock.json"
-          rm -rf node_modules package-lock.json
-          echo "INFO: Running npm install"
+          echo "INFO: Running npm install in frontend/web"
           npm install
           echo "INFO: Running npm run build with CI=false"
           export CI=false
@@ -259,7 +266,7 @@ jobs:
 
       - name: Deploy to S3
         if: "${{ github.event.inputs.dry_run != 'true' }}"
-        working-directory: infinityai-pro/frontend
+        working-directory: ./frontend/web
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             echo "[DRY RUN] Would sync build/ to S3 bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }}"
