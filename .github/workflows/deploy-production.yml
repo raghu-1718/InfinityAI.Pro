@@ -208,7 +208,14 @@ jobs:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: ${{ matrix.service_name }}
           cluster: ${{ secrets.ECS_CLUSTER_NAME }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false
+
+      - name: Check ECS Service Events
+        if: always() # Always run this step to see events even if the previous one fails
+        run: |
+          echo "Fetching latest 5 events for service ${{ matrix.service-name }}..."
+          aws ecs describe-services --services ${{ matrix.service-name }} --cluster ${{ secrets.AWS_ECS_CLUSTER_NAME }} --query "services[0].events[0:5]" --output json
+
           wait-for-minutes: 30 # Increased timeout
 
       - name: Report ECS deployment failure
