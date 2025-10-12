@@ -30,17 +30,14 @@ jobs:
           - engine: engine-a-market-data
             service_name: infinityai-engine-a
             image_name: infinityai-engine-a
-            context: backend/engines/engine-a
-            dockerfile: backend/engines/engine-a/Dockerfile
+            dockerfile: backend/Dockerfile.engine-a
           - engine: engine-b-ai-ml
             service_name: infinityai-engine-b
             image_name: infinityai-engine-b
-            context: backend/engines/engine-b
-            dockerfile: backend/engines/engine-b/Dockerfile
+            dockerfile: backend/Dockerfile.engine-b
           - engine: engine-ultra-aggressive
             service_name: infinityai-ultra-aggressive
             image_name: infinityai-ultra-aggressive
-            context: backend/engines/engine-ultra-aggressive
             dockerfile: backend/engines/engine-ultra-aggressive/Dockerfile
     steps:
       - name: Checkout
@@ -98,7 +95,7 @@ jobs:
       - name: Build & Push (GCP)
         if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} .
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} backend
           docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Deploy (Cloud Run)
@@ -130,13 +127,13 @@ jobs:
             container_name: infinityai-engine-c
             service_name: infinityai-engine-c-service
             task_family: infinityai-engine-c
-            context: backend/engines/engine-c
+            dockerfile: backend/Dockerfile.engine-c
             ecr_repo: infinityai-engine-c
           - engine: engine-d-chatbot
             container_name: infinityai-engine-d
             service_name: infinityai-engine-d-service
             task_family: infinityai-engine-d
-            context: backend/engines/engine-d
+            dockerfile: backend/Dockerfile.engine-d
             ecr_repo: infinityai-engine-d
     steps:
       - name: Checkout
@@ -185,7 +182,7 @@ jobs:
             echo "image=dry-run-image" >> $GITHUB_OUTPUT
             exit 0
           fi
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.dockerfile }} backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
