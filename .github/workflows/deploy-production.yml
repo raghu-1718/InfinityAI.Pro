@@ -164,18 +164,21 @@ jobs:
 
       - name: Download task definition
         if: ${{ env.DRY_RUN == 'false' }}
+        env:
+          TASK_FAMILY: ${{ matrix.task_family }}
+          TASK_DEF_FILE: ${{ matrix.task_def_file }}
         run: |
           # Try to download the current task definition from AWS; if it doesn't exist, fall back to the repo template
-          echo "Attempting to download task definition for ${matrix.task_family} from AWS..."
+          echo "Attempting to download task definition for $TASK_FAMILY from AWS..."
           set -e
-          if aws ecs describe-task-definition --task-definition "${{ matrix.task_family }}" --query taskDefinition > task-definition.json 2>/dev/null; then
+          if aws ecs describe-task-definition --task-definition "$TASK_FAMILY" --query taskDefinition > task-definition.json 2>/dev/null; then
             echo "Downloaded remote task definition"
           else
-            echo "Remote task definition not found; using repository template ${matrix.task_def_file}"
-            if [ -f "${{ matrix.task_def_file }}" ]; then
-              cp "${{ matrix.task_def_file }}" task-definition.json
+            echo "Remote task definition not found; using repository template $TASK_DEF_FILE"
+            if [ -f "$TASK_DEF_FILE" ]; then
+              cp "$TASK_DEF_FILE" task-definition.json
             else
-              echo "Local task definition template ${{ matrix.task_def_file }} not found"; exit 11
+              echo "Local task definition template $TASK_DEF_FILE not found"; exit 11
             fi
           fi
 
