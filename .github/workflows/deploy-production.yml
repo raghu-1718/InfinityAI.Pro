@@ -11,9 +11,8 @@ on:
         description: 'Set to true to run validation without deploying'
         type: boolean
         default: true
-  push:
-    branches:
-      - main
+  repository_dispatch:
+    types: [run-deploy-production]
 
 permissions:
   contents: read
