@@ -191,23 +191,37 @@ jobs:
           # Keep only keys allowed by RegisterTaskDefinition API: family, taskRoleArn, executionRoleArn, networkMode,
           # containerDefinitions, volumes, placementConstraints, requiresCompatibilities, cpu, memory, tags,
           # pidMode, ipcMode, proxyConfiguration, inferenceAccelerators
-          jq '{
-            family: .family,
-            taskRoleArn: .taskRoleArn,
-            executionRoleArn: .executionRoleArn,
-            networkMode: .networkMode,
-            containerDefinitions: .containerDefinitions,
-            volumes: .volumes,
-            placementConstraints: .placementConstraints,
-            requiresCompatibilities: .requiresCompatibilities,
-            cpu: .cpu,
-            memory: .memory,
-            tags: .tags,
-            pidMode: .pidMode,
-            ipcMode: .ipcMode,
-            proxyConfiguration: .proxyConfiguration,
-            inferenceAccelerators: .inferenceAccelerators
-          }' task-definition.json > task-definition.sanitized.json || true
+          # Build an object with only the allowed keys, then remove any keys whose
+          # value is null so the AWS CLI doesn't receive invalid null parameters.
+          # Build minimal allowed object then recursively strip null/empty values (works top-level and inside containerDefinitions)
+          jq '
+            def walk(f):
+              . as $in
+              | if type == "object" then
+                  reduce keys[] as $key ( {}; . + { ($key): ($in[$key] | walk(f)) } ) | f
+                elif type == "array" then map( walk(f) ) | f
+                else f
+                end;
+            {
+              family: .family,
+              taskRoleArn: .taskRoleArn,
+              executionRoleArn: .executionRoleArn,
+              networkMode: .networkMode,
+              containerDefinitions: .containerDefinitions,
+              volumes: .volumes,
+              placementConstraints: .placementConstraints,
+              requiresCompatibilities: .requiresCompatibilities,
+              cpu: .cpu,
+              memory: .memory,
+              tags: .tags,
+              pidMode: .pidMode,
+              ipcMode: .ipcMode,
+              proxyConfiguration: .proxyConfiguration,
+              inferenceAccelerators: .inferenceAccelerators
+            }
+            # Recursively remove keys whose value is null, empty array, empty object or empty string
+            | walk(if type=="object" then with_entries(select(.value != null and .value != [] and .value != {} and .value != "")) else . end)
+          ' task-definition.json > task-definition.sanitized.json || true
 
           # Fallback: if sanitize produced null/empty family, ensure we still operate on original
           if [ ! -s task-definition.sanitized.json ] || [ "$(jq -r '.family // empty' task-definition.sanitized.json)" = "" ]; then
@@ -271,8 +285,20 @@ jobs:
       - name: Build Frontend
         working-directory: frontend/web
         run: |
+          echo "Node version: $(node --version)" || true
+          echo "npm version: $(npm --version)" || true
+          # Ensure a failing `npm ci` doesn't abort the whole step when runner enables errexit.
+          set +e
           npm ci
-          npm run build
+          RC=$?
+          set -e
+          if [ $RC -eq 0 ]; then
+            npm run build
+          else
+            echo "npm ci failed (exit $RC); attempting npm install fallback (this will update node_modules based on package.json)"
+            npm install
+            npm run build
+          fi
 
       - name: Prepare bucket and Deploy to S3
         working-directory: frontend/web
