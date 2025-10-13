@@ -11,6 +11,9 @@ on:
         description: 'Set to true to run validation without deploying'
         type: boolean
         default: true
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
