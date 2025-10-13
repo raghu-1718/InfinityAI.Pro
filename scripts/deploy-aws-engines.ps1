@@ -198,17 +198,26 @@ Write-Host "`n📊 Checking service status..." -ForegroundColor Cyan
 Start-Sleep -Seconds 10
 
 try {
-    $descArgs = @("ecs","describe-services","--cluster", $Cluster, "--services", "engine-c-service", "engine-d-service", "--region", $Region, "--output","json")
-    $json = aws @descArgs
-    $Services = $json | ConvertFrom-Json
-    
-    foreach ($Service in $Services.services) {
-        $ServiceName = $Service.serviceName
-        $Status = $Service.status
-        $RunningCount = $Service.runningCount
-        $DesiredCount = $Service.desiredCount
-        
-        Write-Host "🎯 $ServiceName`: Status=$Status, Running=$RunningCount/$DesiredCount" -ForegroundColor $(if ($Status -eq "ACTIVE") { "Green" } else { "Yellow" })
+    # Defensive: if DRY_RUN is enabled, skip CLI checks
+    if ($env:DRY_RUN -and $env:DRY_RUN -eq 'true') {
+        Write-Host "[DRY RUN] Skipping AWS describe-services/status checks" -ForegroundColor Yellow
+    }
+    elseif (-not $Cluster) {
+        Write-Host "ECS cluster name is empty; skipping status checks" -ForegroundColor Yellow
+    }
+    else {
+        $descArgs = @("ecs","describe-services","--cluster", $Cluster, "--services", "engine-c-service", "engine-d-service", "--region", $Region, "--output","json")
+        $json = aws @descArgs
+        $Services = $json | ConvertFrom-Json
+
+        foreach ($Service in $Services.services) {
+            $ServiceName = $Service.serviceName
+            $Status = $Service.status
+            $RunningCount = $Service.runningCount
+            $DesiredCount = $Service.desiredCount
+
+            Write-Host "🎯 $ServiceName`: Status=$Status, Running=$RunningCount/$DesiredCount" -ForegroundColor $(if ($Status -eq "ACTIVE") { "Green" } else { "Yellow" })
+        }
     }
 }
 catch {

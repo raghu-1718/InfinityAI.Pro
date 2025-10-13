@@ -90,11 +90,20 @@ class TradeExecutionService:
     def __init__(self):
         self.dhan_token = os.getenv('DHAN_ACCESS_TOKEN', 'PLACEHOLDER_TOKEN')
         self.dhan_client_id = os.getenv('DHAN_CLIENT_ID', 'PLACEHOLDER_CLIENT_ID')
+        self.dhan_api_key = os.getenv('DHAN_API_KEY', '')
+        self.dhan_api_secret = os.getenv('DHAN_API_SECRET', '')
         self.base_url = "https://api.dhan.co/v2"
         
         self.headers = {
             "access-token": self.dhan_token,
+            "client-id": self.dhan_client_id,
             "Content-Type": "application/json"
+        }
+        
+        self.rt_headers = {
+            "x-api-key": self.dhan_api_key,
+            "x-api-secret": self.dhan_api_secret,
+            "client-id": self.dhan_client_id
         }
         
         # Risk management parameters
@@ -124,7 +133,7 @@ class TradeExecutionService:
     
     async def perform_risk_checks(self, symbol: str, quantity: int, price: float, transaction_type: TransactionType) -> RiskCheck:
         """Perform comprehensive risk checks"""
-        warnings = []
+        warnings: List[str] = []
         risk_score = 0.0
         
         # Check kill switch
@@ -157,7 +166,7 @@ class TradeExecutionService:
         
         # Calculate current exposure
         current_exposure = sum(
-            pos.quantity * pos.current_price 
+            pos.quantity * float(pos.current_price or 0.0)
             for pos in self.positions.values()
         )
         
@@ -180,7 +189,7 @@ class TradeExecutionService:
             current_exposure=current_exposure
         )
     
-    async def execute_order_with_dhan(self, order: TradeOrder) -> Dict:
+    async def execute_order_with_dhan(self, order: TradeOrder) -> Dict[str, Any]:
         """Execute order through Dhan API"""
         try:
             # Prepare order payload for Dhan API
@@ -260,8 +269,8 @@ class TradeExecutionService:
                 if execution_result['success']:
                     order.status = OrderStatus.EXECUTED
                     order.executed_at = datetime.now()
-                    order.execution_price = price  # In production, get actual execution price
-                    order.fees = quantity * price * 0.001  # Simplified fee calculation
+                    order.execution_price = float(price)  # In production, get actual execution price
+                    order.fees = float(quantity) * float(price) * 0.001  # Simplified fee calculation
                     
                     # Update positions
                     await self.update_positions(order)
@@ -286,7 +295,7 @@ class TradeExecutionService:
             logger.error(f"Error placing order {order_id}: {e}")
             return order
     
-    async def update_positions(self, executed_order: TradeOrder):
+    async def update_positions(self, executed_order: TradeOrder) -> None:
         """Update position after order execution"""
         symbol = executed_order.symbol
         
@@ -295,9 +304,11 @@ class TradeExecutionService:
             
             if executed_order.transaction_type == TransactionType.BUY:
                 # Add to position
-                total_cost = (position.quantity * position.average_price) + (executed_order.quantity * executed_order.execution_price)
+                avg_price = float(position.average_price)
+                exec_price = float(executed_order.execution_price or 0.0)
+                total_cost = (position.quantity * avg_price) + (executed_order.quantity * exec_price)
                 total_quantity = position.quantity + executed_order.quantity
-                position.average_price = total_cost / total_quantity
+                position.average_price = total_cost / max(total_quantity, 1)
                 position.quantity = total_quantity
             else:
                 # Reduce position
@@ -311,15 +322,15 @@ class TradeExecutionService:
             if executed_order.transaction_type == TransactionType.BUY:
                 self.positions[symbol] = Position(
                     symbol=symbol,
-                    quantity=executed_order.quantity,
-                    average_price=executed_order.execution_price,
-                    current_price=executed_order.execution_price,
+                    quantity=int(executed_order.quantity),
+                    average_price=float(executed_order.execution_price or executed_order.price or 0.0),
+                    current_price=float(executed_order.execution_price or executed_order.price or 0.0),
                     unrealized_pnl=0.0,
                     realized_pnl=0.0,
-                    entry_time=executed_order.executed_at
+                    entry_time=executed_order.executed_at or datetime.now()
                 )
     
-    async def get_account_info(self) -> Dict:
+    async def get_account_info(self) -> Dict[str, Any]:
         """Get account information from Dhan"""
         try:
             url = f"{self.base_url}/funds"
@@ -526,6 +537,25 @@ async def get_metrics():
         "execution_enabled": execution_service.execution_enabled,
         "timestamp": datetime.now().isoformat()
     }
+
+@app.post("/api/config/dhan")
+async def update_dhan_config(config: Dict[str, str], credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Update DHAN access token at runtime for Engine C (API key/secret/client id remain stable)."""
+    try:
+        if not await execution_service.validate_api_key(credentials.credentials):
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        token = config.get("access_token") or config.get("DHAN_ACCESS_TOKEN")
+        if token:
+            execution_service.dhan_token = token
+            execution_service.headers["access-token"] = token
+        if config.get("client_id"):
+            execution_service.dhan_client_id = config["client_id"]
+            execution_service.headers["client-id"] = config["client_id"]
+            execution_service.rt_headers["client-id"] = config["client_id"]
+        return {"status": "updated", "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Error updating DHAN config (Engine C): {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8002))

@@ -1,0 +1,54 @@
+name: Deploy - GCP Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g., latest)'
+        required: true
+        default: 'latest'
+      dry_run:
+        description: 'If true, only simulate deploy'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Download image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: image-engine-a-market-data
+          path: tmp/images
+      - name: Build / load images (if artifacts present)
+        run: |
+          echo "Looking for local image artifacts in tmp/images..."
+      - name: Build docker image for engine-a
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          LOCAL_IMAGE="infinityai/engine-a:${IMAGE_TAG}"
+          docker build -t "${LOCAL_IMAGE}" backend/engines/engine-a-market-data
+      - name: Prepare image URI and call deploy script
+        env:
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+        run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          LOCAL_IMAGE="infinityai/engine-a:${IMAGE_TAG}"
+          TARGET_IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/infinityai-repo/engine-a:${IMAGE_TAG}"
+          DRY_RUN=${{ github.event.inputs.dry_run }}
+          echo "Calling deploy script with TARGET_IMAGE=${TARGET_IMAGE} (dry_run=${DRY_RUN})"
+          bash scripts/deploy_cloudrun.sh "${LOCAL_IMAGE}" "${TARGET_IMAGE}" "infinityai-engine-a" "${GCP_REGION}" "${GCP_PROJECT}" "${DRY_RUN}"

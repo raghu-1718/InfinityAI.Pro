@@ -30,11 +30,6 @@ jobs:
         run: |
           pip install --no-cache-dir -r requirements.txt
       - name: Import smoke test
-        working-directory: engines/engine-ultra-aggressive
+        working-directory: backend/engines/engine-ultra-aggressive
         run: |
-          python - <<'PY'
-import importlib, sys
-print('Attempting import of ultra_aggressive_main ...')
-import ultra_aggressive_main
-print('Imported ultra_aggressive_main: OK')
-PY
+          python -c "import importlib, sys; print('Attempting import of ultra_aggressive_main ...'); import ultra_aggressive_main; print('Imported ultra_aggressive_main: OK')"

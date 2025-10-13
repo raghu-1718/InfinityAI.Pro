@@ -57,11 +57,21 @@ class MarketDataService:
     def __init__(self):
         self.dhan_token = os.getenv('DHAN_ACCESS_TOKEN', 'PLACEHOLDER_TOKEN')
         self.dhan_client_id = os.getenv('DHAN_CLIENT_ID', 'PLACEHOLDER_CLIENT_ID')
+        self.dhan_api_key = os.getenv('DHAN_API_KEY', '')
+        self.dhan_api_secret = os.getenv('DHAN_API_SECRET', '')
         self.base_url = "https://api.dhan.co/v2"
         
         self.headers = {
             "access-token": self.dhan_token,
+            "client-id": self.dhan_client_id,
             "Content-Type": "application/json"
+        }
+        
+        # for Real-Time Advantage (if required by WS/gateway services)
+        self.rt_headers = {
+            "x-api-key": self.dhan_api_key,
+            "x-api-secret": self.dhan_api_secret,
+            "client-id": self.dhan_client_id
         }
         
         # Market data cache
@@ -334,6 +344,23 @@ async def get_metrics():
         "last_update": datetime.now().isoformat(),
         "status": "operational"
     }
+
+@app.post("/api/config/dhan")
+async def update_dhan_config(config: Dict[str, str]):
+    """Update DHAN access token at runtime (API key/secret/client id remain stable)."""
+    try:
+        token = config.get("access_token") or config.get("DHAN_ACCESS_TOKEN")
+        if token:
+            market_service.dhan_token = token
+            market_service.headers["access-token"] = token
+        # Optional: allow updating client id if passed explicitly
+        if config.get("client_id"):
+            market_service.dhan_client_id = config["client_id"]
+            market_service.headers["client-id"] = config["client_id"]
+        return {"status": "updated", "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Error updating DHAN config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

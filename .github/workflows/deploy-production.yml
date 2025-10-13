@@ -4,323 +4,267 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Image tag for all engine containers (e.g., latest, git sha)'
+        description: 'Image tag for engine containers (e.g., latest, git-sha)'
         required: true
         default: 'latest'
       dry_run:
-        description: 'Set to true to run validation without deploying (string true/false to avoid 422 bug)'
-        required: false
-        default: 'false'
+        description: 'Set to true to run validation without deploying'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
-  id-token: write # Required for GCP and AWS OIDC authentication
+  id-token: write
+
+env:
+  # Make dry-run available to steps as string 'true' or 'false'
+  DRY_RUN: ${{ github.event.inputs.dry_run }}
 
 jobs:
-  #########################################
-  # DEPLOY ENGINES A & B to GCP CLOUD RUN
-  #########################################
   deploy-gcp-engines:
-    name: "Deploy Engine: ${{ matrix.engine }}"
+    name: Deploy Engines A, B & Ultra to GCP
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         include:
           - engine: engine-a-market-data
             service_name: infinityai-engine-a
-            image_name: infinityai-engine-a
-            dockerfile: backend/Dockerfile.engine-a
+            context: backend/engines/engine-a-market-data
           - engine: engine-b-ai-ml
             service_name: infinityai-engine-b
-            image_name: infinityai-engine-b
-            dockerfile: backend/Dockerfile.engine-b
+            context: backend/engines/engine-b-ai-ml
           - engine: engine-ultra-aggressive
             service_name: infinityai-ultra-aggressive
-            image_name: infinityai-ultra-aggressive
-            dockerfile: backend/engines/engine-ultra-aggressive/Dockerfile
+            context: backend/engines/engine-ultra-aggressive
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Define SHA short
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Dry Run Notice (GCP Job)
-        if: "${{ github.event.inputs.dry_run == 'true' }}"
-        run: echo "[DRY RUN] Skipping GCP auth & deployment for ${{ matrix.service_name }}"
+      - name: Dry-run notice (GCP)
+        run: |
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Skipping GCP auth & deployment for ${{ matrix.service_name }}"
+          else
+            echo "Proceeding to authenticate to GCP for ${{ matrix.service_name }}"
+          fi
 
       - name: Authenticate to Google Cloud
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        id: gcp-auth
-        uses: 'google-github-actions/auth@v2'
+        if: ${{ env.DRY_RUN == 'false' }}
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
-          export_environment_variables: true
-          token_format: 'access_token'
-          access_token_lifetime: '3600s'
 
       - name: Set up Cloud SDK
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: List files for debugging
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: ls -R
-
-      - name: Ensure Artifact Registry repository exists
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: |
-          if ! gcloud artifacts repositories describe ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }} --quiet; then
-            echo "Artifact Registry repository '${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}' not found, creating it..."
-            gcloud artifacts repositories create ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }} \
-              --repository-format=docker \
-              --location=${{ secrets.GCP_REGION }} \
-              --project=${{ secrets.GCP_PROJECT_ID }} \
-              --description="InfinityAI Docker repository"
-          else
-            echo "Artifact Registry repository '${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}' already exists."
-          fi
-
-      - name: Docker login to Artifact Registry
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://${{ secrets.GCP_REGION }}-docker.pkg.dev
+        if: ${{ env.DRY_RUN == 'false' }}
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Build & Push (GCP)
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} -f ${{ matrix.dockerfile }} backend
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }}
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
+            exit 0
+          fi
+          gcloud builds submit "${{ matrix.context }}" \
+            --tag "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}"
 
       - name: Deploy (Cloud Run)
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          # Add GPU flags and minimum resources for Engine B
-          GPU_FLAGS=""
-          if [ "${{ matrix.service_name }}" = "infinityai-engine-b" ]; then
-            GPU_FLAGS="--gpu 1 --gpu-type nvidia-l4 --cpu 4 --memory 16Gi"
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
+            exit 0
           fi
-          gcloud run deploy ${{ matrix.service_name }} \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO_NAME }}/${{ matrix.image_name }}:${{ steps.vars.outputs.sha_short }} \
-            --region ${{ secrets.GCP_REGION }} \
+          gcloud run deploy "${{ matrix.service_name }}" \
+            --image "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}" \
+            --region "${{ secrets.GCP_REGION }}" \
             --platform managed \
-            --allow-unauthenticated \
-            $GPU_FLAGS
+            --allow-unauthenticated
 
-  #########################################
-  # DEPLOY ENGINES C & D to AWS ECS
-  #########################################
   deploy-aws-engines:
     name: Deploy Engines C & D to AWS ECS
+    if: ${{ github.event.inputs.dry_run == 'false' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        engine: [engine-c-execution, engine-d-chatbot]
         include:
           - engine: engine-c-execution
-            container_name: infinityai-engine-c
-            service_name: infinityai-engine-c-service
+            container_name: engine-c-container
+            service_name: infinityai-engine-c
             task_family: infinityai-engine-c
-            dockerfile: backend/Dockerfile.engine-c
-            ecr_repo: infinityai-engine-c
+            task_def_file: task-def-engine-c.json
+            context: backend/engines/engine-c-execution
           - engine: engine-d-chatbot
-            container_name: infinityai-engine-d
-            service_name: infinityai-engine-d-service
+            container_name: engine-d-container
+            service_name: infinityai-engine-d
             task_family: infinityai-engine-d
-            dockerfile: backend/Dockerfile.engine-d
-            ecr_repo: infinityai-engine-d
+            task_def_file: task-def-engine-d.json
+            context: backend/engines/engine-d-chatbot
+    env:
+      ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Dry Run Notice (AWS ECS Job)
-        if: "${{ github.event.inputs.dry_run == 'true' }}"
-        run: echo "[DRY RUN] Skipping AWS auth & ECS deployment for ${{ matrix.engine }}"
+      - name: Dry-run notice (AWS ECS)
+        run: |
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Skipping AWS auth & deploy steps for ${{ matrix.service_name }}"
+          else
+            echo "Proceeding to configure AWS for ${{ matrix.service_name }}"
+          fi
 
       - name: Configure AWS credentials
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        if: ${{ env.DRY_RUN == 'false' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ env.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        if: ${{ env.DRY_RUN == 'false' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
-      - name: List files for debugging
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: ls -R
-
-      - name: Ensure ECR repository exists
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        env:
-          ECR_REPOSITORY: ${{ matrix.ecr_repo }}
-        run: |
-          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
-          aws ecr create-repository --repository-name "$ECR_REPOSITORY"
 
       - name: Build, tag, and push image to ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ matrix.ecr_repo }}
+          ECR_REPOSITORY: infinityai-${{ matrix.engine }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
             echo "[DRY RUN] Would build and push image for ${{ matrix.engine }} to ECR"
             echo "image=dry-run-image" >> $GITHUB_OUTPUT
             exit 0
           fi
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.dockerfile }} backend
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Download task definition
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        if: ${{ env.DRY_RUN == 'false' }}
         run: |
-          aws ecs describe-task-definition --task-definition ${{ matrix.task_family }} --query taskDefinition > task-definition.json
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: ${{ matrix.container_name }}
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy Amazon ECS task definition
-        id: deploy-ecs-task
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ matrix.service_name }}
-          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
-          wait-for-service-stability: false
-
-      - name: Check ECS Service Events
-        if: always() # Always run this step to see events even if the previous one fails
-        run: |
-          echo "Fetching latest 5 events for service ${{ matrix.service-name }}..."
-          aws ecs describe-services --services ${{ matrix.service-name }} --cluster ${{ secrets.AWS_ECS_CLUSTER_NAME }} --query "services[0].events[0:5]" --output json
-
-          wait-for-minutes: 30 # Increased timeout
-
-      - name: Report ECS deployment failure
-        if: failure()
-        env:
-          ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-          ECS_SERVICE: ${{ matrix.service_name }}
-          ENGINE_NAME: ${{ matrix.engine }}
-        run: |
-          echo "::error::ECS deployment for $ENGINE_NAME failed."
-          echo "Fetching last 200 service events for debugging..."
-          aws ecs describe-services --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE" --query 'services[0].events' --output text | head -n 200
-
-  #########################################
-  # DEPLOY FRONTEND TO AWS S3/CLOUDFRONT
-  #########################################
-  deploy-frontend-aws:
-    name: Deploy Frontend to AWS S3
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Dry Run Notice (Frontend)
-        if: "${{ github.event.inputs.dry_run == 'true' }}"
-        run: echo "[DRY RUN] Skipping AWS auth & frontend deployment"
-
-      - name: Configure AWS credentials
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
-
-      - name: Setup Node.js
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: List files for debugging
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: ls -R
-        working-directory: ./frontend/web
-
-      - name: Build Frontend
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        run: |
+          # Try to download the current task definition from AWS; if it doesn't exist, fall back to the repo template
+          echo "Attempting to download task definition for ${matrix.task_family} from AWS..."
           set -e
-          echo "INFO: Running npm install in frontend/web"
-          npm install
-          echo "INFO: Running npm run build with CI=false"
-          export CI=false
-          npm run build
-        working-directory: ./frontend/web
-
-      - name: Create S3 bucket if it doesn't exist
-        run: |
-          if aws s3api head-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" 2>/dev/null; then
-            echo "Bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} already exists."
+          if aws ecs describe-task-definition --task-definition "${{ matrix.task_family }}" --query taskDefinition > task-definition.json 2>/dev/null; then
+            echo "Downloaded remote task definition"
           else
-            echo "Bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }} does not exist. Creating it in region ${{ secrets.AWS_REGION }}..."
-            if [ "${{ secrets.AWS_REGION }}" = "us-east-1" ]; then
-              aws s3api create-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" --region "${{ secrets.AWS_REGION }}"
+            echo "Remote task definition not found; using repository template ${matrix.task_def_file}"
+            if [ -f "${{ matrix.task_def_file }}" ]; then
+              cp "${{ matrix.task_def_file }}" task-definition.json
             else
-              aws s3api create-bucket --bucket "${{ secrets.AWS_S3_BUCKET_FRONTEND }}" --region "${{ secrets.AWS_REGION }}" --create-bucket-configuration LocationConstraint="${{ secrets.AWS_REGION }}"
+              echo "Local task definition template ${{ matrix.task_def_file }} not found"; exit 11
             fi
           fi
 
-      - name: Deploy to S3
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
-        working-directory: ./frontend/web
+      - name: Render, register and deploy ECS task definition
+        if: ${{ env.DRY_RUN == 'false' }}
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "[DRY RUN] Would sync build/ to S3 bucket ${{ secrets.AWS_S3_BUCKET_FRONTEND }}"
+          set -euo pipefail
+          echo "Using built image: ${IMAGE}"
+          # Replace container image in the task definition JSON
+          jq --arg name "${{ matrix.container_name }}" --arg image "${{ steps.build-image.outputs.image }}" '
+            (.containerDefinitions[] | select(.name == $name) .image) = $image
+          ' task-definition.json > task-definition.updated.json
+
+          echo "Registering task definition..."
+          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json)
+          TASK_DEF_ARN=$(echo "$REG_OUT" | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "Registered task definition: $TASK_DEF_ARN"
+
+          echo "Updating service ${{ matrix.service_name }} on cluster ${{ secrets.ECS_CLUSTER_NAME }}"
+          aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ matrix.service_name }}" --task-definition "$TASK_DEF_ARN" --force-new-deployment
+          echo "Waiting for service stability..."
+          aws ecs wait services-stable --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --services "${{ matrix.service_name }}"
+          echo "Deployment complete for ${{ matrix.service_name }}"
+
+      - name: Dry Run Notice
+        if: ${{ env.DRY_RUN == 'true' }}
+        run: echo "[DRY RUN] Would deploy task definition for service ${{ matrix.service_name }}"
+
+  deploy-frontend-aws:
+    name: Deploy Frontend to AWS S3
+    if: ${{ github.event.inputs.dry_run == 'false' }}
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_FRONTEND }}
+      CLOUDFRONT_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dry-run notice (frontend)
+        run: |
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Skipping AWS auth & frontend deployment"
+          else
+            echo "Proceeding to configure AWS for frontend deploy"
+          fi
+
+      - name: Configure AWS credentials
+        if: ${{ env.DRY_RUN == 'false' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION || 'us-east-1' }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Build Frontend
+        working-directory: frontend/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare bucket and Deploy to S3
+        working-directory: frontend/web
+        run: |
+          # Always show intent in dry-run, but only call AWS when not dry-run
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
+            echo "[DRY RUN] Would check/create bucket: ${S3_BUCKET} and sync build/ -> s3://${S3_BUCKET}"
             exit 0
           fi
-          aws s3 sync build/ s3://${{ secrets.AWS_S3_BUCKET_FRONTEND }} --delete
+          if [ -z "${{ env.S3_BUCKET }}" ]; then
+            echo "Missing AWS_S3_BUCKET_FRONTEND secret"; exit 11
+          fi
+          # Verify bucket exists, create if necessary
+          if aws s3api head-bucket --bucket "${{ env.S3_BUCKET }}" 2>/dev/null; then
+            echo "Bucket ${{ env.S3_BUCKET }} already exists."
+          else
+            echo "Bucket ${{ env.S3_BUCKET }} does not exist. Creating in region ${AWS_REGION}..."
+            aws s3api create-bucket --bucket "${{ env.S3_BUCKET }}" --region "${AWS_REGION}" || { echo "Failed to create bucket"; exit 12; }
+          fi
+          aws s3 sync build/ s3://${{ env.S3_BUCKET }} --delete
 
       - name: Invalidate CloudFront Cache
-        if: "${{ github.event.inputs.dry_run != 'true' }}"
+        if: ${{ env.DRY_RUN == 'false' }}
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            echo "[DRY RUN] Would invalidate CloudFront distribution ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}"
-            exit 0
+          if [ -z "${{ env.CLOUDFRONT_ID }}" ]; then
+            echo "Missing AWS_CLOUDFRONT_DISTRIBUTION_ID secret"; exit 12
           fi
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_ID }} --paths "/*"
 
-  #########################################
-  # SUMMARY
-  #########################################
   summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
     needs: [deploy-gcp-engines, deploy-aws-engines, deploy-frontend-aws]
-    if: always()
     steps:
       - name: Report Result
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          if [ "${{ env.DRY_RUN }}" = "true" ]; then
             echo "[DRY RUN] Completed validation without performing cloud actions."
+            echo "✅ Workflow completed (status aggregation may include skipped steps)."
+            echo "Application URL: https://infinityai.pro"
+            exit 0
           fi
-          echo "✅ Workflow completed (status aggregation may include skipped steps)."
+          echo "✅✅✅"
+          echo "All components deployed successfully to AWS and GCP!"
           echo "Application URL: https://infinityai.pro"
+

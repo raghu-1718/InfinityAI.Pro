@@ -25,14 +25,12 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
-import Header from './components/layout/Header';
-import LiveDashboard from './components/views/LiveDashboard';
-import Portfolio from './components/views/Portfolio';
-import Trading from './components/views/Trading';
-import MarketAnalysis from './components/views/MarketAnalysis';
-import AIInsights from './components/views/AIInsights';
-import ChatBot from './components/views/ChatBot';
-import Settings from './components/views/Settings';
+import Portfolio from './components/Portfolio';
+import Trading from './components/Trading';
+import MarketAnalysis from './components/MarketAnalysis';
+import AIInsights from './components/AIInsights';
+import ChatBot from './components/ChatBot';
+import SettingsComponent from './components/Settings';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8003';
 
@@ -273,7 +271,7 @@ const [marketData] = useState({});
           </TabPanel>
 
           <TabPanel value={currentTab} index={5}>
-            <Settings userId={user.id} apiUrl={API_BASE_URL} />
+            <SettingsComponent userId={user.id} apiUrl={API_BASE_URL} />
           </TabPanel>
         </Paper>
       </Container>

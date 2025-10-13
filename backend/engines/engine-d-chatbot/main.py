@@ -496,6 +496,33 @@ async def get_metrics():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.post("/api/config/dhan")
+async def relay_dhan_token_update(config: Dict[str, str]):
+    """Relay DHAN token update to Engines A and C. Engine A is public; Engine C requires API key via Authorization: Bearer."""
+    results = {}
+    token = config.get("access_token") or config.get("DHAN_ACCESS_TOKEN")
+    client_id = config.get("client_id") or os.getenv("DHAN_CLIENT_ID")
+    engine_a_url = chatbot_service.engines['engine_a']['url']
+    engine_c_url = chatbot_service.engines['engine_c']['url']
+    engine_c_api_key = os.getenv("ENGINE_C_API_KEY", "valid_api_key")
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Update Engine A
+            try:
+                async with session.post(f"{engine_a_url}/api/config/dhan", json={"access_token": token, "client_id": client_id}) as resp:
+                    results['engine_a'] = {"status": resp.status, "body": await resp.text()}
+            except Exception as e:
+                results['engine_a'] = {"error": str(e)}
+            # Update Engine C
+            try:
+                async with session.post(f"{engine_c_url}/api/config/dhan", json={"access_token": token, "client_id": client_id}, headers={"Authorization": f"Bearer {engine_c_api_key}"}) as resp:
+                    results['engine_c'] = {"status": resp.status, "body": await resp.text()}
+            except Exception as e:
+                results['engine_c'] = {"error": str(e)}
+    except Exception as e:
+        results['error'] = str(e)
+    return {"status": "relayed", "results": results, "timestamp": datetime.now().isoformat()}
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8003))
     uvicorn.run(
