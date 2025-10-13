@@ -65,8 +65,15 @@ jobs:
             echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
             exit 0
           fi
-          gcloud builds submit "${{ matrix.context }}" \
-            --tag "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}"
+          # Authenticate docker to Artifact Registry and push image from runner
+          REG_HOST="${{ secrets.GCP_REGION }}-docker.pkg.dev"
+          IMAGE_NAME="$REG_HOST/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}"
+          echo "Configuring docker to use gcloud credential helper for $REG_HOST"
+          gcloud auth configure-docker "$REG_HOST" --quiet
+          echo "Building image $IMAGE_NAME"
+          docker build -t "$IMAGE_NAME" -f "${{ matrix.context }}/Dockerfile" "${{ matrix.context }}"
+          echo "Pushing $IMAGE_NAME to Artifact Registry"
+          docker push "$IMAGE_NAME"
 
       - name: Deploy (Cloud Run)
         run: |
@@ -126,6 +133,19 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repository exists
+        if: ${{ env.DRY_RUN == 'false' }}
+        run: |
+          set -euo pipefail
+          ECR_REPOSITORY="infinityai-${{ matrix.engine }}"
+          echo "Checking for ECR repository: $ECR_REPOSITORY"
+          if aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1; then
+            echo "ECR repository $ECR_REPOSITORY already exists"
+          else
+            echo "Creating ECR repository $ECR_REPOSITORY"
+            aws ecr create-repository --repository-name "$ECR_REPOSITORY" || { echo "Failed to create ECR repository"; exit 12; }
+          fi
+
       - name: Build, tag, and push image to ECR
         id: build-image
         env:
@@ -163,7 +183,7 @@ jobs:
         if: ${{ env.DRY_RUN == 'false' }}
         run: |
           set -euo pipefail
-          echo "Using built image: ${IMAGE}"
+          echo "Using built image: ${{ steps.build-image.outputs.image }}"
           # Replace container image in the task definition JSON
           jq --arg name "${{ matrix.container_name }}" --arg image "${{ steps.build-image.outputs.image }}" '
             (.containerDefinitions[] | select(.name == $name) .image) = $image
