@@ -243,8 +243,23 @@ jobs:
             | (.containerDefinitions[] | select(.name == $name) .image) = $image
           ' task-definition.sanitized.json > task-definition.updated.json
 
+          # Defensive cleanup: explicitly remove known problematic keys when null at top-level
+          jq 'if .tags == null then del(.tags) else . end
+              | if .pidMode == null then del(.pidMode) else . end
+              | if .ipcMode == null then del(.ipcMode) else . end
+              | if .proxyConfiguration == null then del(.proxyConfiguration) else . end
+              | if .inferenceAccelerators == null then del(.inferenceAccelerators) else . end
+              # Inside containerDefinitions, remove empty or null optional sections
+              | .containerDefinitions = (.containerDefinitions | map(
+                  (if .dependsOn == null then del(.dependsOn) else . end)
+                  | (if .secrets == null then del(.secrets) else . end)
+                  | (if .logConfiguration == null then del(.logConfiguration) else . end)
+                  | (if .healthCheck == null then del(.healthCheck) else . end)
+                  | (if .resourceRequirements == null then del(.resourceRequirements) else . end)
+                ))' task-definition.updated.json > task-definition.updated.json.tmp && mv task-definition.updated.json.tmp task-definition.updated.json || true
+
           echo "Sanitized task-definition (masked):"
-          # Print a compact view for debugging; mask any potential credentials if present
+          # Print a compact view for debugging; mask environment/secrets
           jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
 
           echo "Registering task definition..."
