@@ -230,12 +230,32 @@ jobs:
           fi
 
           # Replace container image in the sanitized task definition JSON
+          # Additionally run a defensive pass to delete known problematic keys at top-level and inside containerDefinitions
           jq --arg name "${{ matrix.container_name }}" --arg image "${{ steps.build-image.outputs.image }}" '
-            (.containerDefinitions[] | select(.name == $name) .image) = $image
+            # delete problematic keys if present, and clean container definition objects
+            ( del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators)
+              | .containerDefinitions = ( .containerDefinitions
+                  | map( (with_entries(select(.value != null and .value != [] and .value != {} and .value != ""))
+                          | del(.dependsOn, .secrets, .logConfiguration, .healthCheck, .resourceRequirements)
+                        ) )
+            )
+            # now set the image
+            | (.containerDefinitions[] | select(.name == $name) .image) = $image
           ' task-definition.sanitized.json > task-definition.updated.json
 
+          echo "Sanitized task-definition (masked):"
+          # Print a compact view for debugging; mask any potential credentials if present
+          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
+
           echo "Registering task definition..."
-          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json)
+          # Capture aws CLI output and print on failure with the sanitized JSON to debug parameter issues
+          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json 2>&1) || {
+            echo "Register failed with output:";
+            echo "$REG_OUT";
+            echo "--- task-definition.updated.json ---";
+            cat task-definition.updated.json;
+            exit 12;
+          }
           TASK_DEF_ARN=$(echo "$REG_OUT" | jq -r '.taskDefinition.taskDefinitionArn')
           echo "Registered task definition: $TASK_DEF_ARN"
 
