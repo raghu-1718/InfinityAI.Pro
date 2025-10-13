@@ -87,6 +87,79 @@ jobs:
             --platform managed \
             --allow-unauthenticated
 
+  validate-ecs-sanitizer:
+    name: Validate ECS sanitizer (dry-run safe)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run == 'true' }}
+    strategy:
+      matrix:
+        include:
+          - engine: engine-c-execution
+            container_name: engine-c-container
+            service_name: infinityai-engine-c
+            task_family: infinityai-engine-c
+            task_def_file: task-def-engine-c.json
+          - engine: engine-d-chatbot
+            container_name: engine-d-container
+            service_name: infinityai-engine-d
+            task_family: infinityai-engine-d
+            task_def_file: task-def-engine-d.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sanitize task definition (dry run)
+        env:
+          TASK_DEF_FILE: ${{ matrix.task_def_file }}
+          CONTAINER_NAME: ${{ matrix.container_name }}
+          IMAGE_PLACEHOLDER: "dry-run-image:latest"
+        run: |
+          set -euo pipefail
+          echo "Validating sanitizer for $TASK_DEF_FILE"
+          if [ ! -f "$TASK_DEF_FILE" ]; then
+            echo "File $TASK_DEF_FILE not found in repo"; exit 11
+          fi
+          cp "$TASK_DEF_FILE" task-definition.json
+          jq 'with_entries(select(.value != null)) | (.containerDefinitions // []) |= map( with_entries(select(.value != null)) )' task-definition.json > task-definition.sanitized.json || true
+          jq --arg name "$CONTAINER_NAME" --arg image "$IMAGE_PLACEHOLDER" '
+            ( del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators)
+              | .containerDefinitions = ( .containerDefinitions
+                  | map( (with_entries(select(.value != null and .value != [] and .value != {} and .value != ""))
+                          | del(.dependsOn, .secrets, .logConfiguration, .healthCheck, .resourceRequirements)
+                        ) )
+            )
+            | (.containerDefinitions[] | select(.name == $name) .image) = $image
+          ' task-definition.sanitized.json > task-definition.updated.json
+
+          # Python clean pass
+          python3 - <<'PY'
+import json
+from pathlib import Path
+def clean(obj):
+  if isinstance(obj, dict):
+    out = {}
+    for k, v in obj.items():
+      cv = clean(v)
+      if cv is None:
+        continue
+      if cv == [] or cv == {} or cv == "":
+        continue
+      out[k] = cv
+    return out
+  if isinstance(obj, list):
+    out = [clean(v) for v in obj]
+    return [v for v in out if v is not None and v != [] and v != {} and v != ""]
+  return obj
+path = Path('task-definition.updated.json')
+data = json.loads(path.read_text())
+cleaned = clean(data)
+path.write_text(json.dumps(cleaned, indent=2))
+print(json.dumps(cleaned)[:10000])
+PY
+
+          echo "--- final sanitized (masked) ---"
+          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
+
   deploy-aws-engines:
     name: Deploy Engines C & D to AWS ECS
     if: ${{ github.event.inputs.dry_run == 'false' }}
@@ -193,35 +266,12 @@ jobs:
           # pidMode, ipcMode, proxyConfiguration, inferenceAccelerators
           # Build an object with only the allowed keys, then remove any keys whose
           # value is null so the AWS CLI doesn't receive invalid null parameters.
-          # Build minimal allowed object then recursively strip null/empty values (works top-level and inside containerDefinitions)
-          jq '
-            def walk(f):
-              . as $in
-              | if type == "object" then
-                  reduce keys[] as $key ( {}; . + { ($key): ($in[$key] | walk(f)) } ) | f
-                elif type == "array" then map( walk(f) ) | f
-                else f
-                end;
-            {
-              family: .family,
-              taskRoleArn: .taskRoleArn,
-              executionRoleArn: .executionRoleArn,
-              networkMode: .networkMode,
-              containerDefinitions: .containerDefinitions,
-              volumes: .volumes,
-              placementConstraints: .placementConstraints,
-              requiresCompatibilities: .requiresCompatibilities,
-              cpu: .cpu,
-              memory: .memory,
-              tags: .tags,
-              pidMode: .pidMode,
-              ipcMode: .ipcMode,
-              proxyConfiguration: .proxyConfiguration,
-              inferenceAccelerators: .inferenceAccelerators
-            }
-            # Recursively remove keys whose value is null, empty array, empty object or empty string
-            | walk(if type=="object" then with_entries(select(.value != null and .value != [] and .value != {} and .value != "")) else . end)
-          ' task-definition.json > task-definition.sanitized.json || true
+          # Remove any top-level keys that are null, then remove null keys inside
+          # each container definition. This prevents AWS CLI validation errors
+          # caused by passing null for optional params.
+          jq 'with_entries(select(.value != null)) |
+             (.containerDefinitions // []) |= map( with_entries(select(.value != null)) )' \
+            task-definition.json > task-definition.sanitized.json || true
 
           # Fallback: if sanitize produced null/empty family, ensure we still operate on original
           if [ ! -s task-definition.sanitized.json ] || [ "$(jq -r '.family // empty' task-definition.sanitized.json)" = "" ]; then
@@ -243,34 +293,60 @@ jobs:
             | (.containerDefinitions[] | select(.name == $name) .image) = $image
           ' task-definition.sanitized.json > task-definition.updated.json
 
-          # Defensive cleanup: explicitly remove known problematic keys when null at top-level
-          jq 'if .tags == null then del(.tags) else . end
-              | if .pidMode == null then del(.pidMode) else . end
-              | if .ipcMode == null then del(.ipcMode) else . end
-              | if .proxyConfiguration == null then del(.proxyConfiguration) else . end
-              | if .inferenceAccelerators == null then del(.inferenceAccelerators) else . end
-              # Inside containerDefinitions, remove empty or null optional sections
-              | .containerDefinitions = (.containerDefinitions | map(
-                  (if .dependsOn == null then del(.dependsOn) else . end)
-                  | (if .secrets == null then del(.secrets) else . end)
-                  | (if .logConfiguration == null then del(.logConfiguration) else . end)
-                  | (if .healthCheck == null then del(.healthCheck) else . end)
-                  | (if .resourceRequirements == null then del(.resourceRequirements) else . end)
-                ))' task-definition.updated.json > task-definition.updated.json.tmp && mv task-definition.updated.json.tmp task-definition.updated.json || true
 
-          echo "Sanitized task-definition (masked):"
-          # Print a compact view for debugging; mask environment/secrets
-          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
+      # Additional defensive jq cleanup removed; the earlier jq pass and the
+      # Python sanitizer below will ensure no null/empty values remain.
+      echo "Sanitized task-definition (masked):"
+      # Print a compact view for debugging; mask environment/secrets
+      jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
+
+      # Final sanitize using Python to recursively remove null/empty values (more reliable)
+      echo "Running final python sanitizer to remove any remaining nulls..."
+      python3 - <<'PY'
+import json
+from pathlib import Path
+
+def clean(obj):
+  if isinstance(obj, dict):
+    out = {}
+    for k, v in obj.items():
+      cv = clean(v)
+      if cv is None:
+        continue
+      if cv == [] or cv == {} or cv == "":
+        continue
+      out[k] = cv
+    return out
+  if isinstance(obj, list):
+    out = [clean(v) for v in obj]
+    return [v for v in out if v is not None and v != [] and v != {} and v != ""]
+  return obj
+
+path = Path('task-definition.updated.json')
+data = json.loads(path.read_text())
+cleaned = clean(data)
+path.write_text(json.dumps(cleaned, indent=2))
+print('--- cleaned task-definition.updated.json ---')
+print(json.dumps(cleaned)[:10000])
+PY
 
           echo "Registering task definition..."
-          # Capture aws CLI output and print on failure with the sanitized JSON to debug parameter issues
-          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json 2>&1) || {
+          # Defensive jq cleanup: remove known optional top-level keys that may be null
+          jq 'del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators, .placementConstraints)' task-definition.updated.json > task-definition.cleaned.json || true
+          mv task-definition.cleaned.json task-definition.updated.json || true
+
+          # Print masked final JSON for debugging
+          echo "--- final task-definition.updated.json (masked) ---"
+          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
+
+          # Register and capture output; on failure show JSON and error
+          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json 2>&1) || (
             echo "Register failed with output:";
             echo "$REG_OUT";
             echo "--- task-definition.updated.json ---";
             cat task-definition.updated.json;
-            exit 12;
-          }
+            exit 12
+          )
           TASK_DEF_ARN=$(echo "$REG_OUT" | jq -r '.taskDefinition.taskDefinitionArn')
           echo "Registered task definition: $TASK_DEF_ARN"
 
