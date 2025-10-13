@@ -187,10 +187,38 @@ jobs:
         run: |
           set -euo pipefail
           echo "Using built image: ${{ steps.build-image.outputs.image }}"
-          # Replace container image in the task definition JSON
+          # Sanitize task-definition.json: remove fields that are present in describe-task-definition output
+          # Keep only keys allowed by RegisterTaskDefinition API: family, taskRoleArn, executionRoleArn, networkMode,
+          # containerDefinitions, volumes, placementConstraints, requiresCompatibilities, cpu, memory, tags,
+          # pidMode, ipcMode, proxyConfiguration, inferenceAccelerators
+          jq '{
+            family: .family,
+            taskRoleArn: .taskRoleArn // .taskRoleArn,
+            executionRoleArn: .executionRoleArn // .executionRoleArn,
+            networkMode: .networkMode,
+            containerDefinitions: .containerDefinitions,
+            volumes: .volumes,
+            placementConstraints: .placementConstraints,
+            requiresCompatibilities: .requiresCompatibilities,
+            cpu: .cpu,
+            memory: .memory,
+            tags: .tags,
+            pidMode: .pidMode,
+            ipcMode: .ipcMode,
+            proxyConfiguration: .proxyConfiguration,
+            inferenceAccelerators: .inferenceAccelerators
+          }' task-definition.json > task-definition.sanitized.json || true
+
+          # Fallback: if sanitize produced null/empty family, ensure we still operate on original
+          if [ ! -s task-definition.sanitized.json ] || [ "$(jq -r '.family // empty' task-definition.sanitized.json)" = "" ]; then
+            echo "Sanitization resulted in empty family; using original task-definition.json"
+            cp task-definition.json task-definition.sanitized.json
+          fi
+
+          # Replace container image in the sanitized task definition JSON
           jq --arg name "${{ matrix.container_name }}" --arg image "${{ steps.build-image.outputs.image }}" '
             (.containerDefinitions[] | select(.name == $name) .image) = $image
-          ' task-definition.json > task-definition.updated.json
+          ' task-definition.sanitized.json > task-definition.updated.json
 
           echo "Registering task definition..."
           REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json)
