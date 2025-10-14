@@ -1,0 +1,621 @@
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	﻿2025-10-13T22:38:54.1822090Z Current runner version: '2.328.0'
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1854290Z ##[group]Runner Image Provisioner
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1855665Z Hosted Compute Agent
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1856555Z Version: 20250912.392
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1857584Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1858700Z Build Date: 2025-09-12T15:23:14Z
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1859644Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1860789Z ##[group]Operating System
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1861740Z Ubuntu
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1862483Z 24.04.3
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1863269Z LTS
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1864003Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1864998Z ##[group]Runner Image
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1865929Z Image: ubuntu-24.04
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1866762Z Version: 20250929.60.1
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1868642Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1871531Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1873415Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1875028Z ##[group]GITHUB_TOKEN Permissions
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1877552Z Contents: read
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1878461Z Metadata: read
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1879409Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1882464Z Secret source: Actions
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.1883513Z Prepare workflow directory
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.2594263Z Prepare all required actions
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.2648977Z Getting action download info
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.5277591Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.6943894Z Download action repository 'google-github-actions/auth@v2' (SHA:c200f3691d83b41bf9bbd8638997a462592937ed)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:54.8567695Z Download action repository 'google-github-actions/setup-gcloud@v2' (SHA:e427ad8a34f8676edf47cf7d7925499adf3eb74f)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1325800Z Complete job name: Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1958210Z ##[group]Run actions/checkout@v4
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1959139Z with:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1959611Z   repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1960531Z   token: ***
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1960973Z   ssh-strict: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1961421Z   ssh-user: git
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1961870Z   persist-credentials: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1962364Z   clean: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1962818Z   sparse-checkout-cone-mode: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1963349Z   fetch-depth: 1
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1963789Z   fetch-tags: false
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1964246Z   show-progress: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1964689Z   lfs: false
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1965111Z   submodules: false
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1965578Z   set-safe-directory: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1966307Z env:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1966719Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.1967154Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3024036Z Syncing repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3025947Z ##[group]Getting Git version info
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3026846Z Working directory is '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3028024Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3086184Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3113470Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3129228Z Temporarily overriding HOME='/home/runner/work/_temp/535f4c59-469d-4c26-9a6e-e1c1772bfbf5' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3131903Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3143047Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3178839Z Deleting the contents of '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3182990Z ##[group]Initializing the repository
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3187740Z [command]/usr/bin/git init /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3288736Z hint: Using 'master' as the name for the initial branch. This default branch name
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3290400Z hint: is subject to change. To configure the initial branch name to use in all
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3291391Z hint: of your new repositories, which will suppress this warning, call:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3292804Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3293381Z hint: 	git config --global init.defaultBranch <name>
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3294437Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3295529Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3297236Z hint: 'development'. The just-created branch can be renamed via this command:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3298644Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3299488Z hint: 	git branch -m <name>
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3300791Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3301941Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3303852Z Initialized empty Git repository in /home/runner/work/InfinityAI.Pro/InfinityAI.Pro/.git/
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3307098Z [command]/usr/bin/git remote add origin https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3351099Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3352632Z ##[group]Disabling automatic garbage collection
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3355842Z [command]/usr/bin/git config --local gc.auto 0
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3387450Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3389167Z ##[group]Setting up auth
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3395536Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3428381Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3838016Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.3877293Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.4132989Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.4454534Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.4456806Z ##[group]Fetching the repository
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:55.4466702Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8d21186da4d4c1121b8e74996f66b2d8a8e7136c:refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5650022Z From https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5653735Z  * [new ref]           8d21186da4d4c1121b8e74996f66b2d8a8e7136c -> origin/main
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5682433Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5683819Z ##[group]Determining the checkout info
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5685196Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5689107Z [command]/usr/bin/git sparse-checkout disable
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5728381Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5755377Z ##[group]Checking out the ref
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:56.5758944Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.6152090Z Updating files:  54% (26671/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.6324651Z Updating files:  55% (27004/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.6507601Z Updating files:  56% (27495/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.6729598Z Updating files:  57% (27986/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.6901897Z Updating files:  58% (28477/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7081798Z Updating files:  59% (28968/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7255756Z Updating files:  60% (29459/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7431534Z Updating files:  61% (29950/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7604389Z Updating files:  62% (30441/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7776451Z Updating files:  63% (30932/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.7948663Z Updating files:  64% (31423/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8122482Z Updating files:  65% (31914/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8292832Z Updating files:  66% (32405/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8460785Z Updating files:  67% (32896/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8634798Z Updating files:  68% (33387/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8810481Z Updating files:  69% (33878/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.8983347Z Updating files:  70% (34369/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.9161712Z Updating files:  71% (34860/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.9336950Z Updating files:  72% (35351/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.9508364Z Updating files:  73% (35842/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.9684130Z Updating files:  74% (36333/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:57.9863479Z Updating files:  75% (36824/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0044163Z Updating files:  76% (37315/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0221481Z Updating files:  77% (37806/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0405097Z Updating files:  78% (38297/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0581618Z Updating files:  79% (38788/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0755366Z Updating files:  80% (39279/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.0929453Z Updating files:  81% (39770/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1104603Z Updating files:  82% (40261/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1277675Z Updating files:  83% (40752/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1450580Z Updating files:  84% (41243/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1626080Z Updating files:  85% (41734/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1801326Z Updating files:  86% (42225/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.1970525Z Updating files:  87% (42716/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.2145751Z Updating files:  88% (43207/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.2317529Z Updating files:  89% (43698/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.2607657Z Updating files:  90% (44189/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.2820211Z Updating files:  91% (44680/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.3026922Z Updating files:  92% (45171/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.3238025Z Updating files:  93% (45662/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.3423567Z Updating files:  94% (46153/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.3600284Z Updating files:  95% (46644/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.3787007Z Updating files:  96% (47135/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.4003667Z Updating files:  97% (47626/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.4247431Z Updating files:  98% (48117/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.4663958Z Updating files:  99% (48608/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.4664810Z Updating files: 100% (49098/49098)
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.4665457Z Updating files: 100% (49098/49098), done.
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5062463Z Switched to a new branch 'main'
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5065742Z branch 'main' set up to track 'origin/main'.
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5091830Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5132895Z [command]/usr/bin/git log -1 --format=%H
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5154624Z 8d21186da4d4c1121b8e74996f66b2d8a8e7136c
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5344799Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5345149Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5345561Z [36;1m  echo "[DRY RUN] Skipping GCP auth & deployment for infinityai-ultra-aggressive"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5345947Z [36;1melse[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5346282Z [36;1m  echo "Proceeding to authenticate to GCP for infinityai-ultra-aggressive"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5346653Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5382927Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5383173Z env:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5383353Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5383560Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5452044Z [DRY RUN] Skipping GCP auth & deployment for infinityai-ultra-aggressive
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5504389Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5504709Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5505199Z [36;1m  echo "[DRY RUN] Would build & push infinityai-ultra-aggressive from backend/engines/engine-ultra-aggressive"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5505672Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5505862Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5506177Z [36;1m# Authenticate docker to Artifact Registry and push image from runner[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5506789Z [36;1mREG_HOST="***-docker.pkg.dev"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5507352Z [36;1mIMAGE_NAME="$REG_HOST/***/infinityai-repo/infinityai-ultra-aggressive:prod-20251014040847"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5507898Z [36;1mecho "Configuring docker to use gcloud credential helper for $REG_HOST"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5508323Z [36;1mgcloud auth configure-docker "$REG_HOST" --quiet[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5508828Z [36;1mecho "Building image $IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5509416Z [36;1mdocker build -t "$IMAGE_NAME" -f "backend/engines/engine-ultra-aggressive/Dockerfile" "backend/engines/engine-ultra-aggressive"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5510221Z [36;1mecho "Pushing $IMAGE_NAME to Artifact Registry"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5510527Z [36;1mdocker push "$IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5541069Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5541305Z env:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5541471Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5541658Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5589734Z [DRY RUN] Would build & push infinityai-ultra-aggressive from backend/engines/engine-ultra-aggressive
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5676146Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5676469Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5676838Z [36;1m  echo "[DRY RUN] Would deploy Cloud Run service infinityai-ultra-aggressive"[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5677202Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5677394Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5677638Z [36;1mgcloud run deploy "infinityai-ultra-aggressive" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5678395Z [36;1m  --image "***-docker.pkg.dev/***/infinityai-repo/infinityai-ultra-aggressive:prod-20251014040847" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5678874Z [36;1m  --region "***" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5679106Z [36;1m  --platform managed \[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5679351Z [36;1m  --allow-unauthenticated[0m
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5710882Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5711112Z env:
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5711283Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5711461Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5760696Z [DRY RUN] Would deploy Cloud Run service infinityai-ultra-aggressive
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.5831643Z Post job cleanup.
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6749344Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6784899Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6826508Z Temporarily overriding HOME='/home/runner/work/_temp/0078fb81-8d49-4613-8206-9ae65c9632cc' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6827737Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6832230Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6867655Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.6900555Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.7162730Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.7183799Z http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.7195853Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.7225670Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-ultra-aggressive, infinityai-ultra-aggressive, backend...	UNKNOWN STEP	2025-10-13T22:38:58.7581598Z Cleaning up orphan processes
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	﻿2025-10-13T22:38:55.1491424Z Current runner version: '2.328.0'
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1515122Z ##[group]Runner Image Provisioner
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1515976Z Hosted Compute Agent
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1516550Z Version: 20250912.392
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1517308Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1518000Z Build Date: 2025-09-12T15:23:14Z
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1518665Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1519211Z ##[group]Operating System
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1520203Z Ubuntu
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1520724Z 24.04.3
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1521216Z LTS
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1521694Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1522301Z ##[group]Runner Image
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1522860Z Image: ubuntu-24.04
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1523376Z Version: 20250929.60.1
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1524437Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1526061Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1527323Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1528334Z ##[group]GITHUB_TOKEN Permissions
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1530727Z Contents: read
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1531302Z Metadata: read
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1532057Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1534075Z Secret source: Actions
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.1534796Z Prepare workflow directory
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.2089954Z Prepare all required actions
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.2127050Z Getting action download info
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.5842391Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:55.7578350Z Download action repository 'google-github-actions/auth@v2' (SHA:c200f3691d83b41bf9bbd8638997a462592937ed)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:56.6056510Z Download action repository 'google-github-actions/setup-gcloud@v2' (SHA:e427ad8a34f8676edf47cf7d7925499adf3eb74f)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4166522Z Complete job name: Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4900813Z ##[group]Run actions/checkout@v4
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4902099Z with:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4902868Z   repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4904147Z   token: ***
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4904833Z   ssh-strict: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4905549Z   ssh-user: git
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4906280Z   persist-credentials: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4907094Z   clean: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4907832Z   sparse-checkout-cone-mode: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4908745Z   fetch-depth: 1
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4909603Z   fetch-tags: false
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4910345Z   show-progress: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4911082Z   lfs: false
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4911764Z   submodules: false
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4912504Z   set-safe-directory: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4913554Z env:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4914188Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.4914914Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.5979112Z Syncing repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.5982187Z ##[group]Getting Git version info
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.5983719Z Working directory is '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.5985735Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6039969Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6065742Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6080353Z Temporarily overriding HOME='/home/runner/work/_temp/08d8f122-469c-48d1-8352-c40fe0000ece' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6083088Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6093121Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6129882Z Deleting the contents of '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6133540Z ##[group]Initializing the repository
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6138620Z [command]/usr/bin/git init /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6250616Z hint: Using 'master' as the name for the initial branch. This default branch name
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6252873Z hint: is subject to change. To configure the initial branch name to use in all
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6255461Z hint: of your new repositories, which will suppress this warning, call:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6256921Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6257809Z hint: 	git config --global init.defaultBranch <name>
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6258922Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6260485Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6262279Z hint: 'development'. The just-created branch can be renamed via this command:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6263675Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6264381Z hint: 	git branch -m <name>
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6265529Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6266685Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6268791Z Initialized empty Git repository in /home/runner/work/InfinityAI.Pro/InfinityAI.Pro/.git/
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6272312Z [command]/usr/bin/git remote add origin https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6314495Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6315808Z ##[group]Disabling automatic garbage collection
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6318007Z [command]/usr/bin/git config --local gc.auto 0
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6346208Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6347431Z ##[group]Setting up auth
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6353058Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6382492Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6693485Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6721878Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6942164Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6984018Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6985305Z ##[group]Fetching the repository
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:57.6993847Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8d21186da4d4c1121b8e74996f66b2d8a8e7136c:refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1671157Z From https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1672694Z  * [new ref]           8d21186da4d4c1121b8e74996f66b2d8a8e7136c -> origin/main
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1703953Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1704599Z ##[group]Determining the checkout info
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1706172Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1711783Z [command]/usr/bin/git sparse-checkout disable
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1753264Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1781358Z ##[group]Checking out the ref
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:38:59.1785766Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.2154390Z Updating files:  54% (26761/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.2333822Z Updating files:  55% (27004/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.2510036Z Updating files:  56% (27495/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.2684465Z Updating files:  57% (27986/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.2874486Z Updating files:  58% (28477/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3064781Z Updating files:  59% (28968/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3241572Z Updating files:  60% (29459/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3419895Z Updating files:  61% (29950/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3594789Z Updating files:  62% (30441/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3769315Z Updating files:  63% (30932/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.3943407Z Updating files:  64% (31423/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4118784Z Updating files:  65% (31914/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4290188Z Updating files:  66% (32405/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4461822Z Updating files:  67% (32896/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4636703Z Updating files:  68% (33387/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4811648Z Updating files:  69% (33878/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.4986282Z Updating files:  70% (34369/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.5161754Z Updating files:  71% (34860/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.5336451Z Updating files:  72% (35351/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.5510238Z Updating files:  73% (35842/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.5688191Z Updating files:  74% (36333/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.5865614Z Updating files:  75% (36824/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6045226Z Updating files:  76% (37315/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6238495Z Updating files:  77% (37806/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6422779Z Updating files:  78% (38297/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6603221Z Updating files:  79% (38788/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6776790Z Updating files:  80% (39279/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.6948881Z Updating files:  81% (39770/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.7162107Z Updating files:  82% (40261/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.7338445Z Updating files:  83% (40752/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.7524870Z Updating files:  84% (41243/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.7696634Z Updating files:  85% (41734/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.7871534Z Updating files:  86% (42225/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.8040763Z Updating files:  87% (42716/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.8216042Z Updating files:  88% (43207/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.8388117Z Updating files:  89% (43698/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.8677136Z Updating files:  90% (44189/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.8887372Z Updating files:  91% (44680/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.9090215Z Updating files:  92% (45171/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.9301558Z Updating files:  93% (45662/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.9488466Z Updating files:  94% (46153/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.9668035Z Updating files:  95% (46644/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:00.9854223Z Updating files:  96% (47135/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.0070776Z Updating files:  97% (47626/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.0312160Z Updating files:  98% (48117/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.0730355Z Updating files:  99% (48608/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.0731108Z Updating files: 100% (49098/49098)
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.0731499Z Updating files: 100% (49098/49098), done.
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1133802Z Switched to a new branch 'main'
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1135676Z branch 'main' set up to track 'origin/main'.
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1162918Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1200686Z [command]/usr/bin/git log -1 --format=%H
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1222950Z 8d21186da4d4c1121b8e74996f66b2d8a8e7136c
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1413499Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1413845Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1414238Z [36;1m  echo "[DRY RUN] Skipping GCP auth & deployment for infinityai-engine-a"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1414603Z [36;1melse[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1414899Z [36;1m  echo "Proceeding to authenticate to GCP for infinityai-engine-a"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1415231Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1450250Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1450490Z env:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1450663Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1450852Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1520385Z [DRY RUN] Skipping GCP auth & deployment for infinityai-engine-a
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1574167Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1574483Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1574939Z [36;1m  echo "[DRY RUN] Would build & push infinityai-engine-a from backend/engines/engine-a-market-data"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1575378Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1575556Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1575860Z [36;1m# Authenticate docker to Artifact Registry and push image from runner[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1576373Z [36;1mREG_HOST="***-docker.pkg.dev"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1576881Z [36;1mIMAGE_NAME="$REG_HOST/***/infinityai-repo/infinityai-engine-a:prod-20251014040847"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1577388Z [36;1mecho "Configuring docker to use gcloud credential helper for $REG_HOST"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1577809Z [36;1mgcloud auth configure-docker "$REG_HOST" --quiet[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1578133Z [36;1mecho "Building image $IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1578875Z [36;1mdocker build -t "$IMAGE_NAME" -f "backend/engines/engine-a-market-data/Dockerfile" "backend/engines/engine-a-market-data"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1579644Z [36;1mecho "Pushing $IMAGE_NAME to Artifact Registry"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1579994Z [36;1mdocker push "$IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1609402Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1609904Z env:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1610074Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1610261Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1656623Z [DRY RUN] Would build & push infinityai-engine-a from backend/engines/engine-a-market-data
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1744665Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1745011Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1745373Z [36;1m  echo "[DRY RUN] Would deploy Cloud Run service infinityai-engine-a"[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1745713Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1745897Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1746121Z [36;1mgcloud run deploy "infinityai-engine-a" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1746884Z [36;1m  --image "***-docker.pkg.dev/***/infinityai-repo/infinityai-engine-a:prod-20251014040847" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1747355Z [36;1m  --region "***" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1747595Z [36;1m  --platform managed \[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1747843Z [36;1m  --allow-unauthenticated[0m
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1777304Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1777542Z env:
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1777714Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1777896Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1825656Z [DRY RUN] Would deploy Cloud Run service infinityai-engine-a
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.1897517Z Post job cleanup.
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2822022Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2858321Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2902183Z Temporarily overriding HOME='/home/runner/work/_temp/23f598df-3a79-4313-881e-da6ff4bf0d30' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2903471Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2908706Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2944977Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.2977528Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.3238280Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.3261636Z http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.3273863Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.3306249Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-a-market-data, infinityai-engine-a, backend/engines/en...	UNKNOWN STEP	2025-10-13T22:39:01.3666549Z Cleaning up orphan processes
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	﻿2025-10-13T22:38:54.2116596Z Current runner version: '2.328.0'
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2150008Z ##[group]Runner Image Provisioner
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2151302Z Hosted Compute Agent
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2152229Z Version: 20250912.392
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2153341Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2154544Z Build Date: 2025-09-12T15:23:14Z
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2155621Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2156738Z ##[group]Operating System
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2157730Z Ubuntu
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2158875Z 24.04.3
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2159701Z LTS
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2160567Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2161602Z ##[group]Runner Image
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2162572Z Image: ubuntu-24.04
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2163487Z Version: 20250929.60.1
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2165410Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2168209Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2170491Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2172395Z ##[group]GITHUB_TOKEN Permissions
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2175007Z Contents: read
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2176071Z Metadata: read
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2177093Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2180279Z Secret source: Actions
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2181674Z Prepare workflow directory
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2924389Z Prepare all required actions
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.2982267Z Getting action download info
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.5501569Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.6282894Z Download action repository 'google-github-actions/auth@v2' (SHA:c200f3691d83b41bf9bbd8638997a462592937ed)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:54.8109100Z Download action repository 'google-github-actions/setup-gcloud@v2' (SHA:e427ad8a34f8676edf47cf7d7925499adf3eb74f)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.0856847Z Complete job name: Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1587989Z ##[group]Run actions/checkout@v4
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1589663Z with:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1590538Z   repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1591910Z   token: ***
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1592709Z   ssh-strict: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1593528Z   ssh-user: git
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1594362Z   persist-credentials: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1595292Z   clean: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1596136Z   sparse-checkout-cone-mode: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1597138Z   fetch-depth: 1
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1597953Z   fetch-tags: false
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1598928Z   show-progress: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1599771Z   lfs: false
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1600553Z   submodules: false
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1601409Z   set-safe-directory: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1602549Z env:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1603285Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.1604070Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2708111Z Syncing repository: raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2711158Z ##[group]Getting Git version info
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2712812Z Working directory is '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2716413Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2745137Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2779167Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2796708Z Temporarily overriding HOME='/home/runner/work/_temp/0b8d43da-0e6a-45b6-a072-5ed353ae5d49' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2801782Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2810823Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2850890Z Deleting the contents of '/home/runner/work/InfinityAI.Pro/InfinityAI.Pro'
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2854762Z ##[group]Initializing the repository
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2859894Z [command]/usr/bin/git init /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2958553Z hint: Using 'master' as the name for the initial branch. This default branch name
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2962297Z hint: is subject to change. To configure the initial branch name to use in all
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2965544Z hint: of your new repositories, which will suppress this warning, call:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2968000Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2969907Z hint: 	git config --global init.defaultBranch <name>
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2971959Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2973932Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2977193Z hint: 'development'. The just-created branch can be renamed via this command:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2979952Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2981366Z hint: 	git branch -m <name>
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2982962Z hint:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2985179Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2989266Z Initialized empty Git repository in /home/runner/work/InfinityAI.Pro/InfinityAI.Pro/.git/
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.2995210Z [command]/usr/bin/git remote add origin https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3011815Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3014428Z ##[group]Disabling automatic garbage collection
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3016707Z [command]/usr/bin/git config --local gc.auto 0
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3046220Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3048768Z ##[group]Setting up auth
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3051607Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3084683Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3410169Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3438943Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3655476Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3695824Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3697219Z ##[group]Fetching the repository
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:55.3705454Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8d21186da4d4c1121b8e74996f66b2d8a8e7136c:refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3380170Z From https://github.com/raghu-1718/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3381494Z  * [new ref]           8d21186da4d4c1121b8e74996f66b2d8a8e7136c -> origin/main
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3412478Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3412982Z ##[group]Determining the checkout info
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3415064Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3420360Z [command]/usr/bin/git sparse-checkout disable
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3458883Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3484956Z ##[group]Checking out the ref
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:56.3488605Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.3793436Z Updating files:  54% (26918/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.3964593Z Updating files:  55% (27004/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.4138836Z Updating files:  56% (27495/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.4312891Z Updating files:  57% (27986/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.4485261Z Updating files:  58% (28477/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.4660451Z Updating files:  59% (28968/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.4834552Z Updating files:  60% (29459/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5009962Z Updating files:  61% (29950/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5183191Z Updating files:  62% (30441/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5355779Z Updating files:  63% (30932/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5527122Z Updating files:  64% (31423/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5701809Z Updating files:  65% (31914/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.5872240Z Updating files:  66% (32405/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6040958Z Updating files:  67% (32896/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6214244Z Updating files:  68% (33387/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6386575Z Updating files:  69% (33878/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6557246Z Updating files:  70% (34369/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6732332Z Updating files:  71% (34860/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.6908764Z Updating files:  72% (35351/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7079104Z Updating files:  73% (35842/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7253054Z Updating files:  74% (36333/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7427127Z Updating files:  75% (36824/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7608793Z Updating files:  76% (37315/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7785351Z Updating files:  77% (37806/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.7957995Z Updating files:  78% (38297/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8129381Z Updating files:  79% (38788/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8302995Z Updating files:  80% (39279/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8473533Z Updating files:  81% (39770/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8645363Z Updating files:  82% (40261/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8816787Z Updating files:  83% (40752/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.8986953Z Updating files:  84% (41243/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.9156889Z Updating files:  85% (41734/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.9330554Z Updating files:  86% (42225/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.9499542Z Updating files:  87% (42716/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.9670124Z Updating files:  88% (43207/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:57.9841473Z Updating files:  89% (43698/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.0127698Z Updating files:  90% (44189/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.0336036Z Updating files:  91% (44680/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.0536387Z Updating files:  92% (45171/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.0746355Z Updating files:  93% (45662/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.0933135Z Updating files:  94% (46153/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.1109250Z Updating files:  95% (46644/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.1293955Z Updating files:  96% (47135/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.1509970Z Updating files:  97% (47626/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.1752086Z Updating files:  98% (48117/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2172155Z Updating files:  99% (48608/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2173146Z Updating files: 100% (49098/49098)
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2173776Z Updating files: 100% (49098/49098), done.
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2571802Z Switched to a new branch 'main'
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2574333Z branch 'main' set up to track 'origin/main'.
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2600534Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2641375Z [command]/usr/bin/git log -1 --format=%H
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2662984Z 8d21186da4d4c1121b8e74996f66b2d8a8e7136c
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2855156Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2855517Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2855919Z [36;1m  echo "[DRY RUN] Skipping GCP auth & deployment for infinityai-engine-b"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2856279Z [36;1melse[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2856588Z [36;1m  echo "Proceeding to authenticate to GCP for infinityai-engine-b"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2856947Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2893479Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2893738Z env:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2893923Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2894114Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.2962646Z [DRY RUN] Skipping GCP auth & deployment for infinityai-engine-b
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3014789Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3015107Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3015546Z [36;1m  echo "[DRY RUN] Would build & push infinityai-engine-b from backend/engines/engine-b-ai-ml"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3015970Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3016152Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3016472Z [36;1m# Authenticate docker to Artifact Registry and push image from runner[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3016975Z [36;1mREG_HOST="***-docker.pkg.dev"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3017496Z [36;1mIMAGE_NAME="$REG_HOST/***/infinityai-repo/infinityai-engine-b:prod-20251014040847"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3018013Z [36;1mecho "Configuring docker to use gcloud credential helper for $REG_HOST"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3018750Z [36;1mgcloud auth configure-docker "$REG_HOST" --quiet[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3019085Z [36;1mecho "Building image $IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3019819Z [36;1mdocker build -t "$IMAGE_NAME" -f "backend/engines/engine-b-ai-ml/Dockerfile" "backend/engines/engine-b-ai-ml"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3020342Z [36;1mecho "Pushing $IMAGE_NAME to Artifact Registry"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3020644Z [36;1mdocker push "$IMAGE_NAME"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3050488Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3050714Z env:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3050888Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3051076Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3098881Z [DRY RUN] Would build & push infinityai-engine-b from backend/engines/engine-b-ai-ml
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3186361Z ##[group]Run if [ "true" = "true" ]; then
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3186881Z [36;1mif [ "true" = "true" ]; then[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3187468Z [36;1m  echo "[DRY RUN] Would deploy Cloud Run service infinityai-engine-b"[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3188019Z [36;1m  exit 0[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3188507Z [36;1mfi[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3188938Z [36;1mgcloud run deploy "infinityai-engine-b" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3190138Z [36;1m  --image "***-docker.pkg.dev/***/infinityai-repo/infinityai-engine-b:prod-20251014040847" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3190955Z [36;1m  --region "***" \[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3191380Z [36;1m  --platform managed \[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3191816Z [36;1m  --allow-unauthenticated[0m
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3227098Z shell: /usr/bin/bash -e {0}
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3227341Z env:
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3227516Z   DRY_RUN: true
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3227704Z ##[endgroup]
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3279220Z [DRY RUN] Would deploy Cloud Run service infinityai-engine-b
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.3360357Z Post job cleanup.
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4325385Z [command]/usr/bin/git version
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4363596Z git version 2.51.0
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4407286Z Temporarily overriding HOME='/home/runner/work/_temp/195f5eed-ec57-4e6f-82ab-b200d4d959d6' before making global git config changes
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4408238Z Adding repository directory to the temporary git global config as a safe directory
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4413396Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/InfinityAI.Pro/InfinityAI.Pro
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4451353Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4484376Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4752350Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4776232Z http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4789295Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.4820768Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Deploy Engines A, B & Ultra to GCP (engine-b-ai-ml, infinityai-engine-b, backend/engines/engine-b...	UNKNOWN STEP	2025-10-13T22:38:58.5191906Z Cleaning up orphan processes

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'trigger/deploy-production'
+  workflow_dispatch:
 
 jobs:
   dispatch:
