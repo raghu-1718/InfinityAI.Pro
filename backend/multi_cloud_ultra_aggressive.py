@@ -1,5 +1,5 @@
 # 🔥 InfinityAI.Pro - Multi-Cloud Ultra Aggressive Trading Integration
-# Complete integration with all 4 engines across Azure, AWS, and Google Cloud
+# Complete integration with 5 engines across AWS and Google Cloud (Clean Architecture)
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.staticfiles import StaticFiles
@@ -29,28 +29,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Multi-Cloud Engine Configuration - REAL ENDPOINTS
+# Multi-Cloud Engine Configuration - AWS + GCP ONLY (Clean Architecture)
 MULTI_CLOUD_ENGINES = {
-    "azure": {
+    "gcp": {
         "engine_a": {
-            "url": "https://infinityai-engine-a.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-            "type": "signal_analysis",
-            "cloud": "Azure Container Apps",
-            "region": "East US",
+            "url": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+            "type": "market_data_ingestion",
+            "cloud": "Google Cloud Run",
+            "region": "US Central",
             "status": "unknown"
         },
-        "frontend_app": {
-            "url": "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io",
-            "type": "main_frontend",
-            "cloud": "Azure Container Apps",
-            "region": "East US",
-            "status": "unknown"
-        }
-    },
-    "gcp": {
         "engine_b": {
             "url": "https://infinityai-engine-b-573866363639.us-central1.run.app",
-            "type": "ml_processing", 
+            "type": "ai_ml_processing", 
             "cloud": "Google Cloud Run",
             "region": "US Central",
             "status": "unknown"
@@ -65,17 +56,17 @@ MULTI_CLOUD_ENGINES = {
     },
     "aws": {
         "engine_c": {
-            "url": "https://infinityai-engine-c.amazonaws.com",
-            "type": "risk_analysis",
-            "cloud": "AWS ECS",
-            "region": "US East",
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+            "type": "trade_execution",
+            "cloud": "AWS ECS + ALB",
+            "region": "US East 1",
             "status": "unknown"
         },
         "engine_d": {
-            "url": "https://infinityai-engine-d.amazonaws.com", 
-            "type": "central_coordination",
-            "cloud": "AWS ECS",
-            "region": "US East",
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d", 
+            "type": "ai_chatbot_assistant",
+            "cloud": "AWS ECS + ALB",
+            "region": "US East 1",
             "status": "unknown"
         }
     }
@@ -119,7 +110,6 @@ global_trading_state = {
     "last_trade_time": None,
     "integration_health": "active",
     "cloud_connectivity": {
-        "azure": False,
         "gcp": False, 
         "aws": False
     }
@@ -138,7 +128,7 @@ class MultiCloudUltraAggressive:
         
     async def check_all_engines(self):
         """Check status of all engines across all clouds"""
-        logger.info("🔍 Checking all engines across Azure, GCP, and AWS...")
+        logger.info("🔍 Checking all engines across GCP and AWS...")
         
         for cloud_name, cloud_engines in MULTI_CLOUD_ENGINES.items():
             cloud_status = True
@@ -172,7 +162,7 @@ class MultiCloudUltraAggressive:
         total_engines = len(global_trading_state["engines_status"])
         
         logger.info(f"📊 ENGINE HEALTH SUMMARY: {online_engines}/{total_engines} engines online")
-        logger.info(f"☁️ CLOUD CONNECTIVITY: Azure={global_trading_state['cloud_connectivity']['azure']}, GCP={global_trading_state['cloud_connectivity']['gcp']}, AWS={global_trading_state['cloud_connectivity']['aws']}")
+        logger.info(f"☁️ CLOUD CONNECTIVITY: GCP={global_trading_state['cloud_connectivity']['gcp']}, AWS={global_trading_state['cloud_connectivity']['aws']}")
         
     async def get_aggregated_signals(self):
         """Get signals from all online engines"""
