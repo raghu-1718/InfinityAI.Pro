@@ -1,0 +1,6 @@
+2025-10-15 04:12:25,406 - VALIDATOR - INFO - Throughput test: 220 requests in 5.22s = 42.17 RPS
+2025-10-15 04:12:36,394 - VALIDATOR - WARNING - Latency test failed for https://infinityai-engine-b-573866363639.us-east1.run.app: 
+2025-10-15 04:12:45,718 - VALIDATOR - INFO - Throughput test: 220 requests in 5.39s = 40.84 RPS
+2025-10-15 04:12:56,217 - VALIDATOR - INFO - Throughput test: 220 requests in 5.06s = 43.48 RPS
+2025-10-15 04:13:04,701 - VALIDATOR - INFO - Throughput test: 200 requests in 5.33s = 37.51 RPS
+2025-10-15 04:13:12,327 - VALIDATOR - INFO - Throughput test: 0 requests in 5.24s = 0.00 RPS
