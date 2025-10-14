@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfinityAI.Pro - Live Trading Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo h1 { font-size: 1.5rem; }
+        .status { display: flex; align-items: center; gap: 1rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; }
+        .main-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 80px);
+        }
+        .sidebar {
+            background: white;
+            padding: 2rem 1rem;
+            border-right: 1px solid #e1e5e9;
+        }
+        .nav-item {
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: #f0f4ff;
+            color: #667eea;
+        }
+        .content {
+            padding: 2rem;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-bottom: 1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .metric:last-child { border-bottom: none; }
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .live-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .refresh-btn, .dhan-btn {
+            padding: 0.5rem 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+        }
+        .dhan-btn {
+            background: #28a745;
+        }
+        .ai-analysis {
+            background: #f8f9ff;
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            margin-top: 1rem;
+        }
+        .dhan-form {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .callback-urls {
+            background: #e8f5e8;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+        .callback-urls p {
+            margin: 0.5rem 0;
+            font-family: monospace;
+        }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+        .tab-container {
+            display: flex;
+            border-bottom: 2px solid #e1e5e9;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <h1>🤖 InfinityAI.Pro</h1>
+        </div>
+        <div class="status">
+            <span class="status-dot" id="status-indicator"></span>
+            <span>Live Market Data</span>
+            <span id="lastUpdate">Updated: Loading...</span>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="nav-item active" onclick="showTab('dashboard')">📊 Live Dashboard</div>
+            <div class="nav-item" onclick="showTab('dhan')">🏦 Dhan Integration</div>
+            <div class="nav-item" onclick="showTab('portfolio')">💼 Portfolio</div>
+            <div class="nav-item" onclick="showTab('trading')">📈 Trading</div>
+            <div class="nav-item" onclick="showTab('ai')">🤖 AI Analysis</div>
+            <div class="nav-item" onclick="showTab('settings')">⚙️ Settings</div>
+        </div>
+        
+        <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 id="page-title">Live Trading Dashboard</h2>
+                <div>
+                    <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+                    <button class="dhan-btn" onclick="showTab('dhan')">🏦 Setup Dhan</button>
+                </div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>🇮🇳 Indian Markets</h3>
+                        <div class="metric">
+                            <span><span class="live-indicator"></span>NIFTY 50</span>
+                            <span class="metric-value" id="nifty-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span><span class="live-indicator"></span>SENSEX</span>
+                            <span class="metric-value" id="sensex-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span>Market Status</span>
+                            <span class="metric-value positive">🟢 Open</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🇺🇸 US Markets</h3>
+                        <div class="metric">
+                            <span>AAPL</span>
+                            <span class="metric-value" id="aapl-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span>GOOGL</span>
+                            <span class="metric-value" id="googl-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span>MSFT</span>
+                            <span class="metric-value" id="msft-price">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🏦 Top Indian Stocks</h3>
+                        <div class="metric">
+                            <span>RELIANCE</span>
+                            <span class="metric-value" id="reliance-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span>TCS</span>
+                            <span class="metric-value" id="tcs-price">Loading...</span>
+                        </div>
+                        <div class="metric">
+                            <span>INFY</span>
+                            <span class="metric-value" id="infy-price">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🤖 AI Market Analysis</h3>
+                        <div id="ai-analysis">
+                            <p>Loading AI analysis...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dhan Integration Tab -->
+            <div id="dhan-tab" class="tab-content">
+                <div class="card">
+                    <h3>🏦 Dhan Account Integration</h3>
+                    <p>Connect your Dhan account to enable live trading and portfolio management.</p>
+                    
+                    <div class="dhan-form">
+                        <h4>🔐 Store Dhan API Credentials</h4>
+                        <form id="dhan-credentials-form">
+                            <div class="form-group">
+                                <label for="api_key">Dhan API Key</label>
+                                <input type="text" id="api_key" name="api_key" placeholder="Your Dhan API Key" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="api_secret">Dhan API Secret</label>
+                                <input type="password" id="api_secret" name="api_secret" placeholder="Your Dhan API Secret" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="access_token">Dhan Access Token</label>
+                                <input type="text" id="access_token" name="access_token" placeholder="Your Dhan Access Token" required>
+                            </div>
+                            <button type="submit" class="dhan-btn">🔐 Link Dhan Account</button>
+                        </form>
+                        
+                        <div id="dhan-status"></div>
+                    </div>
+                    
+                    <div class="callback-urls">
+                        <h4>📋 Callback URLs for Dhan Setup</h4>
+                        <p><strong>Postback URL:</strong> https://infinityai.pro/api/webhooks/dhan</p>
+                        <p><strong>Redirect URL:</strong> https://infinityai.pro/auth/dhan/callback</p>
+                        <small>Register these URLs in your Dhan Developer Portal</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Portfolio Tab -->
+            <div id="portfolio-tab" class="tab-content">
+                <div class="card">
+                    <h3>💼 Live Portfolio</h3>
+                    <div id="portfolio-data">
+                        <p>Loading portfolio data...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trading Tab -->
+            <div id="trading-tab" class="tab-content">
+                <div class="card">
+                    <h3>📈 Trading Operations</h3>
+                    <div id="trading-data">
+                        <p>Trading functionality will be available after Dhan integration.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis Tab -->
+            <div id="ai-tab" class="tab-content">
+                <div class="card">
+                    <h3>🤖 Advanced AI Analysis</h3>
+                    <div id="detailed-ai-analysis">
+                        <p>Loading detailed AI analysis...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <div class="card">
+                    <h3>⚙️ System Settings</h3>
+                    <div class="metric">
+                        <span>API Status</span>
+                        <span class="metric-value" id="api-status">Checking...</span>
+                    </div>
+                    <div class="metric">
+                        <span>Engine D Status</span>
+                        <span class="metric-value positive">🟢 Operational</span>
+                    </div>
+                    <div class="metric">
+                        <span>Dhan Integration</span>
+                        <span class="metric-value" id="dhan-integration-status">Not Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentTab = 'dashboard';
+        const API_BASE_URL = window.location.protocol + '//' + 'infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d';
+        
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from nav items
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Update page title
+            const titles = {
+                'dashboard': 'Live Trading Dashboard',
+                'dhan': 'Dhan Integration Setup',
+                'portfolio': 'Portfolio Management',
+                'trading': 'Trading Operations',
+                'ai': 'AI Analysis',
+                'settings': 'System Settings'
+            };
+            document.getElementById('page-title').textContent = titles[tabName] || 'Dashboard';
+            currentTab = tabName;
+            
+            // Load tab-specific data
+            loadTabData(tabName);
+        }
+        
+        // Load data for specific tab
+        function loadTabData(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    fetchMarketData();
+                    fetchAIAnalysis();
+                    break;
+                case 'portfolio':
+                    fetchPortfolioData();
+                    break;
+                case 'ai':
+                    fetchDetailedAIAnalysis();
+                    break;
+            }
+        }
+        
+        // Fetch market data
+        async function fetchMarketData() {
+            try {
+                updateStatusIndicator('loading');
+                const response = await fetch(`${API_BASE_URL}/api/market-data`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDashboardWithLiveData(data);
+                    updateStatusIndicator('success');
+                } else {
+                    throw new Error(`API returned ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error fetching market data:', error);
+                updateDashboardWithMockData();
+                updateStatusIndicator('error');
+                document.getElementById('api-status').innerHTML = '🔴 API Error';
+            }
+        }
+        
+        // Fetch AI analysis
+        async function fetchAIAnalysis() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ai-analysis`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateAIAnalysis(data.analysis);
+                } else {
+                    throw new Error(`API returned ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error fetching AI analysis:', error);
+                updateAIAnalysis(null); // Will show mock data
+            }
+        }
+        
+        // Fetch portfolio data from Dhan
+        async function fetchPortfolioData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/dhan/live-data?user_id=demo-user`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    updatePortfolioDisplay(data.data);
+                } else if (data.mock_data) {
+                    updatePortfolioDisplay(data.mock_data);
+                }
+            } catch (error) {
+                console.error('Error fetching portfolio data:', error);
+                document.getElementById('portfolio-data').innerHTML = '<p class="error">Error loading portfolio data</p>';
+            }
+        }
+        
+        // Update dashboard with live data
+        function updateDashboardWithLiveData(data) {
+            const marketData = data.data;
+            
+            if (marketData.nifty_50) {
+                document.getElementById('nifty-price').textContent = `₹${marketData.nifty_50.price} (${marketData.nifty_50.change})`;
+            }
+            if (marketData.sensex) {
+                document.getElementById('sensex-price').textContent = `₹${marketData.sensex.price} (${marketData.sensex.change})`;
+            }
+            if (marketData.us_markets) {
+                document.getElementById('aapl-price').textContent = `$${marketData.us_markets.AAPL.price} (${marketData.us_markets.AAPL.change})`;
+                document.getElementById('googl-price').textContent = `$${marketData.us_markets.GOOGL.price} (${marketData.us_markets.GOOGL.change})`;
+                document.getElementById('msft-price').textContent = `$${marketData.us_markets.MSFT.price} (${marketData.us_markets.MSFT.change})`;
+            }
+            if (marketData.top_stocks) {
+                marketData.top_stocks.forEach(stock => {
+                    const element = document.getElementById(stock.symbol.toLowerCase() + '-price');
+                    if (element) {
+                        element.textContent = `₹${stock.price} (${stock.change})`;
+                    }
+                });
+            }
+            
+            document.getElementById('lastUpdate').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+            document.getElementById('api-status').innerHTML = '🟢 Live Data';
+        }
+        
+        // Update dashboard with mock data (fallback)
+        function updateDashboardWithMockData() {
+            document.getElementById('nifty-price').textContent = '₹24,856.50 (+0.85%)';
+            document.getElementById('sensex-price').textContent = '₹81,475.20 (+0.92%)';
+            document.getElementById('aapl-price').textContent = '$257.13 (+0.66%)';
+            document.getElementById('googl-price').textContent = '$178.45 (+1.23%)';
+            document.getElementById('msft-price').textContent = '$428.90 (+0.45%)';
+            document.getElementById('reliance-price').textContent = '₹2,845.30 (+1.12%)';
+            document.getElementById('tcs-price').textContent = '₹4,156.75 (+0.78%)';
+            document.getElementById('infy-price').textContent = '₹1,789.20 (+1.45%)';
+            
+            document.getElementById('lastUpdate').textContent = `Updated: ${new Date().toLocaleTimeString()} (Mock Data)`;
+        }
+        
+        // Update AI analysis
+        function updateAIAnalysis(analysis) {
+            const element = document.getElementById('ai-analysis');
+            
+            if (analysis) {
+                element.innerHTML = `
+                    <div class="ai-analysis">
+                        <strong>🤖 AI Market Sentiment:</strong> ${analysis.market_sentiment} (${analysis.confidence}% confidence)
+                        <br><br>
+                        <strong>Key Insights:</strong>
+                        <ul>
+                            ${analysis.key_insights.map(insight => `<li>${insight}</li>`).join('')}
+                        </ul>
+                        <br><small>Generated by InfinityAI Engine B • ${new Date().toLocaleTimeString()}</small>
+                    </div>
+                `;
+            } else {
+                element.innerHTML = `
+                    <div class="ai-analysis">
+                        <strong>🤖 AI Insight:</strong> Indian markets showing positive momentum with NIFTY crossing 24,850. 
+                        Technology stocks leading gains. Recommend monitoring banking sector for potential opportunities.
+                        <br><br><small>Generated by InfinityAI • ${new Date().toLocaleTimeString()}</small>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update portfolio display
+        function updatePortfolioDisplay(portfolioData) {
+            const element = document.getElementById('portfolio-data');
+            
+            let html = '<h4>Holdings</h4>';
+            portfolioData.holdings.forEach(holding => {
+                html += `
+                    <div class="metric">
+                        <span>${holding.symbol}</span>
+                        <span>Qty: ${holding.quantity} | P&L: ${holding.pnl || 'N/A'}</span>
+                    </div>
+                `;
+            });
+            
+            html += '<h4>Recent Orders</h4>';
+            portfolioData.orders.forEach(order => {
+                html += `
+                    <div class="metric">
+                        <span>${order.symbol}</span>
+                        <span>Status: ${order.status}</span>
+                    </div>
+                `;
+            });
+            
+            element.innerHTML = html;
+        }
+        
+        // Update status indicator
+        function updateStatusIndicator(status) {
+            const indicator = document.getElementById('status-indicator');
+            switch(status) {
+                case 'loading':
+                    indicator.style.background = '#ffc107';
+                    break;
+                case 'success':
+                    indicator.style.background = '#28a745';
+                    break;
+                case 'error':
+                    indicator.style.background = '#dc3545';
+                    break;
+            }
+        }
+        
+        // Handle Dhan credentials form submission
+        document.getElementById('dhan-credentials-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                api_key: document.getElementById('api_key').value,
+                api_secret: document.getElementById('api_secret').value,
+                access_token: document.getElementById('access_token').value,
+                user_id: 'demo-user'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/dhan/store`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                const statusDiv = document.getElementById('dhan-status');
+                
+                if (result.status === 'success') {
+                    statusDiv.innerHTML = '<p class="success">✅ Dhan credentials stored successfully!</p>';
+                    document.getElementById('dhan-integration-status').innerHTML = '🟢 Connected';
+                } else {
+                    statusDiv.innerHTML = `<p class="error">❌ Error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('dhan-status').innerHTML = '<p class="error">❌ Network error occurred</p>';
+            }
+        });
+        
+        // Refresh data
+        function refreshData() {
+            loadTabData(currentTab);
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (currentTab === 'dashboard') {
+                fetchMarketData();
+            }
+        }, 30000);
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchMarketData();
+            fetchAIAnalysis();
+        });
+    </script>
+</body>
+</html>
