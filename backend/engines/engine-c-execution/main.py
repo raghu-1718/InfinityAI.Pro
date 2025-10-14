@@ -396,6 +396,18 @@ async def root():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/engine-c")
+async def engine_c_root():
+    """ALB path-specific route handler"""
+    return {
+        "service": "Engine C - Trade Execution Service",
+        "status": "active",
+        "version": "1.0.0",
+        "execution_enabled": execution_service.execution_enabled,
+        "kill_switch": execution_service.kill_switch_active,
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/health")
 async def health_check():
     return {
@@ -406,8 +418,59 @@ async def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/engine-c/health")
+async def engine_c_health_check():
+    """ALB path-specific health check"""
+    return {
+        "status": "healthy",
+        "service": "Engine C - Trade Execution Service",
+        "version": "1.0.0",
+        "execution_status": "enabled" if execution_service.execution_enabled else "disabled",
+        "kill_switch": execution_service.kill_switch_active,
+        "dhan_integration": "configured",
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.post("/api/orders")
 async def place_order(
+    symbol: str,
+    quantity: int,
+    price: float,
+    order_type: str = "MARKET",
+    transaction_type: str = "BUY",
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Place a new trade order"""
+    try:
+        # Validate token
+        if not await execution_service.validate_api_key(credentials.credentials):
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        
+        # Convert string enums
+        order_type_enum = OrderType(order_type.upper())
+        transaction_type_enum = TransactionType(transaction_type.upper())
+        
+        # Place order
+        order = await execution_service.place_order(
+            symbol=symbol,
+            quantity=quantity,
+            price=price,
+            order_type=order_type_enum,
+            transaction_type=transaction_type_enum
+        )
+        
+        return {
+            "status": "success",
+            "order": asdict(order),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error placing order: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/engine-c/api/orders")
+async def place_order_alb(
     symbol: str,
     quantity: int,
     price: float,
@@ -538,6 +601,39 @@ async def get_metrics():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/engine-c/metrics")
+async def get_metrics_alb():
+    """Get service metrics (ALB compatible)"""
+    return {
+        "service": "Engine C - Trade Execution Service",
+        "total_orders": len(execution_service.orders),
+        "executed_orders": len([o for o in execution_service.orders.values() if o.status == OrderStatus.EXECUTED]),
+        "active_positions": len(execution_service.positions),
+        "daily_pnl": execution_service.daily_pnl,
+        "kill_switch": execution_service.kill_switch_active,
+        "execution_enabled": execution_service.execution_enabled,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/engine-c/api/positions")
+async def get_positions_alb(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all positions (ALB compatible)"""
+    try:
+        if not await execution_service.validate_api_key(credentials.credentials):
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        
+        return {
+            "status": "success",
+            "positions": [asdict(position) for position in execution_service.positions.values()],
+            "count": len(execution_service.positions),
+            "total_pnl": execution_service.daily_pnl,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting positions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/config/dhan")
 async def update_dhan_config(config: Dict[str, str], credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Update DHAN access token at runtime for Engine C (API key/secret/client id remain stable)."""
@@ -558,7 +654,7 @@ async def update_dhan_config(config: Dict[str, str], credentials: HTTPAuthorizat
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8002))
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
