@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-10-15T02:25:16.261227",
+  "alb_base_test": {
+    "status_code": 404,
+    "headers": {
+      "Server": "awselb/2.0",
+      "Date": "Tue, 14 Oct 2025 20:55:11 GMT",
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Length": "14",
+      "Connection": "keep-alive"
+    },
+    "content": "Not configured"
+  },
+  "path_tests": {
+    "/engine-c": {
+      "status_code": 404,
+      "content_type": "application/json",
+      "server": "uvicorn",
+      "content_preview": "{\"detail\":\"Not Found\"}"
+    },
+    "/engine-d": {
+      "status_code": 404,
+      "content_type": "application/json",
+      "server": "uvicorn",
+      "content_preview": "{\"detail\":\"Not Found\"}"
+    },
+    "/": {
+      "status_code": 404,
+      "content_type": "text/plain; charset=utf-8",
+      "server": "awselb/2.0",
+      "content_preview": "Not configured"
+    },
+    "/health": {
+      "status_code": 404,
+      "content_type": "text/plain; charset=utf-8",
+      "server": "awselb/2.0",
+      "content_preview": "Not configured"
+    },
+    "/api/health": {
+      "status_code": 404,
+      "content_type": "text/plain; charset=utf-8",
+      "server": "awselb/2.0",
+      "content_preview": "Not configured"
+    }
+  },
+  "diagnosis": {
+    "engine_c_reachable": false,
+    "engine_d_reachable": false,
+    "alb_responding": true,
+    "routing_configured": false,
+    "issue_type": "ALB Listener Rules Missing",
+    "root_cause": "Path-based routing rules not configured on ALB listener"
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "action": "Configure ALB Listener Rules",
+      "steps": [
+        "1. Access AWS Console \u2192 EC2 \u2192 Load Balancers",
+        "2. Select infinityai-alb-124143296",
+        "3. Go to Listeners tab \u2192 Select HTTP:80 listener",
+        "4. Add Rule: IF Path = /engine-c* THEN Forward to infinityai-tg-engine-c",
+        "5. Add Rule: IF Path = /engine-d* THEN Forward to infinityai-tg-engine-d",
+        "6. Set rule priorities appropriately (lower number = higher priority)"
+      ],
+      "aws_cli_commands": [
+        "aws elbv2 create-rule --listener-arn <LISTENER_ARN> --priority 100 --conditions Field=path-pattern,Values='/engine-c*' --actions Type=forward,TargetGroupArn=<ENGINE_C_TARGET_GROUP_ARN>",
+        "aws elbv2 create-rule --listener-arn <LISTENER_ARN> --priority 101 --conditions Field=path-pattern,Values='/engine-d*' --actions Type=forward,TargetGroupArn=<ENGINE_D_TARGET_GROUP_ARN>"
+      ]
+    },
+    {
+      "priority": "MEDIUM",
+      "action": "Verify Target Group Health",
+      "steps": [
+        "1. Check that ECS tasks are running and healthy",
+        "2. Verify target group health checks are passing",
+        "3. Ensure security group rules allow ALB to ECS communication"
+      ]
+    }
+  ]
+}

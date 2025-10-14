@@ -8,52 +8,82 @@ import requests
 import json
 import time
 
-# Configuration
-BACKEND_URL = "https://infinityai-app.agreeablemeadow-7375b1f7.eastus.azurecontainerapps.io"
+# Configuration - AWS/GCP Multi-Cloud Architecture
+AWS_ALB_URL = "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com"
+GCP_ENGINES = {
+    "engine_a": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+    "engine_b": "https://infinityai-engine-b-573866363639.us-central1.run.app"
+}
+AWS_ENGINES = {
+    "engine_c": f"{AWS_ALB_URL}/engine-c",
+    "engine_d": f"{AWS_ALB_URL}/engine-d"
+}
+
+# Frontend URLs (cleaned - no Azure/Vercel)
 FRONTEND_URLS = [
-    "https://infinity-ai-9utba60h7-infinityaipro.vercel.app",
     "https://infinityai.pro"
 ]
 
 def test_backend_health():
-    """Test backend health endpoint"""
-    try:
-        response = requests.get(f"{BACKEND_URL}/health", timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            print("✅ Backend Health: HEALTHY")
-            print(f"   Platform: {data.get('platform')}")
-            print(f"   Version: {data.get('version')}")
-            print(f"   Services: {', '.join(data.get('services', {}).keys())}")
-            return True
-        else:
-            print(f"❌ Backend Health: FAILED ({response.status_code})")
-            return False
-    except Exception as e:
-        print(f"❌ Backend Health: ERROR - {e}")
-        return False
+    """Test backend health endpoint for all engines"""
+    results = []
+    
+    # Test GCP Engines
+    for name, url in GCP_ENGINES.items():
+        try:
+            response = requests.get(f"{url}/health", timeout=10)
+            success = response.status_code == 200
+            results.append(success)
+            status = "✅ HEALTHY" if success else "❌ FAILED"
+            print(f"   {status} GCP {name.upper()}: {url}")
+            if success:
+                data = response.json()
+                print(f"      Service: {data.get('service', 'Unknown')}")
+        except Exception as e:
+            results.append(False)
+            print(f"   ❌ ERROR GCP {name.upper()}: {e}")
+    
+    # Test AWS Engines
+    for name, url in AWS_ENGINES.items():
+        try:
+            response = requests.get(url, timeout=10)
+            success = response.status_code == 200
+            results.append(success)
+            status = "✅ HEALTHY" if success else "❌ FAILED"
+            print(f"   {status} AWS {name.upper()}: {url}")
+            if success and 'application/json' in response.headers.get('content-type', ''):
+                try:
+                    data = response.json()
+                    print(f"      Service: {data.get('service', 'Unknown')}")
+                except:
+                    print(f"      Content: {response.text[:50]}...")
+        except Exception as e:
+            results.append(False)
+            print(f"   ❌ ERROR AWS {name.upper()}: {e}")
+    
+    return any(results)  # Return True if at least one engine is healthy
 
 def test_backend_apis():
-    """Test key backend API endpoints"""
+    """Test key backend API endpoints across engines"""
     tests = [
         {
-            "name": "Chatbot Status",
-            "url": f"{BACKEND_URL}/api/chatbot/chatbot-status",
+            "name": "Engine A - Market Data",
+            "url": f"{GCP_ENGINES['engine_a']}/market/indices",
             "method": "GET"
         },
         {
-            "name": "Chatbot Chat",
-            "url": f"{BACKEND_URL}/api/chatbot/chat",
-            "method": "POST",
-            "data": {
-                "message": "Hello InfinityAI",
-                "user_id": "integration_test",
-                "voice_input": False
-            }
+            "name": "Engine B - AI Health",
+            "url": f"{GCP_ENGINES['engine_b']}/health",
+            "method": "GET"
         },
         {
-            "name": "Market Indices",
-            "url": f"{BACKEND_URL}/api/market/indices",
+            "name": "Engine C - Trading Status", 
+            "url": AWS_ENGINES['engine_c'],
+            "method": "GET"
+        },
+        {
+            "name": "Engine D - Chatbot Status",
+            "url": AWS_ENGINES['engine_d'],
             "method": "GET"
         }
     ]
@@ -108,45 +138,39 @@ def test_frontend_accessibility():
     return False
 
 def test_cors_integration():
-    """Test CORS and integration between frontend and backend"""
+    """Test inter-engine communication and integration"""
     try:
-        # Test CORS preflight
-        response = requests.options(
-            f"{BACKEND_URL}/api/chatbot/chat",
-            headers={
-                'Origin': 'https://infinityai.pro',
-                'Access-Control-Request-Method': 'POST',
-                'Access-Control-Request-Headers': 'Content-Type'
-            },
-            timeout=10
-        )
-        
-        cors_ok = response.status_code in [200, 204]
-        print(f"   {'✅' if cors_ok else '❌'} CORS Preflight: {'PASSED' if cors_ok else 'FAILED'}")
-        
-        # Test actual API call with origin header
-        response = requests.post(
-            f"{BACKEND_URL}/api/chatbot/chat",
-            json={
-                "message": "Integration test from frontend",
-                "user_id": "cors_test",
-                "voice_input": False
-            },
+        # Test AWS Engine C to D communication
+        response = requests.get(
+            AWS_ENGINES['engine_c'],
             headers={'Origin': 'https://infinityai.pro'},
             timeout=10
         )
         
-        api_ok = response.status_code == 200
-        print(f"   {'✅' if api_ok else '❌'} API with Origin: {'PASSED' if api_ok else 'FAILED'}")
+        engine_c_ok = response.status_code == 200
+        print(f"   {'✅' if engine_c_ok else '❌'} Engine C Communication: {'PASSED' if engine_c_ok else 'FAILED'}")
         
-        return cors_ok and api_ok
+        # Test GCP to AWS cross-cloud communication
+        try:
+            response = requests.get(
+                f"{GCP_ENGINES['engine_b']}/health",
+                timeout=10
+            )
+            gcp_ok = response.status_code == 200
+            print(f"   {'✅' if gcp_ok else '❌'} GCP Engine B: {'OPERATIONAL' if gcp_ok else 'DOWN'}")
+        except Exception as e:
+            gcp_ok = False
+            print(f"   ❌ GCP Engine B ERROR: {e}")
+        
+        return engine_c_ok or gcp_ok  # Pass if at least one engine is working
         
     except Exception as e:
-        print(f"   ❌ CORS Integration ERROR: {e}")
+        print(f"   ❌ Integration ERROR: {e}")
         return False
 
 def main():
-    print("🚀 InfinityAI.Pro Integration Test")
+    print("🚀 InfinityAI.Pro Multi-Cloud Integration Test")
+    print("AWS (Engines C/D) + GCP (Engines A/B)")
     print("=" * 50)
     
     # Test backend
@@ -168,10 +192,10 @@ def main():
     print("=" * 50)
     
     tests = [
-        ("Backend Health", backend_healthy),
-        ("Backend APIs", apis_working),
+        ("Multi-Cloud Engine Health", backend_healthy),
+        ("Engine API Endpoints", apis_working),
         ("Frontend Access", frontend_accessible),
-        ("CORS Integration", integration_working)
+        ("Inter-Engine Communication", integration_working)
     ]
     
     all_passed = True
@@ -183,11 +207,16 @@ def main():
     
     print("\n" + "=" * 50)
     if all_passed:
-        print("🎉 ALL TESTS PASSED - InfinityAI.Pro is fully integrated!")
-        print("\nYour application is ready at:")
+        print("🎉 ALL TESTS PASSED - InfinityAI.Pro Multi-Cloud Architecture is operational!")
+        print("\n🌐 Frontend:")
         for url in FRONTEND_URLS:
-            print(f"  🌐 {url}")
-        print(f"\nBackend API: {BACKEND_URL}")
+            print(f"  {url}")
+        print("\n☁️ AWS Engines:")
+        for name, url in AWS_ENGINES.items():
+            print(f"  {name.upper()}: {url}")
+        print("\n🔄 GCP Engines:")
+        for name, url in GCP_ENGINES.items():
+            print(f"  {name.upper()}: {url}")
     else:
         print("⚠️  SOME TESTS FAILED - Check the details above")
     

@@ -55,9 +55,28 @@ app.add_middleware(
 	allow_headers=["*"],
 )
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def ultra_aggressive_dashboard():
-	return HTMLResponse("<html><body><h1>Ultra Aggressive Trading</h1><p>Service active.</p></body></html>")
+	return {
+		"service": "Ultra Aggressive Trading Engine",
+		"status": "active",
+		"version": "4.0.0",
+		"trading_active": trading_state["ultra_aggressive_active"],
+		"timestamp": datetime.now().isoformat()
+	}
+
+@app.get("/ultra-aggressive")
+async def ultra_aggressive_root():
+	"""GCP Cloud Run path-specific route handler"""
+	return {
+		"service": "Ultra Aggressive Trading Engine",
+		"status": "active",
+		"version": "4.0.0",
+		"trading_active": trading_state["ultra_aggressive_active"],
+		"capital": trading_state["current_capital"],
+		"target": trading_state["target_capital"],
+		"timestamp": datetime.now().isoformat()
+	}
 
 @app.post("/api/ultra-aggressive/activate")
 async def activate_ultra_aggressive():
@@ -91,7 +110,26 @@ async def get_ultra_status():
 
 @app.get("/health")
 async def health():
-	return {"status": "healthy", "time": datetime.now().isoformat()}
+	return {
+		"status": "healthy",
+		"service": "ultra-aggressive-trading",
+		"trading_active": trading_state["ultra_aggressive_active"],
+		"timestamp": datetime.now().isoformat()
+	}
+
+@app.get("/ultra-aggressive/health")
+async def ultra_aggressive_health():
+	"""GCP Cloud Run path-specific health check"""
+	return {
+		"status": "healthy",
+		"service": "Ultra Aggressive Trading Engine",
+		"version": "4.0.0",
+		"trading_active": trading_state["ultra_aggressive_active"],
+		"capital": trading_state["current_capital"],
+		"orders_placed": trading_state["orders_placed"],
+		"timestamp": datetime.now().isoformat(),
+		"uptime": "running"
+	}
 
 async def run_ultra_aggressive_trading():
 	logger.info("Ultra aggressive trading loop started")

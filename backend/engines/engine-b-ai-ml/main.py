@@ -322,12 +322,36 @@ async def root():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/engine-b")
+async def engine_b_root():
+    """GCP Cloud Run path-specific route handler"""
+    return {
+        "service": "Engine B - AI/ML Processing Service",
+        "status": "active",
+        "version": "1.0.0",
+        "models_loaded": len(ai_service.models),
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
         "service": "engine-b-ai-ml",
         "models_status": "loaded",
+        "timestamp": datetime.now().isoformat(),
+        "uptime": "running"
+    }
+
+@app.get("/engine-b/health")
+async def engine_b_health_check():
+    """GCP Cloud Run path-specific health check"""
+    return {
+        "status": "healthy",
+        "service": "Engine B - AI/ML Processing Service",
+        "version": "1.0.0",
+        "models_status": "loaded",
+        "models_loaded": len(ai_service.models),
         "timestamp": datetime.now().isoformat(),
         "uptime": "running"
     }

@@ -1,0 +1,56 @@
+{
+  "accessibility": {
+    "accessible": true,
+    "response_time_ms": 650.8586406707764,
+    "performance_good": true,
+    "features": {
+      "InfinityAI.Pro": true,
+      "login": true,
+      "dashboard": true,
+      "demo": true,
+      "trading": true
+    },
+    "demo_credentials_present": true,
+    "content_length": 3157
+  },
+  "security": {
+    "https_enabled": true,
+    "ssl_valid": true,
+    "ssl_cert": {
+      "subject": {
+        "commonName": "infinityai.pro"
+      },
+      "expires": "Nov  6 23:59:59 2026 GMT"
+    },
+    "security_headers": {
+      "content_security_policy": null,
+      "x_frame_options": null,
+      "x_content_type_options": null,
+      "strict_transport_security": null
+    }
+  },
+  "backend_integration": {
+    "gcp_engines_accessible": 3,
+    "aws_engines_accessible": 2,
+    "total_engines": 5,
+    "integration_possible": true
+  },
+  "user_experience": {
+    "emotional_elements": {
+      "friendly_language": true,
+      "clear_navigation": true,
+      "helpful_features": true,
+      "demo_access": true
+    },
+    "mobile_responsive": true,
+    "ux_score": "5/5"
+  },
+  "summary": {
+    "accessibility_score": 1,
+    "security_score": 2,
+    "integration_score": 1,
+    "ux_score": 4,
+    "total_score": 3.8,
+    "status": "\ud83d\udfe2 EXCELLENT"
+  }
+}

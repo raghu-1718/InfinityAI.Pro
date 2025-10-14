@@ -397,6 +397,18 @@ async def root():
     </html>
     """.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(chatbot_service.engines)))
 
+@app.get("/engine-d")
+async def engine_d_root():
+    """ALB path-specific route handler"""
+    return {
+        "service": "Engine D - AI Chatbot & Coordination Service",
+        "status": "active",
+        "version": "1.0.0",
+        "engines_configured": len(chatbot_service.engines),
+        "active_connections": len(connection_manager.active_connections),
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/health")
 async def health_check():
     return {
@@ -405,6 +417,20 @@ async def health_check():
         "engines_configured": len(chatbot_service.engines),
         "active_connections": len(connection_manager.active_connections),
         "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/engine-d/health")
+async def engine_d_health_check():
+    """ALB path-specific health check"""
+    return {
+        "status": "healthy",
+        "service": "Engine D - AI Chatbot & Coordination Service",
+        "version": "1.0.0",
+        "engines_configured": len(chatbot_service.engines),
+        "active_connections": len(connection_manager.active_connections),
+        "chat_history_count": len(chatbot_service.chat_history),
+        "timestamp": datetime.now().isoformat(),
+        "uptime": "running"
     }
 
 @app.websocket("/ws/{user_id}")

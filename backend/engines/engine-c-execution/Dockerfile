@@ -24,11 +24,11 @@ RUN useradd -m -u 1000 engineuser && chown -R engineuser:engineuser /app
 USER engineuser
 
 # Expose port
-EXPOSE 8002
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application
 CMD ["python", "main.py"]

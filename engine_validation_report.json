@@ -1,0 +1,360 @@
+{
+  "total_engines": 5,
+  "operational_engines": 5,
+  "success_rate": 100.0,
+  "critical_engines_down": 0,
+  "system_status": "\ud83d\udfe2 FULLY OPERATIONAL",
+  "detailed_results": {
+    "engine_a": {
+      "name": "Engine A - Market Data Ingestion",
+      "url": "https://infinityai-engine-a-573866363639.us-central1.run.app",
+      "function": "Real-time market data collection and preprocessing",
+      "technology": "Google Cloud Run",
+      "region": "us-central1",
+      "critical": true,
+      "validation_results": {
+        "connectivity": {
+          "success": true,
+          "status": "Connected (200)",
+          "response_code": 200
+        },
+        "health": {
+          "success": true,
+          "status": "Healthy",
+          "endpoint": "/health",
+          "data": {
+            "status": "healthy",
+            "service": "engine-a-market-data",
+            "timestamp": "2025-10-14T21:07:00.839358",
+            "uptime": "running"
+          }
+        },
+        "performance": {
+          "avg_response_time": 261.56,
+          "min_response_time": 259.61,
+          "max_response_time": 264.83,
+          "within_expected": true
+        },
+        "endpoints": [
+          {
+            "endpoint": "/health",
+            "success": true,
+            "status_code": 200,
+            "url": "https://infinityai-engine-a-573866363639.us-central1.run.app/health"
+          },
+          {
+            "endpoint": "/api/market/data",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-engine-a-573866363639.us-central1.run.app/api/market/data"
+          },
+          {
+            "endpoint": "/api/market/indices",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-engine-a-573866363639.us-central1.run.app/api/market/indices"
+          }
+        ],
+        "security": {
+          "ssl_valid": true,
+          "cert_subject": {
+            "commonName": "*.a.run.app"
+          },
+          "cert_expires": "Dec 15 08:40:24 2025 GMT"
+        },
+        "integration": {
+          "ready": false,
+          "cors_configured": false,
+          "cors_headers": {
+            "access_control_allow_origin": null,
+            "access_control_allow_methods": null,
+            "access_control_allow_headers": null
+          }
+        }
+      }
+    },
+    "engine_b": {
+      "name": "Engine B - AI/ML Processing",
+      "url": "https://infinityai-engine-b-573866363639.us-central1.run.app",
+      "function": "AI model inference and machine learning predictions",
+      "technology": "Google Cloud Run",
+      "region": "us-central1",
+      "critical": true,
+      "validation_results": {
+        "connectivity": {
+          "success": true,
+          "status": "Connected (200)",
+          "response_code": 200
+        },
+        "health": {
+          "success": true,
+          "status": "Healthy",
+          "endpoint": "/health",
+          "data": {
+            "status": "healthy",
+            "service": "engine-b-ai-ml",
+            "models_status": "loaded",
+            "timestamp": "2025-10-14T21:07:03.942723",
+            "uptime": "running"
+          }
+        },
+        "performance": {
+          "avg_response_time": 266.35,
+          "min_response_time": 258.59,
+          "max_response_time": 272.39,
+          "within_expected": true
+        },
+        "endpoints": [
+          {
+            "endpoint": "/health",
+            "success": true,
+            "status_code": 200,
+            "url": "https://infinityai-engine-b-573866363639.us-central1.run.app/health"
+          },
+          {
+            "endpoint": "/api/ai/predict",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-engine-b-573866363639.us-central1.run.app/api/ai/predict"
+          },
+          {
+            "endpoint": "/api/ai/models",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-engine-b-573866363639.us-central1.run.app/api/ai/models"
+          }
+        ],
+        "security": {
+          "ssl_valid": true,
+          "cert_subject": {
+            "commonName": "*.a.run.app"
+          },
+          "cert_expires": "Dec 15 08:40:24 2025 GMT"
+        },
+        "integration": {
+          "ready": false,
+          "cors_configured": false,
+          "cors_headers": {
+            "access_control_allow_origin": null,
+            "access_control_allow_methods": null,
+            "access_control_allow_headers": null
+          }
+        }
+      }
+    },
+    "ultra_aggressive": {
+      "name": "Ultra-Aggressive Trading Engine",
+      "url": "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app",
+      "function": "High-frequency aggressive trading execution",
+      "technology": "Google Cloud Run",
+      "region": "us-central1",
+      "critical": true,
+      "validation_results": {
+        "connectivity": {
+          "success": true,
+          "status": "Connected (200)",
+          "response_code": 200
+        },
+        "health": {
+          "success": true,
+          "status": "Healthy",
+          "endpoint": "/health",
+          "data": {
+            "status": "healthy",
+            "time": "2025-10-14T21:07:07.124731"
+          }
+        },
+        "performance": {
+          "avg_response_time": 289.4,
+          "min_response_time": 259.83,
+          "max_response_time": 347.32,
+          "within_expected": true
+        },
+        "endpoints": [
+          {
+            "endpoint": "/health",
+            "success": true,
+            "status_code": 200,
+            "url": "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app/health"
+          },
+          {
+            "endpoint": "/",
+            "success": true,
+            "status_code": 200,
+            "url": "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app/"
+          },
+          {
+            "endpoint": "/api/status",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app/api/status"
+          },
+          {
+            "endpoint": "/api/trading/start",
+            "success": true,
+            "status_code": 404,
+            "url": "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app/api/trading/start"
+          }
+        ],
+        "security": {
+          "ssl_valid": true,
+          "cert_subject": {
+            "commonName": "*.a.run.app"
+          },
+          "cert_expires": "Dec 15 08:40:24 2025 GMT"
+        },
+        "integration": {
+          "ready": false,
+          "cors_configured": false,
+          "cors_headers": {
+            "access_control_allow_origin": null,
+            "access_control_allow_methods": null,
+            "access_control_allow_headers": null
+          }
+        }
+      }
+    },
+    "engine_c": {
+      "name": "Engine C - Trade Execution",
+      "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c",
+      "function": "Order execution and portfolio management",
+      "technology": "AWS ECS + Application Load Balancer",
+      "region": "us-east-1",
+      "critical": true,
+      "validation_results": {
+        "connectivity": {
+          "success": true,
+          "status": "Connected (200)",
+          "response_code": 200
+        },
+        "health": {
+          "success": true,
+          "status": "Healthy",
+          "endpoint": "/health",
+          "data": {
+            "status": "healthy",
+            "service": "Engine C - Trade Execution Service",
+            "version": "1.0.0",
+            "execution_status": "enabled",
+            "kill_switch": false,
+            "dhan_integration": "configured",
+            "timestamp": "2025-10-14T21:07:10.816751"
+          }
+        },
+        "performance": {
+          "avg_response_time": 216.18,
+          "min_response_time": 206.93,
+          "max_response_time": 223.95,
+          "within_expected": true
+        },
+        "endpoints": [
+          {
+            "endpoint": "/",
+            "success": true,
+            "status_code": 200,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c/"
+          },
+          {
+            "endpoint": "/health",
+            "success": true,
+            "status_code": 200,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c/health"
+          },
+          {
+            "endpoint": "/api/trades",
+            "success": true,
+            "status_code": 404,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c/api/trades"
+          },
+          {
+            "endpoint": "/api/portfolio",
+            "success": true,
+            "status_code": 404,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c/api/portfolio"
+          }
+        ],
+        "integration": {
+          "ready": false,
+          "cors_configured": false,
+          "cors_headers": {
+            "access_control_allow_origin": null,
+            "access_control_allow_methods": null,
+            "access_control_allow_headers": null
+          }
+        }
+      }
+    },
+    "engine_d": {
+      "name": "Engine D - AI Chatbot Assistant",
+      "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d",
+      "function": "Natural language interface and user assistance",
+      "technology": "AWS ECS + Application Load Balancer",
+      "region": "us-east-1",
+      "critical": true,
+      "validation_results": {
+        "connectivity": {
+          "success": true,
+          "status": "Connected (404)",
+          "response_code": 404
+        },
+        "health": {
+          "success": true,
+          "status": "Healthy",
+          "endpoint": "/health",
+          "data": {
+            "status": "healthy",
+            "service": "Engine D - AI Chatbot",
+            "timestamp": "2025-10-14T21:07:13.631882+00:00",
+            "version": "1.0.0",
+            "ai_models": {
+              "sentiment_model": false,
+              "summarizer": false,
+              "openai_available": false
+            }
+          }
+        },
+        "performance": {
+          "avg_response_time": 211.98,
+          "min_response_time": 208.17,
+          "max_response_time": 215.18,
+          "within_expected": true
+        },
+        "endpoints": [
+          {
+            "endpoint": "/",
+            "success": true,
+            "status_code": 404,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/"
+          },
+          {
+            "endpoint": "/health",
+            "success": true,
+            "status_code": 200,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/health"
+          },
+          {
+            "endpoint": "/api/chat",
+            "success": true,
+            "status_code": 404,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/api/chat"
+          },
+          {
+            "endpoint": "/api/assistant",
+            "success": true,
+            "status_code": 404,
+            "url": "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d/api/assistant"
+          }
+        ],
+        "integration": {
+          "ready": true,
+          "cors_configured": false,
+          "cors_headers": {
+            "access_control_allow_origin": null,
+            "access_control_allow_methods": null,
+            "access_control_allow_headers": null
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+2025-10-15 03:30:45,225 - VALIDATOR - INFO - Throughput test: 220 requests in 5.18s = 42.45 RPS
+2025-10-15 03:30:53,448 - VALIDATOR - INFO - Throughput test: 220 requests in 5.10s = 43.16 RPS
+2025-10-15 03:31:02,124 - VALIDATOR - INFO - Throughput test: 200 requests in 5.53s = 36.18 RPS
+2025-10-15 03:31:10,267 - VALIDATOR - INFO - Throughput test: 160 requests in 5.02s = 31.88 RPS
+2025-10-15 03:31:17,812 - VALIDATOR - INFO - Throughput test: 0 requests in 5.16s = 0.00 RPS
