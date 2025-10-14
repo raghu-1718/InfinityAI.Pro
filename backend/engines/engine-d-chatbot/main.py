@@ -7,7 +7,8 @@ Deployed on AWS ECS/Fargate
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.staticfiles import StaticFiles
 import asyncio
 import uvicorn
@@ -859,6 +860,50 @@ async def get_dhan_callback_urls():
             "3. Test the integration with live data"
         ]
     }
+
+# Frontend serving routes for integrated dashboard
+@app.get("/dashboard")
+@app.get("/dashboard.html") 
+async def serve_dashboard():
+    """Serve the enhanced dashboard"""
+    try:
+        # Try to serve the enhanced dashboard
+        dashboard_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'frontend', 'web', 'build', 'dashboard_enhanced.html')
+        if os.path.exists(dashboard_path):
+            return FileResponse(dashboard_path, media_type="text/html")
+        else:
+            # Fallback to inline dashboard if file doesn't exist
+            return HTMLResponse(get_inline_dashboard())
+    except Exception as e:
+        logger.error(f"Error serving dashboard: {e}")
+        return HTMLResponse(get_inline_dashboard())
+
+@app.get("/")
+async def serve_root_dashboard():
+    """Serve dashboard at root for convenience"""
+    return await serve_dashboard()
+
+@app.get("/auth/dhan/callback")
+async def serve_dhan_auth_callback():
+    """Serve dashboard for Dhan OAuth callback"""
+    return await serve_dashboard()
+
+def get_inline_dashboard():
+    """Inline dashboard HTML as fallback"""
+    return """
+    <!DOCTYPE html>
+    <html><head><title>InfinityAI.Pro Dashboard</title></head>
+    <body>
+        <h1>🤖 InfinityAI.Pro Dashboard</h1>
+        <p>Dashboard is loading... Please refresh if this message persists.</p>
+        <script>
+            // Redirect to enhanced dashboard if available
+            fetch('/api/market-data')
+                .then(() => window.location.href = '/dashboard')
+                .catch(() => console.log('API endpoints loading...'));
+        </script>
+    </body></html>
+    """
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8003))

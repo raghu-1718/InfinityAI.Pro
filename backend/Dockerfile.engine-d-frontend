@@ -1,0 +1,62 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Engine D source code
+COPY engines/engine-d-chatbot/ ./engine-d/
+COPY *.py ./
+
+# Create frontend directory and copy enhanced dashboard
+RUN mkdir -p ./frontend/build
+COPY ../frontend/web/build/dashboard_enhanced.html ./frontend/build/dashboard.html
+COPY ../frontend/web/build/ ./frontend/build/
+
+# Copy any additional static assets
+RUN mkdir -p ./static
+COPY ../frontend/web/build/static/ ./static/ 2>/dev/null || true
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PORT=8003
+ENV PYTHONUNBUFFERED=1
+
+# Add route serving for frontend in Engine D
+RUN echo "
+# Add frontend serving routes to main.py
+@app.get('/dashboard')
+@app.get('/dashboard.html')
+async def serve_dashboard():
+    return FileResponse('frontend/build/dashboard.html')
+
+@app.get('/auth/dhan/callback')
+async def serve_dhan_callback():
+    return FileResponse('frontend/build/dashboard.html')
+
+@app.get('/static/{file_path:path}')
+async def serve_static(file_path: str):
+    return FileResponse(f'static/{file_path}')
+
+@app.get('/')
+async def serve_root():
+    return FileResponse('frontend/build/dashboard.html')
+" >> ./engine-d/main.py
+
+# Expose port
+EXPOSE 8003
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8003/health || exit 1
+
+# Start the application
+CMD ["python", "engine-d/main.py"]
