@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-InfinityAI.Pro - Engine A: Market Data + Option Chain Ingestion Service
-Enhanced real-time market data + option chain integration for Indian exchanges (NSE, BSE, MCX)
-Includes Google Vertex & Gemini AI summarization.
-Deployable on GCP Cloud Run
+InfinityAI.Pro - Engine A: Market Data + Option Chain + AI Integration Service
+Complete integration with Vertex AI Gemini 2.5 Flash Lite, Dhan API, and Hugging Face
+Deployable on GCP Cloud Run with Secret Manager
 """
 
 import os
@@ -18,9 +17,12 @@ from dataclasses import dataclass, asdict
 import aiohttp
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
+from google.cloud import secretmanager
+import google.auth
 
 # Security middleware import (safe fallback)
 sys.path.append('/app')
@@ -40,6 +42,14 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("engine-a")
+
+# ========== Pydantic Models ==========
+
+class TextRequest(BaseModel):
+    text: str
+
+class SymbolRequest(BaseModel):
+    symbol: str
 
 # ========== Data Models ==========
 
@@ -74,143 +84,167 @@ class OptionChainEntry:
     theta: float
     vega: float
 
+# ========== Secret Manager Helper ==========
+
+class SecretManager:
+    def __init__(self):
+        try:
+            _, self.project_id = google.auth.default()
+            self.client = secretmanager.SecretManagerServiceClient()
+            logger.info(f"✅ Secret Manager initialized for project: {self.project_id}")
+        except Exception as e:
+            logger.error(f"❌ Secret Manager init failed: {e}")
+            self.client = None
+            self.project_id = None
+
+    def get_secret(self, secret_name: str) -> str:
+        if not self.client or not self.project_id:
+            return os.getenv(secret_name.upper().replace('-', '_'), "")
+        
+        try:
+            name = f"projects/{self.project_id}/secrets/{secret_name}/versions/latest"
+            response = self.client.access_secret_version(request={"name": name})
+            return response.payload.data.decode("UTF-8")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to get secret {secret_name}: {e}")
+            return os.getenv(secret_name.upper().replace('-', '_'), "")
 
 # ========== Main Service Class ==========
 
 class MarketDataService:
     def __init__(self):
+        self.secret_manager = SecretManager()
+        
         # Dhan API Setup
-        self.base_url = "https://api.dhan.co/v2"
-        self.access_token = os.getenv("DHAN_ACCESS_TOKEN", "")
-        self.client_id = os.getenv("DHAN_CLIENT_ID", "")
+        self.dhan_base_url = "https://api.dhan.co"
+        self.dhan_access_token = self.secret_manager.get_secret("dhan-access-token")
+        self.dhan_api_key = self.secret_manager.get_secret("dhan-api-key")
+        self.dhan_api_secret = self.secret_manager.get_secret("dhan-api-secret")
+        self.dhan_client_id = "1101302170"  # From JWT token
 
-        self.headers = {
-            "access-token": self.access_token,
-            "client-id": self.client_id,
+        self.dhan_headers = {
+            "access-token": self.dhan_access_token,
+            "client-id": self.dhan_client_id,
             "Content-Type": "application/json"
         }
 
-        # Vertex/Gemini (Optional)
-        self.vertex_url = os.getenv("GCP_VERTEX_ENDPOINT", "")
-        self.gemini_url = os.getenv("GCP_GEMINI_ENDPOINT", "")
+        # Vertex AI Gemini Setup
+        self.vertex_api_key = self.secret_manager.get_secret("vertex-ai-api-key")
+        self.gemini_model = "gemini-2.5-flash-lite"
+        self.gemini_url = f"https://aiplatform.googleapis.com/v1/publishers/google/models/{self.gemini_model}:generateContent"
+
+        # Hugging Face Setup
+        self.hf_token = self.secret_manager.get_secret("huggingface-api-token")
+        self.hf_model = "distilbert-base-uncased"
+        self.hf_url = f"https://api-inference.huggingface.co/models/{self.hf_model}"
 
         # Cache
         self.signals_cache: List[MarketSignal] = []
         self.option_chain_cache: Dict[str, Any] = {}
-        self.market_data_cache = {}
 
-        # Symbols (You can dynamically load these)
+        # Symbols
         self.symbols = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK"]
-        logger.info("✅ Engine A initialized with Dhan + Vertex/Gemini support.")
+        logger.info("✅ Engine A initialized with Dhan + Vertex AI + Hugging Face support.")
 
-    # ========== Core Dhan APIs ==========
+    # ========== Vertex AI Gemini Methods ==========
+
+    async def generate_with_gemini(self, text: str) -> Dict[str, Any]:
+        if not self.vertex_api_key:
+            return {"error": "Vertex AI key not configured", "summary": ""}
+
+        payload = {
+            "contents": [
+                {"role": "user", "parts": [{"text": text}]}
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 200
+            }
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.gemini_url}?key={self.vertex_api_key}",
+                    json=payload
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Gemini API error: {error_text}")
+                        return {"error": f"API Error {response.status}", "summary": ""}
+                    
+                    data = await response.json()
+                    summary = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    return {"model": self.gemini_model, "summary": summary}
+        except Exception as e:
+            logger.error(f"Gemini request failed: {e}")
+            return {"error": str(e), "summary": ""}
+
+    # ========== Dhan API Methods ==========
 
     async def fetch_positions(self) -> Optional[Dict]:
-        url = f"{self.base_url}/positions"
+        if not self.dhan_access_token:
+            return {"error": "Dhan credentials not configured"}
+        
+        url = f"{self.dhan_base_url}/positions"
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=self.headers) as r:
-                return await r.json() if r.status == 200 else {}
-
-    async def fetch_orders(self) -> Optional[Dict]:
-        url = f"{self.base_url}/orders"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=self.headers) as r:
-                return await r.json() if r.status == 200 else {}
-
-    async def fetch_live_quotes(self, symbols: List[str]) -> Dict[str, Any]:
-        """Fetch live quotes from Dhan API or mock data"""
-        try:
-            # In production, implement actual Dhan API call
-            # For now, return mock data
-            quotes = {}
-            for symbol in symbols:
-                quotes[symbol] = {
-                    "ltp": 1000 + hash(symbol) % 500,  # Mock price
-                    "change": (hash(symbol) % 20) - 10,  # Mock change
-                    "volume": hash(symbol) % 100000,
-                    "timestamp": datetime.now().isoformat()
-                }
-            
-            self.market_data_cache.update(quotes)
-            return quotes
-            
-        except Exception as e:
-            logger.error(f"Error fetching quotes: {e}")
-            return {}
-
-    # ========== Option Chain ==========
-
-    async def fetch_expiry_list(self, symbol: str) -> List[str]:
-        url = f"{self.base_url}/optionchain/expirylist"
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=self.headers, json={"symbol": symbol}) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    return data.get("expiryDates", [])
-                logger.error(f"Failed expiry list {symbol}: {r.status}")
-                return []
-
-    async def fetch_option_chain(self, symbol: str, expiry: str) -> Optional[Dict]:
-        url = f"{self.base_url}/optionchain"
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=self.headers, json={"symbol": symbol, "expiry": expiry}) as r:
+            async with session.get(url, headers=self.dhan_headers) as r:
                 if r.status == 200:
                     return await r.json()
-                logger.error(f"Option chain fetch failed for {symbol}: {r.status}")
-                return None
+                logger.error(f"Dhan positions failed: {r.status}")
+                return {"error": f"API Error {r.status}"}
 
-    async def get_option_chain(self, symbol: str, expiry: str) -> Dict[str, Any]:
-        """Get option chain data with fallback to mock data"""
+    async def fetch_orders(self) -> Optional[Dict]:
+        if not self.dhan_access_token:
+            return {"error": "Dhan credentials not configured"}
+        
+        url = f"{self.dhan_base_url}/orders"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=self.dhan_headers) as r:
+                if r.status == 200:
+                    return await r.json()
+                logger.error(f"Dhan orders failed: {r.status}")
+                return {"error": f"API Error {r.status}"}
+
+    async def fetch_option_chain(self, symbol: str) -> Optional[Dict]:
+        if not self.dhan_access_token:
+            return {"error": "Dhan credentials not configured"}
+        
+        url = f"{self.dhan_base_url}/optionchain"
+        payload = {"symbol": symbol}
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=self.dhan_headers, json=payload) as r:
+                if r.status == 200:
+                    data = await r.json()
+                    self.option_chain_cache[symbol] = data
+                    return data
+                logger.error(f"Dhan option chain failed for {symbol}: {r.status}")
+                return {"error": f"API Error {r.status}"}
+
+    # ========== Hugging Face Methods ==========
+
+    async def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+        if not self.hf_token:
+            return {"error": "Hugging Face token not configured"}
+
+        headers = {"Authorization": f"Bearer {self.hf_token}"}
+        payload = {"inputs": text}
+
         try:
-            # Try to fetch real data first
-            real_data = await self.fetch_option_chain(symbol, expiry)
-            if real_data:
-                return real_data
-                
-            # Fallback to mock data
-            return {
-                "symbol": symbol,
-                "expiry": expiry,
-                "strikes": [
-                    {
-                        "strike": 21000 + i * 50,
-                        "call_ltp": 50 + i,
-                        "put_ltp": 45 + i,
-                        "call_oi": 1000 * i,
-                        "put_oi": 950 * i
-                    } for i in range(10)
-                ],
-                "timestamp": datetime.now().isoformat()
-            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.hf_url, headers=headers, json=payload) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        return {"error": f"HF API Error {response.status}: {error_text}"}
+                    
+                    data = await response.json()
+                    return {"model": self.hf_model, "result": data}
         except Exception as e:
-            logger.error(f"Error fetching option chain: {e}")
-            return {}
+            logger.error(f"Hugging Face request failed: {e}")
+            return {"error": str(e)}
 
-    # ========== Vertex/Gemini AI (Optional summarization) ==========
-
-    async def summarize_with_vertex(self, text: str) -> str:
-        if not self.vertex_url:
-            return "Vertex not configured"
-        payload = {"instances": [{"content": text}]}
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.vertex_url, json=payload) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    return data.get("predictions", [{}])[0].get("summary", "No summary")
-                return f"Vertex Error {r.status}"
-
-    async def summarize_with_gemini(self, text: str) -> str:
-        if not self.gemini_url:
-            return "Gemini not configured"
-        payload = {"contents": [{"role": "user", "parts": [{"text": text}]}]}
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.gemini_url, json=payload) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                return f"Gemini Error {r.status}"
-
-    # ========== Technical Calculations ==========
+    # ========== Technical Analysis ==========
 
     def calculate_indicators(self, prices: List[float]) -> TechnicalIndicators:
         df = pd.DataFrame({"close": prices})
@@ -258,21 +292,20 @@ class MarketDataService:
         self.signals_cache = all_signals
         return all_signals
 
-
 # ========== FastAPI Initialization ==========
 
 service = MarketDataService()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Engine A starting ...")
+    logger.info("🚀 Engine A starting with full API integrations...")
     yield
-    logger.info("🛑 Engine A stopping ...")
+    logger.info("🛑 Engine A stopping...")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine A",
-    description="Market Data + Option Chain + Vertex AI",
-    version="2.0.0",
+    description="Market Data + Option Chain + AI Integration (Gemini 2.5 Flash Lite + Dhan + Hugging Face)",
+    version="3.0.0",
     lifespan=lifespan
 )
 
@@ -288,7 +321,12 @@ add_security_headers(app)
 
 @app.get("/")
 async def root():
-    return {"status": "active", "timestamp": datetime.now().isoformat()}
+    return {
+        "status": "active", 
+        "timestamp": datetime.now().isoformat(),
+        "engines": ["Gemini 2.5 Flash Lite", "Dhan API", "Hugging Face"],
+        "version": "3.0.0"
+    }
 
 @app.get("/health")
 async def health():
@@ -299,117 +337,61 @@ async def get_signals():
     data = await service.process_signals()
     return {"count": len(data), "signals": [asdict(s) for s in data]}
 
-@app.get("/api/optionchain/{symbol}")
-async def get_option_chain(symbol: str):
-    expiries = await service.fetch_expiry_list(symbol)
-    if not expiries:
-        raise HTTPException(404, f"No expiries found for {symbol}")
-    latest_expiry = expiries[0]
-    data = await service.fetch_option_chain(symbol, latest_expiry)
-    if not data:
-        raise HTTPException(500, f"Failed to fetch option chain for {symbol}")
-    service.option_chain_cache[symbol] = data
-    return {"symbol": symbol, "expiry": latest_expiry, "data": data}
+@app.get("/api/dhan/positions")
+async def get_positions():
+    data = await service.fetch_positions()
+    return data
 
-@app.post("/api/vertex/summary")
-async def summarize_vertex(body: Dict[str, str]):
-    text = body.get("text", "")
-    summary = await service.summarize_with_vertex(text)
-    return {"summary": summary}
+@app.get("/api/dhan/orders")
+async def get_orders():
+    data = await service.fetch_orders()
+    return data
+
+@app.get("/api/dhan/optionchain/{symbol}")
+async def get_option_chain(symbol: str):
+    data = await service.fetch_option_chain(symbol)
+    if not data or "error" in data:
+        raise HTTPException(500, data.get("error", f"Failed to fetch option chain for {symbol}"))
+    return {"symbol": symbol, "data": data}
+
+@app.post("/api/gemini/generate")
+async def generate_text(request: TextRequest):
+    result = await service.generate_with_gemini(request.text)
+    if "error" in result and result["error"]:
+        raise HTTPException(500, result["error"])
+    return result
 
 @app.post("/api/gemini/summary")
-async def summarize_gemini(body: Dict[str, str]):
-    text = body.get("text", "")
-    summary = await service.summarize_with_gemini(text)
-    return {"summary": summary}
+async def summarize_text(request: TextRequest):
+    prompt = f"Summarize this in a few sentences: {request.text}"
+    result = await service.generate_with_gemini(prompt)
+    if "error" in result and result["error"]:
+        raise HTTPException(500, result["error"])
+    return result
 
-@app.get("/api/market-data/{symbol}")
-async def get_market_data(symbol: str):
-    """Market data endpoint for cross-engine communication"""
+@app.post("/api/huggingface/sentiment")
+async def analyze_text_sentiment(request: TextRequest):
+    result = await service.analyze_sentiment(request.text)
+    if "error" in result:
+        raise HTTPException(500, result["error"])
+    return result
+
+@app.post("/api/dhan/postback")
+async def dhan_postback(request: Request):
+    """Handle Dhan postback notifications"""
     try:
-        # For demo, return mock data. In production, fetch from Dhan API
-        mock_data = {
-            "symbol": symbol,
-            "price": 1250.50 + hash(symbol) % 100,
-            "change": 15.25,
-            "change_percent": 1.23,
-            "volume": 125000,
-            "high": 1275.00,
-            "low": 1240.25,
-            "timestamp": datetime.now().isoformat()
-        }
-        return {
-            "status": "success",
-            "symbol": symbol,
-            "data": mock_data,
-            "timestamp": datetime.now().isoformat()
-        }
+        data = await request.json()
+        logger.info(f"📥 Dhan postback received: {data}")
+        return {"status": "received", "timestamp": datetime.now().isoformat()}
     except Exception as e:
-        logger.error(f"Error fetching market data for {symbol}: {e}")
-        return {
-            "status": "error",
-            "symbol": symbol,
-            "data": None,
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }
+        logger.error(f"❌ Postback error: {e}")
+        return {"status": "error", "message": str(e)}
 
-@app.get("/api/quotes")
-async def get_live_quotes(symbols: str = None):
-    """Get live market quotes"""
-    try:
-        if symbols:
-            symbol_list = symbols.split(",")
-        else:
-            symbol_list = service.symbols[:5]  # Default to first 5
-        
-        quotes = await service.fetch_live_quotes(symbol_list)
-        
-        return {
-            "status": "success",
-            "quotes": quotes,
-            "count": len(quotes),
-            "timestamp": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        logger.error(f"Error in get_live_quotes: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/option-chain/{symbol}")
-async def get_option_chain_route(symbol: str, expiry: str = None):
-    """Get option chain for a symbol"""
-    try:
-        if not expiry:
-            # Default to next Thursday for weekly options
-            today = datetime.now()
-            days_ahead = 3 - today.weekday()  # Thursday is 3
-            if days_ahead <= 0:
-                days_ahead += 7
-            expiry = (today + timedelta(days_ahead)).strftime("%Y-%m-%d")
-        
-        option_data = await service.get_option_chain(symbol, expiry)
-        
-        return {
-            "status": "success",
-            "data": option_data,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting option chain: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/metrics")
-async def get_metrics():
-    """Get service metrics"""
-    return {
-        "service": "engine-a-market-data",
-        "cached_symbols": len(service.market_data_cache),
-        "tracked_symbols": len(service.symbols),
-        "cached_signals": len(service.signals_cache),
-        "timestamp": datetime.now().isoformat()
-    }
+@app.get("/api/dhan/callback")
+async def dhan_callback(code: str = None):
+    """Handle OAuth callback from Dhan"""
+    logger.info(f"📥 Dhan callback received with code: {code}")
+    return {"status": "callback_received", "code": code, "timestamp": datetime.now().isoformat()}
 
 # ========== Entrypoint ==========
 

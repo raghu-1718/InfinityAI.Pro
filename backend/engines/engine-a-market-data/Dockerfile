@@ -3,11 +3,12 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including ca-certificates for SSL
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -22,6 +23,9 @@ COPY . .
 # Create non-root user
 RUN useradd -m -u 1000 engineuser && chown -R engineuser:engineuser /app
 USER engineuser
+
+# Set environment for Google Cloud
+ENV GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
 
 # Expose port
 EXPOSE 8080

@@ -1,0 +1,214 @@
+{
+  "service_url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app",
+  "timestamp": "2025-10-16 00:29:02 UTC",
+  "summary": {
+    "total_tests": 10,
+    "min_response_time": 334.0,
+    "max_response_time": 9031.0,
+    "total_time": 12426.0,
+    "failed": 4,
+    "passed": 6,
+    "avg_response_time": 1242.6
+  },
+  "tests": [
+    {
+      "response_time_ms": 9031,
+      "status_code": 200,
+      "response_data": {
+        "status": "active",
+        "timestamp": "2025-10-15T18:59:12.081978",
+        "engines": [
+          "Gemini 2.5 Flash Lite",
+          "Dhan API",
+          "Hugging Face"
+        ],
+        "version": "3.0.0"
+      },
+      "name": "Root Status",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 380,
+      "status_code": 200,
+      "response_data": {
+        "status": "healthy",
+        "timestamp": "2025-10-15T18:59:12.579727"
+      },
+      "name": "Health Check",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/health",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 407,
+      "status_code": 200,
+      "response_data": {
+        "count": 5,
+        "signals": [
+          {
+            "symbol": "NIFTY",
+            "price": 1007.9823223360539,
+            "timestamp": "2025-10-15T18:59:13.004936",
+            "signal_type": "BUY",
+            "confidence": 70,
+            "indicators": {
+              "rsi": 46.742676763893876,
+              "ema_20": 1002.2780786773924,
+              "ema_50": 1001.0683255390659,
+              "bollinger_upper": 1022.2449081687766,
+              "bollinger_lower": 982.5431017166377,
+              "macd": 1.0357974795030032
+            }
+          },
+          {
+            "symbol": "BANKNIFTY",
+            "price": 1012.5187379958951,
+            "timestamp": "2025-10-15T18:59:13.00805",
+            "signal_type": "BUY",
+            "confidence": 70,
+            "indicators": {
+              "rsi": 56.34559896345704,
+              "ema_20": 1001.1513369314638,
+              "ema_50": 1001.1209376579321,
+              "bollinger_upper": 1018.1740872809676,
+              "bollinger_lower": 980.000489587401,
+              "macd": 1.0463803629789936
+            }
+          },
+          {
+            "symbol": "RELIANCE",
+            "price": 992.816814932147,
+            "timestamp": "2025-10-15T18:59:13.010932",
+            "signal_type": "SELL",
+            "confidence": 70,
+            "indicators": {
+              "rsi": 54.69802164195652,
+              "ema_20": 999.4482696456305,
+              "ema_50": 999.9097875766428,
+              "bollinger_upper": 1024.9258793072752,
+              "bollinger_lower": 978.1380899738608,
+              "macd": -0.8971124832686428
+            }
+          },
+          {
+            "symbol": "TCS",
+            "price": 994.6601834239138,
+            "timestamp": "2025-10-15T18:59:13.014191",
+            "signal_type": "BUY",
+            "confidence": 70,
+            "indicators": {
+              "rsi": 51.99759975083716,
+              "ema_20": 1001.6132745959899,
+              "ema_50": 999.8417609008804,
+              "bollinger_upper": 1019.4104129661116,
+              "bollinger_lower": 979.2320158766049,
+              "macd": 2.107706502747874
+            }
+          },
+          {
+            "symbol": "HDFCBANK",
+            "price": 1008.7119446388085,
+            "timestamp": "2025-10-15T18:59:13.016925",
+            "signal_type": "BUY",
+            "confidence": 70,
+            "indicators": {
+              "rsi": 60.13126442554177,
+              "ema_20": 1000.8609126214569,
+              "ema_50": 999.8426103550074,
+              "bollinger_upper": 1017.8078501727557,
+              "bollinger_lower": 981.123945599137,
+              "macd": 1.3388593052301303
+            }
+          }
+        ]
+      },
+      "name": "Market Signals",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/signals",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 431,
+      "status_code": null,
+      "response_data": null,
+      "name": "Gemini Text Generation",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/gemini/generate",
+      "success": false,
+      "error": "Response status code does not indicate success: 500 (Internal Server Error).",
+      "method": "POST"
+    },
+    {
+      "response_time_ms": 348,
+      "status_code": null,
+      "response_data": null,
+      "name": "Gemini Summarization",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/gemini/summary",
+      "success": false,
+      "error": "Response status code does not indicate success: 500 (Internal Server Error).",
+      "method": "POST"
+    },
+    {
+      "response_time_ms": 334,
+      "status_code": null,
+      "response_data": null,
+      "name": "HuggingFace Sentiment",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/huggingface/sentiment",
+      "success": false,
+      "error": "Response status code does not indicate success: 500 (Internal Server Error).",
+      "method": "POST"
+    },
+    {
+      "response_time_ms": 347,
+      "status_code": 200,
+      "response_data": {
+        "error": "Dhan credentials not configured"
+      },
+      "name": "Dhan Positions",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/dhan/positions",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 388,
+      "status_code": 200,
+      "response_data": {
+        "error": "Dhan credentials not configured"
+      },
+      "name": "Dhan Orders",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/dhan/orders",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 381,
+      "status_code": null,
+      "response_data": null,
+      "name": "Dhan Option Chain (NIFTY)",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/dhan/optionchain/NIFTY",
+      "success": false,
+      "error": "Response status code does not indicate success: 500 (Internal Server Error).",
+      "method": "GET"
+    },
+    {
+      "response_time_ms": 379,
+      "status_code": 200,
+      "response_data": {
+        "status": "callback_received",
+        "code": "test123",
+        "timestamp": "2025-10-15T18:59:15.715275"
+      },
+      "name": "Dhan Callback",
+      "url": "https://engine-a-market-data-prod-573866363639.us-central1.run.app/api/dhan/callback?code=test123",
+      "success": true,
+      "error": null,
+      "method": "GET"
+    }
+  ]
+}
