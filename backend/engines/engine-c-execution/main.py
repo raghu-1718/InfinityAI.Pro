@@ -173,8 +173,8 @@ class TradeExecutionService:
         
         # OAuth configuration
         self.oauth_configured = bool(self.dhan_client_id and self.dhan_api_key and self.dhan_api_secret)
-        self.redirect_uri = "https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/callback"
-        self.postback_uri = "https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/postback"
+        self.redirect_uri = "https://engine-c-prod-573866363639.us-central1.run.app/api/dhan/callback"
+        self.postback_uri = "https://engine-c-prod-573866363639.us-central1.run.app/api/dhan/postback"
         self.oauth_scopes = ['trade', 'funds', 'holdings', 'positions']
         
         self.headers = {

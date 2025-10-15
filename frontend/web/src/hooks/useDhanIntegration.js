@@ -18,8 +18,8 @@ export const useDhanIntegration = () => {
   });
 
   // Frontend and Backend URLs
-  const FRONTEND_URL = 'https://infinityai-pro-frontend-573866363639.us-central1.run.app';
-  const ENGINE_C_URL = process.env.REACT_APP_ENGINE_C_URL || 'https://engine-c-oauth-573866363639.us-central1.run.app';
+  const FRONTEND_URL = 'https://infinityai-frontend-573866363639.us-central1.run.app';
+  const ENGINE_C_URL = process.env.REACT_APP_ENGINE_C_URL || 'https://engine-c-prod-573866363639.us-central1.run.app';
   
   // Dhan OAuth Configuration
   const DHAN_CONFIG = {
