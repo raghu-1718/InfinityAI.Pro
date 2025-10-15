@@ -43,59 +43,53 @@ const Portfolio = ({ apiUrl, userId }) => {
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   
-  // Sample positions with real-time updates
-  const positions = portfolioData.positions || [
-    {
-      symbol: 'AAPL',
-      quantity: 100,
-      avg_cost: 150.25,
-      current_price: 175.30,
-      market_value: 17530,
-      unrealized_pnl: 2505,
-      unrealized_pnl_daily: 125.50,
-      sector: 'Technology',
-      percentage_of_portfolio: 35.2
-    },
-    {
-      symbol: 'TSLA',
-      quantity: 50,
-      avg_cost: 220.50,
-      current_price: 245.75,
-      market_value: 12287.50,
-      unrealized_pnl: 1262.50,
-      unrealized_pnl_daily: -85.25,
-      sector: 'Technology',
-      percentage_of_portfolio: 24.7
-    },
-    {
-      symbol: 'NVDA',
-      quantity: 25,
-      avg_cost: 380.00,
-      current_price: 425.60,
-      market_value: 10640,
-      unrealized_pnl: 1140,
-      unrealized_pnl_daily: 67.80,
-      sector: 'Technology',
-      percentage_of_portfolio: 21.4
-    },
-    {
-      symbol: 'SPY',
-      quantity: 20,
-      avg_cost: 420.25,
-      current_price: 435.10,
-      market_value: 8702,
-      unrealized_pnl: 297,
-      unrealized_pnl_daily: 24.20,
-      sector: 'ETF',
-      percentage_of_portfolio: 17.5
+  // Indian market positions from live Dhan data
+  const positions = portfolioData.positions || [];
+  
+  // Helper function to identify Indian market instruments
+  const getIndianMarketInfo = (tradingSymbol) => {
+    const symbol = tradingSymbol?.toUpperCase() || '';
+    
+    if (symbol.includes('NIFTY') || symbol.includes('BANKNIFTY')) {
+      return { market: 'NSE', category: 'Index', sector: 'Index' };
+    } else if (symbol.includes('CRUDEOIL') || symbol.includes('NATURALGAS')) {
+      return { market: 'MCX', category: 'Commodity', sector: 'Energy' };
+    } else if (symbol.includes('GOLD') || symbol.includes('SILVER')) {
+      return { market: 'MCX', category: 'Commodity', sector: 'Precious Metals' };
+    } else if (['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'].some(stock => symbol.includes(stock))) {
+      return { market: 'NSE', category: 'Equity', sector: 'Large Cap' };
+    } else {
+      return { market: 'NSE/BSE', category: 'Equity', sector: 'Equity' };
     }
-  ];
+  };
+  
+  // Transform Dhan API data to component format
+  const indianPositions = positions.map(pos => {
+    const marketInfo = getIndianMarketInfo(pos.tradingSymbol);
+    const currentValue = pos.netQty * pos.buyAvg;
+    
+    return {
+      symbol: pos.tradingSymbol,
+      quantity: pos.netQty || 0,
+      avg_cost: pos.buyAvg || 0,
+      current_price: pos.buyAvg || 0, // In live system, would get current price
+      market_value: currentValue,
+      unrealized_pnl: pos.unrealizedProfit || 0,
+      unrealized_pnl_daily: pos.unrealizedProfit || 0, // Simplified
+      market: marketInfo.market,
+      category: marketInfo.category,
+      sector: marketInfo.sector,
+      exchange: pos.exchangeSegment || 'NSE',
+      multiplier: pos.multiplier || 1,
+      percentage_of_portfolio: 0 // Will be calculated
+    };
+  });
 
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -115,25 +109,34 @@ const Portfolio = ({ apiUrl, userId }) => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-  // Calculate portfolio metrics using real-time data
+  // Calculate portfolio metrics using Indian market data
   const calculatePortfolioMetrics = () => {
-    if (!positions.length) {
+    if (!indianPositions.length) {
       return {
         totalValue: 0,
         totalCost: 0,
         totalPnL: 0,
         totalPnLPercent: 0,
         dailyPnL: 0,
-        dailyPnLPercent: 0
+        dailyPnLPercent: 0,
+        positionCount: 0,
+        marketBreakdown: { NSE: 0, BSE: 0, MCX: 0 }
       };
     }
 
-    const totalValue = positions.reduce((sum, pos) => sum + (pos.market_value || 0), 0);
-    const totalCost = positions.reduce((sum, pos) => sum + (pos.quantity * pos.avg_cost), 0);
-    const totalPnL = totalValue - totalCost;
+    const totalValue = indianPositions.reduce((sum, pos) => sum + (pos.market_value || 0), 0);
+    const totalCost = indianPositions.reduce((sum, pos) => sum + (pos.quantity * pos.avg_cost), 0);
+    const totalPnL = indianPositions.reduce((sum, pos) => sum + (pos.unrealized_pnl || 0), 0);
     const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
-    const dailyPnL = positions.reduce((sum, pos) => sum + (pos.unrealized_pnl_daily || 0), 0);
+    const dailyPnL = indianPositions.reduce((sum, pos) => sum + (pos.unrealized_pnl_daily || 0), 0);
     const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0;
+    
+    // Calculate market breakdown
+    const marketBreakdown = indianPositions.reduce((acc, pos) => {
+      const market = pos.market === 'NSE/BSE' ? 'NSE' : pos.market;
+      acc[market] = (acc[market] || 0) + 1;
+      return acc;
+    }, { NSE: 0, BSE: 0, MCX: 0 });
 
     return {
       totalValue,
@@ -141,7 +144,9 @@ const Portfolio = ({ apiUrl, userId }) => {
       totalPnL,
       totalPnLPercent,
       dailyPnL,
-      dailyPnLPercent
+      dailyPnLPercent,
+      positionCount: indianPositions.length,
+      marketBreakdown
     };
   };
 
@@ -155,18 +160,37 @@ const Portfolio = ({ apiUrl, userId }) => {
     }
   };
 
-  // Prepare data for charts
+  // Prepare data for charts - Indian market focus
   const prepareAllocationData = () => {
-    return positions.map(pos => ({
+    return indianPositions.map(pos => ({
       name: pos.symbol,
       value: pos.market_value,
+      market: pos.market,
       percentage: ((pos.market_value / (metrics.totalValue || 1)) * 100).toFixed(1)
+    }));
+  };
+
+  const prepareMarketData = () => {
+    const marketMap = {};
+    indianPositions.forEach(pos => {
+      const market = pos.market === 'NSE/BSE' ? 'NSE' : pos.market;
+      if (marketMap[market]) {
+        marketMap[market] += pos.market_value;
+      } else {
+        marketMap[market] = pos.market_value;
+      }
+    });
+    
+    return Object.keys(marketMap).map(market => ({
+      name: market,
+      value: marketMap[market],
+      percentage: ((marketMap[market] / (metrics.totalValue || 1)) * 100).toFixed(1)
     }));
   };
 
   const prepareSectorData = () => {
     const sectorMap = {};
-    positions.forEach(pos => {
+    indianPositions.forEach(pos => {
       const sector = pos.sector || 'Other';
       if (sectorMap[sector]) {
         sectorMap[sector] += pos.market_value;
@@ -183,10 +207,12 @@ const Portfolio = ({ apiUrl, userId }) => {
   };
 
   const preparePerformanceData = () => {
-    return positions.map(pos => ({
+    return indianPositions.map(pos => ({
       symbol: pos.symbol,
       dailyPnL: pos.unrealized_pnl_daily || 0,
       totalPnL: pos.unrealized_pnl || 0,
+      market: pos.market,
+      category: pos.category,
       dailyReturn: pos.market_value ? ((pos.unrealized_pnl_daily || 0) / pos.market_value * 100).toFixed(2) : '0.00'
     }));
   };

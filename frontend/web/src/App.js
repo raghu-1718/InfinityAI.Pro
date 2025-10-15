@@ -26,7 +26,9 @@ import {
   Chat,
   Link as LinkIcon,
   Settings as SettingsIcon,
-  Refresh
+  Refresh,
+  PlayArrow as AutoTradeIcon,
+  FlashOn as UltraIcon
 } from '@mui/icons-material';
 
 import Portfolio from './components/views/Portfolio';
@@ -36,8 +38,12 @@ import AIInsights from './components/views/AIInsights';
 import ChatBot from './components/views/ChatBot';
 import BrokerIntegration from './components/views/BrokerIntegration';
 import SettingsComponent from './components/views/Settings';
+import AutoTrading from './components/AutoTrading';
+import UltraTrading from './components/UltraTrading';
+import AIChatbot from './components/AIChatbot';
 import DhanCallback from './components/auth/DhanCallback';
 import { useSystemHealth, usePortfolioData, useAIInsights } from './hooks/useEngineData';
+import ApiService from './services/ApiService';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8003';
 
@@ -62,7 +68,7 @@ function TabPanel({ children, value, index, ...other }) {
 function Dashboard() {
   const [searchParams] = useSearchParams();
   const [currentTab, setCurrentTab] = useState(parseInt(searchParams.get('tab')) || 0);
-  const [user] = useState({ id: 'demo-user', name: 'Demo User' });
+  const [user, setUser] = useState({ id: 'demo-user', name: 'Demo User' });
   const [notifications, setNotifications] = useState([]);
   
   // Use real-time hooks for live data
@@ -83,7 +89,7 @@ function Dashboard() {
     return () => console.log('🖥️ App component unmounting');
   }, []);
   
-  // Log data updates
+  // Log data updates and update user info
   useEffect(() => {
     console.log('📈 App - Portfolio data update:', {
       totalValue: portfolioData.totalValue,
@@ -91,6 +97,11 @@ function Dashboard() {
       error: portfolioData.error,
       lastUpdated: portfolioData.lastUpdated
     });
+    
+    // Update user name from portfolio data if available
+    if (portfolioData.user && portfolioData.user.name && portfolioData.user.name !== 'Demo User') {
+      setUser(prev => ({ ...prev, name: portfolioData.user.name }));
+    }
   }, [portfolioData]);
   
   useEffect(() => {
@@ -140,9 +151,9 @@ function Dashboard() {
   };
   
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(value);
   };
 
@@ -298,9 +309,11 @@ function Dashboard() {
           >
             <Tab icon={<DashboardIcon />} label="Portfolio" />
             <Tab icon={<TrendingUp />} label="Trading" />
+            <Tab icon={<AutoTradeIcon />} label="AI Auto-Trading" />
+            <Tab icon={<UltraIcon />} label="Ultra Mode" />
             <Tab icon={<Timeline />} label="Analysis" />
             <Tab icon={<SmartToy />} label="AI Insights" />
-            <Tab icon={<Chat />} label="Chat Assistant" />
+            <Tab icon={<Chat />} label="AI Assistant" />
             <Tab icon={<LinkIcon />} label="Broker Integration" />
             <Tab icon={<SettingsIcon />} label="Settings" />
           </Tabs>
@@ -314,22 +327,30 @@ function Dashboard() {
           </TabPanel>
 
           <TabPanel value={currentTab} index={2}>
-            <MarketAnalysis apiUrl={API_BASE_URL} />
+            <AutoTrading />
           </TabPanel>
 
           <TabPanel value={currentTab} index={3}>
-            <AIInsights apiUrl={API_BASE_URL} userId={user.id} />
+            <UltraTrading />
           </TabPanel>
 
           <TabPanel value={currentTab} index={4}>
-            <ChatBot userId={user.id} apiUrl={API_BASE_URL} />
+            <MarketAnalysis apiUrl={API_BASE_URL} />
           </TabPanel>
 
           <TabPanel value={currentTab} index={5}>
-            <BrokerIntegration userId={user.id} apiUrl={API_BASE_URL} />
+            <AIInsights apiUrl={API_BASE_URL} userId={user.id} />
           </TabPanel>
 
           <TabPanel value={currentTab} index={6}>
+            <AIChatbot />
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={7}>
+            <BrokerIntegration userId={user.id} apiUrl={API_BASE_URL} />
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={8}>
             <SettingsComponent userId={user.id} apiUrl={API_BASE_URL} />
           </TabPanel>
         </Paper>

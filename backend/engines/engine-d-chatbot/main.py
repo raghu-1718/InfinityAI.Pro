@@ -645,6 +645,62 @@ async def get_system_status():
         logger.error(f"Error getting system status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/orchestrate")
+async def orchestrate():
+    """Orchestrate data from all engines"""
+    try:
+        ENGINE_A_URL = "https://engine-a-573866363639-573866363639.us-central1.run.app"
+        ENGINE_B_URL = "https://engine-b-573866363639-573866363639.us-central1.run.app"
+        ENGINE_C_URL = "https://engine-c-573866363639-573866363639.us-central1.run.app"
+        
+        orchestrated_data = {}
+        
+        async with aiohttp.ClientSession() as session:
+            # Get market data from Engine A
+            try:
+                async with session.get(f"{ENGINE_A_URL}/api/market-summary") as response:
+                    if response.status == 200:
+                        orchestrated_data["market_data"] = await response.json()
+                    else:
+                        orchestrated_data["market_data"] = {"error": f"Engine A returned {response.status}"}
+            except Exception as e:
+                orchestrated_data["market_data"] = {"error": str(e)}
+            
+            # Get AI signals from Engine B
+            try:
+                async with session.get(f"{ENGINE_B_URL}/api/ai-signals") as response:
+                    if response.status == 200:
+                        orchestrated_data["ai_signals"] = await response.json()
+                    else:
+                        orchestrated_data["ai_signals"] = {"error": f"Engine B returned {response.status}"}
+            except Exception as e:
+                orchestrated_data["ai_signals"] = {"error": str(e)}
+            
+            # Get trading status from Engine C
+            try:
+                async with session.get(f"{ENGINE_C_URL}/api/dhan/status") as response:
+                    if response.status == 200:
+                        orchestrated_data["trading_status"] = await response.json()
+                    else:
+                        orchestrated_data["trading_status"] = {"error": f"Engine C returned {response.status}"}
+            except Exception as e:
+                orchestrated_data["trading_status"] = {"error": str(e)}
+        
+        return {
+            "status": "success",
+            "orchestration": orchestrated_data,
+            "timestamp": datetime.now().isoformat(),
+            "engines_queried": 3
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in orchestration: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
 @app.get("/api/chat-history")
 async def get_chat_history():
     """Get chat history"""

@@ -813,6 +813,81 @@ async def toggle_kill_switch(
         logger.error(f"Error toggling kill switch: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/portfolio")
+async def get_portfolio():
+    """Get live portfolio data from Dhan API - Frontend endpoint"""
+    try:
+        # Fetch live positions from Dhan
+        positions_url = f"{execution_service.base_url}/positions"
+        holdings_url = f"{execution_service.base_url}/holdings"
+        orders_url = f"{execution_service.base_url}/orders"
+        
+        portfolio_data = {}
+        
+        async with aiohttp.ClientSession() as session:
+            # Fetch positions
+            try:
+                async with session.get(positions_url, headers=execution_service.headers) as response:
+                    if response.status == 200:
+                        portfolio_data["positions"] = await response.json()
+                    else:
+                        portfolio_data["positions"] = []
+            except Exception as e:
+                logger.error(f"Error fetching positions: {e}")
+                portfolio_data["positions"] = []
+            
+            # Fetch holdings  
+            try:
+                async with session.get(holdings_url, headers=execution_service.headers) as response:
+                    if response.status == 200:
+                        portfolio_data["holdings"] = await response.json()
+                    elif response.status == 400:
+                        # No holdings available - this is normal
+                        portfolio_data["holdings"] = []
+                    else:
+                        portfolio_data["holdings"] = []
+            except Exception as e:
+                logger.error(f"Error fetching holdings: {e}")
+                portfolio_data["holdings"] = []
+            
+            # Fetch orders
+            try:
+                async with session.get(orders_url, headers=execution_service.headers) as response:
+                    if response.status == 200:
+                        portfolio_data["orders"] = await response.json()
+                    else:
+                        portfolio_data["orders"] = []
+            except Exception as e:
+                logger.error(f"Error fetching orders: {e}")
+                portfolio_data["orders"] = []
+        
+        # Calculate summary
+        total_pnl = sum(float(pos.get("unrealizedProfit", 0)) for pos in portfolio_data.get("positions", []))
+        total_positions = len(portfolio_data.get("positions", []))
+        total_orders = len(portfolio_data.get("orders", []))
+        
+        return {
+            "status": "success",
+            "data": portfolio_data,
+            "summary": {
+                "total_positions": total_positions,
+                "total_orders": total_orders,
+                "total_pnl": total_pnl,
+                "currency": "INR"
+            },
+            "source": "live",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting portfolio: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "source": "mock",
+            "timestamp": datetime.now().isoformat()
+        }
+
 @app.get("/api/account")
 async def get_account(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get account information"""

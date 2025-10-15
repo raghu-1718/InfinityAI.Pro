@@ -82,7 +82,22 @@ class AIModelService:
             'price_change_1h', 'price_change_4h', 'volume_ratio'
         ]
         
-        logger.info("🤖 Engine B - AI/ML Service Initialized")
+        # Indian Market Symbols for focused AI analysis
+        self.indian_market_symbols = {
+            "NSE_INDICES": ["NIFTY", "BANKNIFTY", "NIFTYMIDCAP", "NIFTYSMALLCAP"],
+            "NSE_TOP_STOCKS": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT"],
+            "MCX_COMMODITIES": ["CRUDEOIL", "NATURALGAS", "GOLD", "SILVER", "COPPER"],
+            "BSE_STOCKS": ["RELIANCE", "TCS", "INFY"] # BSE equivalent
+        }
+        
+        # Indian market specific parameters
+        self.market_hours = {
+            "NSE": {"open": "09:15", "close": "15:30"},
+            "BSE": {"open": "09:15", "close": "15:30"},
+            "MCX": {"open": "09:00", "close": "23:30"}
+        }
+        
+        logger.info("🤖 Engine B - AI/ML Service Initialized (Indian Markets Focus)")
     
     def initialize_models(self):
         """Initialize machine learning models"""
@@ -368,15 +383,48 @@ async def engine_b_health_check():
 
 @app.get("/api/ai-signals")
 async def get_ai_signals():
-    """Get AI-generated trading signals"""
+    """Get AI-generated trading signals for Indian markets (NSE, BSE, MCX)"""
     try:
-        symbols = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "INFY"]
-        signals = await ai_service.process_ai_signals(symbols)
+        # Focus on Indian market symbols only
+        all_indian_symbols = (
+            ai_service.indian_market_symbols["NSE_INDICES"] +
+            ai_service.indian_market_symbols["NSE_TOP_STOCKS"] +
+            ai_service.indian_market_symbols["MCX_COMMODITIES"][:3]  # Top 3 commodities
+        )
+        
+        signals = await ai_service.process_ai_signals(all_indian_symbols)
+        
+        # Add Indian market specific metadata
+        for signal_dict in [asdict(signal) for signal in signals]:
+            symbol = signal_dict['symbol']
+            if symbol in ai_service.indian_market_symbols["NSE_INDICES"]:
+                signal_dict['market'] = 'NSE'
+                signal_dict['category'] = 'Index'
+            elif symbol in ai_service.indian_market_symbols["NSE_TOP_STOCKS"]:
+                signal_dict['market'] = 'NSE'
+                signal_dict['category'] = 'Equity'
+            elif symbol in ai_service.indian_market_symbols["MCX_COMMODITIES"]:
+                signal_dict['market'] = 'MCX'
+                signal_dict['category'] = 'Commodity'
+            else:
+                signal_dict['market'] = 'BSE'
+                signal_dict['category'] = 'Equity'
+        
+        # Calculate market-wise summary
+        nse_signals = [s for s in signals if asdict(s)['symbol'] in ai_service.indian_market_symbols["NSE_INDICES"] + ai_service.indian_market_symbols["NSE_TOP_STOCKS"]]
+        mcx_signals = [s for s in signals if asdict(s)['symbol'] in ai_service.indian_market_symbols["MCX_COMMODITIES"]]
         
         return {
             "status": "success",
+            "market_focus": "Indian Markets Only (NSE, BSE, MCX)",
             "ai_signals": [asdict(signal) for signal in signals],
             "count": len(signals),
+            "market_breakdown": {
+                "NSE": len(nse_signals),
+                "MCX": len(mcx_signals),
+                "total": len(signals)
+            },
+            "supported_markets": list(ai_service.market_hours.keys()),
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:

@@ -101,7 +101,7 @@ export const useMarketData = (symbol = '', refreshInterval = 5000) => {
 
 // Hook for Engine B - AI/ML Intelligence  
 export const useAIInsights = (refreshInterval = 15000) => {
-  return useEngineData('B', '/predictions', refreshInterval);
+  return useEngineData('B', '/api/ai-signals', refreshInterval);
 };
 
 // Hook for Engine C - Trade Execution
@@ -308,23 +308,24 @@ export const useWebSocket = (engineType, path = '/ws') => {
   };
 };
 
-// Hook for portfolio data with real-time updates
+// Hook for portfolio data with real-time updates from Engine C
 export const usePortfolioData = () => {
   const [portfolioData, setPortfolioData] = useState({
-    totalValue: 125430.50,
-    todaysPnL: 2340.75,
-    todaysPnLPercent: 1.9,
-    activePositions: 8,
-    availableCash: 45000.00,
-    cash_balance: 45000.00,
+    totalValue: 0,
+    todaysPnL: 0,
+    todaysPnLPercent: 0,
+    activePositions: 0,
+    availableCash: 0,
+    cash_balance: 0,
     positions: [],
+    user: { name: 'Demo User', client_id: '' },
     loading: true,
     error: null,
     lastUpdated: null
   });
 
-  // Use direct Engine A portfolio endpoint instead of circular dependencies
-  const portfolioEngine = useEngineData('A', '/portfolio', 15000);
+  // Use Engine C for real portfolio data from Dhan API
+  const portfolioEngine = useEngineData('C', '/api/portfolio', 15000);
   
   // Add component lifecycle logging
   useEffect(() => {
@@ -341,25 +342,39 @@ export const usePortfolioData = () => {
     });
     
     if (portfolioEngine.data && !portfolioEngine.loading) {
-      // Update with real data from Engine A or simulate realistic changes
-      const simulatedUpdate = {
-        totalValue: portfolioData.totalValue + (Math.random() - 0.5) * 2000,
-        todaysPnL: portfolioData.todaysPnL + (Math.random() - 0.5) * 200,
-        todaysPnLPercent: portfolioData.todaysPnLPercent + (Math.random() - 0.5) * 0.5,
-        activePositions: Math.max(4, portfolioData.activePositions + Math.floor((Math.random() - 0.5) * 3)),
-        availableCash: portfolioData.availableCash + (Math.random() - 0.5) * 5000,
-        cash_balance: portfolioData.cash_balance + (Math.random() - 0.5) * 5000,
-        lastUpdated: new Date().toISOString(),
-        loading: false,
-        error: null
-      };
+      // Process real data from Engine C (Dhan API)
+      const portfolioResponse = portfolioEngine.data;
       
-      console.log('💰 Portfolio update applied:', simulatedUpdate);
-      
-      setPortfolioData(prev => ({
-        ...prev,
-        ...simulatedUpdate
-      }));
+      if (portfolioResponse.status === 'success' && portfolioResponse.summary) {
+        const realUpdate = {
+          totalValue: portfolioResponse.summary.portfolio_value || 0,
+          todaysPnL: portfolioResponse.summary.total_pnl || 0,
+          todaysPnLPercent: portfolioResponse.summary.portfolio_value > 0 ? 
+            ((portfolioResponse.summary.total_pnl || 0) / portfolioResponse.summary.portfolio_value * 100) : 0,
+          activePositions: portfolioResponse.summary.total_positions || 0,
+          availableCash: 0, // Not provided by Dhan API
+          cash_balance: 0, // Not provided by Dhan API
+          positions: portfolioResponse.data?.positions || [],
+          user: portfolioResponse.user || { name: 'Demo User', client_id: '' },
+          lastUpdated: portfolioResponse.timestamp || new Date().toISOString(),
+          loading: false,
+          error: null
+        };
+        
+        console.log('💰 Real portfolio update from Engine C:', realUpdate);
+        
+        setPortfolioData(prev => ({
+          ...prev,
+          ...realUpdate
+        }));
+      } else {
+        console.log('⚠️ Portfolio data format unexpected:', portfolioResponse);
+        setPortfolioData(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Unexpected data format'
+        }));
+      }
     } else if (portfolioEngine.error) {
       console.log('❌ Portfolio engine error:', portfolioEngine.error);
       setPortfolioData(prev => ({

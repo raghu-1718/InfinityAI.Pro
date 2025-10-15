@@ -66,7 +66,7 @@ class MarketDataService:
         self.dhan_client_id = os.getenv('DHAN_CLIENT_ID', 'PLACEHOLDER_CLIENT_ID')
         self.dhan_api_key = os.getenv('DHAN_API_KEY', '')
         self.dhan_api_secret = os.getenv('DHAN_API_SECRET', '')
-        self.base_url = "https://api.dhan.co/v2"
+        self.base_url = "https://api.dhan.co"
         
         self.headers = {
             "access-token": self.dhan_token,
@@ -85,16 +85,103 @@ class MarketDataService:
         self.market_cache: Dict[str, List[Dict]] = {}
         self.signals_cache: List[MarketSignal] = []
         
-        # Monitoring symbols
-        self.symbols = [
-            "NSE_EQ|2885",  # NIFTY
-            "NSE_EQ|26000", # BANKNIFTY
-            "NSE_EQ|1333",  # RELIANCE
-            "NSE_EQ|11536", # TCS
-            "NSE_EQ|1922",  # INFY
-        ]
+        # Indian Market Focus - NSE, BSE, MCX only
+        self.supported_exchanges = ["NSE_EQ", "NSE_FO", "BSE_EQ", "BSE_FO", "MCX_FO"]
         
-        logger.info("🎯 Engine A - Market Data Service Initialized")
+        # Core Indian market symbols
+        self.indian_symbols = {
+            "NSE_INDICES": [
+                "NSE_EQ|2885",   # NIFTY 50
+                "NSE_EQ|26000",  # BANKNIFTY
+                "NSE_EQ|26009",  # NIFTY MIDCAP
+                "NSE_EQ|26037",  # NIFTY SMALLCAP
+            ],
+            "NSE_EQUITY": [
+                "NSE_EQ|1333",   # RELIANCE
+                "NSE_EQ|11536",  # TCS
+                "NSE_EQ|1922",   # INFY
+                "NSE_EQ|3045",   # HDFCBANK
+                "NSE_EQ|1594",   # ICICIBANK
+                "NSE_EQ|4963",   # SBIN
+                "NSE_EQ|1270",   # LT
+            ],
+            "MCX_COMMODITIES": [
+                "MCX_FO|55219",  # CRUDE OIL
+                "MCX_FO|55220",  # NATURAL GAS
+                "MCX_FO|55233",  # GOLD
+                "MCX_FO|55234",  # SILVER
+                "MCX_FO|55235",  # COPPER
+            ],
+            "BSE_EQUITY": [
+                "BSE_EQ|500325", # RELIANCE (BSE)
+                "BSE_EQ|532540", # TCS (BSE)
+                "BSE_EQ|500209", # INFY (BSE)
+            ]
+        }
+        
+        logger.info("🎯 Engine A - Market Data Service Initialized (Indian Markets Only)")
+    
+    def filter_indian_markets(self, data: List[Dict]) -> List[Dict]:
+        """Filter data to include only Indian market instruments"""
+        indian_data = []
+        for item in data:
+            # Check if the symbol belongs to supported Indian exchanges
+            symbol = item.get('tradingSymbol', '')
+            exchange = item.get('exchangeSegment', '')
+            
+            if exchange in self.supported_exchanges:
+                # Additional filtering for Indian instruments only
+                if any([
+                    exchange.startswith('NSE'),
+                    exchange.startswith('BSE'), 
+                    exchange.startswith('MCX'),
+                    'NIFTY' in symbol.upper(),
+                    'BANKNIFTY' in symbol.upper(),
+                    'SENSEX' in symbol.upper(),
+                    symbol.upper() in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'],
+                    'CRUDEOIL' in symbol.upper(),
+                    'NATURALGAS' in symbol.upper(),
+                    'GOLD' in symbol.upper(),
+                    'SILVER' in symbol.upper()
+                ]):
+                    item['market_focus'] = 'Indian'
+                    indian_data.append(item)
+        
+        return indian_data
+    
+    async def fetch_positions(self) -> Optional[Dict]:
+        """Fetch live positions from Dhan API"""
+        try:
+            url = f"{self.base_url}/positions"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        logger.info(f"✅ Live positions fetched: {len(data)} positions")
+                        return {"status": "success", "source": "live", "positions": data}
+                    else:
+                        logger.error(f"Failed to fetch positions: {response.status}")
+                        return {"status": "error", "source": "mock", "message": "failed to fetch positions"}
+        except Exception as e:
+            logger.error(f"Error fetching positions: {e}")
+            return {"status": "error", "source": "mock", "message": str(e)}
+    
+    async def fetch_orders(self) -> Optional[Dict]:
+        """Fetch live orders from Dhan API"""
+        try:
+            url = f"{self.base_url}/orders"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        logger.info(f"✅ Live orders fetched: {len(data)} orders")
+                        return {"status": "success", "source": "live", "orders": data}
+                    else:
+                        logger.error(f"Failed to fetch orders: {response.status}")
+                        return {"status": "error", "source": "mock", "message": "failed to fetch orders"}
+        except Exception as e:
+            logger.error(f"Error fetching orders: {e}")
+            return {"status": "error", "source": "mock", "message": str(e)}
     
     async def fetch_live_market_data(self, symbol: str) -> Optional[Dict]:
         """Fetch real-time market data from Dhan API"""
@@ -329,6 +416,54 @@ async def get_market_data(symbol: str):
     except Exception as e:
         logger.error(f"Error getting market data for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/market-summary")
+async def market_summary():
+    """Get live market summary with Indian market positions and orders only"""
+    try:
+        positions_data = await market_service.fetch_positions()
+        orders_data = await market_service.fetch_orders()
+        
+        # Filter to Indian markets only
+        indian_positions = []
+        indian_orders = []
+        
+        if positions_data and positions_data.get("positions"):
+            indian_positions = market_service.filter_indian_markets(positions_data["positions"])
+        
+        if orders_data and orders_data.get("orders"):
+            indian_orders = market_service.filter_indian_markets(orders_data["orders"])
+        
+        return {
+            "status": "success",
+            "source": "live" if positions_data.get("source") == "live" else "mock",
+            "market_focus": "Indian Markets Only (NSE, BSE, MCX)",
+            "data": {
+                "positions": indian_positions,
+                "orders": indian_orders,
+                "supported_exchanges": market_service.supported_exchanges,
+                "timestamp": datetime.now().isoformat()
+            },
+            "summary": {
+                "total_positions": len(indian_positions),
+                "total_orders": len(indian_orders),
+                "exchange_breakdown": {
+                    "NSE": len([p for p in indian_positions if p.get('exchangeSegment', '').startswith('NSE')]),
+                    "BSE": len([p for p in indian_positions if p.get('exchangeSegment', '').startswith('BSE')]),
+                    "MCX": len([p for p in indian_positions if p.get('exchangeSegment', '').startswith('MCX')])
+                }
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting market summary: {e}")
+        return {
+            "status": "error",
+            "source": "mock", 
+            "message": str(e),
+            "market_focus": "Indian Markets Only (NSE, BSE, MCX)",
+            "timestamp": datetime.now().isoformat()
+        }
 
 @app.post("/api/refresh")
 async def refresh_market_data():
