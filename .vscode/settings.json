@@ -1,3 +1,4 @@
 {
-    "github.copilot.chat.virtualTools.threshold": 128
+    "github.copilot.chat.virtualTools.threshold": 128,
+    "terminal.integrated.enableImages": true
 }

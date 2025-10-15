@@ -3,12 +3,12 @@ name: CI Ultra Aggressive Engine
 on:
   pull_request:
     paths:
-      - 'engines/engine-ultra-aggressive/**'
+      - 'backend/engines/engine-ultra-aggressive/**'
       - '.github/workflows/ci-engine-ultra-aggressive.yml'
   push:
     branches: [ main ]
     paths:
-      - 'engines/engine-ultra-aggressive/**'
+      - 'backend/engines/engine-ultra-aggressive/**'
 
 permissions:
   contents: read
@@ -26,7 +26,7 @@ jobs:
           cache-dependency-path: |
             engines/engine-ultra-aggressive/requirements.txt
       - name: Install minimal deps
-        working-directory: engines/engine-ultra-aggressive
+        working-directory: backend/engines/engine-ultra-aggressive
         run: |
           pip install --no-cache-dir -r requirements.txt
       - name: Import smoke test

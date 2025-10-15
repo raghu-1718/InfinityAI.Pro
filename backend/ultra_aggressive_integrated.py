@@ -40,8 +40,9 @@ ENGINE_URLS = {
 # Dhan API Configuration - REAL CREDENTIALS
 DHAN_CONFIG = {
     "client_id": os.getenv("DHAN_CLIENT_ID", "1101302170"),
-    "api_key": os.getenv("DHAN_API_KEY", "a1196f5b"),
-    "api_secret": os.getenv("DHAN_API_SECRET", "66e16669-1b5e-4db7-9aec-4da4f56a2530"),
+    # 🔐 SECURITY: All credentials loaded from environment (set via GCP Secret Manager)
+    "api_key": os.getenv("DHAN_API_KEY"),
+    "api_secret": os.getenv("DHAN_API_SECRET"),
     "access_token": os.getenv("DHAN_ACCESS_TOKEN", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzI4MjAwMzE3LCJ0b2tlblR5cGUiOiJBQ0NFU1NfVE9LRU4iLCJkaGFuQ2xpZW50SWQiOiIxMTAxMzAyMTcwIn0.RRGJlWfLWfcqkbT3h6LPgpUZE7OOlTZ2PEqApgAh31M"),
     "base_url": "https://api.dhan.co"
 }

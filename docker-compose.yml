@@ -11,39 +11,59 @@ services:
       context: .
       dockerfile: backend/engines/engine-a/Dockerfile
     ports:
-      - "8100:8000"
+      - "8100:8080"
     environment:
-      - PORT=8000
+      - PORT=8080
       - REDIS_URL=redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   engine-b:
     build:
       context: .
       dockerfile: backend/engines/engine-b/Dockerfile
     ports:
-      - "8101:8001"
+      - "8101:8080"
     environment:
-      - PORT=8001
+      - PORT=8080
       - REDIS_URL=redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   engine-c:
     build:
       context: .
-      dockerfile: backend/engines/engine-c/Dockerfile
+      dockerfile: backend/engines/engine-c-execution/Dockerfile
     ports:
-      - "8102:8002"
+      - "8102:8080"
     environment:
-      - PORT=8002
+      - PORT=8080
       - REDIS_URL=redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   engine-d:
     build:
       context: .
       dockerfile: backend/engines/engine-d/Dockerfile
     ports:
-      - "8103:8003"
+      - "8103:8080"
     environment:
-      - PORT=8003
+      - PORT=8080
       - REDIS_URL=redis://redis:6379
       - DHAN_CLIENT_ID=${DHAN_CLIENT_ID}
       - DHAN_ACCESS_TOKEN=${DHAN_ACCESS_TOKEN}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

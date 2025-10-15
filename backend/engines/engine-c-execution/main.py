@@ -165,10 +165,16 @@ class RiskCheck:
 class TradeExecutionService:
     def __init__(self):
         # Load secrets from Google Secret Manager
-        self.dhan_token = get_secret('dhan-access-token') or 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTkzIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NjA2MDM3NTEsImlhdCI6MTc2MDUxNzM1MSwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vZW5naW5lLWMtNTczODY2MzYzNjM5LTU3Mzg2NjM2MzYzOS51cy1jZW50cmFsMS5ydW4uYXBwL2FwaS9kaGFuL3Bvc3RiYWNrIiwiZGhhbkNsaWVudElkIjoiMTEwMTMwMjE3MCJ9.cRhYjn044i_CrOwTV5ZxQOPnR_iWNnWcGHWF_q41wSdh02-wLQBFOLeD8TQPaIKdZBXqxQvwKDm6Y0DEfs0JZA'
-        self.dhan_client_id = get_secret('dhan-client-id') or '1101302170'
-        self.dhan_api_key = get_secret('dhan-api-key') or 'fe1942e7'
-        self.dhan_api_secret = get_secret('dhan-api-secret') or '50bc0462-b1aa-489c-9029-fe0cdc68dc27'
+        # 🔐 SECURITY: All credentials MUST be in GCP Secret Manager
+        # NO FALLBACKS - will fail gracefully if secrets are missing
+        self.dhan_token = get_secret('dhan-access-token')
+        self.dhan_client_id = get_secret('dhan-client-id')
+        self.dhan_api_key = get_secret('dhan-api-key')
+        self.dhan_api_secret = get_secret('dhan-api-secret')
+        
+        if not all([self.dhan_token, self.dhan_client_id, self.dhan_api_key, self.dhan_api_secret]):
+            raise ValueError("❌ CRITICAL: Dhan credentials not found in GCP Secret Manager. Please configure secrets.")
+        
         self.base_url = "https://api.dhan.co/v2"
         
         # OAuth configuration

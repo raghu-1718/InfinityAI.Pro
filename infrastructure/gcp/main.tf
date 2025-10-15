@@ -155,12 +155,7 @@ resource "google_compute_firewall" "allow_internal" {
 
   allow {
     protocol = "tcp"
-    ports    = ["0-65535"]
-  }
-
-  allow {
-    protocol = "udp"
-    ports    = ["0-65535"]
+    ports    = ["22", "80", "443", "8002", "8080"] # Only allow essential ports
   }
 
   allow {
@@ -170,23 +165,7 @@ resource "google_compute_firewall" "allow_internal" {
   source_ranges = ["10.2.0.0/16", "172.16.0.0/16", "172.17.0.0/16"]
 }
 
-resource "google_compute_firewall" "allow_cross_cloud" {
-  name    = "allow-cross-cloud-${var.environment}"
-  network = google_compute_network.infinityai.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443", "80", "8002", "8080"]
-  }
-
-  # Allow traffic from AWS and Azure
-  source_ranges = [
-    "10.0.0.0/16",  # AWS VPC
-    "10.1.0.0/16"   # Azure VNet
-  ]
-
-  target_tags = ["gke-node", "engine-b"]
-}
+// Removed cross-cloud allowances: GCP-only posture
 
 resource "google_compute_firewall" "allow_lb_health_check" {
   name    = "allow-lb-health-check-${var.environment}"
@@ -299,20 +278,14 @@ resource "google_container_cluster" "infinityai" {
     master_ipv4_cidr_block  = "172.20.0.0/28"
   }
 
-  # Master authorized networks (allow access from other clouds)
+  # Master authorized networks (restrict to office/VPN CIDR only)
   master_authorized_networks_config {
-    cidr_blocks {
-      cidr_block   = "10.0.0.0/16"
-      display_name = "AWS VPC"
-    }
-    cidr_blocks {
-      cidr_block   = "10.1.0.0/16"
-      display_name = "Azure VNet"
-    }
-    cidr_blocks {
-      cidr_block   = "0.0.0.0/0"
-      display_name = "All (for initial setup)"
-    }
+    cidr_blocks = [
+      {
+        cidr_block   = "203.0.113.0/24" # Example: Replace with your office/VPN CIDR
+        display_name = "Office VPN"
+      }
+    ]
   }
 
   # Workload Identity

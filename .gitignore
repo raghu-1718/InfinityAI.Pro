@@ -1,1 +1,39 @@
+# Node
+node_modules/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Environments & secrets
+.env
+.env.*
+dhan_credentials_secure.json
+
+# Logs & reports
+logs/
+*.log
+reports/*.json
+
+# Build artifacts
+build/
+dist/
+coverage/
+
+# Frontend build outputs
+frontend/web/build/
+
+# OS/IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Vercel
 .vercel
+
+# Misc
+*.db
+*.sqlite3
+dhan_credentials_secure.json
+**/dhan_credentials*.json

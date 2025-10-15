@@ -1,4 +1,4 @@
-name: Deploy Production Stack (AWS + GCP)
+name: Deploy Production Stack (GCP Only)
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ env:
 
 jobs:
   deploy-gcp-engines:
-    name: Deploy Engines A, B & Ultra to GCP
+    name: Deploy Engines A, B, C, D & Ultra to GCP
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -35,6 +35,12 @@ jobs:
           - engine: engine-b-ai-ml
             service_name: infinityai-engine-b
             context: backend/engines/engine-b-ai-ml
+          - engine: engine-c-execution
+            service_name: infinityai-engine-c
+            context: backend/engines/engine-c-execution
+          - engine: engine-d-chatbot
+            service_name: infinityai-engine-d
+            context: backend/engines/engine-d-chatbot
           - engine: engine-ultra-aggressive
             service_name: infinityai-ultra-aggressive
             context: backend/engines/engine-ultra-aggressive
@@ -67,309 +73,47 @@ jobs:
             echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
             exit 0
           fi
-          # Authenticate docker to Artifact Registry and push image from runner
-          REG_HOST="${{ secrets.GCP_REGION }}-docker.pkg.dev"
-          IMAGE_NAME="$REG_HOST/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}"
-          echo "Configuring docker to use gcloud credential helper for $REG_HOST"
-          gcloud auth configure-docker "$REG_HOST" --quiet
-          echo "Building image $IMAGE_NAME"
-          docker build -t "$IMAGE_NAME" -f "${{ matrix.context }}/Dockerfile" "${{ matrix.context }}"
-          echo "Pushing $IMAGE_NAME to Artifact Registry"
-          docker push "$IMAGE_NAME"
-
-      - name: Deploy (Cloud Run)
-        run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Would deploy Cloud Run service ${{ matrix.service_name }}"
-            exit 0
-          fi
-          gcloud run deploy "${{ matrix.service_name }}" \
-            --image "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/infinityai-repo/${{ matrix.service_name }}:${{ github.event.inputs.image_tag }}" \
-            --region "${{ secrets.GCP_REGION }}" \
-            --platform managed \
-            --allow-unauthenticated
-
-  validate-ecs-sanitizer:
-    name: Validate ECS sanitizer (dry-run safe)
-    runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.dry_run == 'true' }}
-    strategy:
-      matrix:
-        include:
-          - engine: engine-c-execution
-            container_name: engine-c-container
-            service_name: infinityai-engine-c
-            task_family: infinityai-engine-c
-            task_def_file: task-def-engine-c.json
-          - engine: engine-d-chatbot
-            container_name: engine-d-container
-            service_name: infinityai-engine-d
-            task_family: infinityai-engine-d
-            task_def_file: task-def-engine-d.json
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Sanitize task definition (dry run)
-        env:
-          TASK_DEF_FILE: ${{ matrix.task_def_file }}
-          CONTAINER_NAME: ${{ matrix.container_name }}
-          IMAGE_PLACEHOLDER: "dry-run-image:latest"
-        run: |
-          set -euo pipefail
-          echo "Validating sanitizer for $TASK_DEF_FILE"
-          if [ ! -f "$TASK_DEF_FILE" ]; then
-            echo "File $TASK_DEF_FILE not found in repo"; exit 11
-          fi
-          cp "$TASK_DEF_FILE" task-definition.json
-          jq 'with_entries(select(.value != null)) | (.containerDefinitions // []) |= map( with_entries(select(.value != null)) )' task-definition.json > task-definition.sanitized.json || true
-          jq --arg name "$CONTAINER_NAME" --arg image "$IMAGE_PLACEHOLDER" '
-            ( del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators)
-              | .containerDefinitions = ( .containerDefinitions
-                  | map( (with_entries(select(.value != null and .value != [] and .value != {} and .value != ""))
-                          | del(.dependsOn, .secrets, .logConfiguration, .healthCheck, .resourceRequirements)
-                        ) )
-            )
-            | (.containerDefinitions[] | select(.name == $name) .image) = $image
-          ' task-definition.sanitized.json > task-definition.updated.json
-
-          # Python clean pass
-          python3 - <<'PY'
-import json
-from pathlib import Path
-def clean(obj):
-  if isinstance(obj, dict):
-    out = {}
-    for k, v in obj.items():
-      cv = clean(v)
-      if cv is None:
-        continue
-      if cv == [] or cv == {} or cv == "":
-        continue
-      out[k] = cv
-    return out
-  if isinstance(obj, list):
-    out = [clean(v) for v in obj]
-    return [v for v in out if v is not None and v != [] and v != {} and v != ""]
-  return obj
-path = Path('task-definition.updated.json')
-data = json.loads(path.read_text())
-cleaned = clean(data)
-path.write_text(json.dumps(cleaned, indent=2))
-print(json.dumps(cleaned)[:10000])
-PY
-
-          echo "--- final sanitized (masked) ---"
-          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
-
-  deploy-aws-engines:
-    name: Deploy Engines C & D to AWS ECS
-    if: ${{ github.event.inputs.dry_run == 'false' }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - engine: engine-c-execution
-            container_name: engine-c-container
-            service_name: infinityai-engine-c
-            task_family: infinityai-engine-c
-            task_def_file: task-def-engine-c.json
-            context: backend/engines/engine-c-execution
-          - engine: engine-d-chatbot
-            container_name: engine-d-container
-            service_name: infinityai-engine-d
-            task_family: infinityai-engine-d
-            task_def_file: task-def-engine-d.json
-            context: backend/engines/engine-d-chatbot
-    env:
-      ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Dry-run notice (AWS ECS)
-        run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Skipping AWS auth & deploy steps for ${{ matrix.service_name }}"
-          else
-            echo "Proceeding to configure AWS for ${{ matrix.service_name }}"
-          fi
-
-      - name: Configure AWS credentials
-        if: ${{ env.DRY_RUN == 'false' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION || 'us-east-1' }}
-
-      - name: Login to Amazon ECR
-        if: ${{ env.DRY_RUN == 'false' }}
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Ensure ECR repository exists
-        if: ${{ env.DRY_RUN == 'false' }}
-        run: |
-          set -euo pipefail
-          ECR_REPOSITORY="infinityai-${{ matrix.engine }}"
-          echo "Checking for ECR repository: $ECR_REPOSITORY"
-          if aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1; then
-            echo "ECR repository $ECR_REPOSITORY already exists"
-          else
-            echo "Creating ECR repository $ECR_REPOSITORY"
-            aws ecr create-repository --repository-name "$ECR_REPOSITORY" || { echo "Failed to create ECR repository"; exit 12; }
-          fi
-
-      - name: Build, tag, and push image to ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: infinityai-${{ matrix.engine }}
-          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
-        run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Would build and push image for ${{ matrix.engine }} to ECR"
-            echo "image=dry-run-image" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.context }}/Dockerfile ${{ matrix.context }}
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Download task definition
-        if: ${{ env.DRY_RUN == 'false' }}
-        env:
-          TASK_FAMILY: ${{ matrix.task_family }}
-          TASK_DEF_FILE: ${{ matrix.task_def_file }}
-        run: |
-          # Try to download the current task definition from AWS; if it doesn't exist, fall back to the repo template
-          echo "Attempting to download task definition for $TASK_FAMILY from AWS..."
-          set -e
-          if aws ecs describe-task-definition --task-definition "$TASK_FAMILY" --query taskDefinition > task-definition.json 2>/dev/null; then
-            echo "Downloaded remote task definition"
-          else
-            echo "Remote task definition not found; using repository template $TASK_DEF_FILE"
-            if [ -f "$TASK_DEF_FILE" ]; then
-              cp "$TASK_DEF_FILE" task-definition.json
-            else
-              echo "Local task definition template $TASK_DEF_FILE not found"; exit 11
-            fi
-          fi
-
-      - name: Render, register and deploy ECS task definition
-        if: ${{ env.DRY_RUN == 'false' }}
-        run: |
-          set -euo pipefail
-          echo "Using built image: ${{ steps.build-image.outputs.image }}"
-          # Sanitize task-definition.json: remove fields that are present in describe-task-definition output
-          # Keep only keys allowed by RegisterTaskDefinition API: family, taskRoleArn, executionRoleArn, networkMode,
-          # containerDefinitions, volumes, placementConstraints, requiresCompatibilities, cpu, memory, tags,
-          # pidMode, ipcMode, proxyConfiguration, inferenceAccelerators
-          # Build an object with only the allowed keys, then remove any keys whose
-          # value is null so the AWS CLI doesn't receive invalid null parameters.
-          # Remove any top-level keys that are null, then remove null keys inside
-          # each container definition. This prevents AWS CLI validation errors
-          # caused by passing null for optional params.
-          jq 'with_entries(select(.value != null)) |
-             (.containerDefinitions // []) |= map( with_entries(select(.value != null)) )' \
-            task-definition.json > task-definition.sanitized.json || true
-
-          # Fallback: if sanitize produced null/empty family, ensure we still operate on original
-          if [ ! -s task-definition.sanitized.json ] || [ "$(jq -r '.family // empty' task-definition.sanitized.json)" = "" ]; then
-            echo "Sanitization resulted in empty family; using original task-definition.json"
-            cp task-definition.json task-definition.sanitized.json
-          fi
-
-          # Replace container image in the sanitized task definition JSON
-          # Additionally run a defensive pass to delete known problematic keys at top-level and inside containerDefinitions
-          jq --arg name "${{ matrix.container_name }}" --arg image "${{ steps.build-image.outputs.image }}" '
-            # delete problematic keys if present, and clean container definition objects
-            ( del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators)
-              | .containerDefinitions = ( .containerDefinitions
-                  | map( (with_entries(select(.value != null and .value != [] and .value != {} and .value != ""))
-                          | del(.dependsOn, .secrets, .logConfiguration, .healthCheck, .resourceRequirements)
-                        ) )
-            )
-            # now set the image
-            | (.containerDefinitions[] | select(.name == $name) .image) = $image
-          ' task-definition.sanitized.json > task-definition.updated.json
-
-
-      # Additional defensive jq cleanup removed; the earlier jq pass and the
-      # Python sanitizer below will ensure no null/empty values remain.
-      echo "Sanitized task-definition (masked):"
-      # Print a compact view for debugging; mask environment/secrets
-      jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
-
-      # Final sanitize using Python to recursively remove null/empty values (more reliable)
-      echo "Running final python sanitizer to remove any remaining nulls..."
-      python3 - <<'PY'
-import json
-from pathlib import Path
-
-def clean(obj):
-  if isinstance(obj, dict):
-    out = {}
-    for k, v in obj.items():
-      cv = clean(v)
-      if cv is None:
-        continue
-      if cv == [] or cv == {} or cv == "":
-        continue
-      out[k] = cv
-    return out
-  if isinstance(obj, list):
-    out = [clean(v) for v in obj]
-    return [v for v in out if v is not None and v != [] and v != {} and v != ""]
-  return obj
-
-path = Path('task-definition.updated.json')
-data = json.loads(path.read_text())
-cleaned = clean(data)
-path.write_text(json.dumps(cleaned, indent=2))
-print('--- cleaned task-definition.updated.json ---')
-print(json.dumps(cleaned)[:10000])
-PY
-
-          echo "Registering task definition..."
-          # Defensive jq cleanup: remove known optional top-level keys that may be null
-          jq 'del(.tags, .pidMode, .ipcMode, .proxyConfiguration, .inferenceAccelerators, .placementConstraints)' task-definition.updated.json > task-definition.cleaned.json || true
-          mv task-definition.cleaned.json task-definition.updated.json || true
-
-          # Print masked final JSON for debugging
-          echo "--- final task-definition.updated.json (masked) ---"
-          jq 'del(.containerDefinitions[].environment? // [], .containerDefinitions[].secrets? // [])' task-definition.updated.json || cat task-definition.updated.json
-
-          # Register and capture output; on failure show JSON and error
-          REG_OUT=$(aws ecs register-task-definition --cli-input-json file://task-definition.updated.json 2>&1) || (
-            echo "Register failed with output:";
-            echo "$REG_OUT";
-            echo "--- task-definition.updated.json ---";
-            cat task-definition.updated.json;
-            exit 12
-          )
-          TASK_DEF_ARN=$(echo "$REG_OUT" | jq -r '.taskDefinition.taskDefinitionArn')
-          echo "Registered task definition: $TASK_DEF_ARN"
-
-          echo "Updating service ${{ matrix.service_name }} on cluster ${{ secrets.ECS_CLUSTER_NAME }}"
-          aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ matrix.service_name }}" --task-definition "$TASK_DEF_ARN" --force-new-deployment
-          echo "Waiting for service stability..."
-          aws ecs wait services-stable --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --services "${{ matrix.service_name }}"
-          echo "Deployment complete for ${{ matrix.service_name }}"
-
-      - name: Dry Run Notice
-        if: ${{ env.DRY_RUN == 'true' }}
-        run: echo "[DRY RUN] Would deploy task definition for service ${{ matrix.service_name }}"
-
-  deploy-frontend-aws:
-    name: Deploy Frontend to AWS S3
-    if: ${{ github.event.inputs.dry_run == 'false' }}
-    runs-on: ubuntu-latest
-    env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_FRONTEND }}
-      CLOUDFRONT_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+          deploy-frontend-gcp:
+            name: Deploy Frontend to GCP Cloud Run (static)
+            if: ${{ github.event.inputs.dry_run == 'false' }}
+            runs-on: ubuntu-latest
+            steps:
+              - name: Checkout
+                uses: actions/checkout@v4
+              - name: Setup Node.js
+                uses: actions/setup-node@v4
+                with:
+                  node-version: '20'
+                  cache: 'npm'
+                  cache-dependency-path: frontend/web/package-lock.json
+              - name: Build Frontend
+                working-directory: frontend/web
+                run: |
+                  if [ -f package-lock.json ]; then npm ci; else npm install; fi
+                  npm run build
+              - name: Authenticate to GCP
+                uses: google-github-actions/auth@v2
+                with:
+                  workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+                  service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+              - name: Setup gcloud
+                uses: google-github-actions/setup-gcloud@v2
+              - name: Build and push frontend image
+                env:
+                  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+                  GCP_REGION: ${{ secrets.GCP_REGION }}
+                run: |
+                  REG_HOST="${GCP_REGION}-docker.pkg.dev"
+                  IMAGE_NAME="$REG_HOST/${GCP_PROJECT}/infinityai-repo/frontend-web:${{ github.event.inputs.image_tag }}"
+                  gcloud auth configure-docker "$REG_HOST" --quiet
+                  docker build -t "$IMAGE_NAME" -f frontend/web/Dockerfile frontend/web
+                  docker push "$IMAGE_NAME"
+              - name: Deploy to Cloud Run
+                env:
+                  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+                  GCP_REGION: ${{ secrets.GCP_REGION }}
+                run: |
+                  gcloud run deploy infinityai-frontend --image "${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/infinityai-repo/frontend-web:${{ github.event.inputs.image_tag }}" --region "${GCP_REGION}" --platform managed --allow-unauthenticated
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -444,7 +188,7 @@ PY
   summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [deploy-gcp-engines, deploy-aws-engines, deploy-frontend-aws]
+    needs: [deploy-gcp-engines, deploy-frontend-gcp]
     steps:
       - name: Report Result
         run: |

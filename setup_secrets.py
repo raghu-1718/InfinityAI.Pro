@@ -16,13 +16,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Dhan credentials provided by user
-DHAN_CREDENTIALS = {
-    'dhan-client-id': '1101302170',
-    'dhan-api-key': 'fe1942e7',
-    'dhan-api-secret': '50bc0462-b1aa-489c-9029-fe0cdc68dc27',
-    'dhan-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTkzIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NjA2MDM3NTEsImlhdCI6MTc2MDUxNzM1MSwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vZW5naW5lLWMtNTczODY2MzYzNjM5LTU3Mzg2NjM2MzYzOS51cy1jZW50cmFsMS5ydW4uYXBwL2FwaS9kaGFuL3Bvc3RiYWNrIiwiZGhhbkNsaWVudElkIjoiMTEwMTMwMjE3MCJ9.cRhYjn044i_CrOwTV5ZxQOPnR_iWNnWcGHWF_q41wSdh02-wLQBFOLeD8TQPaIKdZBXqxQvwKDm6Y0DEfs0JZA'
+# ⚠️ SECURITY: Credentials are now stored in GCP Secret Manager
+# DO NOT hardcode credentials here. Instead:
+# 1. Create secrets in Secret Manager: https://console.cloud.google.com/security/secret-manager
+# 2. Use the secret names below to reference them
+# 3. Get real Dhan API credentials from: https://dhanhq.co/
+
+DHAN_SECRET_NAMES = {
+    'dhan-client-id': 'Dhan Client ID from https://dhanhq.co/',
+    'dhan-api-key': 'Dhan API Key from https://dhanhq.co/',
+    'dhan-api-secret': 'Dhan API Secret from https://dhanhq.co/',
+    'dhan-access-token': 'Dhan Access Token (auto-generated after OAuth)'
 }
+
+# Example: To add credentials to Secret Manager manually:
+# gcloud secrets create dhan-client-id --replication-policy="automatic"
+# echo -n "YOUR_REAL_CLIENT_ID" | gcloud secrets versions add dhan-client-id --data-file=-
 
 def run_gcloud_command(command: str) -> bool:
     """Execute gcloud command and return success status"""
@@ -68,23 +77,15 @@ def setup_all_secrets():
     """Setup all Dhan credentials in Google Secret Manager"""
     logger.info("🔐 Setting up Dhan credentials in Google Secret Manager...")
     
-    success_count = 0
-    total_secrets = len(DHAN_CREDENTIALS)
-    
-    for secret_id, secret_value in DHAN_CREDENTIALS.items():
-        if create_secret(secret_id, secret_value):
-            success_count += 1
-        else:
-            logger.error(f"❌ Failed to setup secret: {secret_id}")
-    
-    logger.info(f"📊 Setup complete: {success_count}/{total_secrets} secrets configured")
-    
-    if success_count == total_secrets:
-        logger.info("🎉 All secrets configured successfully!")
-        return True
-    else:
-        logger.warning("⚠️ Some secrets failed to configure")
-        return False
+    logger.error("⚠️ This script has been disabled for security reasons.")
+    logger.error("📋 Dhan credentials must be manually added to GCP Secret Manager:")
+    logger.error("")
+    for secret_name, description in DHAN_SECRET_NAMES.items():
+        logger.error(f"  • {secret_name}: {description}")
+    logger.error("")
+    logger.error("� Visit: https://console.cloud.google.com/security/secret-manager")
+    logger.error("🔗 Get credentials from: https://dhanhq.co/")
+    return False
 
 def verify_secrets():
     """Verify that all secrets are accessible"""
@@ -92,7 +93,7 @@ def verify_secrets():
     
     success_count = 0
     
-    for secret_id in DHAN_CREDENTIALS.keys():
+    for secret_id in DHAN_SECRET_NAMES.keys():
         verify_cmd = f'gcloud secrets versions access latest --secret="{secret_id}" --limit=10'
         
         if run_gcloud_command(verify_cmd):
@@ -101,7 +102,7 @@ def verify_secrets():
         else:
             logger.error(f"❌ Secret '{secret_id}' is not accessible")
     
-    return success_count == len(DHAN_CREDENTIALS)
+    return success_count == len(DHAN_SECRET_NAMES)
 
 def display_setup_instructions():
     """Display manual setup instructions"""
@@ -110,11 +111,14 @@ def display_setup_instructions():
     logger.info("Run these commands in Google Cloud Shell or with gcloud CLI:")
     logger.info("")
     
-    for secret_id, secret_value in DHAN_CREDENTIALS.items():
+    for secret_id, description in DHAN_SECRET_NAMES.items():
         logger.info(f"# Create secret: {secret_id}")
+        logger.info(f"# Description: {description}")
         logger.info(f'gcloud secrets create {secret_id} --replication-policy="automatic"')
-        logger.info(f'echo -n "{secret_value}" | gcloud secrets versions add {secret_id} --data-file=-')
+        logger.info(f'echo -n "YOUR_REAL_{secret_id.upper().replace("-", "_")}" | gcloud secrets versions add {secret_id} --data-file=-')
         logger.info("")
+    
+    logger.info("🔗 Get real Dhan credentials from: https://dhanhq.co/")
 
 def main():
     """Main setup function"""
