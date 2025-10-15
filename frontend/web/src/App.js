@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useSearchParams } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -12,7 +13,8 @@ import {
   Tabs,
   Tab,
   Alert,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import {
   TrendingUp,
@@ -22,15 +24,20 @@ import {
   SmartToy,
   Timeline,
   Chat,
-  Settings as SettingsIcon
+  Link as LinkIcon,
+  Settings as SettingsIcon,
+  Refresh
 } from '@mui/icons-material';
 
-import Portfolio from './components/Portfolio';
-import Trading from './components/Trading';
-import MarketAnalysis from './components/MarketAnalysis';
-import AIInsights from './components/AIInsights';
-import ChatBot from './components/ChatBot';
-import SettingsComponent from './components/Settings';
+import Portfolio from './components/views/Portfolio';
+import Trading from './components/views/Trading';
+import MarketAnalysis from './components/views/MarketAnalysis';
+import AIInsights from './components/views/AIInsights';
+import ChatBot from './components/views/ChatBot';
+import BrokerIntegration from './components/views/BrokerIntegration';
+import SettingsComponent from './components/views/Settings';
+import DhanCallback from './components/auth/DhanCallback';
+import { useSystemHealth, usePortfolioData, useAIInsights } from './hooks/useEngineData';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8003';
 
@@ -52,63 +59,91 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-function App() {
-  const [currentTab, setCurrentTab] = useState(0);
-const [user] = useState({ id: 'demo-user', name: 'Demo User' });
-  const [systemStatus, setSystemStatus] = useState('loading');
+function Dashboard() {
+  const [searchParams] = useSearchParams();
+  const [currentTab, setCurrentTab] = useState(parseInt(searchParams.get('tab')) || 0);
+  const [user] = useState({ id: 'demo-user', name: 'Demo User' });
   const [notifications, setNotifications] = useState([]);
-const [marketData] = useState({});
+  
+  // Use real-time hooks for live data
+  const { overallHealth, healthStatus, healthyCount, totalCount, loading: healthLoading } = useSystemHealth(30000);
+  const portfolioData = usePortfolioData();
+  const { data: aiData, loading: aiLoading } = useAIInsights(15000);
+  
+  // Component lifecycle logging
+  useEffect(() => {
+    console.log('🖥️ App component mounted');
+    console.log('🔍 Environment variables check:', {
+      ENGINE_A: process.env.REACT_APP_ENGINE_A_URL,
+      ENGINE_B: process.env.REACT_APP_ENGINE_B_URL,
+      ENGINE_C: process.env.REACT_APP_ENGINE_C_URL,
+      ENGINE_D: process.env.REACT_APP_ENGINE_D_URL,
+      ENGINE_ULTRA: process.env.REACT_APP_ENGINE_ULTRA_URL
+    });
+    return () => console.log('🖥️ App component unmounting');
+  }, []);
+  
+  // Log data updates
+  useEffect(() => {
+    console.log('📈 App - Portfolio data update:', {
+      totalValue: portfolioData.totalValue,
+      loading: portfolioData.loading,
+      error: portfolioData.error,
+      lastUpdated: portfolioData.lastUpdated
+    });
+  }, [portfolioData]);
+  
+  useEffect(() => {
+    console.log('🤖 App - AI data update:', {
+      data: aiData,
+      loading: aiLoading,
+      timestamp: new Date().toISOString()
+    });
+  }, [aiData, aiLoading]);
 
   useEffect(() => {
-    // Check system status on load
-    checkSystemStatus();
-    
-    // Set up periodic status checks
-    const statusInterval = setInterval(checkSystemStatus, 30000);
-    
-    return () => clearInterval(statusInterval);
-  }, []);
-
-  const checkSystemStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/status`);
-      const data = await response.json();
-      setSystemStatus('healthy');
+    // Monitor system health changes and create notifications
+    if (healthStatus && Object.keys(healthStatus).length > 0) {
+      const offlineEngines = Object.entries(healthStatus)
+        .filter(([_, status]) => status.status !== 'healthy')
+        .map(([engine, _]) => engine);
       
-      // Check individual engine health
-      const engines = ['engine_a', 'engine_b', 'engine_c', 'engine_d'];
-      const healthyEngines = engines.filter(engine => 
-        data.engines && data.engines[engine] && data.engines[engine].status === 'healthy'
-      ).length;
-      
-      if (healthyEngines < engines.length) {
-        setNotifications(prev => [...prev, {
-          id: Date.now(),
-          type: 'warning',
-          message: `${healthyEngines}/${engines.length} engines healthy`
-        }]);
+      if (offlineEngines.length > 0) {
+        setNotifications(prev => [
+          ...prev.slice(-4), // Keep only recent notifications
+          {
+            id: Date.now(),
+            type: 'warning',
+            message: `${healthyCount}/${totalCount} engines healthy - ${offlineEngines.join(', ')} offline`
+          }
+        ]);
       }
-    } catch (error) {
-      setSystemStatus('error');
-      setNotifications(prev => [...prev, {
-        id: Date.now(),
-        type: 'error',
-        message: 'System health check failed'
-      }]);
     }
-  };
+  }, [healthStatus, healthyCount, totalCount]);
+
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
+    // Update URL without page reload
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', newValue);
+    window.history.replaceState({}, '', `${window.location.pathname}?${newSearchParams}`);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'healthy': return 'success';
-      case 'loading': return 'info';
+      case 'partial': return 'warning'; 
       case 'error': return 'error';
-      default: return 'warning';
+      default: return 'info';
     }
+  };
+  
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
   };
 
   return (
@@ -131,10 +166,13 @@ const [marketData] = useState({});
               size="small"
             />
             <Chip 
-              label={systemStatus} 
-              color={getStatusColor(systemStatus)}
+              label={healthLoading ? 'checking...' : overallHealth} 
+              color={getStatusColor(overallHealth)}
               size="small"
             />
+            {healthLoading && (
+              <CircularProgress size={16} sx={{ ml: 1 }} />
+            )}
             <Typography variant="body2">
               Welcome, {user.name}
             </Typography>
@@ -169,7 +207,11 @@ const [marketData] = useState({});
                       Portfolio Value
                     </Typography>
                     <Typography variant="h6">
-                      $125,430.50
+                      {portfolioData.loading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        formatCurrency(portfolioData.totalValue)
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -186,8 +228,12 @@ const [marketData] = useState({});
                     <Typography color="textSecondary" gutterBottom>
                       Today's P&L
                     </Typography>
-                    <Typography variant="h6" color="success.main">
-                      +$2,340.75 (1.9%)
+                    <Typography variant="h6" color={portfolioData.todaysPnL >= 0 ? 'success.main' : 'error.main'}>
+                      {portfolioData.loading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        `${portfolioData.todaysPnL >= 0 ? '+' : ''}${formatCurrency(portfolioData.todaysPnL)} (${portfolioData.todaysPnLPercent >= 0 ? '+' : ''}${portfolioData.todaysPnLPercent}%)`
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -205,7 +251,11 @@ const [marketData] = useState({});
                       AI Signals Today
                     </Typography>
                     <Typography variant="h6">
-                      23 signals
+                      {aiLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        `${aiData?.signals?.length || 0} signals`
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -223,7 +273,11 @@ const [marketData] = useState({});
                       Active Trades
                     </Typography>
                     <Typography variant="h6">
-                      8 positions
+                      {portfolioData.loading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        `${portfolioData.activePositions} positions`
+                      )}
                     </Typography>
                   </Box>
                 </Box>
@@ -247,6 +301,7 @@ const [marketData] = useState({});
             <Tab icon={<Timeline />} label="Analysis" />
             <Tab icon={<SmartToy />} label="AI Insights" />
             <Tab icon={<Chat />} label="Chat Assistant" />
+            <Tab icon={<LinkIcon />} label="Broker Integration" />
             <Tab icon={<SettingsIcon />} label="Settings" />
           </Tabs>
 
@@ -271,6 +326,10 @@ const [marketData] = useState({});
           </TabPanel>
 
           <TabPanel value={currentTab} index={5}>
+            <BrokerIntegration userId={user.id} apiUrl={API_BASE_URL} />
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={6}>
             <SettingsComponent userId={user.id} apiUrl={API_BASE_URL} />
           </TabPanel>
         </Paper>
@@ -295,6 +354,17 @@ const [marketData] = useState({});
         </Container>
       </Box>
     </Box>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/auth/dhan/callback" element={<DhanCallback />} />
+      </Routes>
+    </Router>
   );
 }
 

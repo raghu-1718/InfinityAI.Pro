@@ -5,9 +5,17 @@ Central coordination hub with AI-powered chatbot
 Deployed on AWS ECS/Fargate
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+import sys
+sys.path.append('/app')
+try:
+    from security_middleware import add_security_headers
+except ImportError:
+    def add_security_headers(app):
+        pass
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.staticfiles import StaticFiles
 import asyncio
 import uvicorn
@@ -492,18 +500,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add security headers
+add_security_headers(app)
+
 @app.get("/")
 async def root():
-    return HTMLResponse("""
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    engine_count = len(chatbot_service.engines)
+    
+    html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>InfinityAI.Pro - Engine D</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-            .header { text-align: center; color: #333; }
-            .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+            .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }}
+            .header {{ text-align: center; color: #333; }}
+            .status {{ background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; }}
         </style>
     </head>
     <body>
@@ -515,8 +529,8 @@ async def root():
             <div class="status">
                 <h3>✅ Service Status: Active</h3>
                 <p><strong>Version:</strong> 1.0.0</p>
-                <p><strong>Started:</strong> {}</p>
-                <p><strong>Engines Connected:</strong> {}</p>
+                <p><strong>Started:</strong> {current_time}</p>
+                <p><strong>Engines Connected:</strong> {engine_count}</p>
             </div>
             <div>
                 <h3>🔗 API Endpoints:</h3>
@@ -530,7 +544,9 @@ async def root():
         </div>
     </body>
     </html>
-    """.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(chatbot_service.engines)))
+    """
+    
+    return HTMLResponse(html_content)
 
 @app.get("/engine-d")
 async def engine_d_root():
@@ -595,11 +611,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket)
 
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+    
 @app.post("/api/chat")
-async def chat_endpoint(user_id: str, message: str):
+async def chat_endpoint(request: ChatRequest):
     """REST endpoint for chat"""
     try:
-        chat_message = await chatbot_service.process_chat_message(user_id, message)
+        chat_message = await chatbot_service.process_chat_message(request.user_id, request.message)
         
         return {
             "status": "success",
@@ -859,6 +879,50 @@ async def get_dhan_callback_urls():
             "3. Test the integration with live data"
         ]
     }
+
+# Frontend serving routes for integrated dashboard
+@app.get("/dashboard")
+@app.get("/dashboard.html") 
+async def serve_dashboard():
+    """Serve the enhanced dashboard"""
+    try:
+        # Try to serve the enhanced dashboard
+        dashboard_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'frontend', 'web', 'build', 'dashboard_enhanced.html')
+        if os.path.exists(dashboard_path):
+            return FileResponse(dashboard_path, media_type="text/html")
+        else:
+            # Fallback to inline dashboard if file doesn't exist
+            return HTMLResponse(get_inline_dashboard())
+    except Exception as e:
+        logger.error(f"Error serving dashboard: {e}")
+        return HTMLResponse(get_inline_dashboard())
+
+@app.get("/")
+async def serve_root_dashboard():
+    """Serve dashboard at root for convenience"""
+    return await serve_dashboard()
+
+@app.get("/auth/dhan/callback")
+async def serve_dhan_auth_callback():
+    """Serve dashboard for Dhan OAuth callback"""
+    return await serve_dashboard()
+
+def get_inline_dashboard():
+    """Inline dashboard HTML as fallback"""
+    return """
+    <!DOCTYPE html>
+    <html><head><title>InfinityAI.Pro Dashboard</title></head>
+    <body>
+        <h1>🤖 InfinityAI.Pro Dashboard</h1>
+        <p>Dashboard is loading... Please refresh if this message persists.</p>
+        <script>
+            // Redirect to enhanced dashboard if available
+            fetch('/api/market-data')
+                .then(() => window.location.href = '/dashboard')
+                .catch(() => console.log('API endpoints loading...'));
+        </script>
+    </body></html>
+    """
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8003))

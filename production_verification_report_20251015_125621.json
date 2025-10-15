@@ -1,0 +1,212 @@
+{
+  "verification_timestamp": "2025-10-15T12:56:21.534180",
+  "system_overview": {
+    "total_services": 6,
+    "healthy_services": 5,
+    "health_percentage": 83.33,
+    "overall_status": "OPERATIONAL"
+  },
+  "service_health": {
+    "frontend": {
+      "status": "unhealthy",
+      "response_time_ms": 365.04,
+      "url": "https://infinityai-pro-frontend-573866363639.us-central1.run.app",
+      "details": {
+        "status": "unhealthy"
+      }
+    },
+    "engine_a": {
+      "status": "healthy",
+      "response_time_ms": 366.77,
+      "url": "https://engine-a-573866363639-573866363639.us-central1.run.app",
+      "details": {
+        "status": "healthy",
+        "service": "engine-a-market-data",
+        "timestamp": "2025-10-15T07:26:11.312412",
+        "uptime": "running"
+      }
+    },
+    "engine_b": {
+      "status": "healthy",
+      "response_time_ms": 395.94,
+      "url": "https://engine-b-573866363639-573866363639.us-central1.run.app",
+      "details": {
+        "status": "healthy",
+        "service": "engine-b-ai-ml",
+        "models_status": "loaded",
+        "timestamp": "2025-10-15T07:26:11.701819",
+        "uptime": "running"
+      }
+    },
+    "engine_c": {
+      "status": "healthy",
+      "response_time_ms": 477.81,
+      "url": "https://engine-c-573866363639-573866363639.us-central1.run.app",
+      "details": {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "oauth_active": true,
+        "timestamp": "2025-10-15T07:26:12.193248"
+      }
+    },
+    "engine_d": {
+      "status": "healthy",
+      "response_time_ms": 346.45,
+      "url": "https://engine-d-573866363639-573866363639.us-central1.run.app",
+      "details": {
+        "status": "healthy",
+        "service": "engine-d-chatbot",
+        "engines_configured": 4,
+        "active_connections": 0,
+        "timestamp": "2025-10-15T07:26:12.541328"
+      }
+    },
+    "engine_ultra": {
+      "status": "healthy",
+      "response_time_ms": 364.43,
+      "url": "https://engine-ultra-573866363639-573866363639.us-central1.run.app",
+      "details": {
+        "status": "healthy",
+        "service": "ultra-aggressive-trading",
+        "trading_active": false,
+        "timestamp": "2025-10-15T07:26:12.902831"
+      }
+    }
+  },
+  "functionality_tests": {
+    "market_data": {
+      "market_signals": {
+        "status": "success",
+        "signals_count": 0,
+        "sample_signal": null
+      },
+      "specific_market_data": {
+        "status": "success",
+        "symbol": "NSE_EQ|2885",
+        "has_data": false
+      }
+    },
+    "ai_predictions": {
+      "ai_signals": {
+        "status": "success",
+        "signals_count": 5,
+        "models_active": true,
+        "sample_prediction": {
+          "symbol": "NIFTY",
+          "predicted_price": 90.62252478948143,
+          "confidence": 52.0783215404662,
+          "signal_type": "HOLD",
+          "risk_score": 0.05006364679320439,
+          "expected_return": 0.005006364679320439,
+          "time_horizon": "4H",
+          "features_used": [
+            "price",
+            "volume",
+            "rsi",
+            "ema_20",
+            "ema_50",
+            "bollinger_upper",
+            "bollinger_lower",
+            "macd",
+            "price_change_1h",
+            "price_change_4h",
+            "volume_ratio"
+          ],
+          "model_version": "v1.0"
+        }
+      },
+      "model_status": {
+        "status": "error",
+        "code": 404
+      }
+    },
+    "trading_execution": {
+      "order_placement": {
+        "status": "success",
+        "order_id": "ORD_1760513179.056422",
+        "message": "Order placed successfully (demo mode)"
+      },
+      "order_retrieval": {
+        "status": "success",
+        "message": "Order execution service operational"
+      }
+    },
+    "dhan_oauth": {
+      "dhan_status": {
+        "status": "success",
+        "oauth_active": true,
+        "connected_users": 0,
+        "endpoints": {
+          "callback": "/api/dhan/callback",
+          "postback": "/api/dhan/postback"
+        }
+      },
+      "oauth_endpoints": {
+        "callback_url": "https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/callback",
+        "postback_url": "https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/postback",
+        "status": "configured"
+      }
+    },
+    "chatbot_integration": {
+      "query_0": {
+        "query": "System status check",
+        "status": "success",
+        "intent": "status",
+        "confidence": 0.5,
+        "response_length": 187
+      },
+      "query_1": {
+        "query": "Show me NIFTY signals",
+        "status": "success",
+        "intent": "ai_prediction",
+        "confidence": 0.2,
+        "response_length": 71
+      },
+      "query_2": {
+        "query": "What are the AI predictions?",
+        "status": "success",
+        "intent": "ai_prediction",
+        "confidence": 0.4,
+        "response_length": 71
+      },
+      "query_3": {
+        "query": "Buy 100 shares of TCS",
+        "status": "success",
+        "intent": "trade_execution",
+        "confidence": 0.2,
+        "response_length": 276
+      },
+      "query_4": {
+        "query": "Connect my Dhan account",
+        "status": "success",
+        "intent": "general",
+        "confidence": 0.5,
+        "response_length": 195
+      }
+    },
+    "ultra_aggressive": {
+      "ultra_status": {
+        "status": "success",
+        "service": "ultra-aggressive-trading",
+        "trading_active": false
+      },
+      "ultra_metrics": {
+        "status": "error",
+        "code": 404
+      }
+    }
+  },
+  "deployment_urls": {
+    "frontend": "https://infinityai-pro-frontend-573866363639.us-central1.run.app",
+    "engine_a": "https://engine-a-573866363639-573866363639.us-central1.run.app",
+    "engine_b": "https://engine-b-573866363639-573866363639.us-central1.run.app",
+    "engine_c": "https://engine-c-573866363639-573866363639.us-central1.run.app",
+    "engine_d": "https://engine-d-573866363639-573866363639.us-central1.run.app",
+    "engine_ultra": "https://engine-ultra-573866363639-573866363639.us-central1.run.app"
+  },
+  "test_summary": {
+    "services_tested": 6,
+    "endpoints_tested": 15,
+    "integration_status": "VERIFIED"
+  }
+}

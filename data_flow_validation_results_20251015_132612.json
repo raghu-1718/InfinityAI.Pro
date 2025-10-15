@@ -1,0 +1,328 @@
+{
+  "timestamp": "2025-10-15T13:26:12.156214",
+  "validation_type": "End-to-End Data Flow Validation",
+  "pipeline_stages": {
+    "market_data_ingestion": {
+      "market_signals": {
+        "status": "success",
+        "data": {
+          "status": "success",
+          "signals": [],
+          "count": 0,
+          "timestamp": "2025-10-15T07:55:59.710119"
+        },
+        "signal_count": 0,
+        "symbols_covered": []
+      },
+      "specific_symbols": {
+        "status": "success",
+        "data": {
+          "NIFTY": {
+            "status": "success",
+            "last_price": "N/A",
+            "indicators": [
+              "status",
+              "symbol",
+              "data",
+              "timestamp"
+            ]
+          },
+          "BANKNIFTY": {
+            "status": "success",
+            "last_price": "N/A",
+            "indicators": [
+              "status",
+              "symbol",
+              "data",
+              "timestamp"
+            ]
+          },
+          "TCS": {
+            "status": "success",
+            "last_price": "N/A",
+            "indicators": [
+              "status",
+              "symbol",
+              "data",
+              "timestamp"
+            ]
+          },
+          "RELIANCE": {
+            "status": "success",
+            "last_price": "N/A",
+            "indicators": [
+              "status",
+              "symbol",
+              "data",
+              "timestamp"
+            ]
+          }
+        }
+      },
+      "technical_indicators": {
+        "status": "failed",
+        "data": null
+      },
+      "real_time_updates": {
+        "status": "failed",
+        "data": null
+      }
+    },
+    "ai_prediction_generation": {
+      "prediction_signals": {
+        "status": "success",
+        "data": {
+          "status": "success",
+          "ai_signals": [
+            {
+              "symbol": "NIFTY",
+              "predicted_price": 90.62252478948142,
+              "confidence": 52.0783215404662,
+              "signal_type": "HOLD",
+              "risk_score": 0.050063646793202805,
+              "expected_return": 0.005006364679320281,
+              "time_horizon": "4H",
+              "features_used": [
+                "price",
+                "volume",
+                "rsi",
+                "ema_20",
+                "ema_50",
+                "bollinger_upper",
+                "bollinger_lower",
+                "macd",
+                "price_change_1h",
+                "price_change_4h",
+                "volume_ratio"
+              ],
+              "model_version": "v1.0"
+            },
+            {
+              "symbol": "BANKNIFTY",
+              "predicted_price": 100.38446179435347,
+              "confidence": 53.137040916586756,
+              "signal_type": "HOLD",
+              "risk_score": 0.02055845356373307,
+              "expected_return": -0.0020558453563733073,
+              "time_horizon": "4H",
+              "features_used": [
+                "price",
+                "volume",
+                "rsi",
+                "ema_20",
+                "ema_50",
+                "bollinger_upper",
+                "bollinger_lower",
+                "macd",
+                "price_change_1h",
+                "price_change_4h",
+                "volume_ratio"
+              ],
+              "model_version": "v1.0"
+            },
+            {
+              "symbol": "RELIANCE",
+              "predicted_price": 103.36845601135303,
+              "confidence": 53.82094789602287,
+              "signal_type": "HOLD",
+              "risk_score": 0.12549262090630375,
+              "expected_return": -0.012549262090630377,
+              "time_horizon": "4H",
+              "features_used": [
+                "price",
+                "volume",
+                "rsi",
+                "ema_20",
+                "ema_50",
+                "bollinger_upper",
+                "bollinger_lower",
+                "macd",
+                "price_change_1h",
+                "price_change_4h",
+                "volume_ratio"
+              ],
+              "model_version": "v1.0"
+            },
+            {
+              "symbol": "TCS",
+              "predicted_price": 102.8092759230866,
+              "confidence": 50.0,
+              "signal_type": "HOLD",
+              "risk_score": 0.12761350972193758,
+              "expected_return": -0.012761350972193757,
+              "time_horizon": "4H",
+              "features_used": [
+                "price",
+                "volume",
+                "rsi",
+                "ema_20",
+                "ema_50",
+                "bollinger_upper",
+                "bollinger_lower",
+                "macd",
+                "price_change_1h",
+                "price_change_4h",
+                "volume_ratio"
+              ],
+              "model_version": "v1.0"
+            },
+            {
+              "symbol": "INFY",
+              "predicted_price": 96.97422181180679,
+              "confidence": 50.0,
+              "signal_type": "HOLD",
+              "risk_score": 0.05422816532436839,
+              "expected_return": 0.005422816532436839,
+              "time_horizon": "4H",
+              "features_used": [
+                "price",
+                "volume",
+                "rsi",
+                "ema_20",
+                "ema_50",
+                "bollinger_upper",
+                "bollinger_lower",
+                "macd",
+                "price_change_1h",
+                "price_change_4h",
+                "volume_ratio"
+              ],
+              "model_version": "v1.0"
+            }
+          ],
+          "count": 5,
+          "timestamp": "2025-10-15T07:56:06.319300"
+        },
+        "signals_count": 0,
+        "models_active": false,
+        "sample_prediction": null
+      },
+      "model_status": {
+        "status": "success",
+        "data": {
+          "status": "success",
+          "models": {
+            "rf_price": {
+              "loaded": true,
+              "type": "RandomForestRegressor",
+              "metrics": {
+                "accuracy": 0.85,
+                "precision": 0.82,
+                "recall": 0.88,
+                "f1_score": 0.85,
+                "last_trained": "2025-10-15T07:49:55.525628",
+                "samples_processed": 1000
+              }
+            },
+            "gb_signal": {
+              "loaded": true,
+              "type": "GradientBoostingRegressor",
+              "metrics": {
+                "accuracy": 0.78,
+                "precision": 0.75,
+                "recall": 0.81,
+                "f1_score": 0.78,
+                "last_trained": "2025-10-15T07:49:55.525643",
+                "samples_processed": 1000
+              }
+            }
+          },
+          "timestamp": "2025-10-15T07:56:06.600891"
+        },
+        "models_loaded": 0,
+        "inference_active": false
+      },
+      "feature_processing": {
+        "status": "failed",
+        "data": null
+      },
+      "confidence_scoring": {
+        "status": "failed",
+        "data": null
+      }
+    },
+    "trading_signal_processing": {
+      "order_placement": {
+        "status": "failed",
+        "data": null
+      },
+      "order_status": {
+        "status": "failed",
+        "data": null
+      },
+      "demo_mode": {
+        "status": "failed",
+        "data": null
+      },
+      "risk_management": {
+        "status": "failed",
+        "data": null
+      }
+    },
+    "chatbot_orchestration": {
+      "system_coordination": {
+        "status": "success",
+        "data": {
+          "status": "success",
+          "message_id": "5911b51c-b16b-4910-be59-fa8e1726173a",
+          "response": "\ud83d\ude80 **System Status: DEGRADED**\n\n\ud83d\udce1 **Engines Online:** 1/4\n\n\ud83d\udd34 **engine_a**: error (0.02s)\n\ud83d\udd34 **engine_b**: error (0.02s)\n\ud83d\udd34 **engine_c**: error (0.02s)\n\ud83d\udfe2 **ultra_aggressive**: online (0.04s)\n",
+          "intent": "status",
+          "confidence": 0.5,
+          "timestamp": "2025-10-15T07:56:10.569518"
+        },
+        "response_length": 187,
+        "engines_mentioned": 0
+      },
+      "data_integration": {
+        "status": "failed",
+        "data": null
+      },
+      "response_quality": {
+        "status": "success",
+        "coherent": true,
+        "contextual": false
+      }
+    },
+    "dashboard_rendering": {
+      "dashboard_api": {
+        "status": "failed",
+        "data": null
+      },
+      "data_aggregation": {
+        "status": "failed",
+        "data": null
+      },
+      "ui_integration": {
+        "status": "failed",
+        "data": null
+      }
+    }
+  },
+  "health_assessment": {
+    "overall_data_flow_health": 33.33,
+    "tests_passed": "6/18",
+    "pipeline_integrity": [
+      {
+        "stage": "market_data_ingestion",
+        "health_percentage": 50.0,
+        "status": "\u26a0\ufe0f DEGRADED"
+      },
+      {
+        "stage": "ai_prediction_generation",
+        "health_percentage": 50.0,
+        "status": "\u26a0\ufe0f DEGRADED"
+      },
+      {
+        "stage": "trading_signal_processing",
+        "health_percentage": 0.0,
+        "status": "\u274c CRITICAL"
+      },
+      {
+        "stage": "chatbot_orchestration",
+        "health_percentage": 66.66666666666666,
+        "status": "\u26a0\ufe0f DEGRADED"
+      }
+    ],
+    "production_ready": false
+  }
+}

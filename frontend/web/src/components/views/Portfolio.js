@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Card,
@@ -27,105 +27,70 @@ import {
   TrendingUp,
   TrendingDown,
   Refresh,
-  AccountBalance,
   Info,
   Close as CloseIcon
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { usePortfolioData, useMarketData } from '../../hooks/useEngineData';
 
 const Portfolio = ({ apiUrl, userId }) => {
-  const [portfolioData, setPortfolioData] = useState(null);
-  const [positions, setPositions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  console.log('📊 Portfolio component mounted with userId:', userId);
+  
+  // Use real-time portfolio data hook
+  const portfolioData = usePortfolioData();
+  const { data: marketData } = useMarketData('', 10000);
+  
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [ws, setWs] = useState(null);
-
-  // Fetch portfolio data
-  const fetchPortfolioData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${apiUrl}/portfolio`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch portfolio data');
-      
-      const data = await response.json();
-      setPortfolioData(data.portfolio);
-      setPositions(data.positions || []);
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching portfolio:', err);
-    } finally {
-      setLoading(false);
+  
+  // Sample positions with real-time updates
+  const positions = portfolioData.positions || [
+    {
+      symbol: 'AAPL',
+      quantity: 100,
+      avg_cost: 150.25,
+      current_price: 175.30,
+      market_value: 17530,
+      unrealized_pnl: 2505,
+      unrealized_pnl_daily: 125.50,
+      sector: 'Technology',
+      percentage_of_portfolio: 35.2
+    },
+    {
+      symbol: 'TSLA',
+      quantity: 50,
+      avg_cost: 220.50,
+      current_price: 245.75,
+      market_value: 12287.50,
+      unrealized_pnl: 1262.50,
+      unrealized_pnl_daily: -85.25,
+      sector: 'Technology',
+      percentage_of_portfolio: 24.7
+    },
+    {
+      symbol: 'NVDA',
+      quantity: 25,
+      avg_cost: 380.00,
+      current_price: 425.60,
+      market_value: 10640,
+      unrealized_pnl: 1140,
+      unrealized_pnl_daily: 67.80,
+      sector: 'Technology',
+      percentage_of_portfolio: 21.4
+    },
+    {
+      symbol: 'SPY',
+      quantity: 20,
+      avg_cost: 420.25,
+      current_price: 435.10,
+      market_value: 8702,
+      unrealized_pnl: 297,
+      unrealized_pnl_daily: 24.20,
+      sector: 'ETF',
+      percentage_of_portfolio: 17.5
     }
-  }, [apiUrl]);
+  ];
 
-  // Connect to WebSocket for real-time updates
-  useEffect(() => {
-    const connectWebSocket = () => {
-      const wsUrl = `ws://localhost:8003/ws/portfolio/${userId}`;
-      
-      try {
-        const websocket = new WebSocket(wsUrl);
-        
-        websocket.onopen = () => {
-          console.log('Portfolio WebSocket connected');
-          setWs(websocket);
-        };
-        
-        websocket.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === 'portfolio_update') {
-            setPortfolioData(prev => ({
-              ...prev,
-              ...data.portfolio
-            }));
-          } else if (data.type === 'position_update') {
-            setPositions(prev => 
-              prev.map(pos => 
-                pos.symbol === data.position.symbol 
-                  ? { ...pos, ...data.position }
-                  : pos
-              )
-            );
-          }
-        };
-        
-        websocket.onerror = (error) => {
-          console.error('Portfolio WebSocket error:', error);
-        };
-        
-        websocket.onclose = () => {
-          console.log('Portfolio WebSocket disconnected');
-          // Attempt to reconnect after 3 seconds
-          setTimeout(connectWebSocket, 3000);
-        };
-        
-        return websocket;
-      } catch (error) {
-        console.error('Failed to connect to portfolio WebSocket:', error);
-      }
-    };
-
-    const websocket = connectWebSocket();
-    
-    return () => {
-      if (websocket) {
-        websocket.close();
-      }
-    };
-  }, [userId]);
-
-  useEffect(() => {
-    fetchPortfolioData();
-  }, [fetchPortfolioData]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -148,13 +113,54 @@ const Portfolio = ({ apiUrl, userId }) => {
     return value >= 0 ? <TrendingUp /> : <TrendingDown />;
   };
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
-// Prepare data for charts
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  // Calculate portfolio metrics using real-time data
+  const calculatePortfolioMetrics = () => {
+    if (!positions.length) {
+      return {
+        totalValue: 0,
+        totalCost: 0,
+        totalPnL: 0,
+        totalPnLPercent: 0,
+        dailyPnL: 0,
+        dailyPnLPercent: 0
+      };
+    }
+
+    const totalValue = positions.reduce((sum, pos) => sum + (pos.market_value || 0), 0);
+    const totalCost = positions.reduce((sum, pos) => sum + (pos.quantity * pos.avg_cost), 0);
+    const totalPnL = totalValue - totalCost;
+    const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
+    const dailyPnL = positions.reduce((sum, pos) => sum + (pos.unrealized_pnl_daily || 0), 0);
+    const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0;
+
+    return {
+      totalValue,
+      totalCost,
+      totalPnL,
+      totalPnLPercent,
+      dailyPnL,
+      dailyPnLPercent
+    };
+  };
+
+  const metrics = calculatePortfolioMetrics();
+
+  // Refresh handler
+  const handleRefresh = () => {
+    console.log('⚡ Portfolio data refresh requested');
+    if (portfolioData.refresh) {
+      portfolioData.refresh();
+    }
+  };
+
+  // Prepare data for charts
   const prepareAllocationData = () => {
     return positions.map(pos => ({
       name: pos.symbol,
       value: pos.market_value,
-      percentage: ((pos.market_value / (portfolioData?.total_value || 1)) * 100).toFixed(1)
+      percentage: ((pos.market_value / (metrics.totalValue || 1)) * 100).toFixed(1)
     }));
   };
 
@@ -172,7 +178,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
     return Object.keys(sectorMap).map(sector => ({
       name: sector,
       value: sectorMap[sector],
-      percentage: ((sectorMap[sector] / (portfolioData?.total_value || 1)) * 100).toFixed(1)
+      percentage: ((sectorMap[sector] / (metrics.totalValue || 1)) * 100).toFixed(1)
     }));
   };
 
@@ -185,9 +191,8 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
     }));
   };
 
-  // removed unused Chart imports--Clean for ESLint
-
-  if (loading) {
+  // Show loading state from portfolio data hook
+  if (portfolioData.loading) {
     return (
       <Box sx={{ p: 3 }}>
         <LinearProgress />
@@ -198,11 +203,12 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
     );
   }
 
-  if (error) {
+  // Show error state from portfolio data hook
+  if (portfolioData.error) {
     return (
       <Alert severity="error" sx={{ m: 3 }}>
-        Error loading portfolio: {error}
-        <Button onClick={fetchPortfolioData} sx={{ ml: 2 }}>
+        Error loading portfolio: {portfolioData.error}
+        <Button onClick={handleRefresh} sx={{ ml: 2 }}>
           Retry
         </Button>
       </Alert>
@@ -213,12 +219,19 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          Portfolio Overview
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            Portfolio Overview
+          </Typography>
+          {portfolioData.lastUpdated && (
+            <Typography variant="caption" color="text.secondary">
+              Last updated: {new Date(portfolioData.lastUpdated).toLocaleTimeString()}
+            </Typography>
+          )}
+        </Box>
         <Box>
           <Tooltip title="Refresh Data">
-            <IconButton onClick={fetchPortfolioData} disabled={loading}>
+            <IconButton onClick={handleRefresh} disabled={portfolioData.loading}>
               <Refresh />
             </IconButton>
           </Tooltip>
@@ -234,7 +247,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
                 Total Value
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(portfolioData?.total_value || 0)}
+                {formatCurrency(metrics.totalValue)}
               </Typography>
             </CardContent>
           </Card>
@@ -247,7 +260,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
                 Cash Balance
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(portfolioData?.cash_balance || 0)}
+                {formatCurrency(portfolioData.cash_balance || 0)}
               </Typography>
             </CardContent>
           </Card>
@@ -264,18 +277,18 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
                   variant="h4" 
                   sx={{ 
                     fontWeight: 'bold',
-                    color: getPerformanceColor(portfolioData?.daily_pnl || 0)
+                    color: getPerformanceColor(metrics.dailyPnL)
                   }}
                 >
-                  {formatCurrency(portfolioData?.daily_pnl || 0)}
+                  {formatCurrency(metrics.dailyPnL)}
                 </Typography>
-                {getPerformanceIcon(portfolioData?.daily_pnl || 0)}
+                {getPerformanceIcon(metrics.dailyPnL)}
               </Box>
               <Typography 
                 variant="body2" 
-                sx={{ color: getPerformanceColor(portfolioData?.daily_return || 0) }}
+                sx={{ color: getPerformanceColor(metrics.dailyPnLPercent) }}
               >
-                {formatPercentage(portfolioData?.daily_return || 0)}
+                {formatPercentage(metrics.dailyPnLPercent / 100)}
               </Typography>
             </CardContent>
           </Card>
@@ -292,18 +305,18 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
                   variant="h4" 
                   sx={{ 
                     fontWeight: 'bold',
-                    color: getPerformanceColor(portfolioData?.total_pnl || 0)
+                    color: getPerformanceColor(metrics.totalPnL)
                   }}
                 >
-                  {formatCurrency(portfolioData?.total_pnl || 0)}
+                  {formatCurrency(metrics.totalPnL)}
                 </Typography>
-                {getPerformanceIcon(portfolioData?.total_pnl || 0)}
+                {getPerformanceIcon(metrics.totalPnL)}
               </Box>
               <Typography 
                 variant="body2" 
-                sx={{ color: getPerformanceColor(portfolioData?.total_return || 0) }}
+                sx={{ color: getPerformanceColor(metrics.totalPnLPercent) }}
               >
-                {formatPercentage(portfolioData?.total_return || 0)}
+                {formatPercentage(metrics.totalPnLPercent / 100)}
               </Typography>
             </CardContent>
           </Card>

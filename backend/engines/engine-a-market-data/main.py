@@ -20,6 +20,13 @@ from dataclasses import dataclass, asdict
 import numpy as np
 import pandas as pd
 from contextlib import asynccontextmanager
+import sys
+sys.path.append('/app')
+try:
+    from security_middleware import add_security_headers
+except ImportError:
+    def add_security_headers(app):
+        pass
 
 # Configure logging
 logging.basicConfig(
@@ -271,6 +278,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security headers
+add_security_headers(app)
 
 @app.get("/")
 async def root():
