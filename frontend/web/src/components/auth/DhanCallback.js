@@ -68,9 +68,13 @@ const DhanCallback = () => {
         setStatus('success');
         setMessage('Successfully connected your Dhan account!');
         
-        // Redirect to broker integration tab after 3 seconds
+        // Store successful auth in localStorage for persistence
+        localStorage.setItem('dhan_auth_success', 'true');
+        localStorage.setItem('dhan_auth_timestamp', new Date().toISOString());
+        
+        // Redirect to portfolio tab after 3 seconds
         setTimeout(() => {
-          navigate('/?tab=5'); // Broker Integration is tab 5 (0-indexed)
+          navigate('/?tab=0'); // Portfolio tab is tab 0
           // Also close this window if it was opened as popup
           if (window.opener) {
             window.close();
@@ -93,7 +97,7 @@ const DhanCallback = () => {
   };
 
   const handleManualRedirect = () => {
-    navigate('/?tab=5'); // Go to Broker Integration tab
+    navigate('/?tab=0'); // Go to Portfolio tab
     if (window.opener) {
       window.close();
     }

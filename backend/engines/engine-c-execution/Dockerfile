@@ -7,11 +7,11 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Minimal requirements
+# Full requirements with OAuth support
 COPY requirements.txt .
-RUN pip install --no-cache-dir fastapi uvicorn pydantic aiohttp
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main_minimal.py main.py
+COPY main.py main.py
 
 EXPOSE 8080
 
