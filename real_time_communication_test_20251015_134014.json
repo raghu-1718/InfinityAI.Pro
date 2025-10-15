@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-10-15T13:40:14.146173",
+  "communication_health_percentage": 60.0,
+  "critical_flows_health_percentage": 75.0,
+  "successful_tests": 3,
+  "total_tests": 5,
+  "test_results": {
+    "market_to_ai": {
+      "status": "success",
+      "market_signals_count": 0,
+      "ai_predictions_count": 0,
+      "data_flow_active": true,
+      "response_time_ms": 150
+    },
+    "ai_to_trading": {
+      "status": "no_ai_signals",
+      "message": "No AI signals available to test"
+    },
+    "chatbot_orchestration": {
+      "status": "success",
+      "response_length": 187,
+      "engine_mentions": {
+        "market_data": false,
+        "ai_predictions": false,
+        "trading_status": false,
+        "engine_health": true
+      },
+      "integration_score": 25.0,
+      "orchestration_active": false,
+      "confidence": 1.0
+    },
+    "frontend_aggregation": {
+      "status": "error",
+      "error": "200, message='Attempt to decode JSON with unexpected mimetype: text/html', url='https://infinityai-pro-frontend-573866363639.us-central1.run.app/api/dashboard/data'"
+    },
+    "end_to_end_flow": {
+      "status": "success",
+      "total_flow_time_ms": 9418.101787567139,
+      "components_active": 4,
+      "components_total": 5,
+      "flow_health_percentage": 80.0,
+      "real_time_flow_active": true,
+      "component_status": {
+        "market_data": true,
+        "ai_predictions": true,
+        "trading_signals": false,
+        "chatbot_orchestration": true,
+        "frontend_aggregation": true
+      }
+    }
+  },
+  "real_time_communication_active": false,
+  "production_ready": false,
+  "recommendations": [
+    "Optimize AI \u2192 Trading Engine signal processing",
+    "Improve chatbot multi-engine orchestration",
+    "Complete frontend dashboard data aggregation"
+  ]
+}

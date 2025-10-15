@@ -1,0 +1,412 @@
+{
+  "verification_timestamp": "2025-10-15T13:02:29.216654",
+  "test_configuration": {
+    "test_duration_seconds": 30,
+    "concurrent_requests": 10,
+    "request_interval_ms": 100.0
+  },
+  "deployment_details": {
+    "engine_a": {
+      "service_name": "engine-a-573866363639",
+      "region": "us-central1",
+      "created": "2025-10-15T07:01:43.744329Z",
+      "last_modified": "engine-a-573866363639-00002-27v",
+      "url": "https://engine-a-573866363639-bprmddefsa-uc.a.run.app",
+      "container_image": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/cloud-run-source-deploy/engine-a-573866363639@sha256:f00a1cb987024fc19f7dbcc5d076d5c3c5918e2d66fdb52c0d87677b3433364b",
+      "cpu_limit": "1",
+      "memory_limit": "1Gi",
+      "concurrency": 160,
+      "min_instances": "0",
+      "max_instances": "3",
+      "timeout": 300,
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "engine-a-573866363639-00002-27v"
+        }
+      ],
+      "conditions": [
+        {
+          "lastTransitionTime": "2025-10-15T07:19:32.170245Z",
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:19:30.899475Z",
+          "status": "True",
+          "type": "ConfigurationsReady"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:19:32.132373Z",
+          "status": "True",
+          "type": "RoutesReady"
+        }
+      ]
+    },
+    "engine_b": {
+      "service_name": "engine-b-573866363639",
+      "region": "us-central1",
+      "created": "2025-10-15T07:05:35.604400Z",
+      "last_modified": "engine-b-573866363639-00002-bk9",
+      "url": "https://engine-b-573866363639-bprmddefsa-uc.a.run.app",
+      "container_image": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/cloud-run-source-deploy/engine-b-573866363639@sha256:9b38933cabbb72d76c7bc62f537c06b4172771d859bc741d2bb35b7c1d889a1a",
+      "cpu_limit": "1",
+      "memory_limit": "2Gi",
+      "concurrency": 160,
+      "min_instances": "0",
+      "max_instances": "5",
+      "timeout": 300,
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "engine-b-573866363639-00002-bk9"
+        }
+      ],
+      "conditions": [
+        {
+          "lastTransitionTime": "2025-10-15T07:08:55.294921Z",
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:08:54.067582Z",
+          "status": "True",
+          "type": "ConfigurationsReady"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:08:55.260276Z",
+          "status": "True",
+          "type": "RoutesReady"
+        }
+      ]
+    },
+    "engine_c": {
+      "service_name": "engine-c-573866363639",
+      "region": "us-central1",
+      "created": "2025-10-15T07:11:02.211188Z",
+      "last_modified": "engine-c-573866363639-00002-2b7",
+      "url": "https://engine-c-573866363639-bprmddefsa-uc.a.run.app",
+      "container_image": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/cloud-run-source-deploy/engine-c-573866363639@sha256:1cf0e2db47498a5df84d70afabcd10dad088af5810ac4abb11f30f99efa71b9c",
+      "cpu_limit": "1",
+      "memory_limit": "512Mi",
+      "concurrency": 80,
+      "min_instances": "0",
+      "max_instances": "2",
+      "timeout": 300,
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "engine-c-573866363639-00002-2b7"
+        }
+      ],
+      "conditions": [
+        {
+          "lastTransitionTime": "2025-10-15T07:22:54.342664Z",
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:22:24.870860Z",
+          "status": "True",
+          "type": "ConfigurationsReady"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:22:54.303021Z",
+          "status": "True",
+          "type": "RoutesReady"
+        }
+      ]
+    },
+    "engine_d": {
+      "service_name": "engine-d-573866363639",
+      "region": "us-central1",
+      "created": "2025-10-15T06:58:17.992344Z",
+      "last_modified": "engine-d-573866363639-00002-6bp",
+      "url": "https://engine-d-573866363639-bprmddefsa-uc.a.run.app",
+      "container_image": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/cloud-run-source-deploy/engine-d-573866363639@sha256:e015b8154e6edcfc7f1e9a6c6b8ee3f54a69c4e440a321dac11261ec674691d6",
+      "cpu_limit": "1",
+      "memory_limit": "1Gi",
+      "concurrency": 160,
+      "min_instances": "0",
+      "max_instances": "3",
+      "timeout": 300,
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "engine-d-573866363639-00001-ldd"
+        }
+      ],
+      "conditions": [
+        {
+          "lastTransitionTime": "2025-10-15T07:19:50.889297Z",
+          "message": "Revision 'engine-d-573866363639-00002-6bp' is not ready and cannot serve traffic. Quota exceeded for total allowable CPU per project per region.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=after-yesterday-473512-k3&resource=cloud_run_revision/service_name/engine-d-573866363639/revision_name/engine-d-573866363639-00002-6bp&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22engine-d-573866363639%22%0Aresource.labels.revision_name%3D%22engine-d-573866363639-00002-6bp%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+          "reason": "HealthCheckContainerError",
+          "status": "False",
+          "type": "Ready"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:19:50.898798Z",
+          "message": "Quota exceeded for total allowable CPU per project per region.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=after-yesterday-473512-k3&resource=cloud_run_revision/service_name/engine-d-573866363639/revision_name/engine-d-573866363639-00002-6bp&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22engine-d-573866363639%22%0Aresource.labels.revision_name%3D%22engine-d-573866363639-00002-6bp%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+          "status": "True",
+          "type": "ConfigurationsReady"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:19:50.889297Z",
+          "message": "Revision 'engine-d-573866363639-00002-6bp' is not ready and cannot serve traffic. Quota exceeded for total allowable CPU per project per region.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=after-yesterday-473512-k3&resource=cloud_run_revision/service_name/engine-d-573866363639/revision_name/engine-d-573866363639-00002-6bp&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22engine-d-573866363639%22%0Aresource.labels.revision_name%3D%22engine-d-573866363639-00002-6bp%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+          "reason": "HealthCheckContainerError",
+          "status": "False",
+          "type": "RoutesReady"
+        }
+      ]
+    },
+    "engine_ultra": {
+      "service_name": "engine-ultra-573866363639",
+      "region": "us-central1",
+      "created": "2025-10-15T07:13:42.487239Z",
+      "last_modified": "engine-ultra-573866363639-00001-hkk",
+      "url": "https://engine-ultra-573866363639-bprmddefsa-uc.a.run.app",
+      "container_image": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/cloud-run-source-deploy/engine-ultra-573866363639@sha256:9e8fd01f86128e1b9886a6d53e99ab5e5a953536e9de14d359bd572c88611a52",
+      "cpu_limit": "1",
+      "memory_limit": "1Gi",
+      "concurrency": 80,
+      "min_instances": "0",
+      "max_instances": "3",
+      "timeout": 300,
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "engine-ultra-573866363639-00001-hkk"
+        }
+      ],
+      "conditions": [
+        {
+          "lastTransitionTime": "2025-10-15T07:13:59.684724Z",
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:13:58.422593Z",
+          "status": "True",
+          "type": "ConfigurationsReady"
+        },
+        {
+          "lastTransitionTime": "2025-10-15T07:13:59.654518Z",
+          "status": "True",
+          "type": "RoutesReady"
+        }
+      ]
+    }
+  },
+  "performance_metrics": {
+    "frontend": {
+      "service_name": "frontend",
+      "test_duration_s": 35.67,
+      "total_requests": 300,
+      "successful_requests": 0,
+      "failed_requests": 300,
+      "error_rate_percent": 100.0,
+      "requests_per_second": 8.41,
+      "avg_response_time_ms": 9908.27,
+      "median_response_time_ms": 10000.0,
+      "p95_response_time_ms": 10000.0,
+      "p99_response_time_ms": 10000.0,
+      "min_response_time_ms": 616.28,
+      "max_response_time_ms": 10000
+    },
+    "engine_a": {
+      "service_name": "engine_a",
+      "test_duration_s": 33.45,
+      "total_requests": 800,
+      "successful_requests": 800,
+      "failed_requests": 0,
+      "error_rate_percent": 0.0,
+      "requests_per_second": 23.92,
+      "avg_response_time_ms": 1164.64,
+      "median_response_time_ms": 882.67,
+      "p95_response_time_ms": 2285.21,
+      "p99_response_time_ms": 3408.82,
+      "min_response_time_ms": 404.21,
+      "max_response_time_ms": 4880.78
+    },
+    "engine_b": {
+      "service_name": "engine_b",
+      "test_duration_s": 33.15,
+      "total_requests": 700,
+      "successful_requests": 689,
+      "failed_requests": 11,
+      "error_rate_percent": 1.57,
+      "requests_per_second": 21.12,
+      "avg_response_time_ms": 1500.34,
+      "median_response_time_ms": 947.14,
+      "p95_response_time_ms": 3530.66,
+      "p99_response_time_ms": 10000.0,
+      "min_response_time_ms": 427.96,
+      "max_response_time_ms": 10000
+    },
+    "engine_c": {
+      "service_name": "engine_c",
+      "test_duration_s": 33.15,
+      "total_requests": 700,
+      "successful_requests": 700,
+      "failed_requests": 0,
+      "error_rate_percent": 0.0,
+      "requests_per_second": 21.12,
+      "avg_response_time_ms": 1538.9,
+      "median_response_time_ms": 1160.04,
+      "p95_response_time_ms": 3404.14,
+      "p99_response_time_ms": 5344.02,
+      "min_response_time_ms": 415.81,
+      "max_response_time_ms": 5593.2
+    },
+    "engine_d": {
+      "service_name": "engine_d",
+      "test_duration_s": 33.15,
+      "total_requests": 700,
+      "successful_requests": 700,
+      "failed_requests": 0,
+      "error_rate_percent": 0.0,
+      "requests_per_second": 21.12,
+      "avg_response_time_ms": 1306.93,
+      "median_response_time_ms": 1048.87,
+      "p95_response_time_ms": 2415.52,
+      "p99_response_time_ms": 5208.23,
+      "min_response_time_ms": 437.83,
+      "max_response_time_ms": 7911.8
+    },
+    "engine_ultra": {
+      "service_name": "engine_ultra",
+      "test_duration_s": 34.98,
+      "total_requests": 800,
+      "successful_requests": 800,
+      "failed_requests": 0,
+      "error_rate_percent": 0.0,
+      "requests_per_second": 22.87,
+      "avg_response_time_ms": 1393.0,
+      "median_response_time_ms": 1167.51,
+      "p95_response_time_ms": 2621.82,
+      "p99_response_time_ms": 3368.45,
+      "min_response_time_ms": 427.88,
+      "max_response_time_ms": 5175.75
+    }
+  },
+  "uptime_status": {
+    "frontend": {
+      "service_name": "frontend",
+      "availability_percent": 0.0,
+      "status": "critical",
+      "consecutive_health_checks": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "engine_a": {
+      "service_name": "engine_a",
+      "availability_percent": 100.0,
+      "status": "healthy",
+      "consecutive_health_checks": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "engine_b": {
+      "service_name": "engine_b",
+      "availability_percent": 100.0,
+      "status": "healthy",
+      "consecutive_health_checks": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "engine_c": {
+      "service_name": "engine_c",
+      "availability_percent": 100.0,
+      "status": "healthy",
+      "consecutive_health_checks": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "engine_d": {
+      "service_name": "engine_d",
+      "availability_percent": 100.0,
+      "status": "healthy",
+      "consecutive_health_checks": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "engine_ultra": {
+      "service_name": "engine_ultra",
+      "availability_percent": 100.0,
+      "status": "healthy",
+      "consecutive_health_checks": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "data_flow_validation": {
+    "market_data": {
+      "status": "active",
+      "signals_generated": 0,
+      "last_update": "2025-10-15T07:34:01.733795",
+      "data_quality": "static"
+    },
+    "ai_predictions": {
+      "status": "generating",
+      "models_active": 5,
+      "confidence_avg": 52.18,
+      "prediction_quality": "real-time"
+    },
+    "trading_execution": {
+      "status": "operational",
+      "order_processing": "active",
+      "demo_mode": true,
+      "response_time_ms": 0
+    },
+    "chatbot_coordination": {
+      "status": "responsive",
+      "intent_recognition": "status",
+      "confidence": 0.5,
+      "multi_engine_comm": true
+    },
+    "oauth_integration": {
+      "status": "configured",
+      "endpoints_active": true,
+      "connected_users": 0
+    }
+  },
+  "integration_health": {},
+  "system_summary": {
+    "total_services": 6,
+    "healthy_services": 5,
+    "system_health_percent": 83.33,
+    "overall_status": "CRITICAL",
+    "avg_response_time_ms": 2802.01,
+    "total_rps_capacity": 118.56,
+    "avg_error_rate_percent": 16.93
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-10-15T13:27:39.777873",
+  "validation_type": "OAuth Integration & Security Validation",
+  "security_assessments": {
+    "dhan_oauth_integration": {
+      "callback_endpoint": {
+        "status": "failed",
+        "http_code": 405
+      },
+      "postback_endpoint": {
+        "status": "success",
+        "message": "Postback endpoint is functional",
+        "http_code": 200
+      },
+      "status_endpoint": {
+        "status": "success",
+        "data": {
+          "status": "operational",
+          "connected_users": 0,
+          "oauth_endpoint": "/api/dhan/callback",
+          "postback_endpoint": "/api/dhan/postback",
+          "timestamp": "2025-10-15T07:57:34.186509"
+        },
+        "oauth_active": false,
+        "connected_users": 0,
+        "endpoints_configured": false
+      },
+      "initiate_oauth": {
+        "status": "failed",
+        "data": null
+      }
+    },
+    "token_security": {
+      "token_storage": {
+        "status": "failed",
+        "http_code": 404
+      },
+      "token_validation": {
+        "status": "failed",
+        "http_code": 404
+      },
+      "token_refresh": {
+        "status": "failed",
+        "data": null
+      },
+      "secure_transmission": {
+        "status": "success",
+        "data": "HTTPS enforced"
+      }
+    },
+    "user_onboarding": {
+      "registration": {
+        "status": "failed",
+        "http_code": 404
+      },
+      "oauth_initiation": {
+        "status": "failed",
+        "http_code": 404
+      },
+      "user_profile": {
+        "status": "failed",
+        "data": null
+      },
+      "onboarding_flow": {
+        "status": "failed",
+        "data": null
+      }
+    },
+    "security_compliance": {
+      "https_enforcement": {
+        "status": "success",
+        "data": "Cloud Run enforces HTTPS"
+      },
+      "cors_configuration": {
+        "status": "success",
+        "data": {
+          "access-control-allow-origin": "https://test-domain.com",
+          "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+          "access-control-allow-headers": "Authorization, Content-Type"
+        },
+        "properly_configured": true
+      },
+      "input_validation": {
+        "status": "warning",
+        "message": "Input validation might need review",
+        "http_code": 404
+      },
+      "rate_limiting": {
+        "status": "warning",
+        "data": {
+          "total_requests": 20,
+          "rate_limited_responses": 0,
+          "rate_limiting_active": false
+        }
+      },
+      "csrf_protection": {
+        "status": "failed",
+        "data": null
+      }
+    }
+  },
+  "security_assessment": {
+    "overall_security_score": 29.41,
+    "tests_passed": "5/17",
+    "warnings": 2,
+    "security_breakdown": [
+      {
+        "area": "dhan_oauth_integration",
+        "health_percentage": 50.0,
+        "status": "\u26a0\ufe0f REVIEW NEEDED"
+      },
+      {
+        "area": "token_security",
+        "health_percentage": 25.0,
+        "status": "\u274c CRITICAL"
+      },
+      {
+        "area": "security_compliance",
+        "health_percentage": 40.0,
+        "status": "\u274c CRITICAL"
+      }
+    ],
+    "production_ready": false,
+    "compliance_status": "NON_COMPLIANT"
+  }
+}

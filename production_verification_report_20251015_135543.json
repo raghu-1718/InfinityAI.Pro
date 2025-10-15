@@ -1,0 +1,1155 @@
+{
+  "verification_timestamp": "2025-10-15T13:55:43.266599",
+  "platform": "InfinityAI.Pro Multi-Cloud AI Trading Platform",
+  "verification_phases": {
+    "live_data_streams": {
+      "stream_health_percentage": 52.63157894736842,
+      "functional_streams": 10,
+      "total_streams": 19,
+      "stream_details": {
+        "market_data": {
+          "passed_tests": 5,
+          "total_tests": 5,
+          "test_details": {
+            "nifty_data": true,
+            "bank_nifty_data": true,
+            "real_time_updates": true,
+            "data_freshness": true,
+            "price_accuracy": true
+          },
+          "success_rate": 100.0
+        },
+        "ai_predictions": {
+          "passed_tests": 3,
+          "total_tests": 5,
+          "test_details": {
+            "ai_signals_active": true,
+            "model_status_healthy": true,
+            "predictions_current": false,
+            "confidence_scores": true,
+            "feature_analysis": false
+          },
+          "success_rate": 60.0
+        },
+        "trading_data": {
+          "passed_tests": 0,
+          "total_tests": 5,
+          "test_details": {
+            "order_status_stream": false,
+            "demo_trading_active": false,
+            "live_trading_ready": false,
+            "position_tracking": false,
+            "execution_latency": false
+          },
+          "success_rate": 0.0
+        },
+        "chatbot_orchestration": {
+          "passed_tests": 2,
+          "total_tests": 4,
+          "test_details": {
+            "chat_response_quality": true,
+            "multi_engine_orchestration": false,
+            "context_awareness": true,
+            "real_time_integration": false
+          },
+          "success_rate": 50.0
+        }
+      },
+      "data_streams_operational": false
+    },
+    "api_endpoints": {
+      "endpoint_health_percentage": 93.75,
+      "healthy_endpoints": 15,
+      "total_endpoints": 16,
+      "service_details": {
+        "Engine A": {
+          "endpoints": {
+            "/api/signals": {
+              "status": "healthy",
+              "response_time": 5134.331941604614,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/market-data/NIFTY": {
+              "status": "healthy",
+              "response_time": 1177.7775287628174,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/market-data/BANKNIFTY": {
+              "status": "healthy",
+              "response_time": 1115.0362491607666,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 3,
+          "healthy_endpoints": 3
+        },
+        "Engine B": {
+          "endpoints": {
+            "/api/ai-signals": {
+              "status": "healthy",
+              "response_time": 1780.7481288909912,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/models/status": {
+              "status": "healthy",
+              "response_time": 1630.458116531372,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/predictions": {
+              "status": "healthy",
+              "response_time": 300.69875717163086,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 3,
+          "healthy_endpoints": 3
+        },
+        "Engine C": {
+          "endpoints": {
+            "/api/orders/place": {
+              "status": "http_404",
+              "response_time": 1121.232509613037,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/orders/status": {
+              "status": "healthy",
+              "response_time": 280.9617519378662,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/dhan/status": {
+              "status": "healthy",
+              "response_time": 542.109489440918,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/auth/dhan/initiate": {
+              "status": "healthy",
+              "response_time": 352.62250900268555,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 4,
+          "healthy_endpoints": 3
+        },
+        "Engine D": {
+          "endpoints": {
+            "/api/chat": {
+              "status": "healthy",
+              "response_time": 1701.1256217956543,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/orchestrate": {
+              "status": "healthy",
+              "response_time": 323.22144508361816,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 2,
+          "healthy_endpoints": 2
+        },
+        "Engine Ultra": {
+          "endpoints": {
+            "/api/metrics": {
+              "status": "healthy",
+              "response_time": 932.29079246521,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/api/performance": {
+              "status": "healthy",
+              "response_time": 280.49373626708984,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": false,
+                "x_frame_options": false,
+                "x_content_type_options": false
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 2,
+          "healthy_endpoints": 2
+        },
+        "Frontend": {
+          "endpoints": {
+            "/api/dashboard/data": {
+              "status": "healthy",
+              "response_time": 2520.3018188476562,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": true,
+                "x_frame_options": true,
+                "x_content_type_options": true
+              },
+              "ssl_grade": "A",
+              "error": null
+            },
+            "/": {
+              "status": "healthy",
+              "response_time": 6704.644680023193,
+              "security_headers": {
+                "strict_transport_security": false,
+                "content_security_policy": true,
+                "x_frame_options": true,
+                "x_content_type_options": true
+              },
+              "ssl_grade": "A",
+              "error": null
+            }
+          },
+          "performance_metrics": {},
+          "security_checks": {},
+          "total_endpoints": 2,
+          "healthy_endpoints": 2
+        }
+      },
+      "apis_production_ready": true
+    },
+    "user_components": {
+      "component_health_percentage": 60.0,
+      "passed_components": 3,
+      "total_components": 5,
+      "component_details": {
+        "frontend_rendering": {
+          "status": "partial",
+          "ui_score": 40.0,
+          "ui_elements": {
+            "login_form": false,
+            "dashboard_access": false,
+            "demo_access": false,
+            "trading_features": true,
+            "responsive_design": true
+          }
+        },
+        "dashboard_updates": {
+          "status": "error",
+          "error": "200, message='Attempt to decode JSON with unexpected mimetype: text/html', url='https://infinityai-pro-frontend-573866363639.us-central1.run.app/api/dashboard/data'"
+        },
+        "user_authentication": {
+          "status": "healthy",
+          "login_available": true,
+          "session_management": true
+        },
+        "demo_access": {
+          "status": "healthy",
+          "demo_score": 100.0,
+          "demo_features": {
+            "demo_login": true,
+            "trading_interface": true,
+            "market_data": true
+          }
+        },
+        "mobile_responsiveness": {
+          "status": "healthy",
+          "responsive_score": 66.66666666666666,
+          "responsive_indicators": {
+            "viewport_meta": true,
+            "responsive_css": true,
+            "mobile_optimized": false
+          }
+        }
+      },
+      "user_ready": false
+    },
+    "oauth_security": {
+      "security_score": 20.0,
+      "passed_security_checks": 1,
+      "total_security_checks": 5,
+      "security_details": {
+        "oauth_configuration": {
+          "status": "partial",
+          "oauth_score": 0.0,
+          "oauth_checks": {
+            "oauth_configured": false,
+            "client_id_present": false,
+            "redirect_uri_set": false,
+            "scopes_defined": false
+          }
+        },
+        "token_security": {
+          "status": "vulnerable",
+          "rejects_malformed_tokens": false,
+          "response_code": 500
+        },
+        "https_enforcement": {
+          "status": "secure",
+          "https_score": 100.0,
+          "service_https": {
+            "Engine A": true,
+            "Engine B": true,
+            "Engine C": true,
+            "Engine D": true,
+            "Engine Ultra": true,
+            "Frontend": true
+          }
+        },
+        "security_headers": {
+          "status": "partial",
+          "header_score": 12.5,
+          "service_headers": {
+            "Engine A": {
+              "strict_transport_security": false,
+              "content_security_policy": false,
+              "x_frame_options": false,
+              "x_content_type_options": false
+            },
+            "Engine B": {
+              "strict_transport_security": false,
+              "content_security_policy": false,
+              "x_frame_options": false,
+              "x_content_type_options": false
+            },
+            "Engine C": {
+              "strict_transport_security": false,
+              "content_security_policy": false,
+              "x_frame_options": false,
+              "x_content_type_options": false
+            },
+            "Engine D": {
+              "strict_transport_security": false,
+              "content_security_policy": false,
+              "x_frame_options": false,
+              "x_content_type_options": false
+            },
+            "Engine Ultra": {
+              "strict_transport_security": false,
+              "content_security_policy": false,
+              "x_frame_options": false,
+              "x_content_type_options": false
+            },
+            "Frontend": {
+              "strict_transport_security": false,
+              "content_security_policy": true,
+              "x_frame_options": true,
+              "x_content_type_options": true
+            }
+          }
+        },
+        "input_validation": {
+          "status": "vulnerable",
+          "validation_score": 0.0,
+          "validation_tests": {
+            "trading_input_validation": false,
+            "chat_input_validation": false
+          }
+        }
+      },
+      "production_secure": false
+    },
+    "cloud_infrastructure": {
+      "cloud_score": 100.0,
+      "passed_cloud_checks": 5,
+      "total_cloud_checks": 5,
+      "cloud_details": {
+        "cloud_run_deployment": {
+          "status": "healthy",
+          "deployment_score": 100.0,
+          "service_deployments": {
+            "Engine A": true,
+            "Engine B": true,
+            "Engine C": true,
+            "Engine D": true,
+            "Engine Ultra": true,
+            "Frontend": true
+          }
+        },
+        "auto_scaling": {
+          "status": "healthy",
+          "scaling_score": 100.0,
+          "service_scaling": {
+            "Engine A": {
+              "avg_response_time": 73.60978126525879,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            },
+            "Engine B": {
+              "avg_response_time": 70.67732810974121,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            },
+            "Engine C": {
+              "avg_response_time": 66.5560245513916,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            },
+            "Engine D": {
+              "avg_response_time": 69.53864097595215,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            },
+            "Engine Ultra": {
+              "avg_response_time": 72.67570495605469,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            },
+            "Frontend": {
+              "avg_response_time": 71.7165470123291,
+              "success_rate": 100.0,
+              "handles_concurrent_load": true
+            }
+          }
+        },
+        "resource_allocation": {
+          "status": "healthy",
+          "resource_score": 100.0,
+          "service_resources": {
+            "Engine A": {
+              "response_time": 328.4616470336914,
+              "efficient": true,
+              "status_code": 200
+            },
+            "Engine B": {
+              "response_time": 392.40050315856934,
+              "efficient": true,
+              "status_code": 200
+            },
+            "Engine C": {
+              "response_time": 333.2653045654297,
+              "efficient": true,
+              "status_code": 200
+            },
+            "Engine D": {
+              "response_time": 349.28107261657715,
+              "efficient": true,
+              "status_code": 200
+            },
+            "Engine Ultra": {
+              "response_time": 329.7584056854248,
+              "efficient": true,
+              "status_code": 200
+            },
+            "Frontend": {
+              "response_time": 350.7649898529053,
+              "efficient": true,
+              "status_code": 200
+            }
+          }
+        },
+        "geographic_distribution": {
+          "status": "healthy",
+          "region_score": 100.0,
+          "service_regions": {
+            "Engine A": true,
+            "Engine B": true,
+            "Engine C": true,
+            "Engine D": true,
+            "Engine Ultra": true,
+            "Frontend": true
+          },
+          "primary_region": "us-central1"
+        },
+        "ssl_certificates": {
+          "status": "healthy",
+          "ssl_score": 100.0,
+          "service_ssl": {
+            "Engine A": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            },
+            "Engine B": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            },
+            "Engine C": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            },
+            "Engine D": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            },
+            "Engine Ultra": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            },
+            "Frontend": {
+              "valid_certificate": true,
+              "hostname_match": false,
+              "tls_version": "TLSv1.3"
+            }
+          }
+        }
+      },
+      "cloud_production_ready": true
+    },
+    "dns_configuration": {
+      "dns_score": 80.0,
+      "passed_dns_checks": 4,
+      "total_dns_checks": 5,
+      "dns_details": {
+        "a_records": {
+          "status": "healthy",
+          "domain": "infinityai.pro",
+          "a_records": [
+            "3.160.188.44",
+            "3.160.188.3",
+            "3.160.188.6",
+            "3.160.188.58"
+          ],
+          "record_count": 4
+        },
+        "aaaa_records": {
+          "status": "healthy",
+          "domain": "infinityai.pro",
+          "aaaa_records": [
+            "2600:9000:266e:8e00:7:94c0:23c0:93a1",
+            "2600:9000:266e:ce00:7:94c0:23c0:93a1",
+            "2600:9000:266e:d000:7:94c0:23c0:93a1",
+            "2600:9000:266e:5c00:7:94c0:23c0:93a1",
+            "2600:9000:266e:5600:7:94c0:23c0:93a1",
+            "2600:9000:266e:fe00:7:94c0:23c0:93a1",
+            "2600:9000:266e:d800:7:94c0:23c0:93a1",
+            "2600:9000:266e:1c00:7:94c0:23c0:93a1"
+          ],
+          "ipv6_enabled": true
+        },
+        "cname_records": {
+          "status": "partial",
+          "domain": "www.infinityai.pro",
+          "cname_records": [],
+          "properly_configured": false
+        },
+        "domain_mapping": {
+          "status": "healthy",
+          "main_accessible": true,
+          "demo_accessible": true,
+          "mapping_score": 100.0
+        },
+        "dns_propagation": {
+          "status": "healthy",
+          "propagation_percentage": 100.0,
+          "resolver_results": {
+            "8.8.8.8": {
+              "resolved": true,
+              "records": [
+                "3.160.188.6",
+                "3.160.188.44",
+                "3.160.188.3",
+                "3.160.188.58"
+              ]
+            },
+            "1.1.1.1": {
+              "resolved": true,
+              "records": [
+                "18.245.31.34",
+                "18.245.31.103",
+                "18.245.31.49",
+                "18.245.31.91"
+              ]
+            },
+            "9.9.9.9": {
+              "resolved": true,
+              "records": [
+                "108.138.199.101",
+                "108.138.199.34",
+                "108.138.199.48",
+                "108.138.199.106"
+              ]
+            }
+          },
+          "fully_propagated": true
+        }
+      },
+      "dns_production_ready": true
+    },
+    "data_accuracy": {
+      "accuracy_score": 80.0,
+      "passed_accuracy_checks": 4,
+      "total_accuracy_checks": 5,
+      "accuracy_details": {
+        "market_data_accuracy": {
+          "status": "accurate",
+          "accuracy_percentage": 100.0,
+          "accuracy_checks": {
+            "price_realistic": true,
+            "timestamp_recent": true,
+            "volume_positive": true,
+            "change_reasonable": true
+          },
+          "data_sample": {
+            "status": "success",
+            "symbol": "NIFTY",
+            "data": null,
+            "timestamp": "2025-10-15T08:24:16.408680"
+          }
+        },
+        "ai_prediction_accuracy": {
+          "status": "accurate",
+          "accuracy_percentage": 100.0,
+          "accuracy_checks": {
+            "confidence_scores_present": true,
+            "predictions_recent": true,
+            "signal_validity": true,
+            "model_consistency": true
+          }
+        },
+        "real_time_latency": {
+          "status": "accurate",
+          "latency_score": 83.33333333333334,
+          "average_latency": 980.573813120524,
+          "service_latencies": {
+            "Engine A": {
+              "latency_ms": 4054.2609691619873,
+              "acceptable": false,
+              "excellent": false
+            },
+            "Engine B": {
+              "latency_ms": 474.96509552001953,
+              "acceptable": true,
+              "excellent": true
+            },
+            "Engine C": {
+              "latency_ms": 332.49521255493164,
+              "acceptable": true,
+              "excellent": true
+            },
+            "Engine D": {
+              "latency_ms": 333.0690860748291,
+              "acceptable": true,
+              "excellent": true
+            },
+            "Engine Ultra": {
+              "latency_ms": 345.2277183532715,
+              "acceptable": true,
+              "excellent": true
+            },
+            "Frontend": {
+              "latency_ms": 343.42479705810547,
+              "acceptable": true,
+              "excellent": true
+            }
+          }
+        },
+        "data_consistency": {
+          "status": "accurate",
+          "consistency_score": 100.0,
+          "consistency_checks": {
+            "symbol_consistent": true,
+            "structure_consistent": true,
+            "price_reasonably_stable": true
+          }
+        },
+        "timestamp_accuracy": {
+          "status": "inaccurate",
+          "timestamp_score": 0.0,
+          "service_timestamps": {
+            "Engine A": {
+              "timestamp_present": true,
+              "timestamp_recent": false,
+              "time_difference_seconds": 19795.683849
+            },
+            "Engine B": {
+              "timestamp_present": true,
+              "timestamp_recent": false,
+              "time_difference_seconds": 19795.192961
+            }
+          }
+        }
+      },
+      "data_production_ready": true
+    },
+    "system_performance": {
+      "performance_score": 80.0,
+      "passed_performance_checks": 4,
+      "total_performance_checks": 5,
+      "performance_details": {
+        "load_testing": {
+          "status": "excellent",
+          "load_score": 100.0,
+          "service_load_results": {
+            "Engine A": {
+              "success_rate": 100.0,
+              "avg_response_time": 48.665642738342285,
+              "handles_load": true
+            },
+            "Engine B": {
+              "success_rate": 100.0,
+              "avg_response_time": 36.203908920288086,
+              "handles_load": true
+            },
+            "Engine C": {
+              "success_rate": 100.0,
+              "avg_response_time": 41.164326667785645,
+              "handles_load": true
+            },
+            "Engine D": {
+              "success_rate": 100.0,
+              "avg_response_time": 59.71119403839111,
+              "handles_load": true
+            },
+            "Engine Ultra": {
+              "success_rate": 100.0,
+              "avg_response_time": 37.11841106414795,
+              "handles_load": true
+            },
+            "Frontend": {
+              "success_rate": 100.0,
+              "avg_response_time": 38.23428153991699,
+              "handles_load": true
+            }
+          }
+        },
+        "response_time_analysis": {
+          "status": "slow",
+          "response_score": 66.66666666666666,
+          "overall_average": 670.9450450208452,
+          "service_response_times": {
+            "Engine A": {
+              "avg_response_time": 2065.0288263956704,
+              "max_response_time": 4165.949106216431,
+              "min_response_time": 1010.8332633972168,
+              "fast_service": false
+            },
+            "Engine B": {
+              "avg_response_time": 659.0921878814697,
+              "max_response_time": 959.348201751709,
+              "min_response_time": 259.0305805206299,
+              "fast_service": false
+            },
+            "Engine C": {
+              "avg_response_time": 296.1825728416443,
+              "max_response_time": 326.7931938171387,
+              "min_response_time": 267.0614719390869,
+              "fast_service": true
+            },
+            "Engine D": {
+              "avg_response_time": 305.7636022567749,
+              "max_response_time": 340.4042720794678,
+              "min_response_time": 271.12293243408203,
+              "fast_service": true
+            },
+            "Engine Ultra": {
+              "avg_response_time": 356.3816547393799,
+              "max_response_time": 441.2662982940674,
+              "min_response_time": 271.4970111846924,
+              "fast_service": true
+            },
+            "Frontend": {
+              "avg_response_time": 343.22142601013184,
+              "max_response_time": 347.3367691040039,
+              "min_response_time": 339.10608291625977,
+              "fast_service": true
+            }
+          }
+        },
+        "concurrent_user_handling": {
+          "status": "excellent",
+          "concurrent_performance": {
+            "total_requests": 11,
+            "successful_requests": 11,
+            "success_rate": 100.0,
+            "total_time": 1.1434834003448486,
+            "requests_per_second": 9.61972862630332,
+            "handles_concurrent_load": true
+          }
+        },
+        "resource_efficiency": {
+          "status": "excellent",
+          "efficiency_score": 83.33333333333334,
+          "service_efficiency": {
+            "Engine A": {
+              "avg_response_time": 276.30505561828613,
+              "std_deviation": 28.458922055344203,
+              "consistent_performance": true,
+              "efficient": true
+            },
+            "Engine B": {
+              "avg_response_time": 278.81994247436523,
+              "std_deviation": 35.845453797640026,
+              "consistent_performance": true,
+              "efficient": true
+            },
+            "Engine C": {
+              "avg_response_time": 280.7784080505371,
+              "std_deviation": 35.39212626859559,
+              "consistent_performance": true,
+              "efficient": true
+            },
+            "Engine D": {
+              "avg_response_time": 323.54536056518555,
+              "std_deviation": 116.22525180862438,
+              "consistent_performance": false,
+              "efficient": false
+            },
+            "Engine Ultra": {
+              "avg_response_time": 283.36033821105957,
+              "std_deviation": 33.36396451702031,
+              "consistent_performance": true,
+              "efficient": true
+            },
+            "Frontend": {
+              "avg_response_time": 340.8590316772461,
+              "std_deviation": 12.542569778284662,
+              "consistent_performance": true,
+              "efficient": true
+            }
+          }
+        },
+        "failover_recovery": {
+          "status": "excellent",
+          "recovery_score": 100.0,
+          "service_recovery": {
+            "Engine A": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            },
+            "Engine B": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            },
+            "Engine C": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            },
+            "Engine D": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            },
+            "Engine Ultra": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            },
+            "Frontend": {
+              "rapid_request_success_rate": 100.0,
+              "resilient": true,
+              "total_requests": 20,
+              "successful_requests": 20
+            }
+          }
+        }
+      },
+      "performance_production_ready": true
+    },
+    "deployment_integrity": {
+      "deployment_score": 40.0,
+      "passed_deployment_checks": 2,
+      "total_deployment_checks": 5,
+      "deployment_details": {
+        "version_consistency": {
+          "status": "partial",
+          "version_score": 0.0,
+          "service_versions": {
+            "Engine A": {
+              "version": "unknown",
+              "timestamp": "2025-10-15T08:25:36.956274",
+              "environment": "production"
+            },
+            "Engine B": {
+              "version": "unknown",
+              "timestamp": "2025-10-15T08:25:37.302297",
+              "environment": "production"
+            },
+            "Engine C": {
+              "version": "unknown",
+              "timestamp": "2025-10-15T08:25:37.634177",
+              "environment": "production"
+            },
+            "Engine D": {
+              "version": "unknown",
+              "timestamp": "2025-10-15T08:25:37.970794",
+              "environment": "production"
+            },
+            "Engine Ultra": {
+              "version": "unknown",
+              "timestamp": "2025-10-15T08:25:38.315945",
+              "environment": "production"
+            },
+            "Frontend": {
+              "version": "error",
+              "error": "200, message='Attempt to decode JSON with unexpected mimetype: text/html', url='https://infinityai-pro-frontend-573866363639.us-central1.run.app/health'"
+            }
+          }
+        },
+        "deployment_status": {
+          "status": "healthy",
+          "deployment_health": 100.0,
+          "service_deployments": {
+            "Engine A": {
+              "accessible": true,
+              "response_time": 334.0187072753906,
+              "deployment_healthy": true
+            },
+            "Engine B": {
+              "accessible": true,
+              "response_time": 344.7761535644531,
+              "deployment_healthy": true
+            },
+            "Engine C": {
+              "accessible": true,
+              "response_time": 357.83886909484863,
+              "deployment_healthy": true
+            },
+            "Engine D": {
+              "accessible": true,
+              "response_time": 375.3848075866699,
+              "deployment_healthy": true
+            },
+            "Engine Ultra": {
+              "accessible": true,
+              "response_time": 333.9862823486328,
+              "deployment_healthy": true
+            },
+            "Frontend": {
+              "accessible": true,
+              "response_time": 337.6126289367676,
+              "deployment_healthy": true
+            }
+          }
+        },
+        "code_integrity": {
+          "status": "corrupted",
+          "integrity_score": 66.66666666666666,
+          "integrity_checks": {
+            "market_data_format": {
+              "response_valid": true,
+              "fields_present": 3,
+              "total_fields": 3,
+              "integrity_score": 100.0
+            },
+            "ai_signals_format": {
+              "response_valid": true,
+              "fields_present": 2,
+              "total_fields": 2,
+              "integrity_score": 100.0
+            },
+            "order_status_format": {
+              "response_valid": false,
+              "http_code": 404
+            }
+          }
+        },
+        "configuration_validity": {
+          "status": "healthy",
+          "config_score": 100.0,
+          "service_configurations": {
+            "Engine A": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            },
+            "Engine B": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            },
+            "Engine C": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            },
+            "Engine D": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            },
+            "Engine Ultra": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            },
+            "Frontend": {
+              "config_score": 100.0,
+              "validations": {
+                "url_format_valid": true,
+                "health_endpoint_present": true,
+                "critical_endpoints_defined": true,
+                "cloud_run_url": true
+              },
+              "properly_configured": true
+            }
+          }
+        },
+        "dependency_health": {
+          "status": "unhealthy",
+          "dependency_score": 50.0,
+          "dependency_tests": {
+            "chatbot_orchestration": {
+              "can_orchestrate": true,
+              "response_quality": true
+            },
+            "dashboard_aggregation": {
+              "can_aggregate": false,
+              "error": "200, message='Attempt to decode JSON with unexpected mimetype: text/html', url='https://infinityai-pro-frontend-573866363639.us-central1.run.app/api/dashboard/data'"
+            }
+          }
+        }
+      },
+      "deployment_production_ready": false
+    }
+  },
+  "phase_scores": {
+    "live_data_streams": 52.63157894736842,
+    "api_endpoints": 93.75,
+    "user_components": 60.0,
+    "oauth_security": 20.0,
+    "cloud_infrastructure": 100.0,
+    "dns_configuration": 80.0,
+    "data_accuracy": 80.0,
+    "system_performance": 80.0,
+    "deployment_integrity": 40.0
+  },
+  "overall_score": 67.37573099415205,
+  "production_readiness_percentage": 55.55555555555556,
+  "passed_production_checks": 5,
+  "total_production_checks": 9,
+  "fully_production_ready": false,
+  "verification_status": "ISSUES_DETECTED",
+  "platform_urls": {
+    "main_platform": "https://infinityai.pro",
+    "demo_access": "https://infinityai.pro/demo",
+    "documentation": "https://infinityai.pro/docs"
+  },
+  "recommendations": [
+    "\ud83d\udd27 Fix data stream issues in Market Data and AI engines",
+    "\ud83d\udee1\ufe0f Complete OAuth security configuration",
+    "\ud83d\udd04 Re-run verification after addressing critical issues",
+    "\u26a0\ufe0f Consider soft launch with limited users for testing",
+    "\ud83d\udcca Monitor all metrics closely during initial deployment"
+  ],
+  "critical_metrics": {
+    "data_accuracy": 80.0,
+    "security_score": 20.0,
+    "performance_score": 80.0,
+    "uptime_estimate": 67.37573099415205
+  }
+}

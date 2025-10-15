@@ -495,16 +495,19 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return HTMLResponse("""
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    engine_count = len(chatbot_service.engines)
+    
+    html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>InfinityAI.Pro - Engine D</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-            .header { text-align: center; color: #333; }
-            .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+            .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }}
+            .header {{ text-align: center; color: #333; }}
+            .status {{ background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; }}
         </style>
     </head>
     <body>
@@ -516,8 +519,8 @@ async def root():
             <div class="status">
                 <h3>✅ Service Status: Active</h3>
                 <p><strong>Version:</strong> 1.0.0</p>
-                <p><strong>Started:</strong> {}</p>
-                <p><strong>Engines Connected:</strong> {}</p>
+                <p><strong>Started:</strong> {current_time}</p>
+                <p><strong>Engines Connected:</strong> {engine_count}</p>
             </div>
             <div>
                 <h3>🔗 API Endpoints:</h3>
@@ -531,7 +534,9 @@ async def root():
         </div>
     </body>
     </html>
-    """.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(chatbot_service.engines)))
+    """
+    
+    return HTMLResponse(html_content)
 
 @app.get("/engine-d")
 async def engine_d_root():
@@ -596,11 +601,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket)
 
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+    
 @app.post("/api/chat")
-async def chat_endpoint(user_id: str, message: str):
+async def chat_endpoint(request: ChatRequest):
     """REST endpoint for chat"""
     try:
-        chat_message = await chatbot_service.process_chat_message(user_id, message)
+        chat_message = await chatbot_service.process_chat_message(request.user_id, request.message)
         
         return {
             "status": "success",
