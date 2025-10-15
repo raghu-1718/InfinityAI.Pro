@@ -7,6 +7,13 @@ Deployed on GCP Cloud Run with GPU support
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+import sys
+sys.path.append('/app')
+try:
+    from security_middleware import add_security_headers
+except ImportError:
+    def add_security_headers(app):
+        pass
 from fastapi.responses import JSONResponse
 import asyncio
 import uvicorn
@@ -311,6 +318,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security headers
+add_security_headers(app)
 
 @app.get("/")
 async def root():

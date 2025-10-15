@@ -5,8 +5,15 @@ Central coordination hub with AI-powered chatbot
 Deployed on AWS ECS/Fargate
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+import sys
+sys.path.append('/app')
+try:
+    from security_middleware import add_security_headers
+except ImportError:
+    def add_security_headers(app):
+        pass
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.staticfiles import StaticFiles
@@ -492,6 +499,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security headers
+add_security_headers(app)
 
 @app.get("/")
 async def root():
