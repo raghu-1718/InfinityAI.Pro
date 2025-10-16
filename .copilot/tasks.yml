@@ -1,0 +1,282 @@
+# InfinityAI.Pro - Copilot Reusable Tasks
+# Automated tasks for GCP deployment verification and maintenance
+
+version: 1.0
+
+tasks:
+  # ===================================================================
+  # GCP DEPLOYMENT VERIFICATION
+  # ===================================================================
+  
+  verify_gcp_deployment:
+    description: "Full GCP deployment verification - services, health, DNS, secrets"
+    steps:
+      - name: "Run comprehensive audit"
+        command: "python3 full_gcp_audit.py"
+        working_directory: "."
+      - name: "Display results"
+        command: "cat FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
+        working_directory: "."
+    outputs:
+      - "deployment_verification_*.json"
+      - "FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
+    tags: ["gcp", "deployment", "verification", "audit"]
+
+  # ===================================================================
+  # ENGINE AUDIT
+  # ===================================================================
+  
+  audit_engines:
+    description: "Audit all InfinityAI engines - health, integration, data flow"
+    steps:
+      - name: "Check Engine A (Market Data)"
+        command: "curl -s https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health | jq ."
+      - name: "Check Engine B (AI/ML)"
+        command: "curl -s https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health | jq ."
+      - name: "Check Engine C (Execution)"
+        command: "curl -s https://engine-c-execution-prod-bprmddefsa-uc.a.run.app/health | jq ."
+      - name: "Check Engine D (Chatbot)"
+        command: "curl -s https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health | jq ."
+      - name: "Check Engine Ultra (Aggressive)"
+        command: "curl -s https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app/health | jq ."
+    tags: ["engines", "health", "monitoring"]
+
+  # ===================================================================
+  # SECRET MANAGEMENT
+  # ===================================================================
+  
+  check_secrets:
+    description: "List and verify GCP Secret Manager configuration"
+    steps:
+      - name: "List all secrets"
+        command: "gcloud secrets list --project=after-yesterday-473512-k3 --format=json | jq '.[] | {name: .name | split(\"/\")[-1], created: .createTime}'"
+      - name: "Check secret access permissions"
+        command: "gcloud secrets get-iam-policy dhan-api-key --project=after-yesterday-473512-k3 --format=json | jq ."
+    tags: ["security", "secrets", "gcp"]
+
+  # ===================================================================
+  # DOMAIN MAPPING
+  # ===================================================================
+  
+  check_domain_mapping:
+    description: "Verify domain configuration and SSL certificates"
+    steps:
+      - name: "List DNS zones"
+        command: "gcloud dns managed-zones list --project=after-yesterday-473512-k3 --format=json | jq ."
+      - name: "List DNS records"
+        command: "gcloud dns record-sets list --zone=infinityai-pro-zone --project=after-yesterday-473512-k3 --format=json | jq ."
+      - name: "Check domain mappings"
+        command: "gcloud beta run domain-mappings list --region=us-central1 --project=after-yesterday-473512-k3 --format=json | jq ."
+      - name: "Test HTTPS connectivity"
+        command: "curl -I https://infinityai.pro || echo 'Domain not yet mapped'"
+    tags: ["dns", "domain", "ssl", "https"]
+
+  # ===================================================================
+  # CREDENTIAL CLEANUP
+  # ===================================================================
+  
+  cleanup_credentials:
+    description: "Scan for and report exposed credentials in repository"
+    steps:
+      - name: "Find credential files"
+        command: "find . -name '*credentials*' -o -name '*dhan*.json' -o -name '*.key' -o -name '*.pem' 2>/dev/null | grep -v node_modules | grep -v .git || echo 'No credential files found'"
+      - name: "Check .env files"
+        command: "find . -name '.env*' -type f 2>/dev/null | grep -v node_modules | grep -v .git || echo 'No .env files found'"
+      - name: "Scan for hardcoded secrets"
+        command: "grep -r 'api_key\\|secret\\|password\\|token' backend/ --include='*.py' | grep -v '#' | head -20 || echo 'No hardcoded secrets detected'"
+    tags: ["security", "cleanup", "credentials"]
+
+  # ===================================================================
+  # CLOUD RUN MONITORING
+  # ===================================================================
+  
+  monitor_cloud_run:
+    description: "Monitor Cloud Run services - status, logs, metrics"
+    steps:
+      - name: "List all services with status"
+        command: "gcloud run services list --region=us-central1 --project=after-yesterday-473512-k3 --format='table(metadata.name,status.url,status.conditions[0].status)'"
+      - name: "Get service metrics"
+        command: "gcloud run services describe engine-a-market-data-prod --region=us-central1 --project=after-yesterday-473512-k3 --format=json | jq '.status'"
+      - name: "Check recent logs (Engine A)"
+        command: "gcloud logging read 'resource.type=cloud_run_revision AND resource.labels.service_name=engine-a-market-data-prod' --limit=10 --project=after-yesterday-473512-k3 --format=json | jq '.[] | {timestamp: .timestamp, message: .textPayload}'"
+    tags: ["monitoring", "cloud-run", "logs"]
+
+  # ===================================================================
+  # ARTIFACT REGISTRY
+  # ===================================================================
+  
+  list_artifacts:
+    description: "List container images in Artifact Registry"
+    steps:
+      - name: "List all images"
+        command: "gcloud artifacts docker images list us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai-repo --format=json --limit=30 | jq '[.[] | {package: .package | split(\"/\")[-1], created: .createTime, size: .metadata.imageSizeBytes}] | group_by(.package) | map({package: .[0].package, count: length})'"
+      - name: "Check repository size"
+        command: "gcloud artifacts repositories describe infinityai-repo --location=us-central1 --project=after-yesterday-473512-k3 --format=json | jq '{size: .sizeBytes, created: .createTime, updated: .updateTime}'"
+    tags: ["artifacts", "docker", "images"]
+
+  # ===================================================================
+  # CI/CD WORKFLOW CHECK
+  # ===================================================================
+  
+  check_cicd:
+    description: "Verify CI/CD workflows and deployment pipeline"
+    steps:
+      - name: "List GitHub workflows"
+        command: "ls -1 .github/workflows/"
+      - name: "Check deploy-production.yml matrix"
+        command: "grep -A 20 'matrix:' .github/workflows/deploy-production.yml | head -30"
+      - name: "Verify workflow secrets required"
+        command: "grep -h 'secrets\\.' .github/workflows/*.yml | sort -u | head -20"
+    tags: ["cicd", "github", "workflows"]
+
+  # ===================================================================
+  # QUICK HEALTH CHECK
+  # ===================================================================
+  
+  quick_health:
+    description: "Quick health check of all deployed services"
+    steps:
+      - name: "Ping all endpoints"
+        command: |
+          python3 -c "
+          import requests
+          services = {
+              'Engine A': 'https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health',
+              'Engine B': 'https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health',
+              'Engine C': 'https://engine-c-execution-prod-bprmddefsa-uc.a.run.app/health',
+              'Engine D': 'https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health',
+              'Engine Ultra': 'https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app/health',
+              'Frontend': 'https://infinityai-frontend-bprmddefsa-uc.a.run.app/health'
+          }
+          for name, url in services.items():
+              try:
+                  r = requests.get(url, timeout=5)
+                  print(f'{name}: {r.status_code}')
+              except Exception as e:
+                  print(f'{name}: ERROR')
+          "
+    tags: ["health", "monitoring", "quick"]
+
+  # ===================================================================
+  # SECURITY AUDIT
+  # ===================================================================
+  
+  security_audit:
+    description: "Comprehensive security audit - secrets, IAM, vulnerabilities"
+    steps:
+      - name: "Check IAM policies"
+        command: "gcloud projects get-iam-policy after-yesterday-473512-k3 --format=json | jq '.bindings[] | select(.role | contains(\"admin\") or contains(\"owner\"))'"
+      - name: "List service accounts"
+        command: "gcloud iam service-accounts list --project=after-yesterday-473512-k3 --format=json | jq '.[] | {email: .email, displayName: .displayName}'"
+      - name: "Check secret versions"
+        command: "gcloud secrets versions list dhan-api-key --project=after-yesterday-473512-k3 --format=json | jq '.[] | {version: .name | split(\"/\")[-1], state: .state, created: .createTime}'"
+      - name: "Scan for exposed credentials"
+        command: "find . -name '*.env' -o -name '*credentials*' -o -name '*.key' 2>/dev/null | grep -v node_modules | grep -v .git || echo 'Clean'"
+    tags: ["security", "audit", "iam"]
+
+  # ===================================================================
+  # DEPLOYMENT ROLLBACK
+  # ===================================================================
+  
+  rollback_service:
+    description: "Rollback a Cloud Run service to previous revision"
+    parameters:
+      - service_name: "Name of the service to rollback"
+    steps:
+      - name: "List revisions"
+        command: "gcloud run revisions list --service=${service_name} --region=us-central1 --project=after-yesterday-473512-k3 --format='table(metadata.name,status.conditions[0].status,metadata.creationTimestamp)'"
+      - name: "Rollback to previous revision"
+        command: "echo 'Use: gcloud run services update-traffic ${service_name} --to-revisions=<revision>=100 --region=us-central1 --project=after-yesterday-473512-k3'"
+    tags: ["rollback", "deployment", "cloud-run"]
+
+  # ===================================================================
+  # COST MONITORING
+  # ===================================================================
+  
+  check_costs:
+    description: "Check GCP costs and resource usage"
+    steps:
+      - name: "List Cloud Run services and their config"
+        command: "gcloud run services list --region=us-central1 --project=after-yesterday-473512-k3 --format=json | jq '.[] | {name: .metadata.name, cpu: .spec.template.spec.containers[0].resources.limits.cpu, memory: .spec.template.spec.containers[0].resources.limits.memory}'"
+      - name: "Check Artifact Registry size"
+        command: "gcloud artifacts repositories describe infinityai-repo --location=us-central1 --project=after-yesterday-473512-k3 --format=json | jq '{size_mb: (.sizeBytes // \"0\" | tonumber / 1024 / 1024)}'"
+    tags: ["cost", "billing", "monitoring"]
+
+  # ===================================================================
+  # POST-AUDIT AUTOMATION (New!)
+  # ===================================================================
+  
+  continuous_monitor:
+    description: "Run continuous monitoring with auto-recovery"
+    steps:
+      - name: "Execute monitoring cycle"
+        command: "python3 continuous_monitoring.py"
+        working_directory: "."
+    outputs:
+      - "logs/monitoring_*.json"
+    tags: ["monitoring", "automation", "health"]
+  
+  fix_engine_c:
+    description: "Fix Engine C health endpoint issue"
+    steps:
+      - name: "Deploy Engine C fix"
+        command: "./scripts/fix_engine_c_health.sh"
+        working_directory: "."
+    tags: ["fix", "engine-c", "deployment"]
+  
+  run_automated_health:
+    description: "Run automated health check script"
+    steps:
+      - name: "Execute health checks"
+        command: "./scripts/automated_health_check.sh"
+        working_directory: "."
+    outputs:
+      - "/tmp/health_check_*.json"
+    tags: ["health", "automation", "monitoring"]
+  
+  post_audit_automation:
+    description: "Run post-audit fixes and automation setup"
+    steps:
+      - name: "Execute automation setup"
+        command: "python3 post_audit_fixes_and_automation.py"
+        working_directory: "."
+    outputs:
+      - "post_audit_fixes_*.json"
+      - "POST_AUDIT_AUTOMATION_REPORT.md"
+    tags: ["automation", "setup", "configuration"]
+  
+  enable_vuln_scanning:
+    description: "Enable vulnerability scanning for Artifact Registry"
+    steps:
+      - name: "Enable Container Scanning API"
+        command: "gcloud services enable containerscanning.googleapis.com --project=after-yesterday-473512-k3"
+      - name: "Update repository with scanning"
+        command: "gcloud artifacts repositories update infinityai-repo --location=us-central1 --project=after-yesterday-473512-k3 --allow-vulnerability-scanning"
+    tags: ["security", "vulnerability", "scanning"]
+
+# ===================================================================
+# METADATA
+# ===================================================================
+
+metadata:
+  project: "InfinityAI.Pro"
+  gcp_project: "after-yesterday-473512-k3"
+  region: "us-central1"
+  domain: "infinityai.pro"
+  engines:
+    - "engine-a-market-data"
+    - "engine-b-ai-ml"
+    - "engine-c-execution"
+    - "engine-d-chatbot"
+    - "engine-ultra-aggressive"
+  services:
+    - "infinityai-frontend"
+  
+  documentation:
+    - "FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
+    - "DEPLOYMENT_GUIDE.md"
+    - "deployment_verification_*.json"
+
+  contacts:
+    maintainer: "InfinityAI Team"
+    repository: "https://github.com/your-org/InfinityAI.Pro"

@@ -6,5 +6,5 @@ logs
 .env.*
 tests
 *.md
-build
+# build - COMMENTED OUT: We need this for production Docker image
 dist
