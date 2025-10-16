@@ -1,12 +1,13 @@
 // InfinityAI Pro - Complete API Service for All 5 Engines
 // Indian Market Focus: NSE/BSE/MCX Only
+// ✅ CORRECTED PRODUCTION URLS - Updated 2025-10-16
 
 const ENGINES = {
-  ENGINE_A: 'https://engine-a-market-data-573866363639.us-central1.run.app',
-  ENGINE_B: 'https://engine-b-ai-ml-573866363639.us-central1.run.app',
-  ENGINE_C: 'https://engine-c-573866363639.us-central1.run.app',
-  ENGINE_D: 'https://engine-d-chatbot-573866363639.us-central1.run.app',
-  ENGINE_ULTRA: 'https://engine-ultra-aggressive-573866363639.us-central1.run.app'
+  ENGINE_A: 'https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app',
+  ENGINE_B: 'https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app',
+  ENGINE_C: 'https://engine-c-prod-bprmddefsa-uc.a.run.app',
+  ENGINE_D: 'https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app',
+  ENGINE_ULTRA: 'https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app'
 };
 
 class ApiService {
