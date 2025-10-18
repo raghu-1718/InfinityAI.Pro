@@ -22,6 +22,7 @@ dist/
 coverage/
 
 # Frontend build outputs
+frontend/
 frontend/web/build/
 
 # OS/IDE

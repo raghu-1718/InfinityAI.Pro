@@ -1,0 +1,5 @@
+requests
+websocket-client
+pandas
+scikit-learn
+python-dotenv

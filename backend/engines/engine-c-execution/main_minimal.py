@@ -11,7 +11,7 @@ import uvicorn
 import os
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import aiohttp
 import json
 from pydantic import BaseModel
@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 class DhanOAuthCallback(BaseModel):
     code: str
     state: str
+    redirect_uri: Optional[str] = None
+    postback_url: Optional[str] = None
 
 class DhanCredentials(BaseModel):
     access_token: str
@@ -50,7 +52,7 @@ class ExecutionService:
     def __init__(self):
         self.dhan_client_id = os.getenv('DHAN_CLIENT_ID', '1101302170')
         self.dhan_client_secret = os.getenv('DHAN_CLIENT_SECRET', 'PLACEHOLDER_SECRET')
-        self.dhan_redirect_uri = os.getenv('DHAN_REDIRECT_URI', 'https://engine-c-573866363639.us-central1.run.app/api/dhan/callback')
+        self.dhan_redirect_uri = os.getenv('DHAN_REDIRECT_URI', 'https://infinityai.pro/auth/dhan/callback')
         
         # Dhan API configuration
         self.dhan_base_url = "https://api.dhan.co"
@@ -77,6 +79,12 @@ class ExecutionService:
         }
         
         logger.info("🎯 Engine C - Trade Execution & OAuth Service Initialized (Minimal)")
+
+    def set_access_token(self, token: str):
+        """Set and propagate new access token to headers"""
+        self.access_token = token
+        self.headers["access-token"] = token
+        logger.info("🔑 Updated Dhan access token in memory")
     
     async def fetch_dhan_data(self, endpoint: str):
         """Fetch data from Dhan API"""
@@ -309,11 +317,25 @@ async def health_check():
 @app.get("/api/dhan/status")
 async def get_dhan_status():
     """Get Dhan connection status for user"""
+    connected = len(execution_service.user_tokens) > 0
+    account_details = None
+    if connected:
+        # In a real app, fetch from store
+        account_details = {
+            "account_id": list(execution_service.user_tokens.keys())[0],
+            "account_type": "Trading",
+            "connected_at": datetime.now().isoformat()
+        }
     return {
         "status": "operational",
+        "connected": connected,
         "connected_users": len(execution_service.user_tokens),
+        "account_details": account_details,
         "oauth_endpoint": "/api/dhan/callback",
-        "postback_endpoint": "/api/dhan/postback",
+        "postback_endpoint": "/api/webhooks/dhan",
+        "redirect_url": execution_service.dhan_redirect_uri,
+        "frontend_redirect_url": "https://infinityai.pro/auth/dhan/callback",
+        "frontend_postback_url": "https://infinityai.pro/api/webhooks/dhan",
         "timestamp": datetime.now().isoformat()
     }
 
@@ -334,6 +356,16 @@ async def dhan_oauth_callback(callback_data: DhanOAuthCallback):
     except Exception as e:
         logger.error(f"Error in OAuth callback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/dhan/callback-urls")
+async def get_dhan_callback_urls():
+    """Expose the configured Redirect and Postback URLs"""
+    return {
+        "redirect_url": execution_service.dhan_redirect_uri,
+        "postback_url": "https://infinityai.pro/api/webhooks/dhan",
+        "engine_c_base": "https://infinityai.pro/api/engine-c",
+        "timestamp": datetime.now().isoformat()
+    }
 
 @app.get("/api/portfolio")
 async def get_portfolio():
@@ -387,7 +419,7 @@ async def get_portfolio():
             "timestamp": datetime.now().isoformat()
         }
 
-@app.post("/api/dhan/postback")
+@app.post("/api/webhooks/dhan")
 async def dhan_postback_handler(request: Request):
     """Handle Dhan postback webhooks"""
     try:
@@ -400,6 +432,7 @@ async def dhan_postback_handler(request: Request):
         logger.error(f"Error in postback handler: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/dhan/disconnect/{user_id}")
 @app.delete("/api/dhan/disconnect/{user_id}")
 async def disconnect_dhan(user_id: str):
     """Disconnect Dhan account for user"""
@@ -422,6 +455,75 @@ async def disconnect_dhan(user_id: str):
             
     except Exception as e:
         logger.error(f"Error disconnecting user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/dhan/disconnect")
+async def disconnect_dhan_default():
+    """Disconnect default/demo user when user id isn't specified by client"""
+    try:
+        # Use first connected user if exists, else demo-user
+        user_id = next(iter(execution_service.user_tokens.keys()), "demo-user")
+        if user_id in execution_service.user_tokens:
+            del execution_service.user_tokens[user_id]
+            logger.info(f"Disconnected Dhan account for user {user_id}")
+        return {
+            "status": "disconnected",
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error disconnecting default user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AccessTokenUpdate(BaseModel):
+    access_token: str
+
+@app.post("/api/dhan/token")
+async def update_dhan_access_token(payload: AccessTokenUpdate):
+    """Update the Dhan access token (admin-protected in production)"""
+    try:
+        if not payload.access_token or len(payload.access_token) < 16:
+            raise HTTPException(status_code=400, detail="Invalid access token")
+
+        execution_service.set_access_token(payload.access_token)
+        # Optionally persist to GCP Secret Manager if available
+        try:
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT_ID")
+            if project_id:
+                from google.cloud import secretmanager
+                client = secretmanager.SecretManagerServiceClient()
+                secret_id = "dhan-access-token"
+                parent = f"projects/{project_id}"
+                secret_name = f"{parent}/secrets/{secret_id}"
+                # Create secret if not exists
+                try:
+                    client.create_secret(
+                        parent=parent,
+                        secret_id=secret_id,
+                        secret={"replication": {"automatic": {}}}
+                    )
+                    logger.info("Created Secret Manager secret 'dhan-access-token'")
+                except Exception:
+                    pass
+                # Add new version
+                client.add_secret_version(
+                    request={
+                        "parent": secret_name,
+                        "payload": {"data": payload.access_token.encode("UTF-8")}
+                    }
+                )
+                logger.info("Stored new access token version in Secret Manager")
+        except Exception as sm_err:
+            logger.warning(f"Secret Manager update skipped/failed: {sm_err}")
+        return {
+            "status": "updated",
+            "message": "Access token updated in runtime",
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating access token: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/orders")

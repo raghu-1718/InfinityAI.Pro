@@ -17,9 +17,6 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [switch]$Verbose,
-    
-    [Parameter(Mandatory=$false)]
     [switch]$QuickCheck,
     
     [Parameter(Mandatory=$false)]
@@ -70,11 +67,11 @@ function Test-ServiceHealth {
         
         if ($response.status -eq "healthy") {
             $healthCheck.status = "healthy"
-            Write-ColorOutput "✅ $ServiceName: Healthy ($($healthCheck.response_time)ms)" "Success"
+            Write-ColorOutput "✅ ${ServiceName}: Healthy ($($healthCheck.response_time)ms)" "Success"
         } else {
             $healthCheck.status = "unhealthy"
             $healthCheck.error = "Service returned non-healthy status: $($response.status)"
-            Write-ColorOutput "⚠️ $ServiceName: Unhealthy - $($response.status)" "Warning"
+            Write-ColorOutput "⚠️ ${ServiceName}: Unhealthy - $($response.status)" "Warning"
         }
     }
     catch {
@@ -82,7 +79,7 @@ function Test-ServiceHealth {
         $healthCheck.status = "error"
         $healthCheck.error = $_.Exception.Message
         $healthCheck.response_time = $stopwatch.ElapsedMilliseconds
-        Write-ColorOutput "❌ $ServiceName: Error - $($_.Exception.Message)" "Error"
+    Write-ColorOutput "❌ ${ServiceName}: Error - $($_.Exception.Message)" "Error"
     }
     
     return $healthCheck
@@ -400,11 +397,11 @@ function Main {
     
     # Define services to test
     $services = @{
-        engine_a = $env:ENGINE_A_URL ?? "https://engine-a-market-data-573866363639.us-central1.run.app"
-        engine_b = $env:ENGINE_B_URL ?? "https://engine-b-ai-ml-573866363639.us-central1.run.app"
-        engine_c = $env:ENGINE_C_URL ?? "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-c"
-        engine_d = $env:ENGINE_D_URL ?? "http://infinityai-alb-124143296.us-east-1.elb.amazonaws.com/engine-d"
-        ultra_aggressive = $env:ULTRA_AGGRESSIVE_URL ?? "https://infinityai-ultra-aggressive-573866363639.us-central1.run.app"
+        engine_a = $env:ENGINE_A_URL ?? "https://infinityai.pro/api/engine-a"
+        engine_b = $env:ENGINE_B_URL ?? "https://infinityai.pro/api/engine-b"
+        engine_c = $env:ENGINE_C_URL ?? "https://infinityai.pro/api/engine-c"
+        engine_d = $env:ENGINE_D_URL ?? "https://infinityai.pro/api/engine-d"
+        ultra_aggressive = $env:ULTRA_AGGRESSIVE_URL ?? "https://infinityai.pro/api/engine-ultra"
     }
     
     # Run health checks

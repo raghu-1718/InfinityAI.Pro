@@ -94,11 +94,12 @@ if (-not $SkipBuild) {
 # Step 5: Build production bundle
 if (-not $SkipBuild) {
     Write-Info "Building production bundle with correct URLs..."
-    $env:REACT_APP_ENGINE_A_URL = "https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app"
-    $env:REACT_APP_ENGINE_B_URL = "https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app"
-    $env:REACT_APP_ENGINE_C_URL = "https://engine-c-prod-bprmddefsa-uc.a.run.app"
-    $env:REACT_APP_ENGINE_D_URL = "https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app"
-    $env:REACT_APP_ENGINE_ULTRA_URL = "https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app"
+    # Use custom domain proxy endpoints for production
+    $env:REACT_APP_ENGINE_A_URL = "https://infinityai.pro/api/engine-a"
+    $env:REACT_APP_ENGINE_B_URL = "https://infinityai.pro/api/engine-b"
+    $env:REACT_APP_ENGINE_C_URL = "https://infinityai.pro/api/engine-c"
+    $env:REACT_APP_ENGINE_D_URL = "https://infinityai.pro/api/engine-d"
+    $env:REACT_APP_ENGINE_ULTRA_URL = "https://infinityai.pro/api/engine-ultra"
     
     npm run build
     if ($LASTEXITCODE -ne 0) {
@@ -146,7 +147,7 @@ gcloud run deploy $serviceName `
     --min-instances=1 `
     --max-instances=10 `
     --timeout=300s `
-    --set-env-vars="REACT_APP_ENGINE_A_URL=https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app,REACT_APP_ENGINE_B_URL=https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app,REACT_APP_ENGINE_C_URL=https://engine-c-prod-bprmddefsa-uc.a.run.app,REACT_APP_ENGINE_D_URL=https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app,REACT_APP_ENGINE_ULTRA_URL=https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app"
+    --set-env-vars="REACT_APP_ENGINE_A_URL=https://infinityai.pro/api/engine-a,REACT_APP_ENGINE_B_URL=https://infinityai.pro/api/engine-b,REACT_APP_ENGINE_C_URL=https://infinityai.pro/api/engine-c,REACT_APP_ENGINE_D_URL=https://infinityai.pro/api/engine-d,REACT_APP_ENGINE_ULTRA_URL=https://infinityai.pro/api/engine-ultra"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Cloud Run deployment failed"
@@ -196,11 +197,11 @@ try {
 
 Write-Info "Testing backend engines connectivity..."
 $engines = @{
-    "Engine A" = "https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health"
-    "Engine B" = "https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health"
-    "Engine C" = "https://engine-c-prod-bprmddefsa-uc.a.run.app/health"
-    "Engine D" = "https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health"
-    "Engine Ultra" = "https://engine-ultra-aggressive-prod-bprmddefsa-uc.a.run.app/health"
+    "Engine A" = "https://infinityai.pro/api/engine-a/health"
+    "Engine B" = "https://infinityai.pro/api/engine-b/health"
+    "Engine C" = "https://infinityai.pro/api/engine-c/health"
+    "Engine D" = "https://infinityai.pro/api/engine-d/health"
+    "Engine Ultra" = "https://infinityai.pro/api/engine-ultra/health"
 }
 
 $healthyEngines = 0

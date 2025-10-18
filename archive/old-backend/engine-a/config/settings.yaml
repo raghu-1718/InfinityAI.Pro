@@ -1,0 +1,15 @@
+# Engine A settings (v7.0)
+market_data:
+  providers:
+    - dhan
+    - yfinance_fallback
+  websocket: true
+  news_feed: true
+  indicators:
+    - ema
+    - rsi
+    - macd
+
+cloud:
+  project_id: after-yesterday-473512-k3
+  region: us-central1

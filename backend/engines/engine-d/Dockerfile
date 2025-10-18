@@ -25,11 +25,11 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Expose port
-EXPOSE 8003
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8003/health || exit 1
+  CMD curl -f http://localhost:8080/health || exit 1
 
-# Run the application
-CMD ["python", "main.py"]
+# Run the application with Uvicorn (bind to Cloud Run PORT)
+CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]

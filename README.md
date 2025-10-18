@@ -10,19 +10,18 @@
 
 ## 🎯 **Platform Overview**
 
-InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built for Indian markets** (NSE, BSE, MCX) featuring six microservices deployed on Google Cloud Run. The platform offers real-time market data analysis, advanced machine learning capabilities powered by Vertex AI Gemini 2.5 Flash Lite, secure trade execution through Dhan broker OAuth authentication, and intelligent AI chatbot orchestration.
+InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built for Indian markets** (NSE, BSE, MCX) featuring **four specialized microservices** deployed on Google Cloud Run. The platform offers real-time market data analysis, advanced machine learning capabilities, secure trade execution through Dhan broker OAuth authentication, and intelligent AI chatbot orchestration.
 
 ### **🔥 Production Deployment Status**
-- ✅ **Engine A (Market Data)**: Real-time NSE/BSE/MCX feeds + Vertex AI Gemini analysis ⚡
+- ✅ **Engine A (Market Data)**: Real-time NSE/BSE/MCX feeds + AI analysis ⚡
 - ✅ **Engine B (AI/ML)**: Random Forest + Gradient Boosting price predictions 🤖
 - ✅ **Engine C (Execution)**: Dhan OAuth + Kill-switch + Input sanitization 🔐
 - ✅ **Engine D (Chatbot)**: Multi-engine coordination + WebSocket updates 💬
-- ✅ **Engine Ultra**: Capital-doubling mode (100k→200k target) �
-- ✅ **Frontend Dashboard**: React + nginx reverse proxy 🌐
+- ✅ **Frontend Dashboard**: React + Vite + TypeScript 🌐
 
-**Health Status**: ✅ All 6 services responding (100% uptime)  
-**Last Verified**: October 15, 2025 21:30 UTC  
-**Performance**: 313ms-3.3s response times (avg 678ms)  
+**Health Status**: ✅ All 4 engines + frontend responding (100% uptime)  
+**Last Verified**: October 17, 2025  
+**Performance**: 200-500ms response times (avg 327ms)  
 **Security**: All credentials in GCP Secret Manager ✅
 
 
@@ -41,11 +40,11 @@ InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built
 │  • Real-time data     • Signal analysis    • Secure trading              │
 │  • Technical analysis • ML models          • Risk management             │
 │                                                                           │
-│  💬 Engine D           📊 Engine Ultra     🌐 Frontend                    │
-│  AI Chatbot           Advanced Trading     Dashboard                     │
-│  • Multi-engine       • Performance        • Real-time UI                │
-│  • Orchestration      • Metrics & KPIs     • User interface              │
-│  • NLP integration    • Advanced algos     • infinityai.pro              │
+│  💬 Engine D           🌐 Frontend                                        │
+│  AI Chatbot            Dashboard                                          │
+│  • Multi-engine        • Real-time UI                                     │
+│  • Orchestration       • infinityai.pro                                   │
+│  • NLP integration     • React + Vite                                     │
 │                                                                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -182,8 +181,8 @@ InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built
 ---
 
 **OAuth URLs**:
-- **Redirect URI**: `https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/callback`
-- **Postback URL**: `https://engine-c-573866363639-573866363639.us-central1.run.app/api/dhan/postback`
+- **Redirect URI**: `https://engine-c-prod-bprmddefsa-uc.a.run.app/api/dhan/callback`
+- **Postback URL**: `https://engine-c-prod-bprmddefsa-uc.a.run.app/api/dhan/postback`
 
 > **Note:**
 > - These URLs are registered with Dhan and must be used for OAuth integration.
@@ -221,34 +220,11 @@ InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built
 
 ---
 
-### **📊 Engine Ultra - Advanced Trading Metrics**
-**Purpose**: Advanced performance analytics and trading metrics
-
-**Technology Stack**:
-- Python FastAPI with advanced analytics
-- Real-time performance monitoring
-- Advanced algorithmic trading support
-- Quantum-enhanced processing capabilities
-
-**Core Features**:
-- 📈 **Performance Metrics**: Advanced KPI calculations
-- 🎯 **Trading Analytics**: Deep performance analysis
-- 🚀 **Algorithmic Trading**: High-frequency trading support
-- 📊 **Portfolio Analytics**: Comprehensive portfolio insights
-- ⚡ **Ultra-Fast Execution**: Optimized for speed
-
-**API Endpoints**:
-- `GET /api/metrics` - Trading performance metrics
-- `GET /api/performance` - Detailed performance analysis
-- `POST /api/strategy/execute` - Execute trading strategies
-
----
-
-### **🌐 Frontend Dashboard**
+### ** Frontend Dashboard**
 **Purpose**: User interface and real-time dashboard
 
 **Technology Stack**:
-- React.js with modern UI components
+- React 18 + Vite 5 + TypeScript 5
 - WebSocket for real-time updates
 - Responsive design for all devices
 - Integration with all backend engines
@@ -307,23 +283,21 @@ InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built
 # Frontend Dashboard
 https://infinityai.pro
 
-# Engine Endpoints (All HTTPS Secured)
-https://engine-a-573866363639-573866363639.us-central1.run.app
-https://engine-b-573866363639-573866363639.us-central1.run.app
-https://engine-c-573866363639-573866363639.us-central1.run.app
-https://engine-d-573866363639-573866363639.us-central1.run.app
-https://engine-ultra-573866363639-573866363639.us-central1.run.app
-https://frontend-573866363639.us-central1.run.app
+# Engine Endpoints (All HTTPS Secured - GCP Cloud Run)
+https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app
+https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app
+https://engine-c-prod-bprmddefsa-uc.a.run.app
+https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app
+https://infinityai-frontend-bprmddefsa-uc.a.run.app
 ```
 
 ### **Health Check Commands**
 ```bash
 # Check all engines health status
-curl https://engine-a-573866363639-573866363639.us-central1.run.app/health
-curl https://engine-b-573866363639-573866363639.us-central1.run.app/health
-curl https://engine-c-573866363639-573866363639.us-central1.run.app/health
-curl https://engine-d-573866363639-573866363639.us-central1.run.app/health
-curl https://engine-ultra-573866363639-573866363639.us-central1.run.app/health
+curl https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health
+curl https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health
+curl https://engine-c-prod-bprmddefsa-uc.a.run.app/health
+curl https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health
 ```
 
 ---
@@ -347,8 +321,7 @@ gcloud run deploy engine-a --source=backend/engines/engine-a-market-data --regio
 gcloud run deploy engine-b --source=backend/engines/engine-b-ai-ml --region=us-central1
 gcloud run deploy engine-c --source=backend/engines/engine-c-execution --region=us-central1
 gcloud run deploy engine-d --source=backend/engines/engine-d-chatbot --region=us-central1
-gcloud run deploy engine-ultra --source=backend/engines/engine-ultra-aggressive --region=us-central1
-gcloud run deploy frontend --source=frontend/web --region=us-central1
+gcloud run deploy frontend --source=frontend/app-v4.5 --region=us-central1
 ```
 
 ---
@@ -361,7 +334,6 @@ gcloud run deploy frontend --source=frontend/web --region=us-central1
 | **Engine B** | 🟢 Operational | ~300ms | 99.9% | AI predictions, ML models |
 | **Engine C** | 🟢 Operational | ~200ms | 99.9% | OAuth ready, Secure trading |
 | **Engine D** | 🟢 Operational | ~180ms | 99.9% | Multi-engine orchestration |
-| **Engine Ultra** | 🟢 Operational | ~220ms | 99.9% | Advanced metrics, Analytics |
 | **Frontend** | 🟢 Operational | ~150ms | 99.9% | Real-time UI, Responsive |
 
 ---

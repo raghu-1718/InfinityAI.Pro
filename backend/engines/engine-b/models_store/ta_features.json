@@ -1,0 +1,5 @@
+[
+    "price","volume","rsi","ema_20","ema_50",
+    "bollinger_upper","bollinger_lower","macd",
+    "price_change_1h","price_change_4h","volume_ratio"
+]

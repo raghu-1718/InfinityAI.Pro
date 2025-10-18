@@ -1,30 +1,38 @@
 import asyncio
 import aiohttp
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 class HealthOrchestrator:
+    # Type hints for class attributes for static analysis
+    engines: Dict[str, str]
+    timeout: float
+    cache_duration: int
+    _health_cache: Dict[str, Any]
+    _last_check: float
     def __init__(self):
+        # Prefer environment variables set at deploy time; fallback to sane defaults
         self.engines = {
-            "A": "https://engine-a-market-data-prod-573866363639.us-central1.run.app",
-            "B": "https://engine-b-ai-ml-prod-573866363639.us-central1.run.app", 
-            "C": "https://engine-c-execution-prod-573866363639.us-central1.run.app",
-            "D": "https://engine-d-chatbot-prod-573866363639.us-central1.run.app",
-            "ULTRA": "https://engine-ultra-aggressive-prod-573866363639.us-central1.run.app"
+            "A": os.getenv("ENGINE_A_URL", "https://engine-a-market-data-prod-573866363639.us-central1.run.app"),
+            "B": os.getenv("ENGINE_B_URL", "https://engine-b-ai-ml-prod-573866363639.us-central1.run.app"),
+            "C": os.getenv("ENGINE_C_URL", "https://engine-c-execution-prod-573866363639.us-central1.run.app"),
         }
         self.timeout = 3.0
         self.cache_duration = 30  # Cache results for 30 seconds
+        # Cache types: Dict[str, Any]
         self._health_cache = {}
-        self._last_check = 0
+        # Last check timestamp: float
+        self._last_check = 0.0
 
-    async def check_engine_health(self, session: aiohttp.ClientSession, name: str, url: str) -> tuple:
+    async def check_engine_health(self, session: aiohttp.ClientSession, name: str, url: str) -> Tuple[str, Dict[str, Any]]:
         """Check individual engine health"""
         start_time = time.time()
         try:
-            async with session.get(f"{url}/health", timeout=self.timeout) as response:
+            async with session.get(f"{url}/health", timeout=aiohttp.ClientTimeout(total=self.timeout)) as response:
                 response_time = round((time.time() - start_time) * 1000)
                 
                 if response.status == 200:
@@ -104,7 +112,7 @@ class HealthOrchestrator:
         avg_response_time = round(total_response_time / total_engines) if total_engines > 0 else 0
 
         # Build comprehensive response
-        comprehensive_health = {
+        comprehensive_health: Dict[str, Any] = {
             "timestamp": current_time,
             "summary": {
                 "healthy_engines": healthy_count,

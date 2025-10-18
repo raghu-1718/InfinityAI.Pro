@@ -1,0 +1,22 @@
+# Ignore dependencies and build outputs
+node_modules
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml
+
+# Build artifacts
+dist
+coverage
+
+# VCS
+.git
+.gitignore
+.gcloudignore
+
+# Local/Editor
+.DS_Store
+.vscode
+*.local
+
+# Misc
+Dockerfile
