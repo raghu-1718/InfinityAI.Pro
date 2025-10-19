@@ -4,6 +4,8 @@ import AIMetricsPanel from '../components/analysis/AIMetricsPanel'
 import ExchangesPanel from '../components/analysis/ExchangesPanel'
 import DhanOverviewPanel from '../components/analysis/DhanOverviewPanel'
 import StatementPanel from '../components/analysis/StatementPanel'
+import PLHistoryChart from '../components/analysis/PLHistoryChart'
+import BacktestPanel from '../components/analysis/BacktestPanel'
 import { useAIAnalysis } from '../hooks/useAIAnalysis'
 
 export default function Analysis() {
@@ -24,6 +26,11 @@ export default function Analysis() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DhanOverviewPanel />
         <ExchangesPanel />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PLHistoryChart />
+        <BacktestPanel />
       </div>
 
       <StatementPanel />

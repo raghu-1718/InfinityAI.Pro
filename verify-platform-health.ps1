@@ -65,7 +65,7 @@ function Test-ServiceHealth {
         $stopwatch.Stop()
         $healthCheck.response_time = $stopwatch.ElapsedMilliseconds
         
-        if ($response.status -eq "healthy") {
+        if ($response.status -eq "healthy" -or $response.status -eq "ok") {
             $healthCheck.status = "healthy"
             Write-ColorOutput "✅ ${ServiceName}: Healthy ($($healthCheck.response_time)ms)" "Success"
         } else {
@@ -126,15 +126,15 @@ function Test-EngineAPIs {
         Write-ColorOutput "🤖 Testing Engine B - AI/ML API..." "Info"
         $response = Invoke-RestMethod -Uri "$($Services['engine_b'])/api/ai-signals" -Method Get -TimeoutSec 30
         
-        if ($response.status -eq "success" -and $response.ai_signals) {
+        if ($response.status -eq "success" -and $response.signals) {
             $apiTests += @{
                 engine = "Engine B"
                 api = "/api/ai-signals"
                 status = "success"
-                data_count = $response.ai_signals.Count
+                data_count = $response.signals.Count
                 timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
             }
-            Write-ColorOutput "✅ Engine B API: Success ($($response.ai_signals.Count) AI signals)" "Success"
+            Write-ColorOutput "✅ Engine B API: Success ($($response.signals.Count) AI signals)" "Success"
         } else {
             throw "Invalid response format"
         }
@@ -153,18 +153,18 @@ function Test-EngineAPIs {
     # Test Engine D - System Status
     try {
         Write-ColorOutput "🎯 Testing Engine D - Chatbot API..." "Info"
-        $response = Invoke-RestMethod -Uri "$($Services['engine_d'])/api/status" -Method Get -TimeoutSec 30
+        $response = Invoke-RestMethod -Uri "$($Services['engine_d'])/api/health/comprehensive" -Method Get -TimeoutSec 30
         
-        if ($response.overall_status) {
+        if ($response.summary) {
             $apiTests += @{
                 engine = "Engine D"
-                api = "/api/status"
+                api = "/api/health/comprehensive"
                 status = "success"
-                overall_status = $response.overall_status
-                engines_online = $response.engines_online
+                overall_status = $response.summary.overall_status
+                engines_online = $response.summary.healthy_engines
                 timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
             }
-            Write-ColorOutput "✅ Engine D API: Success (Status: $($response.overall_status))" "Success"
+            Write-ColorOutput "✅ Engine D API: Success (Status: $($response.summary.overall_status))" "Success"
         } else {
             throw "Invalid response format"
         }
@@ -191,25 +191,25 @@ function Test-CrossEngineComm {
     # Test Engine D's ability to communicate with other engines
     try {
         Write-ColorOutput "🤖 Testing Engine D coordination..." "Info"
-        $response = Invoke-RestMethod -Uri "$($Services['engine_d'])/api/engines" -Method Get -TimeoutSec 30
+        $response = Invoke-RestMethod -Uri "$($Services['engine_d'])/api/health/simple" -Method Get -TimeoutSec 30
         
         if ($response.engines) {
+            $engineProps = $response.engines | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
             $onlineEngines = 0
-            foreach ($engine in $response.engine_status.PSObject.Properties) {
-                if ($engine.Value.status -eq "online") {
-                    $onlineEngines++
-                }
+            foreach ($name in $engineProps) {
+                if ($response.engines.$name -eq $true) { $onlineEngines++ }
             }
+            $totalEngines = $engineProps.Count
             
             $commTests += @{
                 test = "Engine D Coordination"
                 status = "success"
                 engines_reachable = $onlineEngines
-                total_engines = $response.engines.PSObject.Properties.Count
+                total_engines = $totalEngines
                 timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
             }
             
-            Write-ColorOutput "✅ Cross-Engine Communication: $onlineEngines engines reachable" "Success"
+            Write-ColorOutput "✅ Cross-Engine Communication: $onlineEngines engines reachable of $totalEngines" "Success"
         }
     }
     catch {
