@@ -20,10 +20,16 @@ To access the Firebase service account from your Cloud Run services:
 #### Option 1: Environment Variable (Recommended)
 Add the secret as an environment variable in your Cloud Run service:
 
+**Bash/Linux:**
 ```bash
 gcloud run services update SERVICE_NAME \
   --update-secrets=FIREBASE_SERVICE_ACCOUNT=firebase-service-account:latest \
   --region=us-central1
+```
+
+**PowerShell:**
+```powershell
+gcloud run services update SERVICE_NAME --update-secrets=FIREBASE_SERVICE_ACCOUNT=firebase-service-account:latest --region=us-central1
 ```
 
 Then in your code:
@@ -38,10 +44,16 @@ firebase_creds = json.loads(os.environ.get('FIREBASE_SERVICE_ACCOUNT'))
 #### Option 2: Volume Mount
 Mount the secret as a file:
 
+**Bash/Linux:**
 ```bash
 gcloud run services update SERVICE_NAME \
   --update-secrets=/secrets/firebase-sa.json=firebase-service-account:latest \
   --region=us-central1
+```
+
+**PowerShell:**
+```powershell
+gcloud run services update SERVICE_NAME --update-secrets=/secrets/firebase-sa.json=firebase-service-account:latest --region=us-central1
 ```
 
 Then in your code:
@@ -73,6 +85,7 @@ def get_firebase_credentials():
 
 To allow a Cloud Run service to access the secret:
 
+**Bash/Linux:**
 ```bash
 # Get the service account email for your Cloud Run service
 SERVICE_ACCOUNT=$(gcloud run services describe SERVICE_NAME --region=us-central1 --format='value(spec.template.spec.serviceAccountName)')
@@ -81,6 +94,15 @@ SERVICE_ACCOUNT=$(gcloud run services describe SERVICE_NAME --region=us-central1
 gcloud secrets add-iam-policy-binding firebase-service-account \
   --member="serviceAccount:${SERVICE_ACCOUNT}" \
   --role="roles/secretmanager.secretAccessor"
+```
+
+**PowerShell:**
+```powershell
+# Get the service account email for your Cloud Run service
+$SERVICE_ACCOUNT = gcloud run services describe SERVICE_NAME --region=us-central1 --format='value(spec.template.spec.serviceAccountName)'
+
+# Grant Secret Manager Secret Accessor role
+gcloud secrets add-iam-policy-binding firebase-service-account --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/secretmanager.secretAccessor"
 ```
 
 ### Verify Access

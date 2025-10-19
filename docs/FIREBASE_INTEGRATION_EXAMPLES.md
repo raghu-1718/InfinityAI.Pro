@@ -215,6 +215,8 @@ async def verify_token(token: str):
 ## Cloud Run Deployment with Firebase Secret
 
 ### Deploy with Secret as Environment Variable
+
+**Bash/Linux:**
 ```bash
 #!/bin/bash
 # deploy-with-firebase.sh
@@ -235,12 +237,39 @@ gcloud run deploy $SERVICE_NAME \
   --max-instances=10
 ```
 
+**PowerShell:**
+```powershell
+# deploy-with-firebase.ps1
+
+$SERVICE_NAME = "engine-d-orchestration-prod"
+$IMAGE = "gcr.io/after-yesterday-473512-k3/engine-d:latest"
+$REGION = "us-central1"
+
+gcloud run deploy $SERVICE_NAME `
+  --image=$IMAGE `
+  --region=$REGION `
+  --platform=managed `
+  --allow-unauthenticated `
+  --set-secrets=FIREBASE_SERVICE_ACCOUNT=firebase-service-account:latest `
+  --memory=512Mi `
+  --cpu=1 `
+  --timeout=300 `
+  --max-instances=10
+```
+
 ### Deploy with Secret as Volume Mount
+
+**Bash/Linux:**
 ```bash
 gcloud run deploy engine-d-orchestration-prod \
   --image=gcr.io/after-yesterday-473512-k3/engine-d:latest \
   --region=us-central1 \
   --set-secrets=/secrets/firebase-sa.json=firebase-service-account:latest
+```
+
+**PowerShell:**
+```powershell
+gcloud run deploy engine-d-orchestration-prod --image=gcr.io/after-yesterday-473512-k3/engine-d:latest --region=us-central1 --set-secrets=/secrets/firebase-sa.json=firebase-service-account:latest
 ```
 
 ## Dockerfile Example with Firebase
