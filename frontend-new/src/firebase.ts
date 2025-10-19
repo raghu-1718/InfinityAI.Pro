@@ -14,5 +14,6 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+//This is a test comment to trigger the CI/CD pipeline
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
