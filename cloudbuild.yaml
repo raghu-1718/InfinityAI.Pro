@@ -1,18 +1,34 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/equity-engine', './equity-engine']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-a', './backend/engines/engine-a']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/option-engine', './option-engine']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-b', './backend/engines/engine-b']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/equity-engine']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution', './backend/engines/engine-c-execution']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/option-engine']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-d', './backend/engines/engine-d']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-a']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-b']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-d']
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
-  args: ['run', 'deploy', 'equity-engine', '--image', 'gcr.io/$PROJECT_ID/equity-engine', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+  args: ['run', 'deploy', 'infinityai-engine-a', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-a', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
-  args: ['run', 'deploy', 'option-engine', '--image', 'gcr.io/$PROJECT_ID/option-engine', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+  args: ['run', 'deploy', 'infinityai-engine-b', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-b', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run',.factory(), 'deploy', 'infinityai-engine-c-execution', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'infinityai-engine-d', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-d', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
 images:
-- 'gcr.io/$PROJECT_ID/equity-engine'
-- 'gcr.io/$PROJECT_ID/option-engine'
+- 'gcr.io/$PROJECT_ID/infinityai-engine-a'
+- 'gcr.io/$PROJECT_ID/infinityai-engine-b'
+- 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution'
+- 'gcr.io/$PROJECT_ID/infinityai-engine-d'
