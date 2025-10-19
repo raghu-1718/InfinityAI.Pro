@@ -1,28 +1,28 @@
-
-name: Deploy Engine B to Cloud Run
+name: Deploy Engine B
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'engine-b/**'
+      - 'backend/engines/engine-b/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+      - name: GCP Auth
+        uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      - name: 'Deploy to Cloud Run'
-        uses: 'google-github-actions/deploy-cloudrun@v2'
+      - name: Deploy to Cloud Run
+        uses: 'google-github-actions/deploy-cloudrun@v1'
         with:
-          service: 'engine-b-ai-ml-prod'
-          source: './engine-b'
-          region: 'us-central1'
+          service: infinityai-engine-b
+          region: us-central1
+          source: ./backend/engines/engine-b
+          project_id: ${{ secrets.VITE_PROJECT_ID }}
