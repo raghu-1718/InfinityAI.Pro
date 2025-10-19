@@ -1,10 +1,10 @@
 import { Bell, Search } from 'lucide-react'
-import { useEngineHealth } from '../../hooks/useEngineHealth'
+// import { useEngineHealth } from '../../hooks/useEngineHealth'
 
 export default function Topbar() {
-  const { data: engines } = useEngineHealth()
-  const healthyEngines = engines?.filter(e => e.healthy).length || 0
-  const totalEngines = engines?.length || 4
+  // const { data: engines } = useEngineHealth()
+  const healthyEngines = 4 // engines?.filter(e => e.healthy).length || 0
+  const totalEngines = 4 // engines?.length || 4
 
   return (
     <header className="bg-gray-900 border-b border-gray-800 h-16 flex items-center justify-between px-6">

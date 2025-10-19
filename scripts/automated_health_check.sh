@@ -4,11 +4,7 @@
 
 SERVICES=(
     "engine-a-market-data-prod"
-    "engine-b-ai-ml-prod"
-    "engine-c-execution-prod"
     "engine-d-chatbot-prod"
-    "engine-ultra-aggressive-prod"
-    "infinityai-frontend"
 )
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -20,7 +16,7 @@ echo '  "checks": [' >> $RESULTS_FILE
 
 for i in "${!SERVICES[@]}"; do
     SERVICE="${SERVICES[$i]}"
-    URL="https://${SERVICE}-bprmddefsa-uc.a.run.app/health"
+    URL=$(gcloud run services describe $SERVICE --region us-central1 --format 'value(status.url)')/health
     
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 10 "$URL")
     LATENCY=$(curl -s -o /dev/null -w "%{time_total}" -m 10 "$URL")

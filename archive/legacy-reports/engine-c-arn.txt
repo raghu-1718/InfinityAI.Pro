@@ -1,1 +1,0 @@
-arn:aws:ecs:us-east-1:152687308610:task-definition/infinityai-engine-c:39

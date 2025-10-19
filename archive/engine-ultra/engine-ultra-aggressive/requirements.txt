@@ -1,8 +1,0 @@
-# Ultra Aggressive Engine Base Requirements
-fastapi==0.110.0
-uvicorn==0.29.0
-redis==5.0.1
-pandas==2.2.0
-numpy==1.26.4
-aiohttp==3.9.3
-python-dotenv==1.0.1

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Adjust the path as necessary
+import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
 const AISignals = () => {
@@ -18,7 +18,7 @@ const AISignals = () => {
 
   return (
     <div className="bg-gray-800 p-4 rounded-lg mt-4">
-      <h2 class="text-xl font-semibold mb-4">AI Signals</h2>
+      <h2 className="text-xl font-semibold mb-4">AI Signals</h2>
       <ul>
         {signals.map(signal => (
           <li key={signal.id} className="mb-2">

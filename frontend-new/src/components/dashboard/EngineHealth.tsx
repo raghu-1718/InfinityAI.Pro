@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Adjust the path as necessary
+import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot } from 'firebase/firestore';
 
 const EngineHealth = () => {
@@ -17,7 +17,7 @@ const EngineHealth = () => {
 
   return (
     <div className="bg-gray-800 p-4 rounded-lg">
-      <h2 class="text-xl font-semibold mb-4">Engine Health</h2>
+      <h2 className="text-xl font-semibold mb-4">Engine Health</h2>
       <ul>
         {engineStatus.map(engine => (
           <li key={engine.id} className="flex justify-between items-center mb-2">

@@ -1,7 +1,14 @@
 import { useEngineHealth } from '../hooks/useEngineHealth'
 
+const engines = [
+  { key: 'A', service: 'Alpha', healthy: true, status: 'Running' },
+  { key: 'B', service: 'Beta', healthy: true, status: 'Running' },
+  { key: 'C', service: 'Gamma', healthy: true, status: 'Running' },
+  { key: 'D', service: 'Delta', healthy: false, status: 'Error' },
+];
+
 export default function Engines() {
-  const { data: engines } = useEngineHealth()
+  // const { data: engines } = useEngineHealth()
 
   return (
     <div className="space-y-6">

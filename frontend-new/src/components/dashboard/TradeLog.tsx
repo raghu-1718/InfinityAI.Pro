@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { db } from '../firebase'; // Adjust the path as necessary
+import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
 const TradeLog = () => {
@@ -18,7 +18,7 @@ const TradeLog = () => {
 
   return (
     <div className="bg-gray-800 p-4 rounded-lg mt-4">
-      <h2 class="text-xl font-semibold mb-4">Trade Log</h2>
+      <h2 className="text-xl font-semibold mb-4">Trade Log</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-gray-400 uppercase bg-gray-700">
