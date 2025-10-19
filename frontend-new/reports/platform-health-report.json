@@ -1,0 +1,87 @@
+{
+  "api_tests": [
+    {
+      "data_count": 5,
+      "api": "/api/signals",
+      "status": "success",
+      "engine": "Engine A",
+      "timestamp": "2025-10-19T06:24:10Z"
+    },
+    {
+      "data_count": 10,
+      "api": "/api/ai-signals",
+      "status": "success",
+      "engine": "Engine B",
+      "timestamp": "2025-10-19T06:24:24Z"
+    },
+    {
+      "engine": "Engine D",
+      "api": "/api/health/comprehensive",
+      "engines_online": 2,
+      "overall_status": "healthy",
+      "status": "success",
+      "timestamp": "2025-10-19T06:24:27Z"
+    }
+  ],
+  "timestamp": "2025-10-19T06:24:28Z",
+  "environment": "production",
+  "trading_tests": null,
+  "version": "1.0.0",
+  "communication_tests": [
+    {
+      "total_engines": 3,
+      "status": "success",
+      "test": "Engine D Coordination",
+      "timestamp": "2025-10-19T06:24:28Z",
+      "engines_reachable": 2
+    }
+  ],
+  "frontend_tests": [
+    {
+      "status": "success",
+      "test": "Frontend Accessibility",
+      "timestamp": "2025-10-19T06:24:28Z",
+      "status_code": 200
+    }
+  ],
+  "summary": {
+    "total_services": 4,
+    "overall_status": "healthy",
+    "healthy_services": 4
+  },
+  "platform": "InfinityAI.Pro",
+  "health_checks": [
+    {
+      "url": "https://engine-a-573866363639.us-central1.run.app",
+      "error": null,
+      "service": "engine_a",
+      "status": "healthy",
+      "response_time": 7387,
+      "timestamp": "2025-10-19T06:23:50Z"
+    },
+    {
+      "url": "https://engine-b-ai-ml-prod-573866363639.us-central1.run.app",
+      "error": null,
+      "service": "engine_b",
+      "status": "healthy",
+      "response_time": 4174,
+      "timestamp": "2025-10-19T06:23:58Z"
+    },
+    {
+      "url": "https://engine-d-orchestration-prod-573866363639.us-central1.run.app",
+      "error": null,
+      "service": "engine_d",
+      "status": "healthy",
+      "response_time": 360,
+      "timestamp": "2025-10-19T06:24:02Z"
+    },
+    {
+      "url": "https://engine-c-execution-prod-573866363639.us-central1.run.app",
+      "error": null,
+      "service": "engine_c",
+      "status": "healthy",
+      "response_time": 6967,
+      "timestamp": "2025-10-19T06:24:02Z"
+    }
+  ]
+}
