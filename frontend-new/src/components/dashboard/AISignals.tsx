@@ -3,13 +3,20 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
+interface Signal {
+  id: string;
+  signal: string;
+  symbol: string;
+  timestamp: { seconds: number };
+}
+
 const AISignals = () => {
-  const [signals, setSignals] = useState([]);
+  const [signals, setSignals] = useState<Signal[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'ai_signals'), orderBy('timestamp', 'desc'), limit(10));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const signalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const signalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Signal[];
       setSignals(signalsData);
     });
 

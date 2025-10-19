@@ -3,12 +3,17 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot } from 'firebase/firestore';
 
+interface Engine {
+  id: string;
+  status: string;
+}
+
 const EngineHealth = () => {
-  const [engineStatus, setEngineStatus] = useState([]);
+  const [engineStatus, setEngineStatus] = useState<Engine[]>([]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'engine_health'), (snapshot) => {
-      const statusData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const statusData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Engine[];
       setEngineStatus(statusData);
     });
 

@@ -3,13 +3,22 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase'; // Adjust the path as necessary
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
+interface Trade {
+  id: string;
+  symbol: string;
+  action: string;
+  quantity: number;
+  price: number;
+  timestamp: { seconds: number };
+}
+
 const TradeLog = () => {
-  const [trades, setTrades] = useState([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'trades'), orderBy('timestamp', 'desc'), limit(20));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const tradesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const tradesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Trade[];
       setTrades(tradesData);
     });
 

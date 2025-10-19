@@ -1,5 +1,3 @@
-import { useEngineHealth } from '../hooks/useEngineHealth'
-
 const engines = [
   { key: 'A', service: 'Alpha', healthy: true, status: 'Running' },
   { key: 'B', service: 'Beta', healthy: true, status: 'Running' },
@@ -8,7 +6,6 @@ const engines = [
 ];
 
 export default function Engines() {
-  // const { data: engines } = useEngineHealth()
 
   return (
     <div className="space-y-6">
