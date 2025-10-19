@@ -37,7 +37,7 @@ jobs:
     needs: frontend
     strategy:
       matrix:
-        engine: [engine-a-market-data, engine-b-ai-ml, engine-c-execution, engine-d-chatbot, engine-ultra-aggressive]
+        engine: [engine-a, engine-b, engine-c-execution, engine-d]
     name: Build engine ${{ matrix.engine }}
     steps:
       - uses: actions/checkout@v4
