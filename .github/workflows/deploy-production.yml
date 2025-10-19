@@ -26,7 +26,7 @@ jobs:
 
       - name: 'Build and Push Docker image'
         run: |
-          gcloud builds submit --tag "gcr.io/$PROJECT_ID/infinityai-frontend" "infinityai-frontend"
+          gcloud builds submit --tag "gcr.io/$PROJECT_ID/infinityai-frontend" "frontend-new"
 
       - name: 'Deploy to Cloud Run'
         run: |
