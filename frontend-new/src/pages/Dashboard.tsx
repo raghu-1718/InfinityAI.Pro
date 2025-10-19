@@ -1,18 +1,11 @@
 
-import { useEngineHealth } from '../hooks/useEngineHealth'
-import { usePortfolio } from '../hooks/usePortfolio'
-import LiveEngineGrid from '../components/dashboard/LiveEngineGrid'
-import DashboardCard from '../components/dashboard/DashboardCard'
-import TokenStatusCard from '../components/dashboard/TokenStatusCard'
-import HoldingsAnalysisCard from '../components/dashboard/HoldingsAnalysisCard'
-import { Wallet, TrendingUp, Cpu } from 'lucide-react'
-
+import DashboardCard from '../components/dashboard/DashboardCard';
+import { Wallet, TrendingUp, Cpu } from 'lucide-react';
+import EngineHealth from '../components/dashboard/EngineHealth';
+import AISignals from '../components/dashboard/AISignals';
+import TradeLog from '../components/dashboard/TradeLog';
 
 export default function Dashboard() {
-  const { data: engines } = useEngineHealth()
-  const { data: portfolio, isLoading: loadingPortfolio } = usePortfolio()
-  const healthyEngines = engines?.filter(e => e.healthy).length || 0
-  const totalEngines = engines?.length || 4
 
   return (
     <div className="space-y-6">
@@ -30,35 +23,32 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DashboardCard
           title="Portfolio Value"
-          value={loadingPortfolio ? 'Loading...' : `₹${portfolio?.value?.toLocaleString?.() ?? '--'}`}
-          trend={loadingPortfolio ? '' : (portfolio?.pnl && portfolio.pnl >= 0 ? `+${portfolio.pnl.toLocaleString?.()}` : `${portfolio?.pnl?.toLocaleString?.() ?? ''}`)}
+          value={`$12,345.67`}
+          trend={`+1.2%`}
           icon={<Wallet className="text-green-400" size={20} />}
         />
         <DashboardCard
           title="Today's P&L"
-          value={loadingPortfolio ? 'Loading...' : `₹${portfolio?.pnl?.toLocaleString?.() ?? '--'}`}
-          trend={loadingPortfolio ? '' : (portfolio?.pnl && portfolio.pnl >= 0 ? '+1.2%' : '-1.2%')}
+          value={`$123.45`}
+          trend={`+0.5%`}
           icon={<TrendingUp className="text-green-400" size={20} />}
         />
         <DashboardCard
           title="Active Engines"
-          value={`${healthyEngines}/${totalEngines}`}
-          trend={healthyEngines === totalEngines ? 'All Online' : 'Degraded'}
+          value={`4/4`}
+          trend={`All Online`}
           icon={<Cpu className="text-green-400" size={20} />}
         />
       </div>
 
-      {/* Token Status & Holdings Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TokenStatusCard />
-        <HoldingsAnalysisCard />
+        <EngineHealth />
+        <AISignals />
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">Engine Status</h2>
-        <LiveEngineGrid />
+        <TradeLog />
       </div>
     </div>
   )
 }
-
