@@ -1,204 +1,39 @@
-name: Deploy Production Stack (GCP Only)
+name: Deploy Frontend to Production
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag for engine containers (e.g., latest, git-sha)'
-        required: true
-        default: 'latest'
-      dry_run:
-        description: 'Set to true to run validation without deploying'
-        type: boolean
-        default: true
-  repository_dispatch:
-    types: [run-deploy-production]
-
-permissions:
-  contents: read
-  id-token: write
+  push:
+    branches:
+      - main
 
 env:
-  # Make dry-run available to steps as string 'true' or 'false'
-  DRY_RUN: ${{ github.event.inputs.dry_run }}
+  PROJECT_ID: infinity-ai-5ec7c
+  REGION: us-central1
 
 jobs:
-  deploy-gcp-engines:
-    name: Deploy Engines A, B, C, D & Ultra to GCP
+  deploy-frontend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - engine: engine-a-market-data
-            service_name: infinityai-engine-a
-            context: backend/engines/engine-a-market-data
-          - engine: engine-b-ai-ml
-            service_name: infinityai-engine-b
-            context: backend/engines/engine-b-ai-ml
-          - engine: engine-c-execution
-            service_name: infinityai-engine-c
-            context: backend/engines/engine-c-execution
-          - engine: engine-d-chatbot
-            service_name: infinityai-engine-d
-            context: backend/engines/engine-d-chatbot
-          - engine: engine-ultra-aggressive
-            service_name: infinityai-ultra-aggressive
-            context: backend/engines/engine-ultra-aggressive
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Dry-run notice (GCP)
-        run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Skipping GCP auth & deployment for ${{ matrix.service_name }}"
-          else
-            echo "Proceeding to authenticate to GCP for ${{ matrix.service_name }}"
-          fi
-
-      - name: Authenticate to Google Cloud
-        if: ${{ env.DRY_RUN == 'false' }}
-        uses: google-github-actions/auth@v2
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      - name: Set up Cloud SDK
-        if: ${{ env.DRY_RUN == 'false' }}
-        uses: google-github-actions/setup-gcloud@v2
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
 
-      - name: Build & Push (GCP)
+      - name: 'Build and Push Docker image'
         run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Would build & push ${{ matrix.service_name }} from ${{ matrix.context }}"
-            exit 0
-          fi
-          deploy-frontend-gcp:
-            name: Deploy Frontend to GCP Cloud Run (static)
-            if: ${{ github.event.inputs.dry_run == 'false' }}
-            runs-on: ubuntu-latest
-            steps:
-              - name: Checkout
-                uses: actions/checkout@v4
-              - name: Setup Node.js
-                uses: actions/setup-node@v4
-                with:
-                  node-version: '20'
-                  cache: 'npm'
-                  cache-dependency-path: frontend/web/package-lock.json
-              - name: Build Frontend
-                working-directory: frontend/web
-                run: |
-                  if [ -f package-lock.json ]; then npm ci; else npm install; fi
-                  npm run build
-              - name: Authenticate to GCP
-                uses: google-github-actions/auth@v2
-                with:
-                  workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-                  service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-              - name: Setup gcloud
-                uses: google-github-actions/setup-gcloud@v2
-              - name: Build and push frontend image
-                env:
-                  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
-                  GCP_REGION: ${{ secrets.GCP_REGION }}
-                run: |
-                  REG_HOST="${GCP_REGION}-docker.pkg.dev"
-                  IMAGE_NAME="$REG_HOST/${GCP_PROJECT}/infinityai-repo/frontend-web:${{ github.event.inputs.image_tag }}"
-                  gcloud auth configure-docker "$REG_HOST" --quiet
-                  docker build -t "$IMAGE_NAME" -f frontend/web/Dockerfile frontend/web
-                  docker push "$IMAGE_NAME"
-              - name: Deploy to Cloud Run
-                env:
-                  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
-                  GCP_REGION: ${{ secrets.GCP_REGION }}
-                run: |
-                  gcloud run deploy infinityai-frontend --image "${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/infinityai-repo/frontend-web:${{ github.event.inputs.image_tag }}" --region "${GCP_REGION}" --platform managed --allow-unauthenticated
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+          gcloud builds submit --tag "gcr.io/$PROJECT_ID/infinityai-frontend" "infinityai-frontend"
 
-      - name: Dry-run notice (frontend)
+      - name: 'Deploy to Cloud Run'
         run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Skipping AWS auth & frontend deployment"
-          else
-            echo "Proceeding to configure AWS for frontend deploy"
-          fi
-
-      - name: Configure AWS credentials
-        if: ${{ env.DRY_RUN == 'false' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION || 'us-east-1' }}
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/web/package-lock.json
-
-      - name: Build Frontend
-        working-directory: frontend/web
-        run: |
-          echo "Node version: $(node --version)" || true
-          echo "npm version: $(npm --version)" || true
-          # Ensure a failing `npm ci` doesn't abort the whole step when runner enables errexit.
-          set +e
-          npm ci
-          RC=$?
-          set -e
-          if [ $RC -eq 0 ]; then
-            npm run build
-          else
-            echo "npm ci failed (exit $RC); attempting npm install fallback (this will update node_modules based on package.json)"
-            npm install
-            npm run build
-          fi
-
-      - name: Prepare bucket and Deploy to S3
-        working-directory: frontend/web
-        run: |
-          # Always show intent in dry-run, but only call AWS when not dry-run
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Would check/create bucket: ${S3_BUCKET} and sync build/ -> s3://${S3_BUCKET}"
-            exit 0
-          fi
-          if [ -z "${{ env.S3_BUCKET }}" ]; then
-            echo "Missing AWS_S3_BUCKET_FRONTEND secret"; exit 11
-          fi
-          # Verify bucket exists, create if necessary
-          if aws s3api head-bucket --bucket "${{ env.S3_BUCKET }}" 2>/dev/null; then
-            echo "Bucket ${{ env.S3_BUCKET }} already exists."
-          else
-            echo "Bucket ${{ env.S3_BUCKET }} does not exist. Creating in region ${AWS_REGION}..."
-            aws s3api create-bucket --bucket "${{ env.S3_BUCKET }}" --region "${AWS_REGION}" || { echo "Failed to create bucket"; exit 12; }
-          fi
-          aws s3 sync build/ s3://${{ env.S3_BUCKET }} --delete
-
-      - name: Invalidate CloudFront Cache
-        if: ${{ env.DRY_RUN == 'false' }}
-        run: |
-          if [ -z "${{ env.CLOUDFRONT_ID }}" ]; then
-            echo "Missing AWS_CLOUDFRONT_DISTRIBUTION_ID secret"; exit 12
-          fi
-          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_ID }} --paths "/*"
-
-  summary:
-    name: Deployment Summary
-    runs-on: ubuntu-latest
-    needs: [deploy-gcp-engines, deploy-frontend-gcp]
-    steps:
-      - name: Report Result
-        run: |
-          if [ "${{ env.DRY_RUN }}" = "true" ]; then
-            echo "[DRY RUN] Completed validation without performing cloud actions."
-            echo "✅ Workflow completed (status aggregation may include skipped steps)."
-            echo "Application URL: https://infinityai.pro"
-            exit 0
-          fi
-          echo "✅✅✅"
-          echo "All components deployed successfully to AWS and GCP!"
-          echo "Application URL: https://infinityai.pro"
-
+          gcloud run deploy "infinityai-frontend" \
+            --image="gcr.io/$PROJECT_ID/infinityai-frontend" \
+            --platform=managed \
+            --region="$REGION" \
+            --project="$PROJECT_ID" \
+            --allow-unauthenticated \
+            --quiet
