@@ -28,27 +28,11 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
-      - name: Download image artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: image-engine-a-market-data
-          path: tmp/images
-      - name: Build / load images (if artifacts present)
-        run: |
-          echo "Looking for local image artifacts in tmp/images..."
-      - name: Build docker image for engine-a
-        run: |
-          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
-          LOCAL_IMAGE="infinityai/engine-a:${IMAGE_TAG}"
-          docker build -t "${LOCAL_IMAGE}" backend/engines/engine-a-market-data
+      # Removed ultra engine and market-data engine references
       - name: Prepare image URI and call deploy script
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ secrets.GCP_REGION }}
         run: |
           IMAGE_TAG="${{ github.event.inputs.image_tag }}"
-          LOCAL_IMAGE="infinityai/engine-a:${IMAGE_TAG}"
-          TARGET_IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT}/infinityai-repo/engine-a:${IMAGE_TAG}"
-          DRY_RUN=${{ github.event.inputs.dry_run }}
-          echo "Calling deploy script with TARGET_IMAGE=${TARGET_IMAGE} (dry_run=${DRY_RUN})"
-          bash scripts/deploy_cloudrun.sh "${LOCAL_IMAGE}" "${TARGET_IMAGE}" "infinityai-engine-a" "${GCP_REGION}" "${GCP_PROJECT}" "${DRY_RUN}"
+          # No engine-a-market-data or ultra engine references remain

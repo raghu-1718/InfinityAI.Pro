@@ -55,7 +55,7 @@ jobs:
           python -c "import sys; print('import test for engine: ${{ matrix.engine }}');"
       - name: Build docker image
         run: |
-          docker build -t ${{ github.repository }}:${{ matrix.engine }} backend/engines/${{ matrix.engine }}
+          docker build -t raghu1718/infinityai-pro:${{ matrix.engine }} backend/engines/${{ matrix.engine }}
       - name: Save image info
         run: echo "IMAGE_URI=docker://${{ github.repository }}:${{ matrix.engine }}" > image_info.txt
       - uses: actions/upload-artifact@v4
