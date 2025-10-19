@@ -21,38 +21,33 @@ logger = logging.getLogger(__name__)
 
 class ProductionDeployer:
     def __init__(self):
-        self.project_id = "573866363639"
+        self.project_id = "infinity-ai-5ec7c"
         self.region = "us-central1"
         self.domain = "infinityai.pro"
         
         self.services = {
-            'engine-a': {
-                'path': 'backend/engines/engine-a-market-data',
+            'infinityai-engine-a': {
+                'path': 'backend/engines/engine-a',
                 'description': 'Market Data Engine - Real-time NIFTY/BANKNIFTY data',
                 'port': 8080
             },
-            'engine-b': {
-                'path': 'backend/engines/engine-b-ai-ml',
+            'infinityai-engine-b': {
+                'path': 'backend/engines/engine-b',
                 'description': 'AI/ML Engine - Predictions and signals',
                 'port': 8080
             },
-            'engine-c': {
+            'infinityai-engine-c-execution': {
                 'path': 'backend/engines/engine-c-execution',
                 'description': 'Trading Engine - Secure OAuth & order execution',
                 'port': 8080
             },
-            'engine-d': {
-                'path': 'backend/engines/engine-d-chatbot',
+            'infinityai-engine-d': {
+                'path': 'backend/engines/engine-d',
                 'description': 'Chatbot Engine - Multi-engine orchestration',
                 'port': 8080
             },
-            'engine-ultra': {
-                'path': 'backend/engines/engine-ultra',
-                'description': 'Ultra Trading Engine - Advanced metrics',
-                'port': 8080
-            },
-            'frontend': {
-                'path': 'frontend',
+            'infinityai-frontend': {
+                'path': 'frontend-new',
                 'description': 'Dashboard Frontend - Real-time UI & data aggregation',
                 'port': 8080
             }
@@ -168,6 +163,7 @@ class ProductionDeployer:
             f"gcloud run deploy {service_name} "
             f"--source={service_path} "
             f"--region={self.region} "
+            f"--project={self.project_id} "
             f"--platform=managed "
             f"--allow-unauthenticated "
             f"--port={port} "
@@ -194,9 +190,10 @@ class ProductionDeployer:
         # Map frontend service to domain
         domain_mapping_command = (
             f"gcloud run domain-mappings create "
-            f"--service=frontend "
+            f"--service=infinityai-frontend "
             f"--domain={self.domain} "
-            f"--region={self.region}"
+            f"--region={self.region} "
+            f"--project={self.project_id}"
         )
         
         return self.run_command(domain_mapping_command)
@@ -233,7 +230,7 @@ class ProductionDeployer:
         
         successful_deployments = sum(1 for success in results.get('deployments', {}).values() if success)
         total_services = len(self.services)
-        deployment_success_rate = (successful_deployments / total_services) * 100
+        deployment_success_rate = (successful_deployments / total_services) * 100 if total_services > 0 else 0
         
         report = {
             'deployment_timestamp': datetime.now().isoformat(),
