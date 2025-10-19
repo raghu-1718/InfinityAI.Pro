@@ -1,0 +1,6 @@
+{
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://monospace-6.web.app"
+  },
+  "cloud_run_deploy": {}
+}

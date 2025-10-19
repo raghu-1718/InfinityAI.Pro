@@ -1,0 +1,18 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/equity-engine', './equity-engine']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/option-engine', './option-engine']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/equity-engine']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/option-engine']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'equity-engine', '--image', 'gcr.io/$PROJECT_ID/equity-engine', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'option-engine', '--image', 'gcr.io/$PROJECT_ID/option-engine', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+images:
+- 'gcr.io/$PROJECT_ID/equity-engine'
+- 'gcr.io/$PROJECT_ID/option-engine'
