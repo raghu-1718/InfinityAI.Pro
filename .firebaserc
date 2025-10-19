@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "infinityaipro-39809526"
-  }
+    "default": "monospace-6"
+  },
+  "targets": {},
+  "etags": {}
 }
