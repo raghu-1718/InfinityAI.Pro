@@ -10,7 +10,7 @@ permissions:
 
 env:
   PYTHON_VERSION: '3.11'
-  FRONTEND_DIR: frontend/web
+  FRONTEND_DIR: frontend-new
 
 jobs:
   frontend:
@@ -30,7 +30,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: ${{ env.FRONTEND_DIR }}/build
+          path: ${{ env.FRONTEND_DIR }}/dist
 
   engines:
     runs-on: ubuntu-latest
