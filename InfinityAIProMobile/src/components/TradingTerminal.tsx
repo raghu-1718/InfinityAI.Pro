@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 
-const CHATBOT_API_URL = 'https://engine-d-chatbot-prod.infinityai.pro/execute_trade';
+const CHATBOT_API_URL = 'https://engine.infinityai.pro/execute_trade';
 
 const TradingTerminal = () => {
   const [command, setCommand] = useState('');

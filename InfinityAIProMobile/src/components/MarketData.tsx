@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import io from 'socket.io-client';
 
-const WEBSOCKET_URL = 'wss://engine-a-market-data-prod.infinityai.pro';
+const WEBSOCKET_URL = 'wss://api.infinityai.pro';
 
 const MarketData = () => {
   const [nifty, setNifty] = useState('-');
