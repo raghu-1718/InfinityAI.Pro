@@ -45,11 +45,17 @@ Top-level engine folders (backend/engine-a, engine-b, engine-c, engine-d) now ex
 
 ## Cloud Run URLs (production)
 
-- Engine A: https://engine-a-market-data-prod-573866363639.us-central1.run.app
-- Engine B: https://engine-b-ai-ml-prod-573866363639.us-central1.run.app
-- Engine C: https://engine-c-execution-prod-573866363639.us-central1.run.app
-- Engine D: https://engine-d-chatbot-prod-573866363639.us-central1.run.app
-- Frontend: infinityai-frontend (Cloud Run URL printed on deploy)
+**Canonical URLs:**
+- Engine A: https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app
+- Engine B: https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app
+- Engine C: https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app
+- Engine D: https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app
+- Frontend: https://infinityai-frontend-ckxt6xvshq-uc.a.run.app
+
+**Custom Domain Mappings (DNS pending):**
+- Main Site: https://infinityai.pro → infinityai-frontend
+- API/Execution: https://api.infinityai.pro → infinityai-engine-c-execution
+- Orchestration: https://engine.infinityai.pro → infinityai-engine-d
 
 ## Security & Connectivity
 

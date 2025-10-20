@@ -159,11 +159,11 @@ npm run dev
 Your `.env` is pre-configured with:
 
 ```env
-VITE_ENGINE_A_URL=https://engine-a-market-data-prod-573866363639.us-central1.run.app
-VITE_ENGINE_B_URL=https://engine-b-ai-ml-prod-573866363639.us-central1.run.app
-VITE_ENGINE_C_URL=https://engine-c-execution-prod-573866363639.us-central1.run.app
-VITE_ENGINE_D_URL=https://engine-d-chatbot-prod-573866363639.us-central1.run.app
-VITE_GCP_PROJECT_ID=after-yesterday-473512-k3
+VITE_ENGINE_A_URL=https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_B_URL=https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_C_URL=https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_D_URL=https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app
+VITE_GCP_PROJECT_ID=infinity-ai-5ec7c
 VITE_GCP_REGION=us-central1
 ```
 

@@ -17,14 +17,19 @@ npm install
 
 ## 2. Configure Environment
 
-The `.env` file is already configured with your GCP Cloud Run URLs:
+The `.env` file should be configured with canonical Cloud Run URLs:
 
 ```env
-VITE_ENGINE_A_URL=https://engine-a-market-data-prod-573866363639.us-central1.run.app
-VITE_ENGINE_B_URL=https://engine-b-ai-ml-prod-573866363639.us-central1.run.app
-VITE_ENGINE_C_URL=https://engine-c-execution-prod-573866363639.us-central1.run.app
-VITE_ENGINE_D_URL=https://engine-d-chatbot-prod-573866363639.us-central1.run.app
+VITE_ENGINE_A_URL=https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_B_URL=https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_C_URL=https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_D_URL=https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app
 ```
+
+**Production URLs** (after custom domain DNS configuration):
+- Engine A (Market Data): `https://api.infinityai.pro`
+- Engine C (Execution): `https://api.infinityai.pro`
+- Engine D (Orchestration): `https://engine.infinityai.pro`
 
 ## 3. Run Locally
 
@@ -155,19 +160,22 @@ frontend-new/
 The frontend connects to all 4 backend engines:
 
 ### Engine A (Market Data)
-- Base URL: `https://engine-a-market-data-prod-573866363639.us-central1.run.app`
+- Canonical URL: `https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app`
+- Production URL: `https://api.infinityai.pro`
 - Features: Live market data, option chains
 
 ### Engine B (AI/ML)
-- Base URL: `https://engine-b-ai-ml-prod-573866363639.us-central1.run.app`
+- Canonical URL: `https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app`
 - Features: AI signals, sentiment analysis
 
 ### Engine C (Trade Execution)
-- Base URL: `https://engine-c-execution-prod-573866363639.us-central1.run.app`
+- Canonical URL: `https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app`
+- Production URL: `https://api.infinityai.pro`
 - Features: Order placement, portfolio management
 
 ### Engine D (Orchestration)
-- Base URL: `https://engine-d-chatbot-prod-573866363639.us-central1.run.app`
+- Canonical URL: `https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app`
+- Production URL: `https://engine.infinityai.pro`
 - Features: Health monitoring, WebSocket, chatbot
 
 ## 🐛 Troubleshooting

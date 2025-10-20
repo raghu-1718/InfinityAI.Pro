@@ -12,7 +12,7 @@
 | **CI/CD** | ✅ 100% Success | Last 5 builds passed, <10s avg |
 | **Performance** | ⚠️ Cold Start | Warm: 340ms ✅ / Cold: 8s ⚠️ |
 | **Security** | ✅ Secured | IAM proper, Firestore rules enforced |
-| **Duplicates** | ⚠️ Cleanup Needed | 2 duplicate service pairs identified |
+| **Duplicates** | ✅ Removed | Legacy engine-*-prod services deleted |
 
 ---
 
@@ -20,10 +20,10 @@
 
 ### Service Availability
 - **Frontend:** https://infinityai-frontend-ckxt6xvshq-uc.a.run.app ✅
-- **Engine A (Market Data):** 2 instances (consolidate) ⚠️
-- **Engine B (AI/ML):** Healthy ✅
-- **Engine C (Execution):** 2 instances (consolidate) ⚠️
-- **Engine D (Chatbot):** Healthy (1 error logged) ⚠️
+- **Engine A (Market Data):** https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app ✅
+- **Engine B (AI/ML):** https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app ✅
+- **Engine C (Execution):** https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app ✅
+- **Engine D (Orchestrator/Chatbot):** https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app ✅
 
 ### Performance Benchmarks
 ```
@@ -48,15 +48,13 @@ CI/CD Time:  ██████████ 7s (excellent)
 
 ### 2️⃣ Consolidate Duplicate Services (HIGH)
 **Impact:** Operational clarity, cost savings  
-**Duplicates:**
-- `engine-a-market-data-prod` → `infinityai-engine-a`
-- `engine-c-execution-prod` → `infinityai-engine-c-execution`
-
-**Command:**
-```bash
-.\scripts\optimize-production.ps1 -CleanupDuplicates -DryRun
-```
-**Action:** Verify new services for 7 days, then delete old ones
+**Result:** Completed — legacy services removed
+- Deleted: `engine-a-market-data-prod`, `engine-b-ai-ml-prod`, `engine-c-execution-prod`, `engine-d-chatbot-prod`
+- Canonical services:
+	- `infinityai-engine-a`
+	- `infinityai-engine-b`
+	- `infinityai-engine-c-execution`
+	- `infinityai-engine-d`
 
 ### 3️⃣ Add Error Monitoring Alerts (MEDIUM)
 **Impact:** Proactive error detection  
@@ -78,12 +76,18 @@ CI/CD Time:  ██████████ 7s (excellent)
 **Last Credential Update:** 2025-10-19  
 **Next Rotation Due:** ~2026-01-19 (90-day policy)
 
+Planned next steps:
+- Inject secrets via Secret Manager bindings to Cloud Run (no plaintext env)
+- Script: `.\scripts\inject-secrets.ps1` (templated commands)
+
 ---
 
 ## 📁 Key Documents
 
 1. **Full Audit Report:** `reports/PRODUCTION_AUDIT_REPORT_2025-10-20.md`
 2. **Optimization Script:** `scripts/optimize-production.ps1`
+3. **Traffic Shift Runbook:** `docs/RUNBOOK_TRAFFIC_SHIFT.md`
+4. **Domain Mapping Helper:** `scripts/prepare-domain-mappings.ps1`
 3. **IAM Configuration:** `docs/GCP_IAM_CONFIGURATION.md`
 4. **Firestore Rules:** `firestore.rules`
 
@@ -107,8 +111,11 @@ Before your next deploy, complete this ritual:
 
 - [ ] Review full audit report
 - [ ] Check Cloud Console for active alerts
-- [ ] Verify all services respond to /health
-- [ ] Run optimization script in dry-run mode
+- [x] Verify all services respond to /health
+- [x] Migrate traffic to canonical services
+- [x] Delete legacy duplicate services
+- [ ] Configure apex + subdomain DNS with registrar
+- [ ] Re-run verification after DNS propagates (SSL active)
 - [ ] Update architecture docs if services changed
 - [ ] Commit changes with meaningful messages
 - [ ] Monitor first 5 minutes post-deploy
@@ -144,6 +151,18 @@ gcloud logging read 'resource.type="cloud_run_revision" AND severity>=WARNING' -
 ```bash
 gcloud run services list --project=infinity-ai-5ec7c --region=us-central1
 ```
+
+### Domain Mapping (Current)
+Provisioned mappings and required DNS records:
+- Apex `infinityai.pro` → Service `infinityai-frontend`
+	- A: 216.239.32.21, 216.239.34.21, 216.239.36.21, 216.239.38.21
+	- AAAA: 2001:4860:4802:32::15, 2001:4860:4802:34::15, 2001:4860:4802:36::15, 2001:4860:4802:38::15
+- Subdomain `api.infinityai.pro` → Service `infinityai-engine-c-execution`
+	- CNAME: ghs.googlehosted.com.
+- Subdomain `engine.infinityai.pro` → Service `infinityai-engine-d`
+	- CNAME: ghs.googlehosted.com.
+
+After DNS propagation, SSL certificates will auto-provision.
 
 ---
 

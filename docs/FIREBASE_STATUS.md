@@ -111,10 +111,15 @@ Complete guides available:
 
 ## 📊 Service URLs
 
-- Engine A: https://engine-a-573866363639.us-central1.run.app
-- Engine B: https://engine-b-ai-ml-prod-573866363639.us-central1.run.app
-- Engine C: https://engine-c-execution-prod-573866363639.us-central1.run.app
-- Engine D: https://engine-d-orchestration-prod-573866363639.us-central1.run.app
+**Canonical Cloud Run URLs:**
+- Engine A: https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app
+- Engine B: https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app
+- Engine C: https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app
+- Engine D: https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app
+
+**Production Domain Mappings:**
+- https://api.infinityai.pro → Engine C (Execution)
+- https://engine.infinityai.pro → Engine D (Orchestration)
 
 ## ✅ Verification Commands
 

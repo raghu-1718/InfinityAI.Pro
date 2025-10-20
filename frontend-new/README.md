@@ -33,13 +33,13 @@ npm install
 
 ### Environment Configuration
 
-Update `.env` with your actual GCP Cloud Run URLs:
+Update `.env` with canonical Cloud Run URLs:
 
 ```env
-VITE_ENGINE_A_URL=https://infinityai-engine-a-573866363639.us-central1.run.app
-VITE_ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app
-VITE_ENGINE_C_URL=https://infinityai-engine-c-execution-573866363639.us-central1.run.app
-VITE_ENGINE_D_URL=https://infinityai-engine-d-573866363639.us-central1.run.app
+VITE_ENGINE_A_URL=https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_B_URL=https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_C_URL=https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app
+VITE_ENGINE_D_URL=https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app
 ```
 
 ### Development
