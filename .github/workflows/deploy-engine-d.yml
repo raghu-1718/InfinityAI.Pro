@@ -46,7 +46,7 @@ jobs:
       - name: Build, tag, and push image to ECR
         working-directory: ./infinityai-pro/backend/engines/engine-d
         run: |
-          ECR_URI="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          ECR_URI="${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ env.IMAGE_TAG }}"
           echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
           docker build -t "$ECR_URI" .
           docker push "$ECR_URI"

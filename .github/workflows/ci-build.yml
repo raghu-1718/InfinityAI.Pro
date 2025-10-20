@@ -10,7 +10,7 @@ permissions:
 
 env:
   PYTHON_VERSION: '3.11'
-  FRONTEND_DIR: frontend/web
+  FRONTEND_DIR: frontend-new
 
 jobs:
   frontend:
@@ -30,14 +30,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: ${{ env.FRONTEND_DIR }}/build
+          path: ${{ env.FRONTEND_DIR }}/dist
 
   engines:
     runs-on: ubuntu-latest
     needs: frontend
     strategy:
       matrix:
-        engine: [engine-a-market-data, engine-b-ai-ml, engine-c-execution, engine-d-chatbot, engine-ultra-aggressive]
+        engine: [engine-a, engine-b, engine-c-execution, engine-d]
     name: Build engine ${{ matrix.engine }}
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
           python -c "import sys; print('import test for engine: ${{ matrix.engine }}');"
       - name: Build docker image
         run: |
-          docker build -t ${{ github.repository }}:${{ matrix.engine }} backend/engines/${{ matrix.engine }}
+          docker build -t raghu1718/infinityai-pro:${{ matrix.engine }} backend/engines/${{ matrix.engine }}
       - name: Save image info
         run: echo "IMAGE_URI=docker://${{ github.repository }}:${{ matrix.engine }}" > image_info.txt
       - uses: actions/upload-artifact@v4

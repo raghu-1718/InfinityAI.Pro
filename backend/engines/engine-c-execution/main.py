@@ -1900,9 +1900,20 @@ async def update_dhan_credentials(
             except Exception as e:
                 logger.warning(f"Failed to persist credentials to Secret Manager: {e}")
 
+        # Re-evaluate execution_enabled based on all credentials
+        execution_service.execution_enabled = all([
+            execution_service.dhan_token,
+            execution_service.dhan_client_id,
+            execution_service.dhan_api_key,
+            execution_service.dhan_api_secret
+        ])
+        
+        logger.info(f"🔄 Execution enabled status updated: {execution_service.execution_enabled}")
+
         return {
             "status": "updated",
             "persisted": persisted,
+            "execution_enabled": execution_service.execution_enabled,
             "timestamp": datetime.now().isoformat()
         }
     except HTTPException:
@@ -1940,9 +1951,20 @@ async def update_dhan_access_token(request_data: dict):
             except Exception as se:
                 logger.warning(f"Could not persist token to Secret Manager: {se}")
 
+        # Re-evaluate execution_enabled based on all credentials
+        execution_service.execution_enabled = all([
+            execution_service.dhan_token,
+            execution_service.dhan_client_id,
+            execution_service.dhan_api_key,
+            execution_service.dhan_api_secret
+        ])
+        
+        logger.info(f"🔄 Execution enabled status updated: {execution_service.execution_enabled}")
+
         return {
             "status": "updated",
             "persisted": persisted,
+            "execution_enabled": execution_service.execution_enabled,
             "timestamp": datetime.now().isoformat()
         }
     except HTTPException:
