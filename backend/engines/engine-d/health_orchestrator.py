@@ -17,9 +17,9 @@ class HealthOrchestrator:
     def __init__(self):
         # Prefer environment variables set at deploy time; fallback to sane defaults
         self.engines = {
-            "A": os.getenv("ENGINE_A_URL", "https://engine-a-market-data-prod-573866363639.us-central1.run.app"),
-            "B": os.getenv("ENGINE_B_URL", "https://engine-b-ai-ml-prod-573866363639.us-central1.run.app"),
-            "C": os.getenv("ENGINE_C_URL", "https://engine-c-execution-prod-573866363639.us-central1.run.app"),
+            "A": os.getenv("ENGINE_A_URL", "https://infinityai-engine-a-573866363639.us-central1.run.app"),
+            "B": os.getenv("ENGINE_B_URL", "https://infinityai-engine-b-573866363639.us-central1.run.app"),
+            "C": os.getenv("ENGINE_C_URL", "https://infinityai-engine-c-execution-573866363639.us-central1.run.app"),
         }
         self.timeout = 3.0
         self.cache_duration = 30  # Cache results for 30 seconds
@@ -38,19 +38,14 @@ class HealthOrchestrator:
                 if response.status == 200:
                     try:
                         data = await response.json()
-                        return name, {
-                            "healthy": True,
-                            "status": "operational",
-                            "response_time_ms": response_time,
-                            "details": data.get("service", f"engine-{name.lower()}")
-                        }
-                    except:
-                        return name, {
-                            "healthy": True,
-                            "status": "responding",
-                            "response_time_ms": response_time,
-                            "details": "health_ok"
-                        }
+                    except Exception:
+                        data = {"service": "health_ok"}
+                    return name, {
+                        "healthy": True,
+                        "status": "operational",
+                        "response_time_ms": response_time,
+                        "details": data.get("service", f"engine-{name.lower()}")
+                    }
                 else:
                     return name, {
                         "healthy": False,
@@ -111,6 +106,13 @@ class HealthOrchestrator:
         health_percentage = round((healthy_count / total_engines) * 100) if total_engines > 0 else 0
         avg_response_time = round(total_response_time / total_engines) if total_engines > 0 else 0
 
+        if health_percentage >= 60:
+            overall_status = "healthy"
+        elif health_percentage >= 40:
+            overall_status = "degraded"
+        else:
+            overall_status = "critical"
+
         # Build comprehensive response
         comprehensive_health: Dict[str, Any] = {
             "timestamp": current_time,
@@ -119,7 +121,7 @@ class HealthOrchestrator:
                 "total_engines": total_engines,
                 "health_percentage": health_percentage,
                 "avg_response_time_ms": avg_response_time,
-                "overall_status": "healthy" if health_percentage >= 60 else "degraded" if health_percentage >= 40 else "critical"
+                "overall_status": overall_status
             },
             "engines": engine_health,
             "system_status": {
@@ -138,7 +140,7 @@ class HealthOrchestrator:
     def get_simple_health_status(self) -> Dict[str, bool]:
         """Get simple boolean health status for backward compatibility"""
         if not self._health_cache:
-            return {name: False for name in self.engines.keys()}
+            return dict.fromkeys(self.engines.keys(), False)
         
         return {
             name: data["healthy"] 

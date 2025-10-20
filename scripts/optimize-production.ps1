@@ -74,7 +74,9 @@ if ($CleanupDuplicates -or $All) {
     
     $duplicates = @(
         @{Old="engine-a-market-data-prod"; New="infinityai-engine-a"},
-        @{Old="engine-c-execution-prod"; New="infinityai-engine-c-execution"}
+        @{Old="engine-b-ai-ml-prod"; New="infinityai-engine-b"},
+        @{Old="engine-c-execution-prod"; New="infinityai-engine-c-execution"},
+        @{Old="engine-d-chatbot-prod"; New="infinityai-engine-d"}
     )
     
     foreach ($dup in $duplicates) {

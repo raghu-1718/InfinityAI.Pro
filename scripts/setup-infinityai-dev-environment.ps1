@@ -321,11 +321,11 @@ GCP_REGION=us-central1
 # Firebase Project
 FIREBASE_PROJECT_ID=infinity-ai-5ec7c
 
-# Engine URLs
-ENGINE_A_URL=https://engine-a-573866363639.us-central1.run.app
-ENGINE_B_URL=https://engine-b-ai-ml-prod-573866363639.us-central1.run.app
-ENGINE_C_URL=https://engine-c-execution-prod-573866363639.us-central1.run.app
-ENGINE_D_URL=https://engine-d-orchestration-prod-573866363639.us-central1.run.app
+# Engine URLs (Canonical Cloud Run service URLs)
+ENGINE_A_URL=https://infinityai-engine-a-573866363639.us-central1.run.app
+ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app
+ENGINE_C_URL=https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+ENGINE_D_URL=https://infinityai-engine-d-573866363639.us-central1.run.app
 
 # Secrets (use Secret Manager in production)
 # FIREBASE_SERVICE_ACCOUNT=<from Secret Manager>
