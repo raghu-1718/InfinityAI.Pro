@@ -19,7 +19,7 @@ class HealthOrchestrator:
         self.engines = {
             "A": os.getenv("ENGINE_A_URL", "https://infinityai-engine-a-573866363639.us-central1.run.app"),
             "B": os.getenv("ENGINE_B_URL", "https://infinityai-engine-b-573866363639.us-central1.run.app"),
-            "C": os.getenv("ENGINE_C_URL", "https://infinityai-engine-c-execution-573866363639.us-central1.run.app"),
+            "C": os.getenv("ENGINE_C_URL", "https://api.infinityai.pro"),
         }
         self.timeout = 3.0
         self.cache_duration = 30  # Cache results for 30 seconds
