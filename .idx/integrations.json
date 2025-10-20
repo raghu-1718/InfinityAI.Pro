@@ -2,5 +2,7 @@
   "firebase_hosting": {
     "deploymentHostingUrl": "https://monospace-6.web.app"
   },
-  "cloud_run_deploy": {}
+  "cloud_run_deploy": {},
+  "gemini_api": {},
+  "secrets_manager": {}
 }

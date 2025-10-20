@@ -1,6 +1,6 @@
-const functions = require("firebase-functions/v1");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const crypto = require("crypto");
+const crypto = require("crypto"); // Consider replacing with Node.js built-in crypto if possible
 const axios = require("axios");
 
 admin.initializeApp();
@@ -19,16 +19,16 @@ function encrypt(text) {
   return `${iv.toString("hex")}:${authTag}:${encrypted}`;
 }
 
-exports.submitDhanCredentials = functions.https.onCall(async (data, context) => {
+exports.submitDhanCredentials = onCall(async (request) => {
   if (!secretKey) {
-    throw new functions.https.HttpsError("internal", "ENCRYPTION_KEY not set.");
+    throw new HttpsError("internal", "ENCRYPTION_KEY not set.");
   }
-  const uid = context.auth?.uid;
-  if (!uid) throw new functions.https.HttpsError("unauthenticated", "User not signed in");
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "User not signed in");
 
-  const { accessToken, apiKey, apiSecret } = data;
+  const { accessToken, apiKey, apiSecret } = request.data;
   if (!accessToken || !apiKey || !apiSecret)
-    throw new functions.https.HttpsError("invalid-argument", "Missing credentials");
+    throw new HttpsError("invalid-argument", "Missing credentials");
 
   const encrypted = {
     accessToken: encrypt(accessToken),

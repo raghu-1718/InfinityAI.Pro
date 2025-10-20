@@ -4,12 +4,12 @@
   "main": "dhanAuth.js",
   "dependencies": {
     "axios": "^1.4.0",
-    "crypto": "^1.0.1",
-    "firebase-admin": "^11.0.1",
-    "firebase-functions": "^5.0.1"
+    "crypto": "^1.0.1", // Consider if this is still needed or can be replaced by Node.js built-in crypto
+    "firebase-admin": "^12.0.0", // Updated to a recent version
+    "firebase-functions": "^5.2.0" // Updated to a later patch version
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "private": true
 }

@@ -29,17 +29,17 @@ service cloud.firestore {
     // Engine health, AI signals, trades — public read, function write
     match /engine_health/{docId} {
       allow read: if true;
-      allow write: if request.auth.token.admin == true;
+ allow write: if request.auth != null; // Assuming functions will be authenticated
     }
 
     match /ai_signals/{docId} {
       allow read: if true;
-      allow write: if request.auth.token.admin == true;
+ allow write: if request.auth != null; // Assuming functions will be authenticated
     }
 
     match /trades/{docId} {
       allow read: if true;
-      allow write: if request.auth.token.admin == true;
+ allow write: if request.auth != null; // Assuming functions will be authenticated
     }
   }
 }

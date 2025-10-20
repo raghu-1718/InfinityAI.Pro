@@ -21,5 +21,8 @@
   },
   "functions": {
     "source": "functions"
+  },
+  "extensions": {
+    "firestore-multimodal-genai": "googlecloud/firestore-multimodal-genai@1.0.2"
   }
 }
