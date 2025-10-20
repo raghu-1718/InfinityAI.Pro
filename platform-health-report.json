@@ -1,0 +1,103 @@
+{
+  "communication_tests": [
+    {
+      "status": "success",
+      "timestamp": "2025-10-20T19:02:53Z",
+      "engines_reachable": 3,
+      "total_engines": 3,
+      "test": "Engine D Coordination"
+    }
+  ],
+  "version": "1.0.0",
+  "frontend_tests": [
+    {
+      "status": "error",
+      "timestamp": "2025-10-20T19:02:56Z",
+      "error": "No such host is known. (infinityai.pro:443)",
+      "test": "Frontend Accessibility"
+    }
+  ],
+  "platform": "InfinityAI.Pro",
+  "trading_tests": [
+    {
+      "status": "success",
+      "active_positions": 0,
+      "timestamp": "2025-10-20T19:02:56Z",
+      "total_orders": 0,
+      "test": "Account Info Access"
+    }
+  ],
+  "environment": "production",
+  "summary": {
+    "total_services": 5,
+    "healthy_services": 4,
+    "overall_status": "degraded"
+  },
+  "timestamp": "2025-10-20T19:02:56Z",
+  "health_checks": [
+    {
+      "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
+      "response_time": 9473,
+      "status": "healthy",
+      "timestamp": "2025-10-20T19:02:20Z",
+      "error": null,
+      "service": "engine_a"
+    },
+    {
+      "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
+      "response_time": 1140,
+      "status": "healthy",
+      "timestamp": "2025-10-20T19:02:29Z",
+      "error": null,
+      "service": "engine_c"
+    },
+    {
+      "url": "https://infinityai.pro/api/engine-ultra",
+      "response_time": 2474,
+      "status": "error",
+      "timestamp": "2025-10-20T19:02:30Z",
+      "error": "No such host is known. (infinityai.pro:443)",
+      "service": "ultra_aggressive"
+    },
+    {
+      "url": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
+      "response_time": 362,
+      "status": "healthy",
+      "timestamp": "2025-10-20T19:02:33Z",
+      "error": null,
+      "service": "engine_b"
+    },
+    {
+      "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app",
+      "response_time": 359,
+      "status": "healthy",
+      "timestamp": "2025-10-20T19:02:33Z",
+      "error": null,
+      "service": "engine_d"
+    }
+  ],
+  "api_tests": [
+    {
+      "status": "success",
+      "timestamp": "2025-10-20T19:02:34Z",
+      "engine": "Engine A",
+      "api": "/api/signals",
+      "data_count": 5
+    },
+    {
+      "status": "success",
+      "timestamp": "2025-10-20T19:02:52Z",
+      "engine": "Engine B",
+      "api": "/api/ai-signals",
+      "data_count": 10
+    },
+    {
+      "engines_online": 3,
+      "overall_status": "healthy",
+      "status": "success",
+      "engine": "Engine D",
+      "timestamp": "2025-10-20T19:02:52Z",
+      "api": "/api/health/comprehensive"
+    }
+  ]
+}

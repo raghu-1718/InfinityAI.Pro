@@ -280,24 +280,32 @@ InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built
 
 ### **Live Production Endpoints**
 ```bash
-# Frontend Dashboard
+# Frontend Dashboard (Custom Domain)
 https://infinityai.pro
 
-# Engine Endpoints (All HTTPS Secured - GCP Cloud Run)
-https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app
-https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app
-https://engine-c-prod-bprmddefsa-uc.a.run.app
-https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app
-https://infinityai-frontend-bprmddefsa-uc.a.run.app
+# Backend Engines (Custom Domains)
+# API and Trade Execution (Engine A & C routed via api.infinityai.pro)
+https://api.infinityai.pro
+# Orchestration & Chatbot (Engine D)
+https://engine.infinityai.pro
+
+# Note
+# Canonical Cloud Run URLs remain available as fallbacks and for debugging.
+# See DEPLOYMENT_STATUS.md for current canonical service URLs.
 ```
 
 ### **Health Check Commands**
 ```bash
-# Check all engines health status
-curl https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health
-curl https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health
-curl https://engine-c-prod-bprmddefsa-uc.a.run.app/health
-curl https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health
+# Check production endpoints health status (after DNS + SSL are ACTIVE)
+curl https://infinityai.pro
+curl https://api.infinityai.pro/health
+curl https://engine.infinityai.pro/health
+
+# Optional: Check canonical Cloud Run endpoints (for debugging)
+# curl https://infinityai-engine-a-<id>.a.run.app/health
+# curl https://infinityai-engine-b-<id>.a.run.app/health
+# curl https://infinityai-engine-c-execution-<id>.a.run.app/health
+# curl https://infinityai-engine-d-<id>.a.run.app/health
 ```
 
 ---
