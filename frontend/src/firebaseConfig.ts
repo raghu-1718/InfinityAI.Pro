@@ -13,12 +13,13 @@ import { getFunctions, Functions, connectFunctionsEmulator } from "firebase/func
 
 // Firebase configuration - reads from Vite environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDEo_6fMZ8PXxN7kQ7vZg4Xr2JYw8FqYzI",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDjD8D3UYwM_PvPkPoBNZ5soOpsN7hoNVU",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "infinity-ai-5ec7c.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "infinity-ai-5ec7c",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "infinity-ai-5ec7c.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "26140490557",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:26140490557:web:abc123"
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:26140490557:web:6d99cdd77d3f9408c26354",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-3GPS2VZQS9"
 };
 
 // Initialize Firebase (singleton pattern to avoid multiple instances)
