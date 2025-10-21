@@ -25,6 +25,13 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Check build output exists
+        run: |
+          if [ ! -d "frontend/dist" ]; then
+            echo "Build output directory frontend/dist does not exist!"
+            exit 1
+          fi
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

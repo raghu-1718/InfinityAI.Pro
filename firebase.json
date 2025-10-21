@@ -23,7 +23,4 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
-  "extensions": {
-    "firestore-multimodal-genai": "googlecloud/firestore-multimodal-genai@1.0.2"
-  }
 }
