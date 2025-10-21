@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const crypto = require("crypto"); // Consider replacing with Node.js built-in crypto if possible
+const crypto = require("node:crypto"); // Use Node.js built-in crypto module
 const axios = require("axios");
 
 admin.initializeApp();
@@ -40,3 +40,9 @@ exports.submitDhanCredentials = onCall(async (request) => {
   await admin.firestore().collection("dhan_credentials").doc(uid).set(encrypted);
   return { message: "Credentials securely stored" };
 });
+
+exports.submitDhanCredentialsV2 = require("firebase-functions/v2/https").onCall(
+  async (request) => {
+    // your logic
+  }
+);

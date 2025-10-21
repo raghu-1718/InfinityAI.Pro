@@ -6,7 +6,8 @@
   "etags": {
     "infinity-ai-5ec7c": {
       "extensionInstances": {
-        "firestore-multimodal-genai": "d800e30b73e4b5ef746b011508b64bd402dd8cf72dc4ae3fe2a3bc653cf5541e"
+        "firestore-bigquery-export": "c1fc96111eb0907ed8b10410a70185ddaadece3d0f66b78004e99a43664f45c4",
+        "firestore-multimodal-genai": "4a9c49ad6eb028e0a8a87e8e045f1251bdb5173fed4dd7351084400dd0db8fa8"
       }
     }
   }
