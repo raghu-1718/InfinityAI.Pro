@@ -12,34 +12,33 @@ jobs:
   build_and_deploy_web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install Dependencies and Build
+          
+      - name: Install Dependencies
         working-directory: frontend-new
+        run: npm ci
+        
+      - name: Build Frontend
+        working-directory: frontend-new
+        run: npm run build
+        
+      - name: Verify build output
         run: |
-          npm ci
-          npm run build
-      
-      - name: Show build output (debug)
-        run: |
-          echo "Listing frontend-new build output:"
+          echo "Listing frontend-new after build:"
           ls -la frontend-new/ || true
           echo "Listing frontend-new/dist:"
-          ls -la frontend-new/dist || true
-          echo "Checking what Firebase expects (frontend/dist):"
-          ls -la frontend/dist || echo "frontend/dist does not exist"
-      
-      - name: Ensure hosting public dir exists (copy build)
-        run: |
-          mkdir -p frontend
-          rm -rf frontend/dist
-          cp -r frontend-new/dist frontend/dist
-          echo "Copied build output to frontend/dist for Firebase Hosting"
-          ls -la frontend/dist
-      
+          ls -la frontend-new/dist/ || ls -la frontend-new/build/ || true
+          if [ ! -d "frontend-new/dist" ]; then
+            echo "❌ Build output directory frontend-new/dist does not exist!"
+            exit 1
+          fi
+          echo "✅ Build output verified!"
+          
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

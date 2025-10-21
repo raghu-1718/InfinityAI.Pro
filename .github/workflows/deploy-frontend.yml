@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'frontend-new/**'
   workflow_dispatch:
 
 jobs:
@@ -19,17 +19,17 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        working-directory: frontend
+        working-directory: frontend-new
         run: npm ci
 
       - name: Build frontend
-        working-directory: frontend
+        working-directory: frontend-new
         run: npm run build
 
       - name: Check build output exists
         run: |
-          if [ ! -d "frontend/dist" ]; then
-            echo "Build output directory frontend/dist does not exist!"
+          if [ ! -d "frontend-new/dist" ]; then
+            echo "Build output directory frontend-new/dist does not exist!"
             exit 1
           fi
 
