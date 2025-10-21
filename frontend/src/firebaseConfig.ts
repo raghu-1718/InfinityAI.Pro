@@ -4,6 +4,8 @@
  * 
  * Initializes Firebase app with authentication, Firestore, and Cloud Functions
  * Uses environment variables for sensitive credentials
+ * 
+ * Updated: 2025-10-22 - Deployed with corrected API keys and workflow improvements
  */
 
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
