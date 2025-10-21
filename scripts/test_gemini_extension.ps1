@@ -110,7 +110,7 @@ do {
   Start-Sleep -Seconds 5
   try {
     $doc = Get-Document -DocPath $docPath
-    $hasField = $null -ne $doc.fields[$ResponseField]
+    $hasField = $doc.fields.PSObject.Properties.Name -contains $ResponseField
     $status = if ($hasField) { 'FOUND' } else { 'missing' }
     Write-Host ("Poll: $status; updateTime=" + $doc.updateTime)
     if ($hasField) {
