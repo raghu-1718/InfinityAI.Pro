@@ -3,5 +3,11 @@
     "default": "infinity-ai-5ec7c"
   },
   "targets": {},
-  "etags": {}
+  "etags": {
+    "infinity-ai-5ec7c": {
+      "extensionInstances": {
+        "firestore-multimodal-genai": "d800e30b73e4b5ef746b011508b64bd402dd8cf72dc4ae3fe2a3bc653cf5541e"
+      }
+    }
+  }
 }

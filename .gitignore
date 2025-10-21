@@ -22,7 +22,7 @@ dist/
 coverage/
 
 # Frontend build outputs
-frontend/
+# Keep source but ignore build artifacts
 frontend/web/build/
 
 # OS/IDE
