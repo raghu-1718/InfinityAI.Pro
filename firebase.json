@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "frontend-new/dist",
+    "public": "frontend/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -20,7 +20,8 @@
     "indexes": "firestore.indexes.json"
   },
   "functions": {
-    "source": "functions"
+    "source": "functions",
+    "runtime": "nodejs20"
   },
   "extensions": {
     "firestore-multimodal-genai": "googlecloud/firestore-multimodal-genai@1.0.2"

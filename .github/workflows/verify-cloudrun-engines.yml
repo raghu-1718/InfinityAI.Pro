@@ -1,0 +1,21 @@
+name: Verify Cloud Run Engine Health
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Every Monday at 4 AM UTC
+  workflow_dispatch:
+
+jobs:
+  check_engines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Verify Cloud Run Services
+        run: |
+          echo "Checking all engines..."
+          gcloud run services list --project infinity-ai-5ec7c --region=us-central1

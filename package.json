@@ -1,9 +1,35 @@
 {
+  "name": "infinityai-pro-monorepo",
+  "version": "3.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "functions"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=functions",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:functions": "npm run build --workspace=functions",
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
-    "firebase": "^12.4.0"
+    "axios": "^1.6.8",
+    "firebase": "^12.4.0",
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^6.6.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
   }
 }

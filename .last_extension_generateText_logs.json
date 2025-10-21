@@ -1,0 +1,1629 @@
+[
+  {
+    "insertId": "68f6db87000d8c384fde6542",
+    "labels": {
+      "instance_id": "0069c7a9889fb202fcf17679970ae183feb0e8d1c90816c2117ef8529be4ebd4db796019b103c0b2f39409040aa9ae4924d2365d1c0da0aaa7b073991f13782d3271ece52480b0c6a289ffb8b8",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:59.892061140Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "textPayload": "Shutting down all Genkit servers...",
+    "timestamp": "2025-10-21T01:01:59.887864Z"
+  },
+  {
+    "insertId": "19a0czkf3es4q3",
+    "labels": {
+      "execution_id": "eqqar5pxbr5n",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:08.466742297Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 6 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T01:01:08.457961451Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/43c99e0bb16bd1bbb8173807cfcfb788"
+  },
+  {
+    "insertId": "19a0czkf3es4q2",
+    "labels": {
+      "execution_id": "eqqar5pxbr5n",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:08.466742297Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T01:01:08.451099262Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/43c99e0bb16bd1bbb8173807cfcfb788"
+  },
+  {
+    "insertId": "19a0czkf3es4q1",
+    "labels": {
+      "execution_id": "eqqazpuy9s3r",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:08.466742297Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5580 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T01:01:08.381154316Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/17b44a61f2d2303ab2d53c5c0c45335e"
+  },
+  {
+    "insertId": "68f6db540003d550d3538148",
+    "labels": {
+      "execution_id": "eqqazpuy9s3r",
+      "instance_id": "0069c7a988ebb50c3a7e9b3a1c0fe086cc4b56181144bf8245e18aa6135dd9ba7c334fffad79a7fce8bf890cca7e5d57adc2a4ac70df31b2c0062b989642aee673f73256f5ea5619de3d47c518f062",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:08.466742297Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "INFO",
+    "textPayload": "[firestore-multimodal-genai] Received API response for document 'generate/JOkPHU7SmBeexUFoi5MI' in 4641.9031470000045ms.",
+    "timestamp": "2025-10-21T01:01:08.251216Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/17b44a61f2d2303ab2d53c5c0c45335e"
+  },
+  {
+    "insertId": "17cjxhsf3vmcdk",
+    "labels": {
+      "execution_id": "45oz1h66u4qc",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:07.467478762Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 97 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T01:01:07.154340419Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/cdea6eae24adee9d22a667ac58a0450e"
+  },
+  {
+    "insertId": "gpccmjf3132y5",
+    "labels": {
+      "execution_id": "45oz1h66u4qc",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:07.134285566Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T01:01:07.056480309Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/cdea6eae24adee9d22a667ac58a0450e"
+  },
+  {
+    "insertId": "1oi40p5f3rhh4z",
+    "labels": {
+      "execution_id": "eqqazpuy9s3r",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T01:01:02.803797819Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T01:01:02.800322780Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/17b44a61f2d2303ab2d53c5c0c45335e"
+  },
+  {
+    "insertId": "-joqby7cfm6",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9CcnFnOHVwN2pWRQ",
+      "last": true,
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {},
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.UpdateFunction",
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com",
+      "status": {}
+    },
+    "receiveTimestamp": "2025-10-21T00:59:53.663339763Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:59:53.603074Z"
+  },
+  {
+    "insertId": "er6uahe15vqp",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "first": true,
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9CcnFnOHVwN2pWRQ",
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.update",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {}
+        }
+      ],
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.UpdateFunction",
+      "request": {
+        "@type": "type.googleapis.com/google.cloud.functions.v1.UpdateFunctionRequest",
+        "function": {
+          "availableMemoryMb": 2048,
+          "description": "Listens to Firestore data writes to perform generative AI tasks.",
+          "dockerRegistry": "ARTIFACT_REGISTRY",
+          "entryPoint": "generateText",
+          "eventTrigger": {
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "resource": "projects/infinity-ai-5ec7c/databases/(default)/documents/generate/{summaryId}"
+          },
+          "ingressSettings": "ALLOW_INTERNAL_ONLY",
+          "labels": {
+            "deployment-tool": "firebase-extensions",
+            "firebase-extensions-ar": "enabled",
+            "goog-dm": "firebase-ext-firestore-multimodal-genai",
+            "goog-firebase-ext": "firestore-multimodal-genai",
+            "goog-firebase-ext-iid": "firestore-multimodal-genai"
+          },
+          "minInstances": 0,
+          "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "runtime": "nodejs20",
+          "secretEnvironmentVariables": [
+            {
+              "key": "API_KEY",
+              "projectId": "infinity-ai-5ec7c",
+              "secret": "GEMINI_API_KEY",
+              "version": "latest"
+            }
+          ],
+          "serviceAccountEmail": "ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com",
+          "sourceArchiveUrl": "gs://firebase-mod-sources-prod/4ab5880191ce90df4a9253c538898c3e36db7fb1e384c8e848ef5b22e8c2ee3c",
+          "timeout": "540s",
+          "vpcConnectorEgressSettings": "VPC_CONNECTOR_EGRESS_SETTINGS_UNSPECIFIED"
+        },
+        "updateMask": "availableMemoryMb,ingressSettings,minInstances,dockerRegistry,environmentVariables,entryPoint,runtime,vpcConnectorEgressSettings,timeout,sourceArchiveUrl,maxInstances,serviceAccountEmail,description,secretEnvironmentVariables,labels,eventTrigger,buildEnvironmentVariables"
+      },
+      "requestMetadata": {
+        "callerIp": "108.177.65.11",
+        "callerSuppliedUserAgent": "Google-Deployment-Manager,gzip(gfe),gzip(gfe)",
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:57:17.710425Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:57:18.545359312Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:57:17.441658Z"
+  },
+  {
+    "insertId": "t6een3d1d75",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "projects/infinity-ai-5ec7c/locations/us-central1/operations/operation-1761008109491-641a0a6d01463-e9a73599-c920f359",
+      "last": true,
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "methodName": "google.cloud.functions.v2.FunctionService.CreateFunction",
+      "requestMetadata": {
+        "destinationAttributes": {},
+        "requestAttributes": {}
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "response": {
+        "@type": "type.googleapis.com/google.cloud.functions.v2.Function",
+        "buildConfig": {
+          "automaticUpdatePolicy": {},
+          "dockerRegistry": "ARTIFACT_REGISTRY",
+          "entryPoint": "generateText",
+          "runtime": "nodejs20",
+          "serviceAccount": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+          "source": {}
+        },
+        "description": "Listens to Firestore data writes to perform generative AI tasks.",
+        "environment": "GEN_1",
+        "eventTrigger": {
+          "eventFilters": [
+            {
+              "attribute": "resource",
+              "value": "projects/infinity-ai-5ec7c/databases/(default)/documents/generate/{summaryId}"
+            }
+          ],
+          "eventType": "providers/cloud.firestore/eventTypes/document.write",
+          "retryPolicy": "RETRY_POLICY_DO_NOT_RETRY",
+          "service": "firestore.googleapis.com"
+        },
+        "labels": {
+          "deployment-tool": "firebase-extensions",
+          "firebase-extensions-ar": "enabled",
+          "goog-firebase-ext": "firestore-multimodal-genai",
+          "goog-firebase-ext-iid": "firestore-multimodal-genai"
+        },
+        "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+        "satisfiesPzi": true,
+        "serviceConfig": {
+          "availableMemory": "2048M",
+          "ingressSettings": "ALLOW_INTERNAL_ONLY",
+          "maxInstanceCount": 3000,
+          "maxInstanceRequestConcurrency": 1,
+          "revision": "1",
+          "secretEnvironmentVariables": [
+            {
+              "key": "API_KEY",
+              "projectId": "26140490557",
+              "secret": "GEMINI_API_KEY",
+              "version": "latest"
+            }
+          ],
+          "serviceAccountEmail": "ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com",
+          "timeoutSeconds": 540
+        },
+        "state": "ACTIVE",
+        "updateTime": "2025-10-21T00:55:09.891346533Z"
+      },
+      "serviceName": "cloudfunctions.googleapis.com",
+      "status": {}
+    },
+    "receiveTimestamp": "2025-10-21T00:57:09.244646474Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:57:08.356378733Z"
+  },
+  {
+    "insertId": "-tf1cachq8",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9fZEQyTEVRaEJHcw",
+      "last": true,
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {},
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.CreateFunction",
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com",
+      "status": {}
+    },
+    "receiveTimestamp": "2025-10-21T00:57:08.323062789Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:57:07.888468Z"
+  },
+  {
+    "insertId": "-tf1cachqa",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "first": true,
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9fZEQyTEVRaEJHcw",
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.create",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {}
+        }
+      ],
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.CreateFunction",
+      "requestMetadata": {
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:57:07.898462Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:57:08.323062789Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:55:09.960329Z"
+  },
+  {
+    "insertId": "t6een3d1d6v",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "first": true,
+      "id": "projects/infinity-ai-5ec7c/locations/us-central1/operations/operation-1761008109491-641a0a6d01463-e9a73599-c920f359",
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.create",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {
+            "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+            "service": "cloudfunctions.googleapis.com",
+            "type": "cloudfunctions.googleapis.com/Function"
+          }
+        }
+      ],
+      "methodName": "google.cloud.functions.v2.FunctionService.CreateFunction",
+      "request": {
+        "@type": "type.googleapis.com/google.cloud.functions.v2.CreateFunctionRequest",
+        "function": {
+          "build_config": {
+            "docker_registry": "ARTIFACT_REGISTRY",
+            "entry_point": "generateText",
+            "runtime": "nodejs20",
+            "source": {}
+          },
+          "description": "Listens to Firestore data writes to perform generative AI tasks.",
+          "environment": "GEN_1",
+          "event_trigger": {
+            "event_filters": [
+              {
+                "attribute": "resource",
+                "value": "projects/infinity-ai-5ec7c/databases/(default)/documents/generate/{summaryId}"
+              }
+            ],
+            "event_type": "providers/cloud.firestore/eventTypes/document.write",
+            "retry_policy": "RETRY_POLICY_DO_NOT_RETRY"
+          },
+          "labels": {
+            "deployment-tool": "firebase-extensions",
+            "firebase-extensions-ar": "enabled",
+            "goog-firebase-ext": "firestore-multimodal-genai",
+            "goog-firebase-ext-iid": "firestore-multimodal-genai"
+          },
+          "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "service_config": {
+            "available_memory": "2048M",
+            "ingress_settings": "ALLOW_INTERNAL_ONLY",
+            "max_instance_request_concurrency": 1,
+            "revision": "0",
+            "secret_environment_variables": [
+              {
+                "key": "API_KEY",
+                "project_id": "infinity-ai-5ec7c",
+                "secret": "GEMINI_API_KEY",
+                "version": "latest"
+              }
+            ],
+            "service_account_email": "ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com",
+            "timeout_seconds": 540
+          },
+          "update_time": {}
+        },
+        "parent": "projects/infinity-ai-5ec7c/locations/us-central1"
+      },
+      "requestMetadata": {
+        "callerIp": "::1",
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:55:09.484590301Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "response": {
+        "@type": "type.googleapis.com/google.longrunning.Operation"
+      },
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:55:10.092236690Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:55:09.914808578Z"
+  },
+  {
+    "insertId": "1o20he16h0r",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.create",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {}
+        }
+      ],
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.CreateFunction",
+      "request": {
+        "@type": "type.googleapis.com/google.cloud.functions.v1.CreateFunctionRequest",
+        "function": {
+          "availableMemoryMb": 2048,
+          "description": "Listens to Firestore data writes to perform generative AI tasks.",
+          "dockerRegistry": "ARTIFACT_REGISTRY",
+          "entryPoint": "generateText",
+          "eventTrigger": {
+            "eventType": "providers/cloud.firestore/eventTypes/document.write",
+            "resource": "projects/infinity-ai-5ec7c/databases/(default)/documents/generate/{summaryId}"
+          },
+          "ingressSettings": "ALLOW_INTERNAL_ONLY",
+          "labels": {
+            "deployment-tool": "firebase-extensions",
+            "firebase-extensions-ar": "enabled",
+            "goog-firebase-ext": "firestore-multimodal-genai",
+            "goog-firebase-ext-iid": "firestore-multimodal-genai"
+          },
+          "minInstances": 0,
+          "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "runtime": "nodejs20",
+          "secretEnvironmentVariables": [
+            {
+              "key": "API_KEY",
+              "projectId": "infinity-ai-5ec7c",
+              "secret": "GEMINI_API_KEY",
+              "version": "latest"
+            }
+          ],
+          "serviceAccountEmail": "ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com",
+          "sourceArchiveUrl": "gs://firebase-mod-sources-prod/4ab5880191ce90df4a9253c538898c3e36db7fb1e384c8e848ef5b22e8c2ee3c",
+          "timeout": "540s",
+          "vpcConnectorEgressSettings": "VPC_CONNECTOR_EGRESS_SETTINGS_UNSPECIFIED"
+        },
+        "location": "projects/infinity-ai-5ec7c/locations/us-central1"
+      },
+      "requestMetadata": {
+        "callerIp": "108.177.65.9",
+        "callerSuppliedUserAgent": "Google-Deployment-Manager,gzip(gfe),gzip(gfe)",
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:55:09.917865Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:55:10.093273951Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:55:09.423424Z"
+  },
+  {
+    "insertId": "pu5azvd19et",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "projects/infinity-ai-5ec7c/locations/us-central1/operations/operation-1761008067751-641a0a4532d20-0282171e-98ec0fc9",
+      "last": true,
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "methodName": "google.cloud.functions.v2.FunctionService.DeleteFunction",
+      "requestMetadata": {
+        "destinationAttributes": {},
+        "requestAttributes": {}
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "response": {
+        "@type": "type.googleapis.com/google.protobuf.Empty"
+      },
+      "serviceName": "cloudfunctions.googleapis.com",
+      "status": {}
+    },
+    "receiveTimestamp": "2025-10-21T00:54:38.553518258Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:54:37.816278531Z"
+  },
+  {
+    "insertId": "8lszhqcd00",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9wSlNmRlJEaGl6Yw",
+      "last": true,
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {},
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.DeleteFunction",
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com",
+      "status": {}
+    },
+    "receiveTimestamp": "2025-10-21T00:54:36.136642630Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:54:35.390423Z"
+  },
+  {
+    "insertId": "8lszhqcd02",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "first": true,
+      "id": "operations/aW5maW5pdHktYWktNWVjN2MvdXMtY2VudHJhbDEvZXh0LWZpcmVzdG9yZS1tdWx0aW1vZGFsLWdlbmFpLWdlbmVyYXRlVGV4dC9wSlNmRlJEaGl6Yw",
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.delete",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {}
+        }
+      ],
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.DeleteFunction",
+      "requestMetadata": {
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:54:35.395244Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:54:36.136642630Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:54:27.859780Z"
+  },
+  {
+    "insertId": "pu5azvd19eo",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "first": true,
+      "id": "projects/infinity-ai-5ec7c/locations/us-central1/operations/operation-1761008067751-641a0a4532d20-0282171e-98ec0fc9",
+      "producer": "cloudfunctions.googleapis.com"
+    },
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.delete",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {
+            "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+            "service": "cloudfunctions.googleapis.com",
+            "type": "cloudfunctions.googleapis.com/Function"
+          }
+        }
+      ],
+      "methodName": "google.cloud.functions.v2.FunctionService.DeleteFunction",
+      "request": {
+        "@type": "type.googleapis.com/google.cloud.functions.v2.DeleteFunctionRequest",
+        "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText"
+      },
+      "requestMetadata": {
+        "callerIp": "::1",
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:54:27.750803607Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "response": {
+        "@type": "type.googleapis.com/google.longrunning.Operation"
+      },
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:54:28.549863006Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:54:27.805236860Z"
+  },
+  {
+    "insertId": "sb398xe17r9i",
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudaudit.googleapis.com%2Factivity",
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "oauthInfo": {
+          "oauthClientId": "anonymous"
+        },
+        "principalEmail": "26140490557@cloudservices.gserviceaccount.com",
+        "principalSubject": "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccountDelegationInfo": [
+          {
+            "firstPartyPrincipal": {
+              "principalEmail": "cloud-config-workflow-prod-jobs@prod.google.com"
+            }
+          }
+        ]
+      },
+      "authorizationInfo": [
+        {
+          "granted": true,
+          "permission": "cloudfunctions.functions.delete",
+          "permissionType": "ADMIN_WRITE",
+          "resource": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+          "resourceAttributes": {}
+        }
+      ],
+      "methodName": "google.cloud.functions.v1.CloudFunctionsService.DeleteFunction",
+      "request": {
+        "@type": "type.googleapis.com/google.cloud.functions.v1.DeleteFunctionRequest",
+        "name": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText"
+      },
+      "requestMetadata": {
+        "callerIp": "108.177.65.5",
+        "callerSuppliedUserAgent": "Google-Deployment-Manager,gzip(gfe),gzip(gfe)",
+        "destinationAttributes": {},
+        "requestAttributes": {
+          "auth": {},
+          "time": "2025-10-21T00:54:27.807334Z"
+        }
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us-central1"
+        ]
+      },
+      "resourceName": "projects/infinity-ai-5ec7c/locations/us-central1/functions/ext-firestore-multimodal-genai-generateText",
+      "serviceName": "cloudfunctions.googleapis.com"
+    },
+    "receiveTimestamp": "2025-10-21T00:54:28.772896472Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "NOTICE",
+    "timestamp": "2025-10-21T00:54:27.563034Z"
+  },
+  {
+    "insertId": "68f6d5530003652ad9622678",
+    "labels": {
+      "execution_id": "pgl53qto1wr8",
+      "instance_id": "0069c7a988ea2247475930c0c1ee3e9e14bf3e9808d6195ed1b6fa52564c1bc1d60a5e9f152e970fa6e422447ddc911413e1e62884da562ec24d5dfeb5be38766dbdbc2cfcbc90c056d6c4a2be3632",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:35:31.226802839Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "textPayload": "Shutting down all Genkit servers...",
+    "timestamp": "2025-10-21T00:35:31.222506Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/323671a9d18079066f438be1d6f1c07f"
+  },
+  {
+    "insertId": "tgiw2kf3ku3jw",
+    "labels": {
+      "execution_id": "pgl53qto1wr8",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:26.521683110Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:26.431895954Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/323671a9d18079066f438be1d6f1c07f"
+  },
+  {
+    "insertId": "tgiw2kf3ku3jv",
+    "labels": {
+      "execution_id": "pgl53qto1wr8",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:26.521683110Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:26.426528446Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/323671a9d18079066f438be1d6f1c07f"
+  },
+  {
+    "insertId": "tgiw2kf3ku3ju",
+    "labels": {
+      "execution_id": "pgl5638fcnzy",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:26.521683110Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:26.407755580Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/12158a1930bf637173988d54a88a4ec2"
+  },
+  {
+    "insertId": "tgiw2kf3ku3jt",
+    "labels": {
+      "execution_id": "pgl5638fcnzy",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:26.521683110Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:26.402099981Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/12158a1930bf637173988d54a88a4ec2"
+  },
+  {
+    "insertId": "au0oojf35xz1s",
+    "labels": {
+      "execution_id": "pgl5lodk1477",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:25.856010259Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 155 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:25.746289780Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/91b54e289feba6586f438be1d6f1c650"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CMW8iYz1u_eJFQ"
+      }
+    ],
+    "insertId": "68f6d1c9000a1d4b8683e13c",
+    "labels": {
+      "execution_id": "pgl5lodk1477",
+      "instance_id": "0069c7a988ea2247475930c0c1ee3e9e14bf3e9808d6195ed1b6fa52564c1bc1d60a5e9f152e970fa6e422447ddc911413e1e62884da562ec24d5dfeb5be38766dbdbc2cfcbc90c056d6c4a2be3632",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:25.856010259Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "ERROR",
+    "textPayload": "Error: [firestore-multimodal-genai] Error calling Gemini API for document 'generate/WZEXfqTzFsqJoU8n6gk9': API key required for Google AI.\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:130:19)\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:116:11)\n    at Object.errorCallingGLMAPI (/workspace/lib/logs.js:35:33)\n    at /workspace/lib/index.js:93:14",
+    "timestamp": "2025-10-21T00:20:25.662859Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/91b54e289feba6586f438be1d6f1c650"
+  },
+  {
+    "insertId": "au0oojf35xz1r",
+    "labels": {
+      "execution_id": "pgl5lodk1477",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:25.856010259Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:25.591230648Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/91b54e289feba6586f438be1d6f1c650"
+  },
+  {
+    "insertId": "z9q3czf6wh0sh",
+    "labels": {
+      "execution_id": "pgl5ksfazxo9",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:15.531918367Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:15.265378239Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/0eae5a839471e13b152e49708e4fbe04"
+  },
+  {
+    "insertId": "z9q3czf6wh0sg",
+    "labels": {
+      "execution_id": "pgl5ksfazxo9",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:15.531918367Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:15.260344570Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/0eae5a839471e13b152e49708e4fbe04"
+  },
+  {
+    "insertId": "pu1oc9f3lu153",
+    "labels": {
+      "execution_id": "pgl5f70s7kco",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:15.202895658Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:15.164004721Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/a6087d93a146134f152e49708e4fb9b1"
+  },
+  {
+    "insertId": "pu1oc9f3lu152",
+    "labels": {
+      "execution_id": "pgl5f70s7kco",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:15.202895658Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:15.158139812Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/a6087d93a146134f152e49708e4fb9b1"
+  },
+  {
+    "insertId": "wrh6clf3gt4wo",
+    "labels": {
+      "execution_id": "pgl5rrfyojtd",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:14.867089917Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 694 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-21T00:20:14.557640818Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/0ade1cc72ac5205580b655eca44114cc"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CMW8iYz1u_eJFQ"
+      }
+    ],
+    "insertId": "68f6d1be00074dd6aa0452fb",
+    "labels": {
+      "execution_id": "pgl5rrfyojtd",
+      "instance_id": "0069c7a988ea2247475930c0c1ee3e9e14bf3e9808d6195ed1b6fa52564c1bc1d60a5e9f152e970fa6e422447ddc911413e1e62884da562ec24d5dfeb5be38766dbdbc2cfcbc90c056d6c4a2be3632",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:14.534922532Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "ERROR",
+    "textPayload": "Error: [firestore-multimodal-genai] Error calling Gemini API for document 'generate/9sPUihB8O5Vbl8GXaJbr': API key required for Google AI.\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:130:19)\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:116:11)\n    at Object.errorCallingGLMAPI (/workspace/lib/logs.js:35:33)\n    at /workspace/lib/index.js:93:14",
+    "timestamp": "2025-10-21T00:20:14.478678Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/0ade1cc72ac5205580b655eca44114cc"
+  },
+  {
+    "insertId": "8dj03pf3kpmjm",
+    "labels": {
+      "execution_id": "pgl5rrfyojtd",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:20:13.869655331Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-21T00:20:13.862874115Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/0ade1cc72ac5205580b655eca44114cc"
+  },
+  {
+    "insertId": "68f6cd9700034adca8756f6d",
+    "labels": {
+      "execution_id": "lmxsy6jo0g9p",
+      "instance_id": "0069c7a988a0c2efddc321c00f8b25d9800c6f3cfd6aa2232e1688fbb9e975fa8dc5abab773d4f12744583e0d2e02f94789ea1feee45b9dd91177f576f0fe0169c0d6ac54ccb2cf71f008f39ec4cb3",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:02:31.554615128Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "textPayload": "Shutting down all Genkit servers...",
+    "timestamp": "2025-10-21T00:02:31.215772Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/c414dacce84eb516679c9c152162cfc7"
+  },
+  {
+    "insertId": "68f6cd97000347b0582efb8b",
+    "labels": {
+      "execution_id": "10ahvb50gzk7",
+      "instance_id": "0069c7a988c3eda31ada245c1b2e7b497ac5b0157a0bed7fb0f86f97b3085e3d6a6caa4e83f73ffe1d17a7d5e35c77f9d73cc6722663e372c45d8ef472088bf69318c0cdbffefb4de10cdad982e502",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-21T00:02:31.221589478Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "textPayload": "Shutting down all Genkit servers...",
+    "timestamp": "2025-10-21T00:02:31.214960Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/bbe4212a2e6cd47afa8caf71643c81c3"
+  },
+  {
+    "insertId": "1t7jx8rf4qvirr",
+    "labels": {
+      "execution_id": "lmxsy6jo0g9p",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:24.644410163Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 42 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:47:24.490608411Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/c414dacce84eb516679c9c152162cfc7"
+  },
+  {
+    "insertId": "1t7jx8rf4qvirq",
+    "labels": {
+      "execution_id": "10ahvb50gzk7",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:24.644410163Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 7 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:47:24.454433235Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/bbe4212a2e6cd47afa8caf71643c81c3"
+  },
+  {
+    "insertId": "1t7jx8rf4qvirp",
+    "labels": {
+      "execution_id": "lmxsy6jo0g9p",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:24.644410163Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-20T23:47:24.448264236Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/c414dacce84eb516679c9c152162cfc7"
+  },
+  {
+    "insertId": "1t7jx8rf4qviro",
+    "labels": {
+      "execution_id": "10ahvb50gzk7",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:24.644410163Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-20T23:47:24.447223456Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/bbe4212a2e6cd47afa8caf71643c81c3"
+  },
+  {
+    "insertId": "1oj7n23fahmid3",
+    "labels": {
+      "execution_id": "10aht08aupq6",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:23.977075Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 201 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:47:23.841662618Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/d9cc4b3870bc04d46f29c629a95604bb"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CMW8iYz1u_eJFQ"
+      }
+    ],
+    "insertId": "68f6ca0b000b9720a2449c57",
+    "labels": {
+      "execution_id": "10aht08aupq6",
+      "instance_id": "0069c7a988c3eda31ada245c1b2e7b497ac5b0157a0bed7fb0f86f97b3085e3d6a6caa4e83f73ffe1d17a7d5e35c77f9d73cc6722663e372c45d8ef472088bf69318c0cdbffefb4de10cdad982e502",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:23.977075Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "ERROR",
+    "textPayload": "Error: [firestore-multimodal-genai] Error calling Gemini API for document 'generate/aTImEgOzTVhJjzjoQK4W': API key required for Google AI.\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:130:19)\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:116:11)\n    at Object.errorCallingGLMAPI (/workspace/lib/logs.js:35:33)\n    at /workspace/lib/index.js:93:14",
+    "timestamp": "2025-10-20T23:47:23.759584Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/d9cc4b3870bc04d46f29c629a95604bb"
+  },
+  {
+    "insertId": "nvd44wf3ctwks",
+    "labels": {
+      "execution_id": "10aht08aupq6",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:47:23.647563536Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-20T23:47:23.640477383Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/d9cc4b3870bc04d46f29c629a95604bb"
+  },
+  {
+    "insertId": "x1qvrrf2t0ee8",
+    "labels": {
+      "execution_id": "10ahp9um073z",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:58.372220814Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 5 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:41:58.365560776Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/73a33df2561543e61f7a41d91cd04b03"
+  },
+  {
+    "insertId": "x1qvrrf2t0ee7",
+    "labels": {
+      "execution_id": "10ahp9um073z",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:58.372220814Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-20T23:41:58.359821616Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/73a33df2561543e61f7a41d91cd04b03"
+  },
+  {
+    "insertId": "x1qvrrf2t0ee6",
+    "labels": {
+      "execution_id": "10ahgl6chr46",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:58.372220814Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 6 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:41:58.359546956Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/8cb510669ad348d84bf26f02e5c3b5a2"
+  },
+  {
+    "insertId": "x1qvrrf2t0ee5",
+    "labels": {
+      "execution_id": "10ahgl6chr46",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:58.372220814Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution started",
+    "timestamp": "2025-10-20T23:41:58.352841107Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/8cb510669ad348d84bf26f02e5c3b5a2"
+  },
+  {
+    "insertId": "1iduqw6f3c75md",
+    "labels": {
+      "execution_id": "10ah8v852j43",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:58.039354584Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "DEBUG",
+    "textPayload": "Function execution took 714 ms, finished with status: 'ok'",
+    "timestamp": "2025-10-20T23:41:57.749282548Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/e61d508f968181e24bf26f02e5c3bc4a"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CMW8iYz1u_eJFQ"
+      }
+    ],
+    "insertId": "68f6c8c5000a4bd9f35c1604",
+    "labels": {
+      "execution_id": "10ah8v852j43",
+      "instance_id": "0069c7a988c3eda31ada245c1b2e7b497ac5b0157a0bed7fb0f86f97b3085e3d6a6caa4e83f73ffe1d17a7d5e35c77f9d73cc6722663e372c45d8ef472088bf69318c0cdbffefb4de10cdad982e502",
+      "runtime_version": "nodejs20_20251012_20_19_5_RC00"
+    },
+    "logName": "projects/infinity-ai-5ec7c/logs/cloudfunctions.googleapis.com%2Fcloud-functions",
+    "receiveTimestamp": "2025-10-20T23:41:57.705692066Z",
+    "resource": {
+      "labels": {
+        "function_name": "ext-firestore-multimodal-genai-generateText",
+        "project_id": "infinity-ai-5ec7c",
+        "region": "us-central1"
+      },
+      "type": "cloud_function"
+    },
+    "severity": "ERROR",
+    "textPayload": "Error: [firestore-multimodal-genai] Error calling Gemini API for document 'generate/vOtN2atX09nMWepBY3PF': API key required for Google AI.\n    at entryFromArgs (/workspace/node_modules/firebase-functions/lib/logger/index.js:130:19)\n    at Object.error (/workspace/node_modules/firebase-functions/lib/logger/index.js:116:11)\n    at Object.errorCallingGLMAPI (/workspace/lib/logs.js:35:33)\n    at /workspace/lib/index.js:93:14",
+    "timestamp": "2025-10-20T23:41:57.674777Z",
+    "trace": "projects/infinity-ai-5ec7c/traces/e61d508f968181e24bf26f02e5c3bc4a"
+  }
+]
