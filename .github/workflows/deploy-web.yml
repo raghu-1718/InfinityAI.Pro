@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend-new/**'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_web:
@@ -15,14 +18,32 @@ jobs:
         with:
           node-version: '20'
       - name: Install Dependencies and Build
+        working-directory: frontend-new
         run: |
-          cd frontend-new
-          npm install
+          npm ci
           npm run build
+      
+      - name: Show build output (debug)
+        run: |
+          echo "Listing frontend-new build output:"
+          ls -la frontend-new/ || true
+          echo "Listing frontend-new/dist:"
+          ls -la frontend-new/dist || true
+          echo "Checking what Firebase expects (frontend/dist):"
+          ls -la frontend/dist || echo "frontend/dist does not exist"
+      
+      - name: Ensure hosting public dir exists (copy build)
+        run: |
+          mkdir -p frontend
+          rm -rf frontend/dist
+          cp -r frontend-new/dist frontend/dist
+          echo "Copied build output to frontend/dist for Firebase Hosting"
+          ls -la frontend/dist
+      
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.firebaseServiceAccount }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_INFINITY_AI_5EC7C }}'
           channelId: live
           projectId: infinity-ai-5ec7c
