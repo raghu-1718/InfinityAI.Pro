@@ -1,22 +1,115 @@
 {
+  // === CORE PROJECT SETTINGS ===
+  "workbench.colorTheme": "Default Dark+",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.fontFamily": "Fira Code, monospace",
   "editor.fontLigatures": true,
+  "files.autoSave": "onFocusChange",
+  "files.trimTrailingWhitespace": true,
 
-  "github.copilot.chat.virtualTools.threshold": 128,
-  "github.copilot.nextEditSuggestions.enabled": true,
+  // === FORMATTER FIX FOR JSON ===
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 
-  "cloudcode.projectId": "your-gcp-project-id",
-  "firebase.defaultProject": "your-firebase-project-id",
+  // === GCP & FIREBASE ===
+  "cloudcode.project": "infinity-ai-5ec7c",
+  "firebase.project": "infinity-ai-5ec7c",
+  "cloudcode.framework": "python",
+  "cloudcode.runConfig": {
+    "service": "engine-a",
+    "target": "Cloud Run",
+    "region": "us-central1"
+  },
+  "google.cloudsdk.path": "C:\\Program Files (x86)\\Google\\Cloud SDK\\google-cloud-sdk",
+  "google.cloudcode.gemini.projectId": "infinity-ai-5ec7c",
+  "google.cloudcode.gemini.model": "gemini-2.5-pro",
+  "google.cloudcode.gemini.temperature": 0.4,
   "cloudcode.region": "us-central1",
 
+  // === PYTHON BACKEND ===
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.envFile": "${workspaceFolder}\\.env",
+  "python.analysis.autoImportCompletions": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.formatting.provider": "black",
+  "python.languageServer": "Pylance",
+  "python.testing.pytestEnabled": true,
+
+  // === FRONTEND (REACT + TYPESCRIPT) ===
+  "eslint.validate": ["javascript", "typescript", "typescriptreact"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "prettier.requireConfig": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // === DOCKER / CLOUD RUN ===
+  "docker.dockerPath": "C:\\Program Files\\Docker\\docker.exe",
+  "cloudcode.dockerfile": "${workspaceFolder}/docker-compose.yml",
+  "cloudcode.cloudrun.deploy.image": "gcr.io/infinity-ai-5ec7c/infinityai-pro",
+  "cloudcode.cloudrun.deploy.platform": "managed",
+
+  // === GEMINI AI CLI + MULTI-AGENT ===
+  "gemini.cli.path": "C:\\Users\\Raghu\\AppData\\Local\\Programs\\Google\\GeminiCLI\\gemini.exe",
+  "gemini.cli.defaultModel": "gemini-2.5-pro",
+  "gemini.multiAgent.enabled": true,
+  "gemini.multiAgent.agents": [
+    {
+      "name": "Jules",
+      "role": "AI Orchestrator",
+      "description": "Coordinates Engine A–D via Vertex AI APIs"
+    },
+    {
+      "name": "Nova",
+      "role": "Trading Strategy Agent",
+      "description": "Runs ML inference and provides trade signals"
+    }
+  ],
+
+  // === FIREBASE EMULATOR / DEBUG ===
+  "firebase.emulators": {
+    "functions": 5001,
+    "firestore": 8080,
+    "hosting": 5000,
+    "pubsub": 8085
+  },
+  "firebase.hosting.target": "infinityai-pro",
+  "firebase.functions.shell": true,
+
+  // === GIT / CI-CD ===
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "github.copilot.enable": true,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "github.copilot.chat.enableFormatting": false,
+
+  // === TERMINAL & ENVIRONMENT ===
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
   "terminal.integrated.env.windows": {
-    "GOOGLE_APPLICATION_CREDENTIALS": "${workspaceFolder}/service-account.json",
-    "GCP_PROJECT": "your-gcp-project-id",
-    "FIREBASE_PROJECT": "your-firebase-project-id",
-    "OPENAI_API_KEY": "your-openai-api-key",
-    "GEMINI_API_KEY": "your-gemini-api-key",
-    "ANTHROPIC_API_KEY": "your-claude-api-key"
+    "PYTHONPATH": "${workspaceFolder}",
+    "GOOGLE_APPLICATION_CREDENTIALS": "${workspaceFolder}\\.secrets\\service-account.json",
+    "GCP_PROJECT": "infinity-ai-5ec7c",
+    "FIREBASE_PROJECT": "infinity-ai-5ec7c",
+    "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+    "GEMINI_API_KEY": "${env:GEMINI_API_KEY}",
+    "ANTHROPIC_API_KEY": "${env:ANTHROPIC_API_KEY}"
+  },
+  "terraform.mcp.server.enable": true,
+  "cloudcode.enableMultiSkaffoldConfigsKey": true,
+  "cloudcode.compute.sshInternalIp": true,
+  "cloudcode.apigee.gemini.options": {
+
+    "enterpriseContext": {
+      "enabled": true,
+      "includeMetadata": true,
+      "includeSecurity": true,
+      "includeSchema": true
+    },
+    "enableRemoteMockServer": true
   }
 }
