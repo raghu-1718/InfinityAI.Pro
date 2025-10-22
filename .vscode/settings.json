@@ -1,5 +1,22 @@
 {
-    "github.copilot.chat.virtualTools.threshold": 128,
-    "terminal.integrated.enableImages": true,
-    "github.copilot.nextEditSuggestions.enabled": true
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.fontFamily": "Fira Code, monospace",
+  "editor.fontLigatures": true,
+
+  "github.copilot.chat.virtualTools.threshold": 128,
+  "github.copilot.nextEditSuggestions.enabled": true,
+
+  "cloudcode.projectId": "your-gcp-project-id",
+  "firebase.defaultProject": "your-firebase-project-id",
+  "cloudcode.region": "us-central1",
+
+  "terminal.integrated.env.windows": {
+    "GOOGLE_APPLICATION_CREDENTIALS": "${workspaceFolder}/service-account.json",
+    "GCP_PROJECT": "your-gcp-project-id",
+    "FIREBASE_PROJECT": "your-firebase-project-id",
+    "OPENAI_API_KEY": "your-openai-api-key",
+    "GEMINI_API_KEY": "your-gemini-api-key",
+    "ANTHROPIC_API_KEY": "your-claude-api-key"
+  }
 }
