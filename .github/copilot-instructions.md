@@ -2,13 +2,13 @@ InfinityAI.Pro - AI Coding Agent Instructions
 Architecture Overview
 InfinityAI.Pro is a production-ready AI trading platform focused on Indian markets (NSE/BSE/MCX), architected as 4 independently deployable microservices on Google Cloud Run:
 
-Engine A (backend/engines/engine-a-market-data): Market data ingestion with real-time NSE/BSE feeds and technical analysis.
+Engine A (backend/engines/engine-a): Market data ingestion with real-time NSE/BSE feeds and technical analysis.
 
-Engine B (backend/engines/engine-b-ai-ml): AI/ML processing with TensorFlow, providing price predictions and sentiment analysis.
+Engine B (backend/engines/engine-b): AI/ML processing with TensorFlow, providing price predictions and sentiment analysis.
 
 Engine C (backend/engines/engine-c-execution): Secure trade execution with Dhan OAuth integration and risk management.
 
-Engine D (backend/engines/engine-d-chatbot): AI chatbot orchestrator managing multi-engine coordination and real-time WebSocket data aggregation.
+Engine D (backend/engines/engine-d): AI chatbot orchestrator managing multi-engine coordination and real-time WebSocket data aggregation.
 
 Frontend (frontend-new): React + Vite + TypeScript dashboard delivering live market updates and user interactions via WebSocket.
 
@@ -54,13 +54,13 @@ Environment-specific configuration loaded dynamically using core/utils.load_conf
 Frontend environment variables housed in frontend-new/.env correctly reference production Cloud Run endpoints.
 
 Folder and File Structure
-/backend/engines/engine-a-market-data — Market data ingestion logic.
+/backend/engines/engine-a — Market data ingestion logic.
 
-/backend/engines/engine-b-ai-ml — AI/ML prediction models and serving.
+/backend/engines/engine-b — AI/ML prediction models and serving.
 
 /backend/engines/engine-c-execution — Trade execution, OAuth and risk logic.
 
-/backend/engines/engine-d-chatbot — Chatbot and multi-engine orchestration.
+/backend/engines/engine-d — Chatbot and multi-engine orchestration.
 
 /frontend-new — React frontend source with hooks, state management, and UI components.
 
@@ -137,7 +137,7 @@ Validate OAuth integration end-to-end:
 
 Inspect OAuth-related logs and flows in Engine C logs.
 
-Confirm https://engine-c-prod-bprmddefsa-uc.a.run.app/api/dhan/callback and postback URLs function correctly.
+Confirm https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/api/dhan/callback and postback URLs function correctly.
 
 Ensure tokens are rotated securely in Secret Manager without downtime.
 
@@ -165,7 +165,7 @@ Local Development and Testing Workflow
 Install backend dependencies:
 
 bash
-pip install -r backend/engines/engine-a-market-data/requirements.txt
+pip install -r backend/engines/engine-a/requirements.txt
 # Repeat for other engines
 Install frontend dependencies:
 
@@ -174,10 +174,10 @@ npm install --prefix frontend-new
 Run engines locally for development:
 
 bash
-cd backend/engines/engine-a-market-data && python main.py
-cd backend/engines/engine-b-ai-ml && python main.py
+cd backend/engines/engine-a && python main.py
+cd backend/engines/engine-b && python main.py
 cd backend/engines/engine-c-execution && python main.py
-cd backend/engines/engine-d-chatbot && python main.py
+cd backend/engines/engine-d && python main.py
 Run frontend locally:
 
 bash
@@ -224,7 +224,7 @@ firebase firestore:indexes
 firebase functions:list
 
 # Run backend engine locally
-cd backend/engines/engine-a-market-data && python main.py
+cd backend/engines/engine-a && python main.py
 
 # Build and run frontend locally
 npm install --prefix frontend-new
@@ -254,15 +254,15 @@ tasks:
   verify_gcp_deployment:
     description: "Complete verification of GCP Cloud Run, Firebase, Firestore & Secrets deployment"
     steps:
-      - name: "Run full GCP audit script"
-        command: "python3 full_gcp_audit.py"
+      - name: "Run production verification suite"
+        command: "python3 production_verification_suite.py"
         working_directory: "."
-      - name: "Display final deployment verification report"
-        command: "cat FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
+      - name: "Display deployment status report"
+        command: "cat DEPLOYMENT_STATUS.md"
         working_directory: "."
     outputs:
-      - "deployment_verification_*.json"
-      - "FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
+      - "platform-health-report.json"
+      - "DEPLOYMENT_STATUS.md"
     tags: ["gcp", "deployment", "verification", "audit"]
 
   # ===================================================================
@@ -273,19 +273,19 @@ tasks:
     steps:
       - name: "Check Engine A health and market data API"
         command: |
-          curl -s https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health | jq .
-          curl -s https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/api/market-data/NIFTY | jq .
+          curl -s https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/health | jq .
+          curl -s https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/api/market-data/NIFTY | jq .
       - name: "Check Engine B health and AI prediction endpoint"
         command: |
-          curl -s https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health | jq .
-          curl -s https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/api/ai-signals | jq .
+          curl -s https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/health | jq .
+          curl -s https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/api/ai-signals | jq .
       - name: "Check Engine C health and trade execution status"
         command: |
-          curl -s https://engine-c-execution-prod-bprmddefsa-uc.a.run.app/health | jq .
-          curl -s https://engine-c-execution-prod-bprmddefsa-uc.a.run.app/api/orders/status | jq .
+          curl -s https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/health | jq .
+          curl -s https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/api/orders/status | jq .
       - name: "Check Engine D health and WebSocket responses"
         command: |
-          curl -s https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health | jq .
+          curl -s https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/health | jq .
           # Optionally run WebSocket connectivity test here
       - name: "Validate Frontend health endpoint"
         command: |
@@ -306,10 +306,8 @@ tasks:
           firebase firestore:rules:show
       - name: "List Firebase Functions"
         command: "firebase functions:list"
-      - name: "Test Firebase user login flow"
-        command: "python3 tests/firebase_login_test.py"
-      - name: "Test Firebase session/token persistence"
-        command: "python3 tests/firebase_session_test.py"
+      - name: "Run integration tests"
+        command: "python3 tests/integration_test_suite.py"
     tags: ["firebase", "login", "authentication", "firestore"]
 
   # ===================================================================
@@ -348,16 +346,12 @@ tasks:
   cleanup_and_restructure:
     description: "Verify and clean duplicates and placeholders; preserve needed components; reorganize workspace"
     steps:
-      - name: "Scan for duplicate/incomplete files"
-        command: "python3 scripts/scan_duplicates_and_incomplete.py"
-      - name: "Cross-check duplicates with updated code to preserve necessary parts"
-        command: "python3 scripts/verify_and_merge_duplicates.py"
-      - name: "Remove confirmed duplicates and stale placeholders"
-        command: "python3 scripts/remove_duplicates.py"
-      - name: "Reorganize repository per updated folder structure"
-        command: "python3 scripts/reorganize_workspace.py"
-      - name: "Validate new structure consistency"
-        command: "python3 scripts/validate_workspace_structure.py"
+      - name: "Review repository structure"
+        command: "find . -type d -name 'engine*' -o -name 'frontend*' | grep -v node_modules | grep -v '.git'"
+      - name: "Check for duplicate dependencies"
+        command: "find . -name 'package.json' -o -name 'requirements.txt' | grep -v node_modules"
+      - name: "Validate current structure"
+        command: "ls -la backend/engines/ && ls -la frontend-new/"
     tags: ["cleanup", "restructure", "codebase"]
 
   # ===================================================================
@@ -371,10 +365,10 @@ tasks:
           python3 -c "
           import requests
           services = {
-              'Engine A': 'https://engine-a-market-data-prod-bprmddefsa-uc.a.run.app/health',
-              'Engine B': 'https://engine-b-ai-ml-prod-bprmddefsa-uc.a.run.app/health',
-              'Engine C': 'https://engine-c-execution-prod-bprmddefsa-uc.a.run.app/health',
-              'Engine D': 'https://engine-d-chatbot-prod-bprmddefsa-uc.a.run.app/health',
+              'Engine A': 'https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/health',
+              'Engine B': 'https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/health',
+              'Engine C': 'https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/health',
+              'Engine D': 'https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/health',
               'Frontend': 'https://infinityai.pro/health'
           }
           for name, url in services.items():
@@ -393,15 +387,15 @@ tasks:
     description: "Install dependencies, run engines and frontend locally, run post-cleanup verification"
     steps:
       - name: "Install backend dependencies"
-        command: "pip install -r backend/engines/engine-a-market-data/requirements.txt"
+        command: "pip install -r backend/engines/engine-a/requirements.txt"
       - name: "Install frontend dependencies"
         command: "npm install --prefix frontend-new"
       - name: "Run Engines A-D locally"
         command: |
-          cd backend/engines/engine-a-market-data && python main.py &
-          cd backend/engines/engine-b-ai-ml && python main.py &
+          cd backend/engines/engine-a && python main.py &
+          cd backend/engines/engine-b && python main.py &
           cd backend/engines/engine-c-execution && python main.py &
-          cd backend/engines/engine-d-chatbot && python main.py &
+          cd backend/engines/engine-d && python main.py &
           wait
       - name: "Run frontend locally"
         command: "npm run dev --prefix frontend-new"
@@ -419,17 +413,18 @@ metadata:
   region: "us-central1"
   domain: "infinityai.pro"
   engines:
-    - "engine-a-market-data"
-    - "engine-b-ai-ml"
+    - "engine-a"
+    - "engine-b"
     - "engine-c-execution"
-    - "engine-d-chatbot"
+    - "engine-d"
   services:
     - "infinityai-frontend"
   documentation:
-    - "FINAL_LIVE_DEPLOYMENT_VERIFICATION_REPORT.md"
-    - "DEPLOYMENT_GUIDE.md"
-    - "deployment_verification_*.json"
+    - "DEPLOYMENT_STATUS.md"
+    - "DEPLOYMENT_COMPLETE_REPORT.md"
+    - "docs/ARCHITECTURE.md"
+    - "platform-health-report.json"
   contacts:
     maintainer: "InfinityAI Team"
     repository: "https://github.com/raghu-1718/InfinityAI.Pro"
-    support: "
+    support: ""
