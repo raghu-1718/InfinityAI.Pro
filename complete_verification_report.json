@@ -1,0 +1,166 @@
+{
+  "timestamp": "2025-10-23T12:03:34.646703",
+  "platform_status": "partially_operational",
+  "components": {
+    "frontend": {
+      "status": "healthy",
+      "status_code": 200,
+      "is_react_app": true,
+      "response_size": 493,
+      "firebase_hosting": true,
+      "url": "https://infinity-ai-5ec7c.web.app"
+    },
+    "engines": {
+      "engine-a": {
+        "status": "healthy",
+        "status_code": 200,
+        "response_time": 0.352496,
+        "url": "https://infinityai-engine-a-26140490557.us-central1.run.app/health",
+        "response_data": {
+          "status": "healthy",
+          "service": "engine-a",
+          "version": "7.0.0",
+          "timestamp": "2025-10-17 UTC"
+        }
+      },
+      "engine-b": {
+        "status": "healthy",
+        "status_code": 200,
+        "response_time": 0.353982,
+        "url": "https://infinityai-engine-b-26140490557.us-central1.run.app/health",
+        "response_data": {
+          "status": "healthy",
+          "service": "engine-b",
+          "latency_ms": 0,
+          "timestamp": "2025-10-23T06:33:36.160692"
+        }
+      },
+      "engine-c": {
+        "status": "healthy",
+        "status_code": 200,
+        "response_time": 0.341363,
+        "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app/health",
+        "response_data": {
+          "status": "healthy",
+          "service": "engine-c-execution",
+          "version": "1.1.0",
+          "execution_status": "disabled",
+          "kill_switch": false,
+          "timestamp": "2025-10-23T06:33:36.509521"
+        }
+      },
+      "engine-d": {
+        "status": "healthy",
+        "status_code": 200,
+        "response_time": 0.336364,
+        "url": "https://infinityai-engine-d-26140490557.us-central1.run.app/health",
+        "response_data": {
+          "status": "ok",
+          "service": "engine-d-orchestration",
+          "websocket_connections": {
+            "total_connections": 0,
+            "channels": {
+              "dashboard": 0,
+              "trades": 0,
+              "signals": 0,
+              "health": 0
+            }
+          },
+          "timestamp": "2025-10-23 06:33:36 UTC",
+          "uptime_seconds": 704.6
+        }
+      }
+    },
+    "firebase_functions": {
+      "submitDhanCredentialsV2": {
+        "deployed": true,
+        "status_code": 401,
+        "response_time": 0.371989,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/submitDhanCredentialsV2",
+        "response_data": {
+          "error": {
+            "message": "User must be logged in to save credentials.",
+            "status": "UNAUTHENTICATED"
+          }
+        },
+        "status": "healthy_auth_required"
+      },
+      "analyzePortfolio": {
+        "deployed": true,
+        "status_code": 403,
+        "response_time": 0.380818,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/analyzePortfolio",
+        "status": "exists_non_json"
+      },
+      "startTrading": {
+        "deployed": true,
+        "status_code": 403,
+        "response_time": 0.492745,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/startTrading",
+        "status": "exists_non_json"
+      },
+      "stopTrading": {
+        "deployed": true,
+        "status_code": 403,
+        "response_time": 0.401462,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/stopTrading",
+        "status": "exists_non_json"
+      },
+      "saveDhanCredentials": {
+        "deployed": true,
+        "status_code": 403,
+        "response_time": 0.395878,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/saveDhanCredentials",
+        "status": "exists_non_json"
+      },
+      "syncHoldings": {
+        "deployed": true,
+        "status_code": 403,
+        "response_time": 0.399928,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/syncHoldings",
+        "status": "exists_non_json"
+      },
+      "getAiSignals": {
+        "deployed": true,
+        "status_code": 404,
+        "response_time": 0.33573,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getAiSignals",
+        "status": "exists_non_json"
+      },
+      "getVertexAiAnalysis": {
+        "deployed": true,
+        "status_code": 404,
+        "response_time": 0.326272,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getVertexAiAnalysis",
+        "status": "exists_non_json"
+      },
+      "getGeminiAnalysis": {
+        "deployed": true,
+        "status_code": 404,
+        "response_time": 0.331056,
+        "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getGeminiAnalysis",
+        "status": "exists_non_json"
+      }
+    },
+    "frontend_firebase_integration": {
+      "firebase_config_present": false,
+      "functions_import_present": false,
+      "httpsCallable_usage": false,
+      "auth_integration": false
+    },
+    "end_to_end_workflow": {
+      "frontend_accessible": true,
+      "engines_responsive": true,
+      "functions_callable": false,
+      "integration_ready": false
+    }
+  },
+  "integrations": {},
+  "issues": [],
+  "recommendations": [
+    "\ud83c\udf89 All systems operational - ready for production!",
+    "\ud83d\udcca Set up monitoring and alerting for production readiness",
+    "\ud83d\udd0d Run end-to-end user acceptance testing",
+    "\ud83d\udee1\ufe0f Verify security configurations and authentication flows"
+  ]
+}

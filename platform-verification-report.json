@@ -1,23 +1,23 @@
 {
-  "timestamp": "2025-10-23T11:19:38.978775",
-  "platform_status": "mostly_operational",
+  "timestamp": "2025-10-23T12:00:39.403704",
+  "platform_status": "partially_operational",
   "services": {
     "frontend": {
       "name": "frontend",
       "url": "https://infinity-ai-5ec7c.web.app",
       "status_code": 200,
-      "response_time": 0.548067,
+      "response_time": 0.448992,
       "healthy": true,
-      "timestamp": "2025-10-23T11:19:39.544358",
-      "response_data": "<!doctype html>\r\n<html lang=\"en\">\r\n  <head>\r\n    <meta charset=\"UTF-8\" />\r\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\r\n    <meta name=\"viewport\" content=\"width=device-width, initial"
+      "timestamp": "2025-10-23T12:00:39.866162",
+      "response_data": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scal"
     },
     "engine-a": {
       "name": "engine-a",
       "url": "https://infinityai-engine-a-26140490557.us-central1.run.app/health",
       "status_code": 200,
-      "response_time": 7.830438,
+      "response_time": 0.377948,
       "healthy": true,
-      "timestamp": "2025-10-23T11:19:48.388164",
+      "timestamp": "2025-10-23T12:00:41.251973",
       "response_data": {
         "status": "healthy",
         "service": "engine-a",
@@ -28,40 +28,33 @@
     "engine-b": {
       "name": "engine-b",
       "url": "https://infinityai-engine-b-26140490557.us-central1.run.app/health",
-      "status_code": 200,
-      "response_time": 5.010876,
-      "healthy": true,
-      "timestamp": "2025-10-23T11:19:54.407398",
-      "response_data": {
-        "status": "healthy",
-        "service": "engine-b",
-        "latency_ms": 0,
-        "timestamp": "2025-10-23T05:49:55.103010"
-      }
+      "error": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=10)",
+      "healthy": false,
+      "timestamp": "2025-10-23T12:00:52.378316"
     },
     "engine-c": {
       "name": "engine-c",
       "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app/health",
       "status_code": 200,
-      "response_time": 0.363177,
+      "response_time": 0.365571,
       "healthy": true,
-      "timestamp": "2025-10-23T11:19:55.777017",
+      "timestamp": "2025-10-23T12:00:53.747095",
       "response_data": {
         "status": "healthy",
         "service": "engine-c-execution",
         "version": "1.1.0",
         "execution_status": "disabled",
         "kill_switch": false,
-        "timestamp": "2025-10-23T05:49:56.481696"
+        "timestamp": "2025-10-23T06:30:54.453945"
       }
     },
     "engine-d": {
       "name": "engine-d",
       "url": "https://infinityai-engine-d-26140490557.us-central1.run.app/health",
       "status_code": 200,
-      "response_time": 0.409505,
+      "response_time": 0.402941,
       "healthy": true,
-      "timestamp": "2025-10-23T11:19:57.194566",
+      "timestamp": "2025-10-23T12:00:55.155989",
       "response_data": {
         "status": "ok",
         "service": "engine-d-orchestration",
@@ -74,24 +67,25 @@
             "health": 0
           }
         },
-        "timestamp": "2025-10-23 05:49:57 UTC",
-        "uptime_seconds": 534.4
+        "timestamp": "2025-10-23 06:30:55 UTC",
+        "uptime_seconds": 543.6
       }
     },
     "firebase-functions": {
       "name": "firebase-functions",
       "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getMarketData",
       "status_code": 404,
-      "response_time": 0.407636,
+      "response_time": 0.349619,
       "healthy": false,
-      "timestamp": "2025-10-23T11:19:58.611198"
+      "timestamp": "2025-10-23T12:00:56.512670"
     }
   },
   "issues": [
+    "engine-b connection failed: HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=10)",
     "firebase-functions returned 404"
   ],
   "recommendations": [
-    "\ud83d\udd27 Fix deployment issues for: firebase-functions",
+    "\ud83d\udd27 Fix deployment issues for: engine-b, firebase-functions",
     "\u26a1 Complete remaining service deployments to achieve full operational status",
     "\ud83d\udd0d Run end-to-end integration tests once all services are healthy",
     "\ud83d\udcca Set up monitoring and alerting for production readiness"
