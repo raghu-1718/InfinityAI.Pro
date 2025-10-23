@@ -42,12 +42,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onHoldingsUpdate = exports.analyzePortfolio = exports.syncHoldings = void 0;
+exports.getDhanCallbackUrls = exports.getDhanOverview = exports.onHoldingsUpdate = exports.analyzePortfolio = exports.getEngineBStatus = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getBatchAiSignals = exports.getAiSignals = exports.syncHoldings = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
 const axios_1 = __importDefault(require("axios"));
 const storeCredentials_1 = require("./storeCredentials");
+const config_1 = require("./config");
 const db = admin.firestore();
 /**
  * Sync Holdings from Dhan API
@@ -62,7 +63,7 @@ exports.syncHoldings = (0, https_1.onCall)({
     timeoutSeconds: 120,
     secrets: ["ENCRYPTION_KEY"],
 }, async (request) => {
-    var _a;
+    var _a, _b, _c;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
     }
@@ -74,33 +75,51 @@ exports.syncHoldings = (0, https_1.onCall)({
             throw new https_1.HttpsError("failed-precondition", "Access token required. Please update your credentials.");
         }
         console.log(`📊 Fetching holdings for user: ${uid}`);
-        // Fetch holdings from Dhan API
-        const response = await axios_1.default.get("https://api.dhan.co/v2/holdings", {
+        // ARCHITECTURE FIX: Point to Engine A, the data hub, not Engine C.
+        // The Cloud Function securely provides the credentials to the trusted engine.
+        // We will use the more efficient `overview` endpoint which includes holdings.
+        const response = await axios_1.default.get(`${config_1.ENGINE_URLS.A}/api/dhan/overview`, {
             headers: {
-                "access-token": credentials.accessToken,
-                "client-id": credentials.clientId,
+                "x-client-id": credentials.clientId,
+                "Authorization": `Bearer ${credentials.accessToken}`
             },
             timeout: 30000,
         });
-        const holdings = response.data.data || [];
+        // The overview endpoint in Engine A returns holdings in a `holdings` field.
+        const holdings = response.data.holdings || [];
         console.log(`✅ Retrieved ${holdings.length} holdings from Dhan API`);
-        // Store holdings in Firestore
+        const userHoldingsRef = db.collection("holdings").doc(uid);
+        const itemsCollectionRef = userHoldingsRef.collection("items");
+        // 1. Clear out old holdings to prevent stale data
+        const oldHoldingsSnapshot = await itemsCollectionRef.get();
+        if (!oldHoldingsSnapshot.empty) {
+            console.log(`🗑️ Deleting ${oldHoldingsSnapshot.size} old holding items...`);
+            // Handle batching for > 500 deletes
+            const deletePromises = [];
+            let deleteBatch = db.batch();
+            oldHoldingsSnapshot.docs.forEach((doc, index) => {
+                deleteBatch.delete(doc.ref);
+                if ((index + 1) % 500 === 0) {
+                    deletePromises.push(deleteBatch.commit());
+                    deleteBatch = db.batch();
+                }
+            });
+            deletePromises.push(deleteBatch.commit());
+            await Promise.all(deletePromises);
+        }
+        // Create a new batch for setting data
         const batch = db.batch();
-        const holdingsRef = db.collection("holdings").doc(uid);
-        // Update main holdings document
-        batch.set(holdingsRef, {
+        // 2. Update the main holdings document
+        batch.set(userHoldingsRef, {
             userId: uid,
             totalHoldings: holdings.length,
             lastSyncedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-        // Store individual holdings
+        // 3. Add the new individual holdings
         holdings.forEach((holding) => {
-            const holdingDocRef = db
-                .collection("holdings")
-                .doc(uid)
-                .collection("items")
-                .doc(holding.securityId);
+            // Use a consistent and safe document ID
+            const holdingDocRef = itemsCollectionRef.doc(holding.securityId);
             batch.set(holdingDocRef, Object.assign(Object.assign({}, holding), { syncedAt: admin.firestore.FieldValue.serverTimestamp() }));
         });
         await batch.commit();
@@ -115,10 +134,229 @@ exports.syncHoldings = (0, https_1.onCall)({
     }
     catch (error) {
         console.error("❌ Error syncing holdings:", error);
-        if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 401) {
+        if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 401 || ((_c = (_b = error.response) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.code) === "UNAUTHENTICATED") {
             throw new https_1.HttpsError("unauthenticated", "Invalid or expired Dhan access token");
         }
         throw new https_1.HttpsError("internal", `Failed to sync holdings: ${error.message}`);
+    }
+});
+/**
+ * Get AI Signals from Engine B
+ *
+ * Fetches AI/ML trading signals from the dedicated Engine B.
+ * @param data - { symbol }
+ * @returns { signals }
+ */
+exports.getAiSignals = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 60,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const { symbol } = request.data;
+    if (!symbol) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required field: symbol");
+    }
+    try {
+        console.log(`🤖 Fetching AI signals for ${symbol} from Engine B`);
+        // CORRECTED: Call the endpoint for a single symbol prediction.
+        const response = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/predict/${symbol}`);
+        return {
+            message: `Successfully fetched signals for ${symbol}`,
+            signal: response.data.signal,
+        };
+    }
+    catch (error) {
+        console.error(`❌ Error fetching signals from Engine B:`, error);
+        throw new https_1.HttpsError("internal", `Failed to get AI signals: ${error.message}`);
+    }
+});
+/**
+ * Get Batch AI Signals from Engine B
+ *
+ * Fetches AI/ML trading signals for a list of symbols.
+ * @param data - { symbols: string[] }
+ * @returns { signals }
+ */
+exports.getBatchAiSignals = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "512MiB",
+    timeoutSeconds: 180,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const { symbols } = request.data;
+    if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
+        throw new https_1.HttpsError("invalid-argument", "Missing or invalid required field: symbols (must be a non-empty array)");
+    }
+    try {
+        console.log(`🤖 Fetching batch AI signals for ${symbols.length} symbols from Engine B`);
+        // GATEWAY PATTERN: Call Engine B's batch-predict endpoint
+        const response = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/batch-predict`, symbols);
+        return {
+            message: `Successfully fetched ${response.data.count} signals.`,
+            signals: response.data.signals,
+            count: response.data.count,
+        };
+    }
+    catch (error) {
+        console.error(`❌ Error fetching batch signals from Engine B:`, error);
+        if (error.response) {
+            console.error('Engine B Error Response:', error.response.data);
+        }
+        throw new https_1.HttpsError("internal", `Failed to get AI signals: ${error.message}`);
+    }
+});
+/**
+ * Get Vertex AI Analysis from Engine A
+ *
+ * Relays a prompt to Engine A for processing with Google's Vertex AI.
+ * @param data - { prompt: string, context?: any }
+ * @returns { analysis }
+ */
+exports.getVertexAiAnalysis = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 180, // Longer timeout for generative AI
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const { prompt, context } = request.data;
+    if (!prompt) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required field: prompt");
+    }
+    try {
+        console.log(`🧠 Relaying prompt to Engine A (Vertex AI)`);
+        // GATEWAY PATTERN: Call Engine A's Vertex AI endpoint
+        const response = await axios_1.default.post(`${config_1.ENGINE_URLS.A}/api/vertex/analyze`, {
+            prompt,
+            context: context || {},
+            userId: request.auth.uid,
+        }, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 170000,
+        });
+        return {
+            message: "Vertex AI analysis successful",
+            analysis: response.data,
+        };
+    }
+    catch (error) {
+        console.error(`❌ Error fetching analysis from Engine A (Vertex AI):`, error);
+        throw new https_1.HttpsError("internal", `Failed to get Vertex AI analysis: ${error.message}`);
+    }
+});
+/**
+ * Get Gemini Analysis from Engine B
+ *
+ * Relays a prompt to Engine B for processing with its native Gemini models.
+ * @param data - { prompt: string, context?: any }
+ * @returns { analysis }
+ */
+exports.getGeminiAnalysis = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 180,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const { prompt, context } = request.data;
+    if (!prompt) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required field: prompt");
+    }
+    try {
+        console.log(`🧠 Relaying prompt to Engine B (Gemini)`);
+        // GATEWAY PATTERN: Call Engine B's Gemini endpoint
+        const response = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/gemini/analyze`, {
+            prompt,
+            context: context || {},
+            userId: request.auth.uid,
+        }, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 170000,
+        });
+        return {
+            message: "Gemini analysis successful",
+            analysis: response.data,
+        };
+    }
+    catch (error) {
+        console.error(`❌ Error fetching analysis from Engine B (Gemini):`, error);
+        throw new https_1.HttpsError("internal", `Failed to get Gemini analysis: ${error.message}`);
+    }
+});
+/**
+ * Get Robotics ER Analysis from Engine B
+ *
+ * Relays an image and prompt to Engine B for processing with Gemini Robotics-ER.
+ * @param data - { prompt: string, image: string (base64) }
+ * @returns { analysis }
+ */
+exports.analyzeImageWithRoboticsER = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "512MiB", // Increased memory for image data
+    timeoutSeconds: 180,
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const { prompt, image } = request.data;
+    if (!prompt || !image) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required fields: prompt and image (base64)");
+    }
+    try {
+        console.log(`🤖 Relaying image and prompt to Engine B (Robotics-ER)`);
+        // GATEWAY PATTERN: Call Engine B's Robotics-ER endpoint
+        // The image is passed as a base64 string in the JSON payload.
+        const response = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/robotics/analyze`, {
+            prompt,
+            image, // Your Python engine will decode this base64 string
+            userId: request.auth.uid,
+        }, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 170000,
+        });
+        return {
+            message: "Robotics-ER analysis successful",
+            analysis: response.data,
+        };
+    }
+    catch (error) {
+        console.error(`❌ Error fetching analysis from Engine B (Robotics-ER):`, error);
+        if (error.response) {
+            console.error('Engine B Error Response:', error.response.data);
+        }
+        throw new https_1.HttpsError("internal", `Failed to get Robotics-ER analysis: ${error.message}`);
+    }
+});
+/**
+ * Get Engine B Model Status
+ *
+ * Fetches the operational status of the AI models inside Engine B.
+ * @returns { status }
+ */
+exports.getEngineBStatus = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 30,
+}, async (request) => {
+    // Optional: Add admin-only authentication here
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    try {
+        console.log(`🩺 Fetching model status from Engine B`);
+        const response = await axios_1.default.get(`${config_1.ENGINE_URLS.B}/api/models/status`);
+        return response.data;
+    }
+    catch (error) {
+        console.error(`❌ Error fetching status from Engine B:`, error);
+        throw new https_1.HttpsError("internal", `Failed to get Engine B status: ${error.message}`);
     }
 });
 /**
@@ -165,7 +403,7 @@ Please provide:
 6. Current market trends affecting these holdings
 
 Be specific and actionable. Focus on Indian market context (NIFTY, BANKNIFTY, sectoral indices).`,
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash-latest", // Using a standard, current model name
             userId: uid,
             analysisType: "portfolio",
             holdingsCount: holdings.length,
@@ -249,7 +487,7 @@ Provide:
 4. Quick action items
 
 Keep it concise (max 200 words).`,
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash-latest", // Using a standard, current model name
             userId,
             analysisType: "auto-holdings-update",
             holdingsCount: holdings.length,
@@ -262,4 +500,72 @@ Keep it concise (max 200 words).`,
         throw error;
     }
 }
+/**
+ * Get Dhan Account Overview from Engine A
+ *
+ * Fetches a consolidated overview of the user's Dhan account, including
+ * funds, holdings, positions, and profile information.
+ * @returns { overview }
+ */
+exports.getDhanOverview = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "512MiB",
+    timeoutSeconds: 120,
+    secrets: ["ENCRYPTION_KEY"],
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    const uid = request.auth.uid;
+    try {
+        console.log(`📋 Fetching Dhan overview for user ${uid} from Engine A`);
+        // This endpoint in Engine A will need the user's credentials.
+        // We assume Engine A's /api/dhan/overview is a POST endpoint that accepts credentials.
+        // If it's a GET, the credentials would need to be passed in headers.
+        const { clientId, accessToken } = await (0, storeCredentials_1.getDecryptedCredentials)(uid);
+        if (!accessToken) {
+            throw new https_1.HttpsError("failed-precondition", "Dhan access token is required for this operation.");
+        }
+        // Pass credentials securely in headers, which is a more standard practice.
+        const response = await axios_1.default.get(`${config_1.ENGINE_URLS.A}/api/dhan/overview`, {
+            headers: {
+                "x-client-id": clientId,
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+        return response.data;
+    }
+    catch (error) {
+        console.error(`❌ Error fetching Dhan overview from Engine A:`, error);
+        throw new https_1.HttpsError("internal", `Failed to get Dhan overview: ${error.message}`);
+    }
+});
+/**
+ * Get Dhan Callback URLs from Engine A
+ *
+ * Fetches the configured Redirect and Postback URLs that users need
+ * to set up their own Dhan developer applications.
+ * @returns { redirect_url: string, postback_url: string }
+ */
+exports.getDhanCallbackUrls = (0, https_1.onCall)({
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 30,
+}, async (request) => {
+    // This is public information, but we can still require authentication
+    // to prevent abuse.
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
+    }
+    try {
+        console.log(`🔗 Fetching Dhan callback URLs from Engine C`);
+        // Fetch URLs from Engine C, which is the authority for trading OAuth.
+        const response = await axios_1.default.get(`${config_1.ENGINE_URLS.C}/api/dhan/callback-urls`);
+        return response.data;
+    }
+    catch (error) {
+        console.error(`❌ Error fetching Dhan callback URLs:`, error);
+        throw new https_1.HttpsError("internal", `Failed to get Dhan callback URLs: ${error.message}`);
+    }
+});
 //# sourceMappingURL=analyzePortfolio.js.map

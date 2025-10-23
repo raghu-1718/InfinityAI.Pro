@@ -47,9 +47,8 @@ const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const axios_1 = __importDefault(require("axios"));
 const storeCredentials_1 = require("./storeCredentials");
+const config_1 = require("./config");
 const db = admin.firestore();
-// Cloud Run Engine URLs (configure via environment variables)
-const ENGINE_C_URL = process.env.ENGINE_C_URL || "https://infinityai-engine-c-execution-26140490557.us-central1.run.app";
 /**
  * Start Trading Session
  *
@@ -107,18 +106,28 @@ exports.startTrading = (0, https_1.onCall)({
         console.log(`✅ Trading session created: ${sessionId}`);
         // Call Engine C to start trading execution
         try {
+            // 1. Get a real-time signal from Engine B first
+            console.log(`🤖 Requesting initial signal from Engine B for strategy: ${strategy}`);
+            // We need a representative symbol for the strategy to get a signal
+            const representativeSymbol = strategy === "mcx" ? "CRUDEOIL" : "NIFTY";
+            const signalResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/predict/${representativeSymbol}`);
+            const aiSignal = signalResponse.data.signal;
+            if (!aiSignal || !aiSignal.signal_type || aiSignal.signal_type === "HOLD") {
+                throw new https_1.HttpsError("aborted", "AI signal is HOLD or unavailable. No trade initiated.");
+            }
+            console.log(`👍 Received initial signal: ${aiSignal.signal_type} ${aiSignal.symbol}`);
+            // This payload should match the `/api/orders/place` endpoint in Engine C
             const enginePayload = {
-                sessionId,
-                userId: uid,
+                // 2. Use the AI signal to construct the trade order
+                symbol: aiSignal.symbol,
+                quantity: 1, // Simplified quantity, should be based on risk/amount
                 strategy,
-                amount: amountNum,
-                risk: riskNum,
-                credentials: {
-                    clientId: credentials.clientId,
-                    accessToken: credentials.accessToken,
-                },
+                order_type: "MARKET",
+                transaction_type: aiSignal.signal_type, // Use the signal from Engine B
+                price: 0, // Market order
+                demo: false, // For live trading
             };
-            const engineResponse = await axios_1.default.post(`${ENGINE_C_URL}/start`, enginePayload, {
+            const engineResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.C}/api/orders/place`, enginePayload, {
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -190,7 +199,7 @@ exports.stopTrading = (0, https_1.onCall)({
         }
         // Call Engine C to stop execution
         try {
-            await axios_1.default.post(`${ENGINE_C_URL}/stop`, { sessionId }, {
+            await axios_1.default.post(`${config_1.ENGINE_URLS.C}/stop`, { sessionId }, {
                 headers: { "Content-Type": "application/json" },
                 timeout: 10000,
             });
@@ -222,16 +231,16 @@ async function triggerPortfolioAnalysis(userId, sessionId) {
     try {
         // Create a document in the 'generate' collection for Gemini extension
         await db.collection("generate").add({
-            prompt: `Analyze the trading session for user ${userId}. Session ID: ${sessionId}. 
-      
+            prompt: `Analyze the trading session for user ${userId}. Session ID: ${sessionId}.
+
       Provide insights on:
       - Current market conditions for Indian markets (NIFTY, BANKNIFTY)
       - Risk assessment for the selected strategy
       - Recommended actions based on real-time data
       - Key support and resistance levels
-      
+
       Be concise and actionable.`,
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash-latest", // Using a standard, current model name
             userId,
             sessionId,
             createTime: admin.firestore.FieldValue.serverTimestamp(),
