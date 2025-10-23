@@ -9,22 +9,22 @@ import time
 
 def open_firebase_console():
     """Open Firebase Console in browser"""
-    
+
     print("🔥 Firebase Authentication Quick Setup")
     print("=" * 50)
-    
+
     project_id = "infinity-ai-5ec7c"
-    
+
     # URLs for setup
     urls = {
         "auth_main": f"https://console.firebase.google.com/project/{project_id}/authentication",
         "sign_in_methods": f"https://console.firebase.google.com/project/{project_id}/authentication/providers",
         "users": f"https://console.firebase.google.com/project/{project_id}/authentication/users"
     }
-    
+
     print("🌐 Opening Firebase Console...")
     print("📝 Follow these steps in the browser that opens:\n")
-    
+
     # Step-by-step instructions
     steps = [
         {
@@ -38,7 +38,7 @@ def open_firebase_console():
             ]
         },
         {
-            "step": 2, 
+            "step": 2,
             "title": "Enable Email/Password Provider",
             "url": urls["sign_in_methods"],
             "instructions": [
@@ -62,7 +62,7 @@ def open_firebase_console():
             ]
         }
     ]
-    
+
     for step_info in steps:
         print(f"📋 STEP {step_info['step']}: {step_info['title']}")
         print(f"🌐 URL: {step_info['url']}")
@@ -70,7 +70,7 @@ def open_firebase_console():
         for instruction in step_info['instructions']:
             print(f"   • {instruction}")
         print()
-        
+
         if step_info['step'] == 1:
             # Open the first URL automatically
             print("🔄 Opening Firebase Console...")
@@ -80,10 +80,10 @@ def open_firebase_console():
             except:
                 print("❌ Could not open browser automatically")
                 print(f"📖 Please manually go to: {step_info['url']}")
-        
+
         input("⏳ Press ENTER when you've completed this step...")
         print()
-    
+
     print("🎉 Setup Complete!")
     print("=" * 50)
     print("✅ Firebase Authentication should now be configured")
@@ -92,14 +92,14 @@ def open_firebase_console():
 
 def main():
     """Main setup function"""
-    
+
     print("🚀 InfinityAI.Pro - Firebase Authentication Setup")
     print("=" * 60)
     print("This will guide you through setting up Firebase Authentication")
     print("to fix the 'auth/configuration-not-found' error.\n")
-    
+
     response = input("🤔 Ready to start Firebase Auth setup? (y/n): ").lower()
-    
+
     if response in ['y', 'yes']:
         print("\n🚀 Starting setup process...")
         open_firebase_console()
@@ -107,7 +107,7 @@ def main():
         print("\n📖 Manual Setup Instructions:")
         print("1. Go to: https://console.firebase.google.com/project/infinity-ai-5ec7c/authentication")
         print("2. Click 'Get Started' if shown")
-        print("3. Enable Email/Password provider") 
+        print("3. Enable Email/Password provider")
         print("4. Test login at: https://infinity-ai-5ec7c.web.app/login")
         print("\n🔍 Run 'python verify_firebase_auth.py' to verify setup")
 
