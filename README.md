@@ -1,53 +1,160 @@
-# 🚀 InfinityAI.Pro - Fully Operational AI Trading Platform
+# 🚀 InfinityAI.Pro - AI Trading Platform
 
-**Production-ready, secure, 100% GCP-native AI trading platform for Indian markets (NSE/BSE/MCX) with complete Dhan OAuth integration, real-time data flow, and comprehensive microservices architecture.**
+**Production-ready, secure, 100% GCP-native AI trading platform for Indian markets (NSE/BSE/MCX) with complete Dhan OAuth integration, real-time data flow, and a comprehensive microservices architecture.**
 
 [![Production Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://infinityai.pro)
-[![Security](https://img.shields.io/badge/Security-Secret%20Manager%20Secured-blue)](#security)
-[![Cloud Platform](https://img.shields.io/badge/Cloud-Google%20Cloud%20Run-orange)](#deployment)
-[![OAuth Ready](https://img.shields.io/badge/OAuth-Dhan%20Integrated-green)](#oauth-integration)
-[![Architecture](https://img.shields.io/badge/Architecture-100%25%20GCP%20Native-blueviolet)](#architecture)
+[![Security](https://img.shields.io/badge/Security-Secret%20Manager%20Secured-blue)](#-security--oauth-integration)
+[![Cloud Platform](https://img.shields.io/badge/Cloud-Google%20Cloud%20Run-orange)](#-cloud-infrastructure)
+[![OAuth Ready](https://img.shields.io/badge/OAuth-Dhan%20Integrated-green)](#-security--oauth-integration)
+[![Architecture](https://img.shields.io/badge/Architecture-Microservices-blueviolet)](#️-system-architecture)
 
-## 🎯 **Platform Overview**
+## 🎯 Platform Overview
 
 InfinityAI.Pro is a comprehensive AI-driven trading platform **exclusively built for Indian markets** (NSE, BSE, MCX) featuring **four specialized microservices** deployed on Google Cloud Run. The platform offers real-time market data analysis, advanced machine learning capabilities, secure trade execution through Dhan broker OAuth authentication, and intelligent AI chatbot orchestration.
 
-### **🔥 Production Deployment Status**
+### 🔥 Core Components
 - ✅ **Engine A (Market Data)**: Real-time NSE/BSE/MCX feeds + AI analysis ⚡
 - ✅ **Engine B (AI/ML)**: Random Forest + Gradient Boosting price predictions 🤖
 - ✅ **Engine C (Execution)**: Dhan OAuth + Kill-switch + Input sanitization 🔐
 - ✅ **Engine D (Chatbot)**: Multi-engine coordination + WebSocket updates 💬
-- ✅ **Frontend Dashboard**: React + Vite + TypeScript 🌐
+- ✅ **Frontend Dashboard**: React + Vite + TypeScript + TailwindCSS 🌐
+- ✅ **Cloud Functions**: Serverless backend for user management and tasks.
 
-**Health Status**: ✅ All 4 engines + frontend responding (100% uptime)  
-**Last Verified**: October 17, 2025  
-**Performance**: 200-500ms response times (avg 327ms)  
-**Security**: All credentials in GCP Secret Manager ✅
+**Health Status**: ✅ All engines + frontend are containerized and ready for deployment.
+**Security**: ✅ All credentials managed via GCP Secret Manager.
 
+## 🏗️ System Architecture
 
-## 🏗️ **System Architecture**
+The platform is built on a robust microservices architecture, with each engine serving a specific purpose. The frontend is a modern React application, and the entire system is designed for deployment on Google Cloud.
 
-### **Microservices Architecture on Google Cloud**
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                      INFINITYAI.PRO PLATFORM                             │
-│                   Google Cloud Run (us-central1)                         │
+│                   Google Cloud & Firebase Ecosystem                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                           │
 │  🔵 Engine A           🤖 Engine B          🔐 Engine C                   │
 │  Market Data           AI/ML Processing     Trade Execution               │
-│  • NIFTY feeds        • Predictions        • Dhan OAuth                  │
-│  • Real-time data     • Signal analysis    • Secure trading              │
-│  • Technical analysis • ML models          • Risk management             │
+│  (Python/FastAPI)      (Python/FastAPI)     (Python/FastAPI)              │
 │                                                                           │
-│  💬 Engine D           🌐 Frontend                                        │
-│  AI Chatbot            Dashboard                                          │
-│  • Multi-engine        • Real-time UI                                     │
-│  • Orchestration       • infinityai.pro                                   │
-│  • NLP integration     • React + Vite                                     │
+│  💬 Engine D           🌐 Frontend           ☁️ Functions                  │
+│  AI Chatbot            Dashboard            (Serverless)                  │
+│  (Python/FastAPI)      (React/Vite)         (Node.js)                     │
 │                                                                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- Python (v3.9+)
+- Docker and Docker Compose
+- Google Cloud SDK (`gcloud`)
+- Firebase CLI
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/raghu-1718/InfinityAI.Pro.git
+cd InfinityAI.Pro
+```
+
+### 2. Configure Environment Variables
+Create a `.env` file in the root of the project by copying the example file:
+```bash
+cp .env.example .env
+```
+Now, edit the `.env` file and add your actual credentials for the Dhan API, GCP Project ID, and other secrets.
+
+### 3. Local Development with Docker
+The easiest way to run the entire backend stack locally is with Docker Compose. This will start all four engines and a Redis instance.
+
+```bash
+# Build and start all engine containers
+docker-compose up --build
+```
+The engines will be available at:
+- **Engine A**: `http://localhost:8100`
+- **Engine B**: `http://localhost:8101`
+- **Engine C**: `http://localhost:8102`
+- **Engine D**: `http://localhost:8103`
+
+### 4. Run the Frontend
+In a separate terminal, navigate to the `frontend` directory, install dependencies, and start the development server:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+The frontend will be available at `http://localhost:5173`.
+
+---
+
+## ☁️ Deployment
+
+The application is designed to be deployed on Google Cloud Run and Firebase.
+
+### Deploying the Engines
+The `cloudbuild.yaml` file in the `infrastructure/` directory is configured to build and deploy all four engines to Google Cloud Run. You can trigger this build manually or connect it to a CI/CD pipeline.
+
+To deploy a single engine manually, use the `gcloud` CLI:
+```bash
+# Example for Engine A
+gcloud run deploy infinityai-engine-a --source ./engines/engine-a --region=us-central1 --platform=managed --allow-unauthenticated
+```
+Repeat this for `engine-b`, `engine-c-execution`, and `engine-d`.
+
+### Deploying the Frontend
+The frontend is deployed to Firebase Hosting.
+```bash
+# From the root directory
+firebase deploy --only hosting
+```
+
+### Deploying Cloud Functions
+The serverless functions are deployed using the Firebase CLI.
+```bash
+# From the root directory
+firebase deploy --only functions
+```
+
+---
+
+## 🛡️ Security & OAuth Integration
+
+- **Dhan OAuth 2.0**: The platform uses a complete OAuth 2.0 flow for secure broker integration.
+- **Secret Management**: All secrets (API keys, tokens, etc.) are managed using **Google Secret Manager**. The application code does not contain any hardcoded credentials.
+- **IAM**: Detailed IAM roles and service account configurations are documented in `GCP_IAM_CONFIGURATION.md`.
+
+---
+
+## 🔧 Engine Specifications
+
+### 🔵 Engine A - Market Data Ingestion
+- **Purpose**: Real-time market data collection and technical analysis.
+- **Tech**: Python, FastAPI, WebSockets, Pandas.
+
+### 🤖 Engine B - AI/ML Processing
+- **Purpose**: Advanced AI analytics and predictive modeling.
+- **Tech**: Python, FastAPI, TensorFlow, scikit-learn.
+
+### 🔐 Engine C - Trade Execution
+- **Purpose**: Secure trade execution with Dhan broker integration.
+- **Tech**: Python, FastAPI, OAuth 2.0, Google Secret Manager.
+
+### 💬 Engine D - AI Chatbot Orchestrator
+- **Purpose**: Natural language interface and multi-engine orchestration.
+- **Tech**: Python, FastAPI, NLP libraries.
+
+---
+
+## 📞 Support & Contact
+
+- **🌐 Website**: https://infinityai.pro
+- **📧 Support**: support@infinityai.pro
+- **🐛 Issues**: GitHub Issues section
 
 ---
 

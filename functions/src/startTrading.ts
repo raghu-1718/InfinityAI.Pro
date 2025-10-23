@@ -1,6 +1,6 @@
 /**
  * Start Trading Function
- * 
+ *
  * Initiates a trading session by calling Engine C execution service
  * Creates session document in Firestore and triggers portfolio analysis
  */
@@ -9,11 +9,9 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import axios from "axios";
 import { getDecryptedCredentials } from "./storeCredentials";
+import { ENGINE_URLS } from "./config";
 
 const db = admin.firestore();
-
-// Cloud Run Engine URLs (configure via environment variables)
-const ENGINE_C_URL = process.env.ENGINE_C_URL || "https://infinityai-engine-c-execution-26140490557.us-central1.run.app";
 
 interface StartTradingData {
   userId: string;
@@ -24,7 +22,7 @@ interface StartTradingData {
 
 /**
  * Start Trading Session
- * 
+ *
  * @param data - { userId, strategy, amount, risk }
  * @returns { message, sessionId, status }
  */
@@ -97,20 +95,33 @@ export const startTrading = onCall(
 
       // Call Engine C to start trading execution
       try {
+        // 1. Get a real-time signal from Engine B first
+        console.log(`🤖 Requesting initial signal from Engine B for strategy: ${strategy}`);
+        // We need a representative symbol for the strategy to get a signal
+        const representativeSymbol = strategy === "mcx" ? "CRUDEOIL" : "NIFTY";
+        const signalResponse = await axios.post(`${ENGINE_URLS.B}/api/predict/${representativeSymbol}`);
+        const aiSignal = signalResponse.data.signal;
+
+        if (!aiSignal || !aiSignal.signal_type || aiSignal.signal_type === "HOLD") {
+          throw new HttpsError("aborted", "AI signal is HOLD or unavailable. No trade initiated.");
+        }
+
+        console.log(`👍 Received initial signal: ${aiSignal.signal_type} ${aiSignal.symbol}`);
+
+        // This payload should match the `/api/orders/place` endpoint in Engine C
         const enginePayload = {
-          sessionId,
-          userId: uid,
+          // 2. Use the AI signal to construct the trade order
+          symbol: aiSignal.symbol,
+          quantity: 1, // Simplified quantity, should be based on risk/amount
           strategy,
-          amount: amountNum,
-          risk: riskNum,
-          credentials: {
-            clientId: credentials.clientId,
-            accessToken: credentials.accessToken,
-          },
+          order_type: "MARKET",
+          transaction_type: aiSignal.signal_type, // Use the signal from Engine B
+          price: 0, // Market order
+          demo: false, // For live trading
         };
 
         const engineResponse = await axios.post(
-          `${ENGINE_C_URL}/start`,
+          `${ENGINE_URLS.C}/api/orders/place`,
           enginePayload,
           {
             headers: {
@@ -155,11 +166,11 @@ export const startTrading = onCall(
       }
     } catch (error: any) {
       console.error("❌ Error starting trading session:", error);
-      
+
       if (error instanceof HttpsError) {
         throw error;
       }
-      
+
       throw new HttpsError("internal", `Failed to start trading: ${error.message}`);
     }
   }
@@ -167,7 +178,7 @@ export const startTrading = onCall(
 
 /**
  * Stop Trading Session
- * 
+ *
  * @param data - { sessionId }
  * @returns { message, status }
  */
@@ -206,7 +217,7 @@ export const stopTrading = onCall(
       // Call Engine C to stop execution
       try {
         await axios.post(
-          `${ENGINE_C_URL}/stop`,
+          `${ENGINE_URLS.C}/stop`,
           { sessionId },
           {
             headers: { "Content-Type": "application/json" },
@@ -244,16 +255,16 @@ async function triggerPortfolioAnalysis(userId: string, sessionId: string): Prom
   try {
     // Create a document in the 'generate' collection for Gemini extension
     await db.collection("generate").add({
-      prompt: `Analyze the trading session for user ${userId}. Session ID: ${sessionId}. 
-      
+      prompt: `Analyze the trading session for user ${userId}. Session ID: ${sessionId}.
+
       Provide insights on:
       - Current market conditions for Indian markets (NIFTY, BANKNIFTY)
       - Risk assessment for the selected strategy
       - Recommended actions based on real-time data
       - Key support and resistance levels
-      
+
       Be concise and actionable.`,
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash-latest", // Using a standard, current model name
       userId,
       sessionId,
       createTime: admin.firestore.FieldValue.serverTimestamp(),

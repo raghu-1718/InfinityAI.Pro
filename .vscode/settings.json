@@ -84,7 +84,9 @@
   "git.autofetch": true,
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
-  "github.copilot.enable": true,
+  "github.copilot.enable": {
+    "*": true
+  },
   "github.copilot.editor.enableAutoCompletions": true,
   "github.copilot.chat.enableFormatting": false,
 
@@ -111,5 +113,6 @@
       "includeSchema": true
     },
     "enableRemoteMockServer": true
-  }
+  },
+  "containers.containerCommand": "C:\\Program Files\\Docker\\docker.exe"
 }
