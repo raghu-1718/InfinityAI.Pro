@@ -1,0 +1,131 @@
+{
+  "timestamp": "2025-10-23T11:19:38.978775",
+  "platform_status": "mostly_operational",
+  "services": {
+    "frontend": {
+      "name": "frontend",
+      "url": "https://infinity-ai-5ec7c.web.app",
+      "status_code": 200,
+      "response_time": 0.548067,
+      "healthy": true,
+      "timestamp": "2025-10-23T11:19:39.544358",
+      "response_data": "<!doctype html>\r\n<html lang=\"en\">\r\n  <head>\r\n    <meta charset=\"UTF-8\" />\r\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\r\n    <meta name=\"viewport\" content=\"width=device-width, initial"
+    },
+    "engine-a": {
+      "name": "engine-a",
+      "url": "https://infinityai-engine-a-26140490557.us-central1.run.app/health",
+      "status_code": 200,
+      "response_time": 7.830438,
+      "healthy": true,
+      "timestamp": "2025-10-23T11:19:48.388164",
+      "response_data": {
+        "status": "healthy",
+        "service": "engine-a",
+        "version": "7.0.0",
+        "timestamp": "2025-10-17 UTC"
+      }
+    },
+    "engine-b": {
+      "name": "engine-b",
+      "url": "https://infinityai-engine-b-26140490557.us-central1.run.app/health",
+      "status_code": 200,
+      "response_time": 5.010876,
+      "healthy": true,
+      "timestamp": "2025-10-23T11:19:54.407398",
+      "response_data": {
+        "status": "healthy",
+        "service": "engine-b",
+        "latency_ms": 0,
+        "timestamp": "2025-10-23T05:49:55.103010"
+      }
+    },
+    "engine-c": {
+      "name": "engine-c",
+      "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app/health",
+      "status_code": 200,
+      "response_time": 0.363177,
+      "healthy": true,
+      "timestamp": "2025-10-23T11:19:55.777017",
+      "response_data": {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "version": "1.1.0",
+        "execution_status": "disabled",
+        "kill_switch": false,
+        "timestamp": "2025-10-23T05:49:56.481696"
+      }
+    },
+    "engine-d": {
+      "name": "engine-d",
+      "url": "https://infinityai-engine-d-26140490557.us-central1.run.app/health",
+      "status_code": 200,
+      "response_time": 0.409505,
+      "healthy": true,
+      "timestamp": "2025-10-23T11:19:57.194566",
+      "response_data": {
+        "status": "ok",
+        "service": "engine-d-orchestration",
+        "websocket_connections": {
+          "total_connections": 0,
+          "channels": {
+            "dashboard": 0,
+            "trades": 0,
+            "signals": 0,
+            "health": 0
+          }
+        },
+        "timestamp": "2025-10-23 05:49:57 UTC",
+        "uptime_seconds": 534.4
+      }
+    },
+    "firebase-functions": {
+      "name": "firebase-functions",
+      "url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getMarketData",
+      "status_code": 404,
+      "response_time": 0.407636,
+      "healthy": false,
+      "timestamp": "2025-10-23T11:19:58.611198"
+    }
+  },
+  "issues": [
+    "firebase-functions returned 404"
+  ],
+  "recommendations": [
+    "\ud83d\udd27 Fix deployment issues for: firebase-functions",
+    "\u26a1 Complete remaining service deployments to achieve full operational status",
+    "\ud83d\udd0d Run end-to-end integration tests once all services are healthy",
+    "\ud83d\udcca Set up monitoring and alerting for production readiness"
+  ],
+  "firebase_functions": {
+    "submitDhanCredentialsV2": {
+      "deployed": false,
+      "status": 400
+    },
+    "analyzePortfolio": {
+      "deployed": true,
+      "status": 403
+    },
+    "startTrading": {
+      "deployed": true,
+      "status": 403
+    },
+    "stopTrading": {
+      "deployed": true,
+      "status": 403
+    },
+    "getMarketData": {
+      "deployed": false,
+      "status": 404
+    },
+    "executeOrder": {
+      "deployed": false,
+      "status": 404
+    }
+  },
+  "docker_images": {
+    "infinityai-engine-a": "\u2705 Pushed to Artifact Registry",
+    "infinityai-engine-b": "\u2705 Pushed to Artifact Registry",
+    "infinityai-engine-c-execution": "\u2705 Pushed to Artifact Registry",
+    "infinityai-engine-d": "\u2705 Pushed to Artifact Registry"
+  }
+}
