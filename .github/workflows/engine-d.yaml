@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'backend/engines/engine-d/**'
+      - 'engines/engine-d/**'
 
 jobs:
   deploy:
@@ -24,5 +24,5 @@ jobs:
         with:
           service: infinityai-engine-d
           region: us-central1
-          source: ./backend/engines/engine-d
+          source: ./engines/engine-d
           project_id: ${{ secrets.VITE_PROJECT_ID }}

@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'backend/engines/engine-c-execution/**'
+      - "engines/engine-c-execution/**"
 
 jobs:
   deploy:
@@ -15,14 +15,14 @@ jobs:
         uses: actions/checkout@v2
 
       - name: GCP Auth
-        uses: 'google-github-actions/auth@v1'
+        uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
       - name: Deploy to Cloud Run
-        uses: 'google-github-actions/deploy-cloudrun@v1'
+        uses: "google-github-actions/deploy-cloudrun@v1"
         with:
           service: infinityai-engine-c
           region: us-central1
-          source: ./backend/engines/engine-c-execution
+          source: ./engines/engine-c-execution
           project_id: ${{ secrets.VITE_PROJECT_ID }}

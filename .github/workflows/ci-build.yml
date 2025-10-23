@@ -2,15 +2,15 @@ name: CI - Build frontend & engines
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  PYTHON_VERSION: '3.11'
-  FRONTEND_DIR: frontend-new
+  PYTHON_VERSION: "3.11"
+  FRONTEND_DIR: frontend
 
 jobs:
   frontend:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - name: Install & build
         working-directory: ${{ env.FRONTEND_DIR }}
         run: |
@@ -46,16 +46,16 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install requirements (if any)
-        working-directory: backend/engines/${{ matrix.engine }}
+        working-directory: engines/${{ matrix.engine }}
         run: |
           if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
       - name: Import smoke test
-        working-directory: backend/engines/${{ matrix.engine }}
+        working-directory: engines/${{ matrix.engine }}
         run: |
           python -c "import sys; print('import test for engine: ${{ matrix.engine }}');"
       - name: Build docker image
         run: |
-          docker build -t raghu1718/infinityai-pro:${{ matrix.engine }} backend/engines/${{ matrix.engine }}
+          docker build -t raghu1718/infinityai-pro:${{ matrix.engine }} engines/${{ matrix.engine }}
       - name: Save image info
         run: echo "IMAGE_URI=docker://${{ github.repository }}:${{ matrix.engine }}" > image_info.txt
       - uses: actions/upload-artifact@v4

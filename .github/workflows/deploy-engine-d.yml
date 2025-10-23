@@ -44,7 +44,7 @@ jobs:
             aws ecr create-repository --repository-name "${{ env.ECR_REPOSITORY }}" 1>/dev/null
 
       - name: Build, tag, and push image to ECR
-        working-directory: ./infinityai-pro/backend/engines/engine-d
+        working-directory: ./engines/engine-d
         run: |
           ECR_URI="${{ steps.login-ecr.outputs.registry }}/infinityai-engine-d:${{ env.IMAGE_TAG }}"
           echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
@@ -55,7 +55,7 @@ jobs:
         run: |
           set -e
           # Use existing taskdef template and swap image URI
-          cp infinityai-pro/infinityai-engine-d-taskdef.json taskdef.json
+          cp engines/engine-d/infinityai-engine-d-taskdef.json taskdef.json
           jq ".containerDefinitions[0].image=\"$ECR_URI\"" taskdef.json > taskdef.updated.json
           mv taskdef.updated.json taskdef.json
           echo "Prepared task definition:" && cat taskdef.json

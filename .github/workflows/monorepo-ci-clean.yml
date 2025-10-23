@@ -22,13 +22,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend-new/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       - name: Install deps
-        working-directory: frontend-new
+        working-directory: frontend
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Build
-        working-directory: frontend-new
+        working-directory: frontend
         run: npm run build
 
   engine-a:
@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install deps
-        working-directory: backend/engines/engine-a
+        working-directory: engines/engine-a
         run: |
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
