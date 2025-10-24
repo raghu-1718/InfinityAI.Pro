@@ -39,7 +39,7 @@ export const syncHoldings = onCall(
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 120,
-    secrets: ["ENCRYPTION_KEY"],
+    // ENCRYPTION_KEY will be provided via environment variable instead
   },
   async (request) => {
     if (!request.auth) {

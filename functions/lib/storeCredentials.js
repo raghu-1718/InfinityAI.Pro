@@ -41,18 +41,16 @@ var __importStar = (this && this.__importStar) || (function () {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
 exports.getDecryptedCredentials = getDecryptedCredentials;
-const functions = __importStar(require("firebase-functions"));
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
 const db = admin.firestore();
-// Encryption configuration
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || ((_a = functions.config().secrets) === null || _a === void 0 ? void 0 : _a.encryption_key);
+// Encryption configuration - Using environment variable for better compatibility
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const ALGORITHM = "aes-256-gcm";
 if (!ENCRYPTION_KEY) {
     console.warn("⚠️ ENCRYPTION_KEY not set. Please configure: firebase functions:config:set secrets.encryption_key=YOUR_KEY");
@@ -103,7 +101,8 @@ exports.submitDhanCredentialsV2 = (0, https_1.onCall)({
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
 }, async (request) => {
     // Verify authentication
     if (!request.auth) {

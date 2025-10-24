@@ -61,7 +61,7 @@ exports.syncHoldings = (0, https_1.onCall)({
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 120,
-    secrets: ["ENCRYPTION_KEY"],
+    // ENCRYPTION_KEY will be provided via environment variable instead
 }, async (request) => {
     var _a, _b, _c;
     if (!request.auth) {
@@ -370,7 +370,8 @@ exports.analyzePortfolio = (0, https_1.onCall)({
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
@@ -511,7 +512,8 @@ exports.getDhanOverview = (0, https_1.onCall)({
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 120,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
