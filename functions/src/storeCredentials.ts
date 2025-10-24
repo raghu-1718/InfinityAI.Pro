@@ -5,7 +5,6 @@
  * Credentials are encrypted before being written to Firestore
  */
 
-import * as functions from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
@@ -13,8 +12,8 @@ import axios from "axios";
 
 const db = admin.firestore();
 
-// Encryption configuration
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || functions.config().secrets?.encryption_key;
+// Encryption configuration - Using environment variable for better compatibility
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const ALGORITHM = "aes-256-gcm";
 
 if (!ENCRYPTION_KEY) {
@@ -79,7 +78,8 @@ export const submitDhanCredentialsV2 = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
   },
   async (request) => {
     // Verify authentication

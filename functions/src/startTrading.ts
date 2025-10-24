@@ -31,7 +31,8 @@ export const startTrading = onCall(
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 120,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
   },
   async (request) => {
     // Verify authentication
@@ -187,7 +188,8 @@ export const stopTrading = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
-    secrets: ["ENCRYPTION_KEY"],
+    // Removed secrets configuration to avoid deployment validation issues
+    // ENCRYPTION_KEY will be provided via environment variable instead
   },
   async (request) => {
     if (!request.auth) {
