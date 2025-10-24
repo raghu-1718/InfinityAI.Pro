@@ -16,10 +16,10 @@ class CICDFixer:
         self.repo_name = "raghu-1718/InfinityAI.Pro"
         self.issues_found = []
         self.fixes_applied = []
-        
+
         print("🔧 InfinityAI.Pro CI/CD Issues Fix Script")
         print("=" * 60)
-    
+
     def log_issue(self, description, severity="MEDIUM"):
         """Log identified issue"""
         issue = {
@@ -28,10 +28,10 @@ class CICDFixer:
             "severity": severity
         }
         self.issues_found.append(issue)
-        
+
         emoji = "🔴" if severity == "HIGH" else "🟡" if severity == "MEDIUM" else "🟢"
         print(f"{emoji} [{severity}] {description}")
-    
+
     def log_fix(self, description, command=""):
         """Log applied fix"""
         fix = {
@@ -43,7 +43,7 @@ class CICDFixer:
         print(f"🔧 FIX: {description}")
         if command:
             print(f"   Command: {command}")
-    
+
     def run_command(self, cmd, capture_output=True):
         """Run shell command"""
         try:
@@ -51,16 +51,16 @@ class CICDFixer:
             return result.returncode == 0, result.stdout, result.stderr
         except Exception as e:
             return False, "", str(e)
-    
+
     def fix_typescript_error(self):
         """Fix TypeScript error in appStore.ts"""
         print("\n📋 Fixing TypeScript Error in appStore.ts")
-        
+
         try:
             # Read the file
             with open("frontend/src/stores/appStore.ts", "r") as f:
                 content = f.read()
-            
+
             # Check if the error exists
             if "subscribeWithSelector((set, get) =>" in content:
                 # Fix the error by removing unused 'get' parameter
@@ -68,33 +68,33 @@ class CICDFixer:
                     "subscribeWithSelector((set, get) =>",
                     "subscribeWithSelector((set) =>"
                 )
-                
+
                 # Write the fixed content
                 with open("frontend/src/stores/appStore.ts", "w") as f:
                     f.write(fixed_content)
-                
+
                 self.log_fix("Fixed TypeScript error: Removed unused 'get' parameter from subscribeWithSelector")
             else:
                 print("✅ TypeScript error not found - already fixed")
-                
+
         except Exception as e:
             self.log_issue(f"Failed to fix TypeScript error: {e}", "HIGH")
-    
+
     def create_service_account_key(self):
         """Create and configure GCP service account key"""
         print("\n📋 Creating GCP Service Account Key")
-        
+
         service_account_email = f"github-actions@{self.project_id}.iam.gserviceaccount.com"
-        
+
         # Create service account if it doesn't exist
         success, stdout, stderr = self.run_command(
             f'gcloud iam service-accounts create github-actions --display-name="GitHub Actions" --project={self.project_id}'
         )
-        
+
         if not success and "already exists" not in stderr:
             self.log_issue(f"Failed to create service account: {stderr}", "HIGH")
             return
-        
+
         # Grant necessary roles
         roles = [
             "roles/run.admin",
@@ -102,63 +102,63 @@ class CICDFixer:
             "roles/storage.admin",
             "roles/secretmanager.secretAccessor"
         ]
-        
+
         for role in roles:
             success, stdout, stderr = self.run_command(
                 f'gcloud projects add-iam-policy-binding {self.project_id} --member="serviceAccount:{service_account_email}" --role="{role}" --condition=None'
             )
-            
+
             if success:
                 print(f"✅ Granted {role}")
             else:
                 self.log_issue(f"Failed to grant {role}: {stderr}", "MEDIUM")
-        
+
         # Create service account key
         key_file = f"github-actions-key-{datetime.now().strftime('%Y%m%d')}.json"
         success, stdout, stderr = self.run_command(
             f'gcloud iam service-accounts keys create {key_file} --iam-account={service_account_email} --project={self.project_id}'
         )
-        
+
         if success:
             # Read and encode the key
             try:
                 with open(key_file, 'r') as f:
                     key_content = f.read()
-                
+
                 # Clean up the file
                 os.remove(key_file)
-                
+
                 self.log_fix(f"Service account key created successfully", f"Key saved for GitHub secret")
-                
+
                 print("\n🔑 IMPORTANT: Add this to GitHub repository secrets as 'GCP_SERVICE_ACCOUNT_KEY':")
                 print("─" * 60)
                 print(key_content)
                 print("─" * 60)
-                
+
                 return key_content
-                
+
             except Exception as e:
                 self.log_issue(f"Failed to read service account key: {e}", "HIGH")
         else:
             self.log_issue(f"Failed to create service account key: {stderr}", "HIGH")
-    
+
     def fix_github_workflows(self):
         """Fix GitHub workflow configurations"""
         print("\n📋 Fixing GitHub Workflow Configurations")
-        
+
         # Update GitHub workflow files with correct authentication
         workflows = [
             ".github/workflows/engine-a.yaml",
-            ".github/workflows/engine-b.yaml", 
+            ".github/workflows/engine-b.yaml",
             ".github/workflows/engine-c.yaml",
             ".github/workflows/engine-d.yaml"
         ]
-        
+
         for workflow_file in workflows:
             try:
                 with open(workflow_file, 'r') as f:
                     content = f.read()
-                
+
                 # Fix the authentication step
                 if 'credentials_json: "${{ secrets.GCP_SA_KEY }}"' in content:
                     # Replace with correct secret name
@@ -166,25 +166,25 @@ class CICDFixer:
                         'credentials_json: "${{ secrets.GCP_SA_KEY }}"',
                         'credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"'
                     )
-                    
+
                     # Also fix project ID reference
                     fixed_content = fixed_content.replace(
                         'project_id: ${{ secrets.VITE_PROJECT_ID }}',
                         f'project_id: {self.project_id}'
                     )
-                    
+
                     with open(workflow_file, 'w') as f:
                         f.write(fixed_content)
-                    
+
                     self.log_fix(f"Fixed workflow file: {workflow_file}")
-                
+
             except Exception as e:
                 self.log_issue(f"Failed to fix workflow {workflow_file}: {e}", "MEDIUM")
-    
+
     def create_github_secrets_script(self):
         """Create script to set up GitHub secrets"""
         print("\n📋 Creating GitHub Secrets Setup Script")
-        
+
         script_content = f'''#!/bin/bash
 
 # InfinityAI.Pro - GitHub Secrets Setup Script
@@ -255,43 +255,43 @@ echo "📋 Manual steps required:"
 echo "   1. Add GCP_SERVICE_ACCOUNT_KEY secret"
 echo "   2. Run 'firebase login:ci' and add the token as FIREBASE_DEPLOY_TOKEN"
 '''
-        
+
         with open("scripts/setup-github-secrets.sh", "w", encoding="utf-8") as f:
             f.write(script_content)
-        
+
         # Make executable
         os.chmod("scripts/setup-github-secrets.sh", 0o755)
-        
+
         self.log_fix("Created GitHub secrets setup script: scripts/setup-github-secrets.sh")
-    
+
     def verify_current_deployments(self):
         """Verify current deployment status"""
         print("\n📋 Verifying Current Deployment Status")
-        
+
         # Check Cloud Run services
         success, stdout, stderr = self.run_command(
             f'gcloud run services list --region=us-central1 --project={self.project_id} --format="table(metadata.name,status.url,status.conditions[0].status)"'
         )
-        
+
         if success:
             print("🌐 Current Cloud Run Services:")
             print(stdout)
         else:
             self.log_issue(f"Failed to list Cloud Run services: {stderr}", "MEDIUM")
-        
+
         # Check Firebase Functions
         success, stdout, stderr = self.run_command(f'firebase functions:list --project={self.project_id}')
-        
+
         if success:
             print("\n🔥 Current Firebase Functions:")
             print(stdout)
         else:
             print(f"⚠️ Firebase Functions list failed: {stderr}")
-    
+
     def create_ci_cd_fix_summary(self):
         """Create comprehensive CI/CD fix summary"""
         print("\n📋 Creating CI/CD Fix Summary")
-        
+
         summary = {
             "timestamp": datetime.now().isoformat(),
             "project_id": self.project_id,
@@ -308,59 +308,59 @@ echo "   2. Run 'firebase login:ci' and add the token as FIREBASE_DEPLOY_TOKEN"
             "github_secrets_required": [
                 "GCP_SERVICE_ACCOUNT_KEY (Service account JSON)",
                 "GEMINI_API_KEY_PRIMARY (From GCP Secret Manager)",
-                "GEMINI_API_KEY_SECONDARY (From GCP Secret Manager)", 
+                "GEMINI_API_KEY_SECONDARY (From GCP Secret Manager)",
                 "FIREBASE_DEPLOY_TOKEN (From firebase login:ci)"
             ]
         }
-        
+
         filename = f"ci-cd-fix-summary-{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(filename, 'w') as f:
             json.dump(summary, f, indent=2)
-        
+
         self.log_fix(f"CI/CD fix summary saved to: {filename}")
-        
+
         return filename, summary
-    
+
     def run_comprehensive_fix(self):
         """Run all CI/CD fixes"""
         print("\n🚀 Running Comprehensive CI/CD Fix")
-        
+
         try:
             # Fix TypeScript error
             self.fix_typescript_error()
-            
+
             # Create service account key
             service_account_key = self.create_service_account_key()
-            
+
             # Fix GitHub workflows
             self.fix_github_workflows()
-            
+
             # Create GitHub secrets setup script
             self.create_github_secrets_script()
-            
+
             # Verify current deployments
             self.verify_current_deployments()
-            
+
             # Create summary report
             report_file, summary = self.create_ci_cd_fix_summary()
-            
+
             print(f"\n{'='*80}")
             print(f"✅ CI/CD FIX COMPLETED!")
             print(f"{'='*80}")
             print(f"📊 Issues Found: {len(self.issues_found)}")
             print(f"🔧 Fixes Applied: {len(self.fixes_applied)}")
             print(f"📄 Summary Report: {report_file}")
-            
+
             print(f"\n🚀 NEXT STEPS:")
             for i, step in enumerate(summary["next_steps"], 1):
                 print(f"   {step}")
-            
+
             print(f"\n🔑 REQUIRED GITHUB SECRETS:")
             for secret in summary["github_secrets_required"]:
                 print(f"   • {secret}")
-            
+
             return report_file, summary
-            
+
         except Exception as e:
             self.log_issue(f"CI/CD fix failed: {e}", "HIGH")
             raise

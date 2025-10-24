@@ -148,7 +148,7 @@ tasks:
       - name: "Install backend dependencies"
         command: "pip install -r backend/engines/engine-a-market-data/requirements.txt"
       - name: "Install frontend dependencies"
-        command: "npm install --prefix frontend-new"
+        command: "npm install --prefix frontend"
       - name: "Run Engines A-D locally"
         command: |
           cd backend/engines/engine-a-market-data && python main.py &
@@ -157,7 +157,7 @@ tasks:
           cd backend/engines/engine-d-chatbot && python main.py &
           wait
       - name: "Run frontend locally"
-        command: "npm run dev --prefix frontend-new"
+        command: "npm run dev --prefix frontend"
       - name: "Run automated health check script"
         command: "./scripts/automated_health_check.sh"
     tags: ["local", "development", "validation"]

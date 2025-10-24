@@ -4,7 +4,7 @@
     "dockerfile": "../Dockerfile",
     "context": ".."
   },
-  "postCreateCommand": "pip install -r backend/requirements.txt && npm install --prefix frontend-new && gcloud auth application-default login --quiet || true",
+  "postCreateCommand": "pip install -r backend/requirements.txt && npm install --prefix frontend && gcloud auth application-default login --quiet || true",
   "forwardPorts": [8080, 3000, 5000, 8085],
   "remoteUser": "vscode",
 

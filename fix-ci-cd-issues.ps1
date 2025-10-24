@@ -11,13 +11,13 @@ function Write-Issue {
         [string]$Description,
         [string]$Severity = "MEDIUM"
     )
-    
+
     $emoji = @{
         "HIGH" = "🔴"
-        "MEDIUM" = "🟡" 
+        "MEDIUM" = "🟡"
         "LOW" = "🟢"
     }
-    
+
     Write-Host "$($emoji[$Severity]) [$Severity] $Description" -ForegroundColor $(
         switch ($Severity) {
             "HIGH" { "Red" }
@@ -32,7 +32,7 @@ function Write-Fix {
         [string]$Description,
         [string]$Command = ""
     )
-    
+
     Write-Host "🔧 FIX: $Description" -ForegroundColor Green
     if ($Command) {
         Write-Host "   Command: $Command" -ForegroundColor Gray
@@ -45,7 +45,7 @@ Write-Host "`n📋 Step 1: Fixing TypeScript Error in appStore.ts" -ForegroundCo
 $appStoreFile = "frontend\src\stores\appStore.ts"
 if (Test-Path $appStoreFile) {
     $content = Get-Content $appStoreFile -Raw
-    
+
     if ($content -match "subscribeWithSelector\(\(set, get\) =>") {
         $content = $content -replace "subscribeWithSelector\(\(set, get\) =>", "subscribeWithSelector((set) =>"
         Set-Content $appStoreFile $content -Encoding UTF8
@@ -63,18 +63,18 @@ Write-Host "`n📋 Step 2: Fixing GitHub Workflow Configurations" -ForegroundCol
 $workflows = @(
     ".github\workflows\engine-a.yaml",
     ".github\workflows\engine-b.yaml",
-    ".github\workflows\engine-c.yaml", 
+    ".github\workflows\engine-c.yaml",
     ".github\workflows\engine-d.yaml"
 )
 
 foreach ($workflow in $workflows) {
     if (Test-Path $workflow) {
         $content = Get-Content $workflow -Raw
-        
+
         # Fix authentication and project ID
         $content = $content -replace 'credentials_json: "\$\{\{ secrets\.GCP_SA_KEY \}\}"', 'credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"'
         $content = $content -replace 'project_id: \$\{\{ secrets\.VITE_PROJECT_ID \}\}', "project_id: $PROJECT_ID"
-        
+
         Set-Content $workflow $content -Encoding UTF8
         Write-Fix "Fixed workflow file: $workflow"
     }
@@ -92,7 +92,7 @@ gcloud iam service-accounts create github-actions --display-name="GitHub Actions
 # Grant necessary roles
 $roles = @(
     "roles/run.admin",
-    "roles/iam.serviceAccountUser", 
+    "roles/iam.serviceAccountUser",
     "roles/storage.admin",
     "roles/secretmanager.secretAccessor"
 )
@@ -111,9 +111,9 @@ $result = gcloud iam service-accounts keys create $keyFile --iam-account=$servic
 if ($LASTEXITCODE -eq 0) {
     $keyContent = Get-Content $keyFile -Raw
     Remove-Item $keyFile -Force
-    
+
     Write-Fix "Service account key created successfully"
-    
+
     Write-Host "`n🔑 IMPORTANT: Add this to GitHub repository secrets as 'GCP_SERVICE_ACCOUNT_KEY':" -ForegroundColor Magenta
     Write-Host "─" * 80 -ForegroundColor Gray
     Write-Host $keyContent -ForegroundColor Cyan
@@ -142,7 +142,7 @@ if ($primaryKey) {
 }
 
 if ($secondaryKey) {
-    Write-Host "✅ Secondary Gemini API Key retrieved" -ForegroundColor Green  
+    Write-Host "✅ Secondary Gemini API Key retrieved" -ForegroundColor Green
     Write-Host "gh secret set GEMINI_API_KEY_SECONDARY --body `"$secondaryKey`" --repo $REPO_NAME" -ForegroundColor Cyan
 } else {
     Write-Issue "Failed to retrieve secondary Gemini API key" "HIGH"
@@ -167,7 +167,7 @@ Write-Host "`n📊 Summary and Next Steps" -ForegroundColor Magenta
 Write-Host "=" * 60
 
 Write-Host "✅ TypeScript error fixed" -ForegroundColor Green
-Write-Host "✅ GitHub workflow files updated" -ForegroundColor Green  
+Write-Host "✅ GitHub workflow files updated" -ForegroundColor Green
 Write-Host "✅ GCP service account key created" -ForegroundColor Green
 Write-Host "✅ Current deployment status verified" -ForegroundColor Green
 

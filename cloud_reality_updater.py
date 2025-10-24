@@ -139,10 +139,10 @@ VITE_CORS_ENABLED=true
 VITE_AUTH_REQUIRED=true
 """
 
-        with open("frontend-new/.env", "w", encoding='utf-8') as f:
+        with open("frontend/.env", "w", encoding='utf-8') as f:
             f.write(frontend_env_content)
 
-        self.log_update("Updated frontend environment variables with verified URLs", "frontend-new/.env")
+        self.log_update("Updated frontend environment variables with verified URLs", "frontend/.env")
 
     def update_documentation(self):
         """Update documentation with current cloud status"""

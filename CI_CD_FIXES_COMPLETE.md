@@ -14,7 +14,7 @@ subscribeWithSelector((set) => ({
 **Status**: ✅ FIXED
 
 ### 2. GitHub Actions Authentication Errors
-**Issues**: 
+**Issues**:
 - Invalid service account credentials JSON causing parse errors
 - Incorrect secret references in workflow files
 - Missing authentication tokens for Firebase deployment
@@ -29,7 +29,7 @@ subscribeWithSelector((set) => ({
 **Required Secrets**: All properly configured
 - ✅ `GCP_SERVICE_ACCOUNT_KEY` - Valid service account JSON
 - ✅ `GEMINI_API_KEY_PRIMARY` - Retrieved from GCP Secret Manager
-- ✅ `GEMINI_API_KEY_SECONDARY` - Retrieved from GCP Secret Manager  
+- ✅ `GEMINI_API_KEY_SECONDARY` - Retrieved from GCP Secret Manager
 - ✅ `FIREBASE_DEPLOY_TOKEN` - Generated via `firebase login:ci`
 
 ## 🚀 Deployment Status
@@ -43,7 +43,7 @@ subscribeWithSelector((set) => ({
 
 ### Firebase Functions (14 Active)
 - ✅ analyzePortfolio
-- ✅ getDhanOverview  
+- ✅ getDhanOverview
 - ✅ getGeminiAnalysis
 - ✅ submitDhanCredentialsV2
 - ✅ startTrading / stopTrading
@@ -102,14 +102,14 @@ Service Account: `github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com`
 
 ### Branch-Specific Deployments
 - **Engine A**: Triggers on `engines/engine-a/**` changes
-- **Engine B**: Triggers on `engines/engine-b/**` changes  
+- **Engine B**: Triggers on `engines/engine-b/**` changes
 - **Engine C**: Triggers on `engines/engine-c-execution/**` changes
 - **Engine D**: Triggers on `engines/engine-d/**` changes
 
 ## 📋 Verification Steps Completed
 
 1. ✅ **TypeScript Error**: Fixed in appStore.ts
-2. ✅ **Service Account**: Created with proper permissions  
+2. ✅ **Service Account**: Created with proper permissions
 3. ✅ **GitHub Secrets**: All 4 required secrets configured
 4. ✅ **Workflow Files**: Updated with correct references
 5. ✅ **Push to GitHub**: Changes committed and pushed
@@ -132,7 +132,7 @@ Service Account: `github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com`
 ```bash
 # All should return 200 OK
 curl https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/health
-curl https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/health  
+curl https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/health
 curl https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/health
 curl https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/health
 ```
@@ -142,7 +142,7 @@ curl https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/health
 **Final Status**: 🎉 **ALL CI/CD ISSUES RESOLVED**
 
 - **TypeScript Build**: ✅ Fixed
-- **Authentication**: ✅ Working  
+- **Authentication**: ✅ Working
 - **Secrets Management**: ✅ Complete
 - **Cloud Deployment**: ✅ Operational
 - **Pipeline Configuration**: ✅ Updated

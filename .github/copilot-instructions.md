@@ -10,7 +10,7 @@ Engine C (backend/engines/engine-c-execution): Secure trade execution with Dhan 
 
 Engine D (backend/engines/engine-d): AI chatbot orchestrator managing multi-engine coordination and real-time WebSocket data aggregation.
 
-Frontend (frontend-new): React + Vite + TypeScript dashboard delivering live market updates and user interactions via WebSocket.
+Frontend (frontend): React + Vite + TypeScript dashboard delivering live market updates and user interactions via WebSocket.
 
 This modular design ensures clear separation of concerns and facilitates independent deployment, upgrades, and scaling.
 
