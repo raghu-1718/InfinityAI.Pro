@@ -67,7 +67,7 @@ jobs:
           node-version: "18"
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@latest
 
       - name: Deploy Engine A (Market Data)
         run: |
@@ -104,12 +104,28 @@ jobs:
             --project infinity-ai-5ec7c \
             --allow-unauthenticated
 
+      - name: Set up Google Cloud credentials for Firebase
+        run: |
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > ${{ github.workspace }}/gcp-sa-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
+          gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+          gcloud config set project infinity-ai-5ec7c
+
+      - name: Clean up orphaned Firebase Functions
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
+          firebase functions:delete submitDhanCredentials --region us-central1 --force --project infinity-ai-5ec7c || echo "Function may not exist or already deleted"
+
       - name: Deploy Firebase Functions
         run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
           cd functions
           npm install
           cd ..
-          firebase deploy --only functions --project infinity-ai-5ec7c --non-interactive --token ${{ secrets.FIREBASE_DEPLOY_TOKEN }}
+          firebase deploy --only functions --project infinity-ai-5ec7c --non-interactive
+
+      - name: Clean up credentials file
+        run: rm -f ${{ github.workspace }}/gcp-sa-key.json
 
       - name: Deploy Frontend
         run: |
