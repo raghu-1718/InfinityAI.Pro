@@ -53,7 +53,7 @@ Your GitHub Actions workflows have been updated to resolve all authentication is
 
 **Set the GitHub secrets above using your clean service account JSON file**
 
-Once you set the secrets, all workflows will deploy successfully! 
+Once you set the secrets, all workflows will deploy successfully!
 
 Your domain `infinityai.pro` is ready and waiting for the fixed deployments! 🌐
 
