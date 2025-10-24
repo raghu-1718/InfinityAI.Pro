@@ -61,10 +61,10 @@ jobs:
             --role="roles/artifactregistry.writer" \
             --project=infinity-ai-5ec7c || true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@latest
