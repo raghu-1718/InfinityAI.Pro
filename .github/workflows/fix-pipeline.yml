@@ -41,27 +41,31 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      - name: Authenticate with Firebase
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_DEPLOY_TOKEN }}
+      - name: Authenticate with Firebase using Service Account
         run: |
-          if [ -z "$FIREBASE_TOKEN" ]; then
-            echo "❌ FIREBASE_DEPLOY_TOKEN secret not set"
-            echo "Please run: firebase login:ci"
-            echo "Then add the token to GitHub secrets"
-            exit 1
-          fi
-          firebase use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
+          gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+          gcloud config set project $FIREBASE_PROJECT_ID
+          firebase use $FIREBASE_PROJECT_ID
+
+      - name: Delete orphaned functions (if any)
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
+          firebase functions:delete submitDhanCredentials --region us-central1 --force --project $FIREBASE_PROJECT_ID || echo "Function may not exist"
 
       - name: Deploy Firebase Functions
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_DEPLOY_TOKEN }}
           GEMINI_API_KEY_PRIMARY: ${{ secrets.GEMINI_API_KEY_PRIMARY }}
           GEMINI_API_KEY_SECONDARY: ${{ secrets.GEMINI_API_KEY_SECONDARY }}
         run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
           cd functions
           npm ci
-          firebase deploy --only functions --token $FIREBASE_TOKEN
+          firebase deploy --only functions --project $FIREBASE_PROJECT_ID --non-interactive
+
+      - name: Clean up credentials
+        run: rm -f ${{ github.workspace }}/gcp-sa-key.json
 
   fix-gcp-permissions:
     runs-on: ubuntu-latest
@@ -70,11 +74,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          project_id: ${{ env.GCP_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure IAM Permissions
         run: |
@@ -118,11 +124,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          project_id: ${{ env.GCP_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy Engine ${{ matrix.engine }}
         run: |

@@ -37,6 +37,6 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_INFINITY_AI_5EC7C }}
+          firebaseServiceAccount: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           channelId: live
           projectId: infinity-ai-5ec7c

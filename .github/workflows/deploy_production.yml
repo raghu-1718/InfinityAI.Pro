@@ -106,10 +106,16 @@ jobs:
 
       - name: Set up Google Cloud credentials for Firebase
         run: |
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > ${{ github.workspace }}/gcp-sa-key.json
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
           gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
           gcloud config set project infinity-ai-5ec7c
+
+      - name: Validate credentials file
+        run: |
+          echo "Checking credentials file format..."
+          python -m json.tool ${{ github.workspace }}/gcp-sa-key.json > /dev/null && echo "✅ JSON is valid" || echo "❌ JSON is invalid"
+          ls -la ${{ github.workspace }}/gcp-sa-key.json
 
       - name: Clean up orphaned Firebase Functions
         run: |
