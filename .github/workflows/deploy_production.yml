@@ -26,6 +26,41 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Debug GCP Authentication and Setup
+        run: |
+          echo "---- gcloud auth list ----"
+          gcloud auth list
+          echo "---- active account ----"
+          gcloud config list --format='value(core.account)'
+          echo "---- project config ----"
+          gcloud config list project
+          echo "---- checking artifact registry repository ----"
+          gcloud artifacts repositories describe cloud-run-source-deploy --location=us-central1 --project=infinity-ai-5ec7c || echo "Repository does not exist, will create it"
+
+      - name: Create Artifact Registry Repository if needed
+        run: |
+          # Create the repository if it doesn't exist
+          gcloud artifacts repositories create cloud-run-source-deploy \
+            --repository-format=docker \
+            --location=us-central1 \
+            --description="Repository used by Cloud Run source deploy" \
+            --project=infinity-ai-5ec7c || echo "Repository may already exist"
+          
+          # Grant necessary permissions
+          gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
+            --location=us-central1 \
+            --member="serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com" \
+            --role="roles/artifactregistry.reader" \
+            --project=infinity-ai-5ec7c || true
+          
+          # Grant Cloud Build service account writer access
+          PROJECT_NUMBER=$(gcloud projects describe infinity-ai-5ec7c --format='value(projectNumber)')
+          gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
+            --location=us-central1 \
+            --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+            --role="roles/artifactregistry.writer" \
+            --project=infinity-ai-5ec7c || true
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
