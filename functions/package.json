@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Firebase (InfinityAI)",
+  "description": "Cloud Functions for Firebase (InfinityAI) - CPU quota cleaned",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
