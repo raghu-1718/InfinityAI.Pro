@@ -169,6 +169,72 @@ async def get_market_data():
         "message": "Analytics service unavailable, returning empty data."
     }
 
+# Market data with symbol endpoint (MISSING - FIXED)
+@app.get("/api/market-data/{symbol}")
+async def get_market_data_by_symbol(symbol: str):
+    """
+    Returns live market data for a specific symbol (e.g., NIFTY, BANKNIFTY).
+    """
+    if analytics is not None and hasattr(analytics, "get_market_data_by_symbol"):
+        try:
+            data = await analytics.get_market_data_by_symbol(symbol)
+            return {
+                "status": "success",
+                "symbol": symbol.upper(),
+                "market_data": data,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Failed to get market data for {symbol}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    
+    # Fallback: return sample data for the symbol
+    sample_data = {
+        "NIFTY": {
+            "ltp": 19450.75,
+            "change": 125.80,
+            "change_percent": 0.65,
+            "volume": 182500000,
+            "high": 19485.30,
+            "low": 19420.15,
+            "open": 19435.50,
+            "previous_close": 19324.95
+        },
+        "BANKNIFTY": {
+            "ltp": 44750.25,
+            "change": -180.50,
+            "change_percent": -0.40,
+            "volume": 58200000,
+            "high": 44890.75,
+            "low": 44680.80,
+            "open": 44825.40,
+            "previous_close": 44930.75
+        }
+    }
+    
+    symbol_upper = symbol.upper()
+    if symbol_upper in sample_data:
+        return {
+            "status": "success",
+            "symbol": symbol_upper,
+            "market_data": sample_data[symbol_upper],
+            "timestamp": datetime.utcnow().isoformat(),
+            "message": "Sample data - analytics service unavailable"
+        }
+    else:
+        return {
+            "status": "success",
+            "symbol": symbol_upper,
+            "market_data": {
+                "ltp": 0.0,
+                "change": 0.0,
+                "change_percent": 0.0,
+                "volume": 0,
+                "message": f"No data available for {symbol_upper}"
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 # Dhan positions (real)
 @app.get("/api/dhan/positions")
 async def get_dhan_positions():

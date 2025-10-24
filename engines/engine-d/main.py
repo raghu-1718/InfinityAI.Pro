@@ -9,6 +9,35 @@ import os
 import time
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime, timezone
+import google.generativeai as genai
+from google.cloud import secretmanager
+
+# Google Cloud Project Configuration
+PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT', 'infinity-ai-5ec7c') # Default to your project ID
+
+def get_gemini_api_key() -> str:
+    """Get Gemini API key from GCP Secret Manager or environment variables."""
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        # Try primary key first
+        secret_name = f"projects/{PROJECT_ID}/secrets/gemini-api-key-primary/versions/latest"
+        response = client.access_secret_version(request={"name": secret_name})
+        api_key = response.payload.data.decode("UTF-8")
+        return api_key
+    except Exception:
+        try:
+            # Fallback to secondary key
+            secret_name = f"projects/{PROJECT_ID}/secrets/gemini-api-key-secondary/versions/latest"
+            response = client.access_secret_version(request={"name": secret_name})
+            api_key = response.payload.data.decode("UTF-8")
+            return api_key
+        except Exception:
+            # Final fallback to environment variable
+            api_key = os.getenv("GEMINI_API_KEY_PRIMARY")
+            if api_key:
+                return api_key
+            else:
+                raise ValueError("Gemini API key not configured in Secret Manager or environment")
 
 # Health orchestrator import with fallback
 try:
@@ -178,6 +207,34 @@ def classify_intent(message: str) -> Tuple[str, float]:
 
 
 async def generate_response(intent: str, message: str, confidence: float) -> str:
+    # Configure Gemini
+    try:
+        api_key = get_gemini_api_key()
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Construct prompt for Gemini
+        gemini_prompt = f"""
+        You are InfinityAI.Pro's expert chatbot.
+        User message: {message}
+        Detected intent: {intent}
+        Confidence: {confidence}
+        
+        Based on the user's message and detected intent, provide a concise and helpful response.
+        If the intent is 'status', provide a summary of the system health.
+        If the intent is 'market_data', explain that Engine A provides this.
+        If the intent is 'ai_prediction', explain that Engine B provides this.
+        If the intent is 'trade_execution', explain that Engine C handles this.
+        If the intent is 'portfolio', explain that Engine C provides this.
+        If the intent is 'account_management', explain that Engine C handles this.
+        Otherwise, provide a general helpful response.
+        """
+        
+        response = model.generate_content(gemini_prompt)
+        return response.text
+    except Exception as e:
+        return f"🤖 **InfinityAI Assistant**: I'm sorry, I'm having trouble connecting to my AI brain. Error: {str(e)[:100]}"
+
     if intent == "status":
         try:
             health_data = await health_orchestrator.get_comprehensive_health()
@@ -354,6 +411,41 @@ async def simple_health() -> Dict[str, Any]:
         return {"engines": health_orchestrator.get_simple_health_status(), "summary": health_data.get("summary", {})}
     except Exception as e:
         return {"engines": {name: False for name in ['A', 'B', 'C', 'D', 'ULTRA']}, "summary": {"healthy_engines": 0, "total_engines": 5, "health_percentage": 0, "overall_status": "critical"}, "error": str(e)[:100]}
+
+@app.get("/api/status")
+async def engine_status() -> Dict[str, Any]:
+    """Engine D status endpoint - MISSING ENDPOINT FIXED"""
+    try:
+        # Get comprehensive health data
+        health_data = await health_orchestrator.get_comprehensive_health()
+        
+        # Get WebSocket connection stats
+        ws_stats = ws_manager.get_connection_stats()
+        
+        # Get event broadcaster stats
+        event_stats = event_broadcaster.get_stats()
+        
+        return {
+            "status": "operational",
+            "service": "engine-d-orchestration",
+            "version": "4.6.0",
+            "uptime_seconds": round(time.time() - STARTED_AT, 1),
+            "health_summary": health_data.get("summary", {}),
+            "websocket_connections": ws_stats,
+            "event_stats": event_stats,
+            "engines_status": health_orchestrator.get_simple_health_status(),
+            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime()),
+            "features": ["chatbot", "websocket", "orchestration", "health-monitoring", "jwt-auth"],
+            "last_health_check": health_data.get("timestamp", time.time())
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "service": "engine-d-orchestration", 
+            "error": str(e)[:100],
+            "uptime_seconds": round(time.time() - STARTED_AT, 1),
+            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
+        }
 
 
 @app.post("/api/chat")
