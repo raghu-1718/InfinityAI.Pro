@@ -106,6 +106,9 @@ jobs:
 
       - name: Deploy Firebase Functions
         run: |
+          cd functions
+          npm install
+          cd ..
           firebase deploy --only functions --project infinity-ai-5ec7c --non-interactive --token ${{ secrets.FIREBASE_DEPLOY_TOKEN }}
 
       - name: Deploy Frontend
