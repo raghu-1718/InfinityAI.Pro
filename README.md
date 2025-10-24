@@ -562,4 +562,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **🚀 InfinityAI.Pro - Where AI Meets Trading Excellence**
 
-*Built with ❤️ by the InfinityAI.Pro team*
+*Built with ❤️ by the InfinityAI.Pro team*<!-- Secret Manager Permissions Updated: 10/25/2025 03:41:56 -->
