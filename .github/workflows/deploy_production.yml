@@ -45,14 +45,14 @@ jobs:
             --location=us-central1 \
             --description="Repository used by Cloud Run source deploy" \
             --project=infinity-ai-5ec7c || echo "Repository may already exist"
-          
+
           # Grant necessary permissions
           gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
             --location=us-central1 \
             --member="serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com" \
             --role="roles/artifactregistry.reader" \
             --project=infinity-ai-5ec7c || true
-          
+
           # Grant Cloud Build service account writer access
           PROJECT_NUMBER=$(gcloud projects describe infinity-ai-5ec7c --format='value(projectNumber)')
           gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
@@ -80,6 +80,7 @@ jobs:
 
       - name: Deploy Engine B (AI/ML)
         run: |
+          gcloud run services update infinityai-engine-b --clear-env-vars --region=us-central1 --project=infinity-ai-5ec7c || true
           gcloud run deploy infinityai-engine-b \
             --source ./engines/engine-b \
             --region us-central1 \
