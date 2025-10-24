@@ -1,0 +1,254 @@
+{
+  "timestamp": "2025-10-24T04:44:58.584757+00:00",
+  "project_id": "infinity-ai-5ec7c",
+  "system_architecture": {
+    "engine_d_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:44:59.282512+00:00",
+      "details": {
+        "status": "ok",
+        "service": "engine-d-orchestration",
+        "websocket_connections": {
+          "total_connections": 0,
+          "channels": {
+            "dashboard": 0,
+            "trades": 0,
+            "signals": 0,
+            "health": 0
+          }
+        },
+        "timestamp": "2025-10-24 04:45:00 UTC",
+        "uptime_seconds": 1313.5
+      },
+      "latency_ms": 668.28
+    },
+    "engine_c_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:44:59.296018+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "version": "1.1.0",
+        "execution_status": "disabled",
+        "kill_switch": false,
+        "timestamp": "2025-10-24T04:45:00.076689"
+      },
+      "latency_ms": 677.12
+    },
+    "engine_a_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:44:59.296018+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "engine-a",
+        "version": "7.0.0",
+        "timestamp": "2025-10-17 UTC"
+      },
+      "latency_ms": 682.2
+    },
+    "engine_b_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:44:59.296018+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "engine-b",
+        "latency_ms": 0,
+        "timestamp": "2025-10-24T04:45:00.079572"
+      },
+      "latency_ms": 677.12
+    },
+    "frontend_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:44:59.296018+00:00",
+      "details": "Health check failed"
+    },
+    "engine_a_to_b_communication": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:45:11.084655+00:00",
+      "details": {
+        "status": "success",
+        "signal": {
+          "symbol": "NIFTY",
+          "predicted_price": 98.54,
+          "confidence": 57.92,
+          "signal_type": "HOLD",
+          "expected_return": -0.0146,
+          "risk_score": 0.21926673395799837,
+          "time_horizon": "4H",
+          "model_version": "4.0.0",
+          "features_used": [
+            "price",
+            "volume",
+            "rsi",
+            "ema_20",
+            "ema_50",
+            "bollinger_upper",
+            "bollinger_lower",
+            "macd",
+            "price_change_1h",
+            "price_change_4h",
+            "volume_ratio"
+          ],
+          "components": {
+            "rf_price": 99.3926,
+            "xgb_price": 97.585,
+            "lgb_price": 98.486
+          },
+          "timestamp": "2025-10-24T04:45:11.936699"
+        }
+      },
+      "latency_ms": 11785.75
+    }
+  },
+  "data_flow": {
+    "firebase_function_getGeminiAnalysis": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:11.904146+00:00",
+      "details": "Status: 404"
+    },
+    "firebase_function_analyzePortfolio": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:45:12.452744+00:00",
+      "details": "Function accessible",
+      "latency_ms": 548.6
+    },
+    "firebase_function_getDhanOverview": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:15.428583+00:00",
+      "details": "Status: 400"
+    },
+    "firebase_function_submitDhanCredentialsV2": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:18.938848+00:00",
+      "details": "Status: 400"
+    },
+    "firestore_write_test": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:19.375921+00:00",
+      "details": "Status: 404"
+    },
+    "real_time_orchestration": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:19.785478+00:00",
+      "details": "Status: 404"
+    }
+  },
+  "ai_integrations": {
+    "gemini_api": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:49.926338+00:00",
+      "details": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=30)"
+    },
+    "vertex_ai": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:45:50.461322+00:00",
+      "details": "Status: 404"
+    },
+    "ai_signal_generation": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:46:05.579944+00:00",
+      "details": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=15)"
+    }
+  },
+  "market_data": {
+    "market_data_NIFTY": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:46:06.018887+00:00",
+      "details": "Status: 404"
+    },
+    "market_data_BANKNIFTY": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:46:06.482182+00:00",
+      "details": "Status: 404"
+    },
+    "market_data_RELIANCE": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:46:06.903833+00:00",
+      "details": "Status: 404"
+    },
+    "dhan_api_connectivity": {
+      "status": "FAIL",
+      "timestamp": "2025-10-24T04:46:07.364787+00:00",
+      "details": "Status: 400"
+    }
+  },
+  "frontend": {
+    "accessibility": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:46:07.897666+00:00",
+      "details": "Content size: 493 bytes",
+      "latency_ms": 525.47
+    },
+    "react_app_detection": {
+      "status": "WARNING",
+      "timestamp": "2025-10-24T04:46:07.906107+00:00",
+      "details": "React app not clearly detected"
+    },
+    "api_health_check": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:46:08.354101+00:00",
+      "details": "API endpoint accessible",
+      "latency_ms": 447.99
+    },
+    "api_status_api": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:46:08.781599+00:00",
+      "details": "API endpoint accessible",
+      "latency_ms": 427.5
+    }
+  },
+  "trading": {},
+  "performance": {
+    "response_time_analysis": {
+      "status": "PASS",
+      "timestamp": "2025-10-24T04:46:08.785143+00:00",
+      "details": {
+        "average_latency_ms": 1826.67,
+        "max_latency": {
+          "category": "system_architecture",
+          "test": "engine_a_to_b_communication",
+          "latency_ms": 11785.75,
+          "status": "PASS"
+        },
+        "min_latency": {
+          "category": "frontend",
+          "test": "api_status_api",
+          "latency_ms": 427.5,
+          "status": "PASS"
+        },
+        "total_tests": 9
+      }
+    },
+    "slow_response_detection": {
+      "status": "WARNING",
+      "timestamp": "2025-10-24T04:46:08.785143+00:00",
+      "details": "Found 1 slow responses"
+    },
+    "resource_check": {
+      "status": "INFO",
+      "timestamp": "2025-10-24T04:46:08.785143+00:00",
+      "details": "Resource monitoring requires additional setup"
+    },
+    "bottleneck_identification": {
+      "status": "WARNING",
+      "timestamp": "2025-10-24T04:46:08.790598+00:00",
+      "details": "Found 13 potential bottlenecks"
+    }
+  },
+  "security": {},
+  "recommendations": [
+    "\u26a0\ufe0f System requires significant development work before production",
+    "\ud83c\udfd7\ufe0f Focus on core functionality and service stability",
+    "\ud83d\udd27 Address fundamental architecture and integration issues",
+    "\ud83d\udcda Review system design and implementation patterns",
+    "\ud83d\udd10 Implement proper authentication for all Firebase Functions",
+    "\ud83d\udcf1 Develop mobile app integration roadmap",
+    "\ud83d\udcb0 Implement cost monitoring and optimization strategies",
+    "\ud83c\udf10 Set up CDN and edge caching for better global performance",
+    "\ud83d\udd04 Implement proper error handling and circuit breakers",
+    "\ud83d\udcca Add comprehensive logging and observability",
+    "\ud83e\uddea Set up automated testing pipelines",
+    "\ud83d\udd12 Conduct security audit and penetration testing"
+  ],
+  "overall_status": "DEVELOPMENT_PHASE"
+}

@@ -3,3 +3,7 @@ websocket-client
 pandas
 scikit-learn
 python-dotenv
+uvicorn
+fastapi
+aiohttp
+PyYAML

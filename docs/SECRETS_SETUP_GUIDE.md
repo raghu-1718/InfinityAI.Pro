@@ -13,16 +13,16 @@ This guide documents how to set up and manage secrets for the InfinityAI.Pro pla
 
 ### 1. **gemini-api-key**
 - **Used By**: Engine A (Market Data), Engine B (AI/ML)
-- **Environment Variable**: `VERTEX_AI_API_KEY`
+- **Secret Name**: `GEMINI_API_KEY_PRIMARY`
 - **Purpose**: Vertex AI / Gemini API authentication for AI analysis
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
   2. Create API key or use existing service account
   3. Enable Vertex AI API for the project
 
 ```powershell
 # Set the secret value (replace YOUR_ACTUAL_KEY with real key)
-echo "YOUR_ACTUAL_GEMINI_API_KEY" | gcloud secrets versions add gemini-api-key --data-file=- --project=infinity-ai-5ec7c
+echo "AIzaSyCkg8QKAT3vvbTU9_1qBqB1G7ZL0oQ-Ebs" | gcloud secrets versions add GEMINI_API_KEY_PRIMARY --data-file=- --project=infinity-ai-5ec7c
 ```
 
 ---
@@ -31,7 +31,7 @@ echo "YOUR_ACTUAL_GEMINI_API_KEY" | gcloud secrets versions add gemini-api-key -
 - **Used By**: Engine A (Market Data), Engine B (AI/ML)
 - **Environment Variable**: `HUGGINGFACE_API_TOKEN`
 - **Purpose**: HuggingFace API authentication for AI models
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Create account at [huggingface.co](https://huggingface.co)
   2. Go to Settings → Access Tokens
   3. Create a new token with "read" scope
@@ -47,7 +47,7 @@ echo "hf_YOUR_HUGGINGFACE_TOKEN" | gcloud secrets versions add huggingface-token
 - **Used By**: Engine C (Execution), Engine D (Orchestration)
 - **Environment Variable**: `TELEGRAM_BOT_TOKEN`
 - **Purpose**: Telegram Bot API for notifications and alerts
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Message [@BotFather](https://t.me/botfather) on Telegram
   2. Send `/newbot` and follow instructions
   3. Copy the bot token (format: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
@@ -63,7 +63,7 @@ echo "123456789:YOUR_TELEGRAM_BOT_TOKEN" | gcloud secrets versions add telegram-
 - **Used By**: Engine C (Execution), Engine D (Orchestration)
 - **Environment Variable**: `TELEGRAM_CHAT_ID`
 - **Purpose**: Target chat ID for sending notifications
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Start a chat with your bot on Telegram
   2. Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
   3. Look for `"chat":{"id":123456789}` in the response
@@ -107,7 +107,7 @@ echo $secret | gcloud secrets versions add trading-engine-secret --data-file=- -
 - **Used By**: Future authentication features
 - **Environment Variable**: `FIREBASE_ADMIN_SDK`
 - **Purpose**: Firebase Admin SDK service account JSON
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Go to [Firebase Console](https://console.firebase.google.com)
   2. Project Settings → Service Accounts
   3. Generate new private key (JSON file)
@@ -123,7 +123,7 @@ gcloud secrets versions add firebase-admin-sdk --data-file=path/to/firebase-serv
 - **Used By**: Engine A (Market Data), Engine C (Execution)
 - **Environment Variables**: `DHAN_ACCESS_TOKEN`, `DHAN_CLIENT_ID`
 - **Purpose**: Dhan trading API authentication
-- **How to Obtain**: 
+- **How to Obtain**:
   1. Create account at [dhan.co](https://dhan.co)
   2. Go to API access section in dashboard
   3. Generate API credentials

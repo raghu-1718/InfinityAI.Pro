@@ -15,16 +15,16 @@ class PlatformFixer:
         self.project_id = "infinity-ai-5ec7c"
         self.engines = {
             "engine-a": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
-            "engine-b": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app", 
+            "engine-b": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
             "engine-c": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
             "engine-d": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
         }
-    
+
     def create_monitoring_script(self):
         """Create continuous monitoring script"""
         print("Creating Platform Monitoring Script")
         print("-" * 50)
-        
+
         monitoring_script = '''#!/usr/bin/env python3
 """
 InfinityAI.Pro - Continuous Platform Health Monitor
@@ -41,17 +41,17 @@ class PlatformMonitor:
     def __init__(self):
         self.engines = {
             "engine-a": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
-            "engine-b": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app", 
+            "engine-b": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
             "engine-c": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
             "engine-d": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
         }
         self.functions_base = "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net"
         self.frontend_url = "https://infinity-ai-5ec7c.web.app"
-        
+
     def check_engine_health(self):
         """Check all engines health"""
         print(f"\\n{datetime.now().strftime('%H:%M:%S')} - Checking Engine Health")
-        
+
         for name, url in self.engines.items():
             try:
                 response = requests.get(f"{url}/health", timeout=10)
@@ -61,16 +61,16 @@ class PlatformMonitor:
                     print(f"  ❌ {name}: Error ({response.status_code})")
             except Exception as e:
                 print(f"  ❌ {name}: Connection failed")
-    
+
     def check_functions_health(self):
         """Check Firebase Functions"""
         print(f"\\n{datetime.now().strftime('%H:%M:%S')} - Checking Functions")
-        
+
         functions = ["submitDhanCredentialsV2", "analyzePortfolio", "getGeminiAnalysis"]
-        
+
         for func in functions:
             try:
-                response = requests.post(f"{self.functions_base}/{func}", 
+                response = requests.post(f"{self.functions_base}/{func}",
                                        json={"data": {"test": True}}, timeout=10)
                 if response.status_code in [200, 401, 403]:
                     print(f"  ✅ {func}: Available")
@@ -78,11 +78,11 @@ class PlatformMonitor:
                     print(f"  ❌ {func}: Error ({response.status_code})")
             except Exception as e:
                 print(f"  ❌ {func}: Failed")
-    
+
     def check_frontend_health(self):
         """Check frontend accessibility"""
         print(f"\\n{datetime.now().strftime('%H:%M:%S')} - Checking Frontend")
-        
+
         try:
             response = requests.get(self.frontend_url, timeout=10)
             if response.status_code == 200:
@@ -91,22 +91,22 @@ class PlatformMonitor:
                 print(f"  ❌ Frontend: Error ({response.status_code})")
         except Exception as e:
             print(f"  ❌ Frontend: Failed")
-    
+
     def run_continuous_monitoring(self, interval=60):
         """Run continuous monitoring"""
         print("🔍 Starting Continuous Platform Monitoring")
         print("=" * 60)
         print("Press Ctrl+C to stop monitoring")
-        
+
         try:
             while True:
                 self.check_engine_health()
-                self.check_functions_health()  
+                self.check_functions_health()
                 self.check_frontend_health()
-                
+
                 print(f"\\n⏰ Next check in {interval} seconds...")
                 time.sleep(interval)
-                
+
         except KeyboardInterrupt:
             print("\\n🛑 Monitoring stopped by user")
 
@@ -114,16 +114,16 @@ if __name__ == "__main__":
     monitor = PlatformMonitor()
     monitor.run_continuous_monitoring()
 '''
-        
+
         with open("platform_monitor.py", "w", encoding='utf-8') as f:
             f.write(monitoring_script)
         print("   ✅ Created platform_monitor.py")
-    
+
     def create_engine_d_fix(self):
         """Create Engine D specific fix"""
         print("\nCreating Engine D Fix Script")
         print("-" * 50)
-        
+
         fix_script = '''#!/bin/bash
 # Engine D Recovery Script
 echo "Starting Engine D Recovery..."
@@ -155,16 +155,16 @@ curl -s https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/api/status
 
 echo "Engine D recovery completed!"
 '''
-        
+
         with open("fix_engine_d.sh", "w", encoding='utf-8') as f:
             f.write(fix_script)
         print("   ✅ Created fix_engine_d.sh")
-    
+
     def create_ai_analysis_fallback(self):
         """Create AI analysis fallback service"""
         print("\nCreating AI Analysis Fallback")
         print("-" * 50)
-        
+
         fallback_service = '''#!/usr/bin/env python3
 """
 AI Analysis Fallback Service
@@ -183,14 +183,14 @@ class AIAnalysisFallback(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            
+
             analysis = {
                 "timestamp": datetime.now().isoformat(),
                 "market_sentiment": "NEUTRAL",
                 "confidence": 0.75,
                 "key_insights": [
                     "Market in consolidation phase",
-                    "Awaiting key economic indicators", 
+                    "Awaiting key economic indicators",
                     "Technical levels holding support"
                 ],
                 "recommendations": [
@@ -200,15 +200,15 @@ class AIAnalysisFallback(BaseHTTPRequestHandler):
                 ],
                 "status": "fallback_service"
             }
-            
+
             self.wfile.write(json.dumps(analysis).encode())
-            
+
         elif self.path == '/vertex-analysis':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            
+
             analysis = {
                 "timestamp": datetime.now().isoformat(),
                 "model_predictions": {
@@ -219,15 +219,15 @@ class AIAnalysisFallback(BaseHTTPRequestHandler):
                 },
                 "sector_analysis": {
                     "banking": "NEUTRAL",
-                    "it": "POSITIVE", 
+                    "it": "POSITIVE",
                     "pharma": "NEUTRAL",
                     "metals": "NEGATIVE"
                 },
                 "status": "fallback_service"
             }
-            
+
             self.wfile.write(json.dumps(analysis).encode())
-            
+
         else:
             self.send_response(404)
             self.end_headers()
@@ -243,16 +243,16 @@ def run_fallback_service(port=8888):
 if __name__ == "__main__":
     run_fallback_service()
 '''
-        
+
         with open("ai_analysis_fallback.py", "w", encoding='utf-8') as f:
             f.write(fallback_service)
         print("   ✅ Created ai_analysis_fallback.py")
-    
+
     def create_dashboard_quick_fixes(self):
         """Create quick fixes for dashboard issues"""
         print("\nCreating Dashboard Quick Fixes")
         print("-" * 50)
-        
+
         # JavaScript fixes for immediate deployment
         js_fixes = '''// Quick fixes for InfinityAI.Pro dashboard issues
 // Add this to your frontend to handle errors gracefully
@@ -270,7 +270,7 @@ function handleAiAnalysisError() {
                         <p class="text-yellow-600 text-sm mt-1">
                             We're working to restore the AI analysis service. Please check back in a few minutes.
                         </p>
-                        <button onclick="location.reload()" 
+                        <button onclick="location.reload()"
                                 class="mt-2 px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600">
                             Refresh Page
                         </button>
@@ -291,7 +291,7 @@ function handleEngineErrors() {
                     <div class="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
                     <span class="text-red-800">Engine Temporarily Unavailable</span>
                 </div>
-                <button onclick="checkEngineStatus(this)" 
+                <button onclick="checkEngineStatus(this)"
                         class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">
                     Retry
                 </button>
@@ -306,17 +306,17 @@ function initWebSocketWithFallback() {
     let ws;
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 5;
-    
+
     function connect() {
         try {
             ws = new WebSocket(wsUrl);
-            
+
             ws.onopen = () => {
                 console.log('✅ WebSocket connected');
                 reconnectAttempts = 0;
                 updateConnectionStatus(true);
             };
-            
+
             ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
@@ -325,11 +325,11 @@ function initWebSocketWithFallback() {
                     console.error('❌ WebSocket message error:', e);
                 }
             };
-            
+
             ws.onclose = () => {
                 console.log('🔌 WebSocket disconnected');
                 updateConnectionStatus(false);
-                
+
                 if (reconnectAttempts < maxReconnectAttempts) {
                     setTimeout(() => {
                         reconnectAttempts++;
@@ -337,27 +337,27 @@ function initWebSocketWithFallback() {
                     }, 1000 * Math.pow(2, reconnectAttempts));
                 }
             };
-            
+
             ws.onerror = (error) => {
                 console.error('❌ WebSocket error:', error);
                 updateConnectionStatus(false);
             };
-            
+
         } catch (error) {
             console.error('❌ WebSocket connection failed:', error);
             updateConnectionStatus(false);
         }
     }
-    
+
     function updateConnectionStatus(connected) {
         const statusElement = document.querySelector('[data-connection-status]');
         if (statusElement) {
-            statusElement.innerHTML = connected 
+            statusElement.innerHTML = connected
                 ? '<span class="text-green-500 text-sm">● Live</span>'
                 : '<span class="text-red-500 text-sm">● Disconnected</span>';
         }
     }
-    
+
     connect();
 }
 
@@ -381,17 +381,17 @@ function autoRetryFailedComponents() {
 // 5. Initialize all fixes
 function initDashboardFixes() {
     console.log('🔧 Initializing dashboard fixes...');
-    
+
     // Handle existing errors
     handleAiAnalysisError();
     handleEngineErrors();
-    
+
     // Initialize WebSocket with fallback
     initWebSocketWithFallback();
-    
+
     // Start auto-retry mechanism
     autoRetryFailedComponents();
-    
+
     console.log('✅ Dashboard fixes initialized');
 }
 
@@ -402,16 +402,16 @@ if (document.readyState === 'loading') {
     initDashboardFixes();
 }
 '''
-        
+
         with open("frontend/dashboard-fixes.js", "w", encoding='utf-8') as f:
             f.write(js_fixes)
         print("   ✅ Created dashboard-fixes.js")
-    
+
     def create_gcp_service_fixes(self):
         """Create GCP service configuration fixes"""
         print("\nCreating GCP Service Fixes")
         print("-" * 50)
-        
+
         gcp_fixes = '''#!/bin/bash
 # GCP Service Configuration Fixes
 
@@ -488,16 +488,16 @@ echo "2. Refresh the dashboard at https://infinity-ai-5ec7c.web.app"
 echo "3. Check engine status in the Engines page"
 echo "4. Verify AI analysis components load properly"
 '''
-        
+
         with open("fix_gcp_services.sh", "w", encoding='utf-8') as f:
             f.write(gcp_fixes)
         print("   ✅ Created fix_gcp_services.sh")
-    
+
     def run_immediate_fixes(self):
         """Run immediate diagnostic and fixes"""
         print("\nRunning Immediate Platform Diagnostics & Fixes")
         print("=" * 60)
-        
+
         # Test all engines quickly
         print("\n🔍 Quick Engine Health Check:")
         for name, url in self.engines.items():
@@ -507,19 +507,19 @@ echo "4. Verify AI analysis components load properly"
                 print(f"   {name}: {status}")
             except Exception as e:
                 print(f"   {name}: ❌ Connection failed")
-        
+
         # Test Firebase Functions
         print("\n⚡ Quick Functions Check:")
         functions = ["submitDhanCredentialsV2", "analyzePortfolio"]
         for func in functions:
             try:
-                response = requests.post(f"https://us-central1-{self.project_id}.cloudfunctions.net/{func}", 
+                response = requests.post(f"https://us-central1-{self.project_id}.cloudfunctions.net/{func}",
                                        json={"data": {"test": True}}, timeout=5)
                 status = "✅ Available" if response.status_code in [200, 401, 403] else f"❌ Error ({response.status_code})"
                 print(f"   {func}: {status}")
             except Exception as e:
                 print(f"   {func}: ❌ Failed")
-        
+
         # Test frontend
         print("\n🌐 Quick Frontend Check:")
         try:
@@ -528,24 +528,24 @@ echo "4. Verify AI analysis components load properly"
             print(f"   Frontend: {status}")
         except Exception as e:
             print(f"   Frontend: ❌ Failed")
-    
+
     def generate_final_report(self):
         """Generate final comprehensive report"""
         print("\n📋 Generating Final Comprehensive Report")
         print("-" * 50)
-        
+
         report = {
             "timestamp": datetime.now().isoformat(),
             "platform_status": "PARTIALLY_OPERATIONAL_WITH_FIXES",
-            
+
             "issues_identified": [
                 "Engine D orchestration API endpoints missing (404 errors)",
-                "AI analysis Firebase Functions deployment failures", 
+                "AI analysis Firebase Functions deployment failures",
                 "WebSocket connection instability",
                 "Dashboard components showing persistent loading states",
                 "Missing error boundaries and retry mechanisms"
             ],
-            
+
             "fixes_implemented": [
                 "Created comprehensive platform monitoring script",
                 "Generated Engine D recovery and restart script",
@@ -554,15 +554,15 @@ echo "4. Verify AI analysis components load properly"
                 "Generated GCP service configuration fixes",
                 "Implemented error handling and retry mechanisms"
             ],
-            
+
             "files_created": [
                 "platform_monitor.py - Continuous health monitoring",
-                "fix_engine_d.sh - Engine D recovery script", 
+                "fix_engine_d.sh - Engine D recovery script",
                 "ai_analysis_fallback.py - Fallback AI analysis service",
                 "frontend/dashboard-fixes.js - Immediate dashboard fixes",
                 "fix_gcp_services.sh - GCP service configuration fixes"
             ],
-            
+
             "immediate_actions_required": [
                 "1. Run fix_gcp_services.sh to restart all engines properly",
                 "2. Deploy dashboard-fixes.js to frontend for immediate error handling",
@@ -570,7 +570,7 @@ echo "4. Verify AI analysis components load properly"
                 "4. Monitor platform with platform_monitor.py",
                 "5. Redeploy Firebase Functions after fixing container issues"
             ],
-            
+
             "long_term_improvements": [
                 "Implement Zustand state management in frontend",
                 "Add React Query for robust API handling",
@@ -578,17 +578,17 @@ echo "4. Verify AI analysis components load properly"
                 "Set up automated health monitoring with alerts",
                 "Implement circuit breaker patterns for resilience"
             ],
-            
+
             "estimated_recovery_time": {
                 "immediate_fixes": "15-30 minutes",
                 "full_restoration": "1-2 hours",
                 "ui_enhancements": "2-4 hours"
             }
         }
-        
+
         with open("comprehensive_platform_fix_report.json", "w", encoding='utf-8') as f:
             json.dump(report, f, indent=2)
-        
+
         print("=" * 60)
         print("🎯 COMPREHENSIVE PLATFORM FIX SUMMARY")
         print("=" * 60)
@@ -607,19 +607,19 @@ echo "4. Verify AI analysis components load properly"
 
 if __name__ == "__main__":
     fixer = PlatformFixer()
-    
+
     print("🚀 InfinityAI.Pro - Complete Platform Fix & Recovery")
     print("=" * 60)
-    
+
     # Create all fix scripts
     fixer.create_monitoring_script()
-    fixer.create_engine_d_fix() 
+    fixer.create_engine_d_fix()
     fixer.create_ai_analysis_fallback()
     fixer.create_dashboard_quick_fixes()
     fixer.create_gcp_service_fixes()
-    
+
     # Run immediate diagnostics
     fixer.run_immediate_fixes()
-    
+
     # Generate final report
     fixer.generate_final_report()

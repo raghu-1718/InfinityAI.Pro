@@ -9,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
       }
     ]
   },

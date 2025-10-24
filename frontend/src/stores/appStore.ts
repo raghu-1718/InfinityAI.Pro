@@ -11,7 +11,7 @@ interface AppState {
   // User state
   user: User | null
   isAuthenticated: boolean
-  
+
   // Engine status
   engines: {
     'engine-a': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
@@ -19,7 +19,7 @@ interface AppState {
     'engine-c': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
     'engine-d': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
   }
-  
+
   // AI Analysis data
   aiAnalysis: {
     gemini: any | null
@@ -29,14 +29,14 @@ interface AppState {
     isLoading: boolean
     error: string | null
   }
-  
+
   // Real-time data
   realTimeData: {
     marketData: any | null
     websocketConnected: boolean
     lastUpdate: Date | null
   }
-  
+
   // Actions
   setUser: (user: User | null) => void
   updateEngineStatus: (engine: string, status: any) => void
@@ -48,18 +48,18 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>()(
-  subscribeWithSelector((set, get) => ({
+  subscribeWithSelector((set) => ({
     // Initial state
     user: null,
     isAuthenticated: false,
-    
+
     engines: {
       'engine-a': { status: 'offline', lastChecked: null },
       'engine-b': { status: 'offline', lastChecked: null },
       'engine-c': { status: 'offline', lastChecked: null },
       'engine-d': { status: 'offline', lastChecked: null },
     },
-    
+
     aiAnalysis: {
       gemini: null,
       vertex: null,
@@ -68,23 +68,23 @@ export const useAppStore = create<AppState>()(
       isLoading: false,
       error: null,
     },
-    
+
     realTimeData: {
       marketData: null,
       websocketConnected: false,
       lastUpdate: null,
     },
-    
+
     // Actions
     setUser: (user) => set({ user, isAuthenticated: !!user }),
-    
+
     updateEngineStatus: (engine, status) => set((state) => ({
       engines: {
         ...state.engines,
         [engine]: { ...status, lastChecked: new Date() }
       }
     })),
-    
+
     setAiAnalysis: (type, data) => set((state) => ({
       aiAnalysis: {
         ...state.aiAnalysis,
@@ -93,15 +93,15 @@ export const useAppStore = create<AppState>()(
         error: null,
       }
     })),
-    
+
     setAiAnalysisLoading: (loading) => set((state) => ({
       aiAnalysis: { ...state.aiAnalysis, isLoading: loading }
     })),
-    
+
     setAiAnalysisError: (error) => set((state) => ({
       aiAnalysis: { ...state.aiAnalysis, error, isLoading: false }
     })),
-    
+
     setRealTimeData: (data) => set((state) => ({
       realTimeData: {
         ...state.realTimeData,
@@ -109,7 +109,7 @@ export const useAppStore = create<AppState>()(
         lastUpdate: new Date(),
       }
     })),
-    
+
     setWebSocketStatus: (connected) => set((state) => ({
       realTimeData: { ...state.realTimeData, websocketConnected: connected }
     })),

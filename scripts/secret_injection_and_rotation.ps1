@@ -42,14 +42,14 @@ param(
 )
 
 # Color output functions
-function Write-Success { param($Message) Write-Host "✅ $Message" -ForegroundColor Green }
-function Write-Info { param($Message) Write-Host "ℹ️  $Message" -ForegroundColor Cyan }
-function Write-Warning { param($Message) Write-Host "⚠️  $Message" -ForegroundColor Yellow }
-function Write-Error { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
+function Write-Success { param($Message) Write-Host "SUCCESS: $Message" -ForegroundColor Green }
+function Write-Info { param($Message) Write-Host "INFO: $Message" -ForegroundColor Cyan }
+function Write-Warning { param($Message) Write-Host "WARNING: $Message" -ForegroundColor Yellow }
+function Write-Error { param($Message) Write-Host "ERROR: $Message" -ForegroundColor Red }
 
 Write-Info "=========================================="
-Write-Info "InfinityAI.Pro - Secret Injection & Rotation"
-Write-Info "=========================================="
+Write-Info "'InfinityAI.Pro' - Secret Injection & Rotation"
+Write-Info "==========================================
 Write-Info "Project: $Project"
 Write-Info "Region: $Region"
 Write-Info "Mode: $(if ($DryRun) { 'DRY-RUN (Preview Only)' } else { 'LIVE EXECUTION' })"
@@ -74,6 +74,54 @@ $SecretMappings = @{
         "JWT_SECRET_KEY:trading-engine-secret:latest",
         "TELEGRAM_BOT_TOKEN:telegram-bot-token:latest",
         "TELEGRAM_CHAT_ID:telegram-chat-id:latest"
+    )
+    "analyzeportfolio" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "getdhanoverview" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "savedhancredentials" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "starttrading" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "stoptrading" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "submitdhancredentials" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "submitdhancredentialsv2" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
+    )
+    "syncholdings" = @(
+        "DHAN_ACCESS_TOKEN:dhan-access-token:latest",
+        "DHAN_CLIENT_ID:dhan-client-id:latest",
+        "DHAN_API_KEY:dhan-api-key:latest",
+        "DHAN_API_SECRET:dhan-api-secret:latest"
     )
 }
 
@@ -169,36 +217,31 @@ foreach ($service in $SecretMappings.Keys) {
     
     if ($DryRun) {
         Write-Warning "  [DRY-RUN] Would execute:"
-        Write-Host "    gcloud run services update $service \" -ForegroundColor Yellow
-        Write-Host "      --region=$Region \" -ForegroundColor Yellow
-        Write-Host "      --project=$Project \" -ForegroundColor Yellow
+        Write-Host "    gcloud run services update $service " -ForegroundColor Yellow
+        Write-Host "      --region=$Region " -ForegroundColor Yellow
+        Write-Host "      --project=$Project " -ForegroundColor Yellow
         if ($updateSecretsArgs.Count -gt 0) {
-            Write-Host "      --update-secrets=$($updateSecretsArgs -join ',') \" -ForegroundColor Yellow
+            Write-Host "      --update-secrets=$($updateSecretsArgs -join ',') " -ForegroundColor Yellow
         }
         if ($setEnvVarsArgs.Count -gt 0) {
             Write-Host "      --set-env-vars=$($setEnvVarsArgs -join ',')" -ForegroundColor Yellow
         }
-    } else {
-        try {
-            $gcloudArgs = @(
-                "run", "services", "update", $service,
-                "--region=$Region",
-                "--project=$Project"
-            )
-            if ($updateSecretsArgs.Count -gt 0) {
-                $gcloudArgs += "--update-secrets=$($updateSecretsArgs -join ',')"
-            }
-            if ($setEnvVarsArgs.Count -gt 0) {
-                $gcloudArgs += "--set-env-vars=$($setEnvVarsArgs -join ',')"
-            }
-            
-            & gcloud @gcloudArgs
-            Write-Success "  ✓ Secrets injected into $service"
-        } catch {
-            Write-Error "  ✗ Failed to inject secrets into $service : $_"
-        }
-    }
-}
+                            } else {
+                                try {
+                                    $command = "gcloud run services update $service --region=$Region --project=$Project"
+                                    if ($updateSecretsArgs.Count -gt 0) {
+                                        $command += " --update-secrets=" + ($updateSecretsArgs -join ',')
+                                    }
+                                    if ($setEnvVarsArgs.Count -gt 0) {
+                                        $command += " --set-env-vars=" + ($setEnvVarsArgs -join ',')
+                                    }
+                                    
+                                    Start-Process -FilePath "gcloud" -ArgumentList $command.Split(' ') -NoNewWindow -Wait -ErrorAction Stop
+                                    Write-Success "  ✓ Secrets injected into $service"
+                                } catch {
+                                    Write-Error "  ✗ Failed to inject secrets into $service : $_"
+                                }
+                            }}
 
 Write-Info ""
 Write-Info "=========================================="

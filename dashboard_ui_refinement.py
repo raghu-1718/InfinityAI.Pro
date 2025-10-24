@@ -15,16 +15,16 @@ class DashboardRefinement:
         self.frontend_path = "frontend"
         self.issues_found = []
         self.recommendations = []
-    
+
     def create_zustand_store(self):
         """Create Zustand store for state management"""
         print("🎯 Creating Zustand Store for State Management")
         print("-" * 50)
-        
+
         # Create stores directory
         stores_dir = f"{self.frontend_path}/src/stores"
         os.makedirs(stores_dir, exist_ok=True)
-        
+
         # Main app store
         app_store = """import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
@@ -39,7 +39,7 @@ interface AppState {
   // User state
   user: User | null
   isAuthenticated: boolean
-  
+
   // Engine status
   engines: {
     'engine-a': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
@@ -47,7 +47,7 @@ interface AppState {
     'engine-c': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
     'engine-d': { status: 'online' | 'offline' | 'error', lastChecked: Date | null }
   }
-  
+
   // AI Analysis data
   aiAnalysis: {
     gemini: any | null
@@ -57,14 +57,14 @@ interface AppState {
     isLoading: boolean
     error: string | null
   }
-  
+
   // Real-time data
   realTimeData: {
     marketData: any | null
     websocketConnected: boolean
     lastUpdate: Date | null
   }
-  
+
   // Actions
   setUser: (user: User | null) => void
   updateEngineStatus: (engine: string, status: any) => void
@@ -80,14 +80,14 @@ export const useAppStore = create<AppState>()(
     // Initial state
     user: null,
     isAuthenticated: false,
-    
+
     engines: {
       'engine-a': { status: 'offline', lastChecked: null },
       'engine-b': { status: 'offline', lastChecked: null },
       'engine-c': { status: 'offline', lastChecked: null },
       'engine-d': { status: 'offline', lastChecked: null },
     },
-    
+
     aiAnalysis: {
       gemini: null,
       vertex: null,
@@ -96,23 +96,23 @@ export const useAppStore = create<AppState>()(
       isLoading: false,
       error: null,
     },
-    
+
     realTimeData: {
       marketData: null,
       websocketConnected: false,
       lastUpdate: null,
     },
-    
+
     // Actions
     setUser: (user) => set({ user, isAuthenticated: !!user }),
-    
+
     updateEngineStatus: (engine, status) => set((state) => ({
       engines: {
         ...state.engines,
         [engine]: { ...status, lastChecked: new Date() }
       }
     })),
-    
+
     setAiAnalysis: (type, data) => set((state) => ({
       aiAnalysis: {
         ...state.aiAnalysis,
@@ -121,15 +121,15 @@ export const useAppStore = create<AppState>()(
         error: null,
       }
     })),
-    
+
     setAiAnalysisLoading: (loading) => set((state) => ({
       aiAnalysis: { ...state.aiAnalysis, isLoading: loading }
     })),
-    
+
     setAiAnalysisError: (error) => set((state) => ({
       aiAnalysis: { ...state.aiAnalysis, error, isLoading: false }
     })),
-    
+
     setRealTimeData: (data) => set((state) => ({
       realTimeData: {
         ...state.realTimeData,
@@ -137,7 +137,7 @@ export const useAppStore = create<AppState>()(
         lastUpdate: new Date(),
       }
     })),
-    
+
     setWebSocketStatus: (connected) => set((state) => ({
       realTimeData: { ...state.realTimeData, websocketConnected: connected }
     })),
@@ -150,11 +150,11 @@ export const useEngines = () => useAppStore((state) => state.engines)
 export const useAiAnalysis = () => useAppStore((state) => state.aiAnalysis)
 export const useRealTimeData = () => useAppStore((state) => state.realTimeData)
 """
-        
+
         with open(f"{stores_dir}/appStore.ts", "w") as f:
             f.write(app_store)
         print("   ✅ Created appStore.ts")
-        
+
         # WebSocket store
         websocket_store = """import { create } from 'zustand'
 import { useAppStore } from './appStore'
@@ -165,7 +165,7 @@ interface WebSocketState {
   reconnectAttempts: number
   maxReconnectAttempts: number
   reconnectDelay: number
-  
+
   connect: () => void
   disconnect: () => void
   sendMessage: (message: any) => void
@@ -181,35 +181,35 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   reconnectAttempts: 0,
   maxReconnectAttempts: 5,
   reconnectDelay: 1000,
-  
+
   connect: () => {
     const { socket, isConnected, reconnectAttempts, maxReconnectAttempts } = get()
-    
+
     if (socket && isConnected) {
       console.log('🔌 WebSocket already connected')
       return
     }
-    
+
     if (reconnectAttempts >= maxReconnectAttempts) {
       console.error('🚫 Max reconnection attempts reached')
       return
     }
-    
+
     try {
       console.log('🔌 Connecting to WebSocket...')
       const ws = new WebSocket(WS_URL)
-      
+
       ws.onopen = () => {
         console.log('✅ WebSocket connected')
         set({ socket: ws, isConnected: true, reconnectAttempts: 0 })
         useAppStore.getState().setWebSocketStatus(true)
       }
-      
+
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
           console.log('📨 WebSocket message:', data)
-          
+
           // Update app store with real-time data
           if (data.type === 'market_data') {
             useAppStore.getState().setRealTimeData(data.payload)
@@ -222,12 +222,12 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           console.error('❌ Error parsing WebSocket message:', error)
         }
       }
-      
+
       ws.onclose = () => {
         console.log('🔌 WebSocket disconnected')
         set({ socket: null, isConnected: false })
         useAppStore.getState().setWebSocketStatus(false)
-        
+
         // Auto-reconnect with exponential backoff
         const attempts = get().reconnectAttempts
         if (attempts < maxReconnectAttempts) {
@@ -237,20 +237,20 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
           }, get().reconnectDelay * Math.pow(2, attempts))
         }
       }
-      
+
       ws.onerror = (error) => {
         console.error('❌ WebSocket error:', error)
         set({ socket: null, isConnected: false })
         useAppStore.getState().setWebSocketStatus(false)
       }
-      
+
       set({ socket: ws })
-      
+
     } catch (error) {
       console.error('❌ WebSocket connection error:', error)
     }
   },
-  
+
   disconnect: () => {
     const { socket } = get()
     if (socket) {
@@ -258,7 +258,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       set({ socket: null, isConnected: false, reconnectAttempts: 0 })
     }
   },
-  
+
   sendMessage: (message) => {
     const { socket, isConnected } = get()
     if (socket && isConnected) {
@@ -267,29 +267,29 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.warn('⚠️ WebSocket not connected')
     }
   },
-  
+
   subscribe: (channel) => {
     get().sendMessage({ type: 'subscribe', channel })
   },
-  
+
   unsubscribe: (channel) => {
     get().sendMessage({ type: 'unsubscribe', channel })
   },
 }))
 """
-        
+
         with open(f"{stores_dir}/webSocketStore.ts", "w") as f:
             f.write(websocket_store)
         print("   ✅ Created webSocketStore.ts")
-    
+
     def create_react_query_setup(self):
         """Create React Query setup for API calls"""
         print("\n📡 Setting up React Query for API Management")
         print("-" * 50)
-        
+
         hooks_dir = f"{self.frontend_path}/src/hooks"
         os.makedirs(hooks_dir, exist_ok=True)
-        
+
         # API hooks
         api_hooks = """import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { httpsCallable } from 'firebase/functions'
@@ -308,13 +308,13 @@ const getDhanOverview = httpsCallable(functions, 'getDhanOverview')
 export const useGeminiAnalysis = (prompt?: string) => {
   const setAiAnalysisError = useAppStore((state) => state.setAiAnalysisError)
   const setAiAnalysisLoading = useAppStore((state) => state.setAiAnalysisLoading)
-  
+
   return useQuery({
     queryKey: ['gemini-analysis', prompt],
     queryFn: async () => {
       setAiAnalysisLoading(true)
       try {
-        const result = await getGeminiAnalysis({ 
+        const result = await getGeminiAnalysis({
           prompt: prompt || 'Provide current market analysis for NIFTY and BANKNIFTY',
           context: { timestamp: new Date().toISOString() }
         })
@@ -323,7 +323,7 @@ export const useGeminiAnalysis = (prompt?: string) => {
       } catch (error: any) {
         console.error('❌ Gemini Analysis Error:', error)
         setAiAnalysisError(error.message || 'Failed to load Gemini analysis')
-        
+
         // Return fallback data
         return {
           analysis: {
@@ -355,12 +355,12 @@ export const useGeminiAnalysis = (prompt?: string) => {
 
 export const useVertexAnalysis = (prompt?: string) => {
   const setAiAnalysisError = useAppStore((state) => state.setAiAnalysisError)
-  
+
   return useQuery({
     queryKey: ['vertex-analysis', prompt],
     queryFn: async () => {
       try {
-        const result = await getVertexAiAnalysis({ 
+        const result = await getVertexAiAnalysis({
           prompt: prompt || 'Analyze current market trends and provide predictions',
           context: { timestamp: new Date().toISOString() }
         })
@@ -369,7 +369,7 @@ export const useVertexAnalysis = (prompt?: string) => {
       } catch (error: any) {
         console.error('❌ Vertex AI Analysis Error:', error)
         setAiAnalysisError(error.message || 'Failed to load Vertex AI analysis')
-        
+
         // Return fallback data
         return {
           analysis: {
@@ -400,7 +400,7 @@ export const useAiSignals = (symbol?: string) => {
         return result.data
       } catch (error: any) {
         console.error('❌ AI Signals Error:', error)
-        
+
         // Return fallback signals
         return {
           signals: {
@@ -426,7 +426,7 @@ export const useAiSignals = (symbol?: string) => {
 
 export const usePortfolioAnalysis = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async () => {
       const result = await analyzePortfolio({})
@@ -442,7 +442,7 @@ export const usePortfolioAnalysis = () => {
 
 export const useHoldingsSync = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async () => {
       const result = await syncHoldings({})
@@ -464,7 +464,7 @@ export const useDhanOverview = () => {
         return result.data
       } catch (error: any) {
         console.error('❌ Dhan Overview Error:', error)
-        
+
         // Return fallback data
         return {
           overview: {
@@ -484,7 +484,7 @@ export const useDhanOverview = () => {
 // Engine status hooks
 export const useEngineStatus = () => {
   const updateEngineStatus = useAppStore((state) => state.updateEngineStatus)
-  
+
   return useQuery({
     queryKey: ['engine-status'],
     queryFn: async () => {
@@ -494,12 +494,12 @@ export const useEngineStatus = () => {
         { name: 'engine-c', url: 'https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app' },
         { name: 'engine-d', url: 'https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app' }
       ]
-      
+
       const statusPromises = engines.map(async (engine) => {
         try {
-          const response = await fetch(`${engine.url}/health`, { 
+          const response = await fetch(`${engine.url}/health`, {
             method: 'GET',
-            timeout: 5000 
+            timeout: 5000
           })
           const status = response.ok ? 'online' : 'error'
           updateEngineStatus(engine.name, { status })
@@ -509,7 +509,7 @@ export const useEngineStatus = () => {
           return { [engine.name]: 'offline' }
         }
       })
-      
+
       const results = await Promise.all(statusPromises)
       return Object.assign({}, ...results)
     },
@@ -518,19 +518,19 @@ export const useEngineStatus = () => {
   })
 }
 """
-        
+
         with open(f"{hooks_dir}/useApi.ts", "w") as f:
             f.write(api_hooks)
         print("   ✅ Created useApi.ts")
-    
+
     def create_error_boundary_component(self):
         """Create error boundary for better error handling"""
         print("\n🛡️ Creating Error Boundary Component")
         print("-" * 50)
-        
+
         components_dir = f"{self.frontend_path}/src/components"
         os.makedirs(components_dir, exist_ok=True)
-        
+
         error_boundary = """import React, { Component, ErrorInfo, ReactNode } from 'react'
 
 interface Props {
@@ -590,10 +590,10 @@ interface RetryProps {
   retryDelay?: number
 }
 
-export const RetryWrapper: React.FC<RetryProps> = ({ 
-  children, 
-  maxRetries = 3, 
-  retryDelay = 1000 
+export const RetryWrapper: React.FC<RetryProps> = ({
+  children,
+  maxRetries = 3,
+  retryDelay = 1000
 }) => {
   const [retryCount, setRetryCount] = React.useState(0)
   const [isRetrying, setIsRetrying] = React.useState(false)
@@ -636,18 +636,18 @@ export const RetryWrapper: React.FC<RetryProps> = ({
   )
 }
 """
-        
+
         with open(f"{components_dir}/ErrorBoundary.tsx", "w") as f:
             f.write(error_boundary)
         print("   ✅ Created ErrorBoundary.tsx")
-    
+
     def create_enhanced_dashboard_components(self):
         """Create enhanced dashboard components with real-time updates"""
         print("\n🎨 Creating Enhanced Dashboard Components")
         print("-" * 50)
-        
+
         components_dir = f"{self.frontend_path}/src/components"
-        
+
         # Enhanced AI Analysis component
         ai_analysis_component = """import React from 'react'
 import { useGeminiAnalysis, useVertexAnalysis, useAiSignals } from '../hooks/useApi'
@@ -658,7 +658,7 @@ export const EnhancedAiAnalysis: React.FC = () => {
   const { data: geminiData, isLoading: geminiLoading, error: geminiError } = useGeminiAnalysis()
   const { data: vertexData, isLoading: vertexLoading, error: vertexError } = useVertexAnalysis()
   const { data: signalsData, isLoading: signalsLoading, error: signalsError } = useAiSignals()
-  
+
   const aiAnalysis = useAppStore((state) => state.aiAnalysis)
   const realTimeData = useAppStore((state) => state.realTimeData)
 
@@ -713,7 +713,7 @@ export const EnhancedAiAnalysis: React.FC = () => {
                 🧠 Gemini Insights
                 {geminiLoading && <div className="ml-2 animate-pulse text-blue-500">●</div>}
               </h3>
-              
+
               {geminiData?.analysis ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -726,7 +726,7 @@ export const EnhancedAiAnalysis: React.FC = () => {
                       {geminiData.analysis.market_sentiment || 'N/A'}
                     </span>
                   </div>
-                  
+
                   {geminiData.analysis.key_insights && (
                     <div>
                       <p className="text-sm text-blue-600 mb-1">Key Insights:</p>
@@ -756,7 +756,7 @@ export const EnhancedAiAnalysis: React.FC = () => {
                 🎯 Vertex AI Predictions
                 {vertexLoading && <div className="ml-2 animate-pulse text-purple-500">●</div>}
               </h3>
-              
+
               {vertexData?.analysis?.model_predictions ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -769,14 +769,14 @@ export const EnhancedAiAnalysis: React.FC = () => {
                       {vertexData.analysis.model_predictions.nifty_direction || 'N/A'}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-purple-600">Confidence:</span>
                     <span className="text-sm font-medium text-gray-700">
                       {(vertexData.analysis.model_predictions.probability * 100).toFixed(1)}%
                     </span>
                   </div>
-                  
+
                   {vertexData.analysis.model_predictions.target_range && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-purple-600">Target Range:</span>
@@ -802,7 +802,7 @@ export const EnhancedAiAnalysis: React.FC = () => {
               📊 AI Trading Signals
               {signalsLoading && <div className="ml-2 animate-pulse text-green-500">●</div>}
             </h3>
-            
+
             {signalsData?.signals?.signals ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {signalsData.signals.signals.slice(0, 4).map((signal: any, index: number) => (
@@ -818,14 +818,14 @@ export const EnhancedAiAnalysis: React.FC = () => {
                         {signal.signal}
                       </span>
                     </div>
-                    
+
                     {signal.strength && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Strength:</span>
                         <span className="font-medium">{(signal.strength * 100).toFixed(0)}%</span>
                       </div>
                     )}
-                    
+
                     {signal.entry_price && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Entry:</span>
@@ -847,16 +847,16 @@ export const EnhancedAiAnalysis: React.FC = () => {
   )
 }
 """
-        
+
         with open(f"{components_dir}/EnhancedAiAnalysis.tsx", "w") as f:
             f.write(ai_analysis_component)
         print("   ✅ Created EnhancedAiAnalysis.tsx")
-    
+
     def create_package_json_updates(self):
         """Create package.json updates for new dependencies"""
         print("\n📦 Creating Package Dependencies Update")
         print("-" * 50)
-        
+
         package_updates = {
             "dependencies": {
                 "zustand": "^4.4.4",
@@ -868,11 +868,11 @@ export const EnhancedAiAnalysis: React.FC = () => {
                 "build:optimized": "vite build --mode production"
             }
         }
-        
+
         with open(f"{self.frontend_path}/package-updates.json", "w") as f:
             json.dump(package_updates, f, indent=2)
         print("   ✅ Created package-updates.json")
-        
+
         install_script = """#!/bin/bash
 # Install new dependencies for enhanced dashboard
 
@@ -897,16 +897,16 @@ echo "4. Test WebSocket connections"
 echo ""
 echo "💡 Run 'npm run dev' to start development server"
 """
-        
+
         with open(f"{self.frontend_path}/install-dependencies.sh", "w") as f:
             f.write(install_script)
         print("   ✅ Created install-dependencies.sh")
-    
+
     def create_implementation_guide(self):
         """Create implementation guide for UI refinements"""
         print("\n📖 Creating Implementation Guide")
         print("-" * 50)
-        
+
         guide = """# Dashboard UI Refinement Implementation Guide
 
 ## 🎯 Overview
@@ -975,12 +975,12 @@ import { useEngineStatus } from './hooks/useApi'
 export const Dashboard = () => {
   const { connect, disconnect } = useWebSocketStore()
   const { data: engineStatus } = useEngineStatus()
-  
+
   useEffect(() => {
     connect() // Start WebSocket connection
     return () => disconnect() // Cleanup on unmount
   }, [])
-  
+
   // Your dashboard JSX
 }
 ```
@@ -993,7 +993,7 @@ export const Dashboard = () => {
 
 ### Issue 2: AI Analysis Loading Forever
 **Problem**: "Loading AI analysis..." never resolves
-**Solution**: 
+**Solution**:
 - New API hooks include fallback data
 - Error boundaries show user-friendly messages
 - Retry mechanisms attempt recovery
@@ -1096,16 +1096,16 @@ export const Dashboard = () => {
 
 **Note**: This implementation provides robust fallbacks and error handling to ensure the dashboard remains functional even when some services are temporarily unavailable.
 """
-        
+
         with open(f"{self.frontend_path}/IMPLEMENTATION_GUIDE.md", "w") as f:
             f.write(guide)
         print("   ✅ Created IMPLEMENTATION_GUIDE.md")
-    
+
     def generate_summary_report(self):
         """Generate summary report of all improvements"""
         print("\n📋 Generating Summary Report")
         print("-" * 50)
-        
+
         report = {
             "timestamp": datetime.now().isoformat(),
             "dashboard_refinements": {
@@ -1113,7 +1113,7 @@ export const Dashboard = () => {
                     "implemented": "Zustand stores",
                     "features": [
                         "App-wide state management",
-                        "Engine status tracking", 
+                        "Engine status tracking",
                         "Real-time data handling",
                         "WebSocket connection state"
                     ]
@@ -1165,7 +1165,7 @@ export const Dashboard = () => {
             ],
             "files_created": [
                 "stores/appStore.ts",
-                "stores/webSocketStore.ts", 
+                "stores/webSocketStore.ts",
                 "hooks/useApi.ts",
                 "components/ErrorBoundary.tsx",
                 "components/EnhancedAiAnalysis.tsx",
@@ -1182,10 +1182,10 @@ export const Dashboard = () => {
                 "Monitor performance improvements"
             ]
         }
-        
+
         with open("dashboard_refinement_report.json", "w") as f:
             json.dump(report, f, indent=2)
-        
+
         print("=" * 60)
         print("📊 DASHBOARD REFINEMENT SUMMARY")
         print("=" * 60)
@@ -1200,7 +1200,7 @@ export const Dashboard = () => {
 
 if __name__ == "__main__":
     refinement = DashboardRefinement()
-    
+
     # Create all enhancements
     refinement.create_zustand_store()
     refinement.create_react_query_setup()

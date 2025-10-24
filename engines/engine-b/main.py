@@ -38,14 +38,14 @@ def init_services():
                 CFG = yaml.safe_load(f)
         except Exception:
             CFG = {"service": {"version": "4.6.0"}, "markets": {"NSE_INDICES": [], "NSE_STOCKS": [], "MCX_COMMODITIES": []}}
-    
+
     if ai is None:
         try:
             from services.ai_model_service import AIModelService
             ai = AIModelService(settings_path=CFG_PATH)
         except Exception:
             pass  # Will be initialized on first use
-    
+
     if explain_svc is None:
         try:
             from services.explainability_service import ExplainabilityService
@@ -190,6 +190,96 @@ async def model_status():
         ],
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@app.post("/api/gemini/analyze")
+async def gemini_analyze(request_data: dict):
+    """
+    Gemini AI Analysis Endpoint
+
+    Processes prompts using Google's Gemini API for portfolio analysis,
+    market insights, and trading recommendations.
+    """
+    try:
+        import google.generativeai as genai
+        import os
+        from google.cloud import secretmanager
+
+        # Get API key from GCP Secret Manager
+        try:
+            client = secretmanager.SecretManagerServiceClient()
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-5ec7c")
+
+            # Try primary key first
+            secret_name = f"projects/{project_id}/secrets/gemini-api-key-primary/versions/latest"
+            response = client.access_secret_version(request={"name": secret_name})
+            api_key = response.payload.data.decode("UTF-8")
+        except Exception as e:
+            # Fallback to secondary key
+            try:
+                secret_name = f"projects/{project_id}/secrets/gemini-api-key-secondary/versions/latest"
+                response = client.access_secret_version(request={"name": secret_name})
+                api_key = response.payload.data.decode("UTF-8")
+            except Exception:
+                # Final fallback to environment variable
+                api_key = os.getenv("GEMINI_API_KEY_PRIMARY")
+
+        if not api_key:
+            raise HTTPException(status_code=503, detail="Gemini API key not configured in Secret Manager or environment")
+
+        # Configure Gemini
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+
+        # Extract request data
+        prompt = request_data.get("prompt", "")
+        context = request_data.get("context", {})
+        user_id = request_data.get("userId", "anonymous")
+
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required")
+
+        # Enhanced prompt with context for trading analysis
+        enhanced_prompt = f"""
+You are InfinityAI.Pro's expert trading analyst specializing in Indian markets (NSE/BSE/MCX).
+
+User Context: {user_id}
+Additional Context: {context}
+
+Analysis Request:
+{prompt}
+
+Please provide:
+1. Clear, actionable insights
+2. Risk assessment for Indian markets
+3. Specific recommendations with rationale
+4. Market timing considerations
+5. Risk management suggestions
+
+Focus on NSE/BSE stocks and MCX commodities. Consider current Indian market conditions.
+"""
+
+        # Generate response
+        response = model.generate_content(enhanced_prompt)
+
+        return {
+            "status": "success",
+            "analysis": response.text,
+            "model": "gemini-1.5-flash",
+            "user_id": user_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "context_used": bool(context)
+        }
+
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Gemini API library not installed. Please install: pip install google-generativeai"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Gemini analysis failed: {str(e)}"
+        )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))

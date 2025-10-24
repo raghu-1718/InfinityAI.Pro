@@ -17,7 +17,7 @@ jobs:
       - name: GCP Auth
         uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+          credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
 
       - name: Deploy to Cloud Run
         uses: "google-github-actions/deploy-cloudrun@v1"
@@ -25,4 +25,5 @@ jobs:
           service: infinityai-engine-d
           region: us-central1
           source: ./engines/engine-d
-          project_id: ${{ secrets.VITE_PROJECT_ID }}
+          project_id: infinity-ai-5ec7c
+

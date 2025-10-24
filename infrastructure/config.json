@@ -1,0 +1,10 @@
+{
+  "project_id": "infinity-ai-5ec7c",
+  "region": "us-central1",
+  "engine_a_url": "https://infinityai-engine-a-26140490557.us-central1.run.app",
+  "engine_b_url": "https://infinityai-engine-b-26140490557.us-central1.run.app",
+  "engine_c_url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app",
+  "engine_d_url": "https://infinityai-engine-d-26140490557.us-central1.run.app",
+  "frontend_url": "https://infinityai-frontend-26140490557.us-central1.run.app",
+  "firebase_functions_base_url": "https://us-central1-infinity-ai-5ec7c.cloudfunctions.net"
+}

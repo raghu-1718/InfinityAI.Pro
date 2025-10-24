@@ -212,14 +212,14 @@ async def generate_response(intent: str, message: str, confidence: float) -> str
         api_key = get_gemini_api_key()
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
-        
+
         # Construct prompt for Gemini
         gemini_prompt = f"""
         You are InfinityAI.Pro's expert chatbot.
         User message: {message}
         Detected intent: {intent}
         Confidence: {confidence}
-        
+
         Based on the user's message and detected intent, provide a concise and helpful response.
         If the intent is 'status', provide a summary of the system health.
         If the intent is 'market_data', explain that Engine A provides this.
@@ -229,7 +229,7 @@ async def generate_response(intent: str, message: str, confidence: float) -> str
         If the intent is 'account_management', explain that Engine C handles this.
         Otherwise, provide a general helpful response.
         """
-        
+
         response = model.generate_content(gemini_prompt)
         return response.text
     except Exception as e:
@@ -418,13 +418,13 @@ async def engine_status() -> Dict[str, Any]:
     try:
         # Get comprehensive health data
         health_data = await health_orchestrator.get_comprehensive_health()
-        
+
         # Get WebSocket connection stats
         ws_stats = ws_manager.get_connection_stats()
-        
+
         # Get event broadcaster stats
         event_stats = event_broadcaster.get_stats()
-        
+
         return {
             "status": "operational",
             "service": "engine-d-orchestration",
@@ -441,7 +441,7 @@ async def engine_status() -> Dict[str, Any]:
     except Exception as e:
         return {
             "status": "error",
-            "service": "engine-d-orchestration", 
+            "service": "engine-d-orchestration",
             "error": str(e)[:100],
             "uptime_seconds": round(time.time() - STARTED_AT, 1),
             "timestamp": time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())

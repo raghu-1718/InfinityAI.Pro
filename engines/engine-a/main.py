@@ -187,7 +187,7 @@ async def get_market_data_by_symbol(symbol: str):
         except Exception as e:
             logger.error(f"Failed to get market data for {symbol}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     # Fallback: return sample data for the symbol
     sample_data = {
         "NIFTY": {
@@ -211,7 +211,7 @@ async def get_market_data_by_symbol(symbol: str):
             "previous_close": 44930.75
         }
     }
-    
+
     symbol_upper = symbol.upper()
     if symbol_upper in sample_data:
         return {

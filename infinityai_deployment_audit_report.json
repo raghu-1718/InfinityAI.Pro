@@ -1,0 +1,2953 @@
+{
+  "deployment_summary": {
+    "total_resources": 36,
+    "project_id": "infinity-ai-5ec7c",
+    "region": "us-central1",
+    "audit_timestamp": "2025-10-23T11:48:36.058225"
+  },
+  "resource_inventory": {
+    "cloud_run": {
+      "count": 19,
+      "services": [
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "analyzeImageWithRoboticsER",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "analyzeImageWithRoboticsER",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/cf52581c-db7e-4a2e-a204-c9e8ae53006a",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/analyzeImageWithRoboticsER/function-source.zip#1761208578547367",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/analyzeImageWithRoboticsER\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "4ea30b01-fd5a-4f3d-9bcd-74cf719a8dab",
+              "run.googleapis.com/urls": "[\"https://analyzeimagewithroboticser-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/analyzeImageWithRoboticsER\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T08:36:19.073245Z",
+            "generation": 1,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "analyzeimagewithroboticser",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "analyzeimagewithroboticser",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1QM6ys",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/analyzeimagewithroboticser",
+            "uid": "c88fc779-efc6-4778-9adf-a5e8ffaefa33"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "analyzeimagewithroboticser-00001-yeh"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/analyzeImageWithRoboticsER"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "analyzeImageWithRoboticsER"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 180
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:24.369915Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/analyzeimagewithroboticser/revision_name/analyzeimagewithroboticser-00001-yeh&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22analyzeimagewithroboticser%22%0Aresource.labels.revision_name%3D%22analyzeimagewithroboticser-00001-yeh%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:24.280994Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/analyzeimagewithroboticser/revision_name/analyzeimagewithroboticser-00001-yeh&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22analyzeimagewithroboticser%22%0Aresource.labels.revision_name%3D%22analyzeimagewithroboticser-00001-yeh%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:24.369915Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/analyzeimagewithroboticser/revision_name/analyzeimagewithroboticser-00001-yeh&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22analyzeimagewithroboticser%22%0Aresource.labels.revision_name%3D%22analyzeimagewithroboticser-00001-yeh%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "analyzeimagewithroboticser-00001-yeh",
+            "observedGeneration": 1
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "analyzePortfolio",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "analyzePortfolio",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/analyzePortfolio/function-source.zip#1761208568392242",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/analyzePortfolio\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "93b33a6f-d066-4f6e-bd99-47552d5ea988",
+              "run.googleapis.com/urls": "[\"https://analyzeportfolio-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/analyzePortfolio\",\"https://analyzeportfolio-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-21T16:52:06.601772Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "analyzeportfolio",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "analyzeportfolio",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1ONWIo",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/analyzeportfolio",
+            "uid": "1c6647d1-20eb-424b-a4bf-cf3c4f0e94d4"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "analyzeportfolio",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "analyzeportfolio-00005-cec"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/analyzePortfolio"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "analyzePortfolio"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://analyzeportfolio-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:16.071818Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:10.190177Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:16.028165Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "analyzeportfolio-00005-cec",
+            "latestReadyRevisionName": "analyzeportfolio-00005-cec",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "analyzeportfolio-00005-cec"
+              }
+            ],
+            "url": "https://analyzeportfolio-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getAiSignals",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getAiSignals",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getAiSignals/function-source.zip#1761208568350587",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getAiSignals\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "158606bc-eb19-4694-923a-377277ea498b",
+              "run.googleapis.com/urls": "[\"https://getaisignals-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getAiSignals\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T05:14:48.889969Z",
+            "generation": 2,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getaisignals",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getaisignals",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1OPGNo",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getaisignals",
+            "uid": "991b32ca-2353-4d84-ae6c-14fac11d5df7"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "goog-drz-cloudfunctions-id": "getaisignals",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getaisignals-00002-qih"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getAiSignals"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getAiSignals"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:16.156259Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getaisignals/revision_name/getaisignals-00002-qih&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getaisignals%22%0Aresource.labels.revision_name%3D%22getaisignals-00002-qih%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:16.071642Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getaisignals/revision_name/getaisignals-00002-qih&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getaisignals%22%0Aresource.labels.revision_name%3D%22getaisignals-00002-qih%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:16.156259Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getaisignals/revision_name/getaisignals-00002-qih&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getaisignals%22%0Aresource.labels.revision_name%3D%22getaisignals-00002-qih%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getaisignals-00002-qih",
+            "observedGeneration": 2
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getBatchAiSignals",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getBatchAiSignals",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/cf52581c-db7e-4a2e-a204-c9e8ae53006a",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getBatchAiSignals/function-source.zip#1761208578555218",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getBatchAiSignals\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "bb619ae5-3fd2-4cfb-a714-de9379799d7c",
+              "run.googleapis.com/urls": "[\"https://getbatchaisignals-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getBatchAiSignals\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T08:36:19.135480Z",
+            "generation": 1,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getbatchaisignals",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getbatchaisignals",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1Qe7gM",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getbatchaisignals",
+            "uid": "eb639741-4f42-4005-b076-c7df170d376e"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getbatchaisignals-00001-hin"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getBatchAiSignals"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getBatchAiSignals"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 180
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.559829Z",
+                "message": "Revision 'getbatchaisignals-00001-hin' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getbatchaisignals/revision_name/getbatchaisignals-00001-hin&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getbatchaisignals%22%0Aresource.labels.revision_name%3D%22getbatchaisignals-00001-hin%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.288704Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getbatchaisignals/revision_name/getbatchaisignals-00001-hin&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getbatchaisignals%22%0Aresource.labels.revision_name%3D%22getbatchaisignals-00001-hin%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.559829Z",
+                "message": "Revision 'getbatchaisignals-00001-hin' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getbatchaisignals/revision_name/getbatchaisignals-00001-hin&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getbatchaisignals%22%0Aresource.labels.revision_name%3D%22getbatchaisignals-00001-hin%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getbatchaisignals-00001-hin",
+            "observedGeneration": 1
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getDhanOverview",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getDhanOverview",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/cf52581c-db7e-4a2e-a204-c9e8ae53006a",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getDhanOverview/function-source.zip#1761208578446004",
+              "run.googleapis.com/client-name": "cli-firebase",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getDhanOverview\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "ff92bbe6-43b2-4ea8-b7b9-a585ca4fa4cb",
+              "run.googleapis.com/urls": "[\"https://getdhanoverview-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getDhanOverview\",\"https://getdhanoverview-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T05:03:09.491779Z",
+            "generation": 2,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getdhanoverview",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getdhanoverview",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1QbJ7Y",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getdhanoverview",
+            "uid": "61b6a757-d976-4bce-a1c0-04532378212b"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cli-firebase",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "getdhanoverview",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getdhanoverview-00002-jon"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getDhanOverview"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getDhanOverview"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 120
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://getdhanoverview-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.365430Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:20.137022Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.322800Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getdhanoverview-00002-jon",
+            "latestReadyRevisionName": "getdhanoverview-00002-jon",
+            "observedGeneration": 2,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "getdhanoverview-00002-jon"
+              }
+            ],
+            "url": "https://getdhanoverview-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getEngineBStatus",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getEngineBStatus",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getEngineBStatus/function-source.zip#1761208568290009",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getEngineBStatus\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "82f03096-8905-4c93-9ed4-92b0d58f55f2",
+              "run.googleapis.com/urls": "[\"https://getenginebstatus-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getEngineBStatus\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T05:15:59.690959Z",
+            "generation": 2,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getenginebstatus",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getenginebstatus",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1NzL5o",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getenginebstatus",
+            "uid": "8d6daf46-351f-4fe4-b1c4-1cf0b03c0fa7"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "goog-drz-cloudfunctions-id": "getenginebstatus",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getenginebstatus-00002-pec"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getEngineBStatus"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getEngineBStatus"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 30
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:13.945075Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getenginebstatus/revision_name/getenginebstatus-00002-pec&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getenginebstatus%22%0Aresource.labels.revision_name%3D%22getenginebstatus-00002-pec%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.313496Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getenginebstatus/revision_name/getenginebstatus-00001-wag&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getenginebstatus%22%0Aresource.labels.revision_name%3D%22getenginebstatus-00001-wag%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "Retired",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:13.945075Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getenginebstatus/revision_name/getenginebstatus-00002-pec&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getenginebstatus%22%0Aresource.labels.revision_name%3D%22getenginebstatus-00002-pec%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getenginebstatus-00002-pec",
+            "observedGeneration": 2
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getGeminiAnalysis",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getGeminiAnalysis",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getGeminiAnalysis/function-source.zip#1761208568297248",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getGeminiAnalysis\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "fad0ac8d-7886-4935-939c-ae738580c5a7",
+              "run.googleapis.com/urls": "[\"https://getgeminianalysis-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getGeminiAnalysis\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T05:16:05.531382Z",
+            "generation": 2,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getgeminianalysis",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getgeminianalysis",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1N369Y",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getgeminianalysis",
+            "uid": "8352db4a-e85f-43e5-af31-4f3f80afe7f3"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "goog-drz-cloudfunctions-id": "getgeminianalysis",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getgeminianalysis-00002-taq"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getGeminiAnalysis"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getGeminiAnalysis"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 180
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.595927Z",
+                "message": "Revision 'getgeminianalysis-00002-taq' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getgeminianalysis/revision_name/getgeminianalysis-00002-taq&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getgeminianalysis%22%0Aresource.labels.revision_name%3D%22getgeminianalysis-00002-taq%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.574994Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getgeminianalysis/revision_name/getgeminianalysis-00002-taq&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getgeminianalysis%22%0Aresource.labels.revision_name%3D%22getgeminianalysis-00002-taq%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.595927Z",
+                "message": "Revision 'getgeminianalysis-00002-taq' is not ready and cannot serve traffic. The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getgeminianalysis/revision_name/getgeminianalysis-00002-taq&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getgeminianalysis%22%0Aresource.labels.revision_name%3D%22getgeminianalysis-00002-taq%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getgeminianalysis-00002-taq",
+            "observedGeneration": 2
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "getVertexAiAnalysis",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "getVertexAiAnalysis",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/getVertexAiAnalysis/function-source.zip#1761208568346733",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getVertexAiAnalysis\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "79c0d15a-8926-44a6-b139-13ef74b0de60",
+              "run.googleapis.com/urls": "[\"https://getvertexaianalysis-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/getVertexAiAnalysis\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-23T05:16:04.176305Z",
+            "generation": 2,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "getvertexaianalysis",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "getvertexaianalysis",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1N1MB8",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/getvertexaianalysis",
+            "uid": "1e9eb987-fa04-4595-9260-a6fb217ae56b"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "0b8d08859a761a399b2eda07a8757b9f0c675217",
+                  "goog-drz-cloudfunctions-id": "getvertexaianalysis",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "getvertexaianalysis-00002-nev"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/getVertexAiAnalysis"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "getVertexAiAnalysis"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 180
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.411685Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getvertexaianalysis/revision_name/getvertexaianalysis-00002-nev&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getvertexaianalysis%22%0Aresource.labels.revision_name%3D%22getvertexaianalysis-00002-nev%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.382241Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getvertexaianalysis/revision_name/getvertexaianalysis-00002-nev&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getvertexaianalysis%22%0Aresource.labels.revision_name%3D%22getvertexaianalysis-00002-nev%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.411685Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/getvertexaianalysis/revision_name/getvertexaianalysis-00002-nev&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22getvertexaianalysis%22%0Aresource.labels.revision_name%3D%22getvertexaianalysis-00002-nev%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "getvertexaianalysis-00002-nev",
+            "observedGeneration": 2
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "run.googleapis.com/build-enable-automatic-updates": "false",
+              "run.googleapis.com/build-id": "1b0f435b-dc8c-4ef2-9dc6-8dd44b88632d",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/global/builds/1b0f435b-dc8c-4ef2-9dc6-8dd44b88632d",
+              "run.googleapis.com/client-name": "gcloud",
+              "run.googleapis.com/client-version": "544.0.0",
+              "run.googleapis.com/description": "Market Data Engine - Real-time NIFTY/BANKNIFTY data",
+              "run.googleapis.com/enable-automatic-updates": "false",
+              "run.googleapis.com/image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-a",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "c4761826-8843-4ec8-9a84-a5c80a632e18",
+              "run.googleapis.com/urls": "[\"https://infinityai-engine-a-26140490557.us-central1.run.app\",\"https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "raghu42620@gmail.com",
+              "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+            },
+            "creationTimestamp": "2025-10-20T01:07:01.596174Z",
+            "generation": 8,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1"
+            },
+            "name": "infinityai-engine-a",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBzOOELjs",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-a",
+            "uid": "c769d8e8-76e3-4920-b3d6-ce3611b9cca1"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "10",
+                  "run.googleapis.com/client-name": "gcloud",
+                  "run.googleapis.com/client-version": "544.0.0",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "client.knative.dev/nonce": "cmnqcuhlme",
+                  "run.googleapis.com/startupProbeType": "Default"
+                }
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "GOOGLE_CLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "DEPLOYMENT_TIME",
+                        "value": "2025-10-20T18:46:56Z"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/infinityai-images/engine-a:latest",
+                    "ports": [
+                      {
+                        "containerPort": 8000,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "1Gi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8000
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 300
+              }
+            },
+            "traffic": [
+              {
+                "percent": 100,
+                "revisionName": "infinityai-engine-a-00001-vmn"
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T05:41:46.420853Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T05:41:46.449715Z",
+                "reason": "Retired",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-20T13:18:33.909285Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "infinityai-engine-a-00006-hns",
+            "latestReadyRevisionName": "infinityai-engine-a-00001-vmn",
+            "observedGeneration": 8,
+            "traffic": [
+              {
+                "percent": 100,
+                "revisionName": "infinityai-engine-a-00001-vmn"
+              }
+            ],
+            "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "run.googleapis.com/build-enable-automatic-updates": "false",
+              "run.googleapis.com/build-id": "cc242d2e-ac12-483d-91ce-38efe12beeea",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/global/builds/cc242d2e-ac12-483d-91ce-38efe12beeea",
+              "run.googleapis.com/client-name": "gcloud",
+              "run.googleapis.com/client-version": "544.0.0",
+              "run.googleapis.com/description": "AI/ML Engine - Predictions and signals",
+              "run.googleapis.com/enable-automatic-updates": "false",
+              "run.googleapis.com/image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-b",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "ebcb2106-592d-4e23-b7b6-9996b75d589f",
+              "run.googleapis.com/urls": "[\"https://infinityai-engine-b-26140490557.us-central1.run.app\",\"https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "raghu42620@gmail.com",
+              "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+            },
+            "creationTimestamp": "2025-10-20T01:10:32.684549Z",
+            "generation": 6,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1"
+            },
+            "name": "infinityai-engine-b",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBzYUnyIE",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-b",
+            "uid": "942c531f-51ac-4ed9-8755-11cbc81580ad"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "10",
+                  "run.googleapis.com/client-name": "gcloud",
+                  "run.googleapis.com/client-version": "544.0.0",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "client.knative.dev/nonce": "qslvmcwwxx",
+                  "run.googleapis.com/startupProbeType": "Default"
+                }
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "GOOGLE_CLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/infinityai-images/engine-b:latest",
+                    "ports": [
+                      {
+                        "containerPort": 8000,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "2",
+                        "memory": "2Gi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8000
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 300
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T05:46:19.778619Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-b/revision_name/infinityai-engine-b-00005-47k&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-b%22%0Aresource.labels.revision_name%3D%22infinityai-engine-b-00005-47k%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T06:26:58.305796Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-b/revision_name/infinityai-engine-b-00004-ppc&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-b%22%0Aresource.labels.revision_name%3D%22infinityai-engine-b-00004-ppc%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "Retired",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T05:46:19.778619Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-b/revision_name/infinityai-engine-b-00005-47k&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-b%22%0Aresource.labels.revision_name%3D%22infinityai-engine-b-00005-47k%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "infinityai-engine-b-00005-47k",
+            "latestReadyRevisionName": "infinityai-engine-b-00003-xv8",
+            "observedGeneration": 6,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "infinityai-engine-b-00003-xv8"
+              }
+            ],
+            "url": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "run.googleapis.com/build-enable-automatic-updates": "false",
+              "run.googleapis.com/build-id": "e5f6e738-4125-4596-a16d-546d98a9cbe8",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/global/builds/e5f6e738-4125-4596-a16d-546d98a9cbe8",
+              "run.googleapis.com/client-name": "gcloud",
+              "run.googleapis.com/client-version": "544.0.0",
+              "run.googleapis.com/description": "Trading Engine - Secure OAuth & order execution",
+              "run.googleapis.com/enable-automatic-updates": "false",
+              "run.googleapis.com/image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-c-execution",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "83a447d0-a55d-400a-9cf1-295117cf6458",
+              "run.googleapis.com/urls": "[\"https://infinityai-engine-c-execution-26140490557.us-central1.run.app\",\"https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "raghu42620@gmail.com",
+              "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+            },
+            "creationTimestamp": "2025-10-20T01:15:43.835588Z",
+            "generation": 6,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1"
+            },
+            "name": "infinityai-engine-c-execution",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBzYUoNbQ",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-c-execution",
+            "uid": "dc5d45b7-3f44-4226-8fab-76b75b1b5015"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "10",
+                  "run.googleapis.com/client-name": "gcloud",
+                  "run.googleapis.com/client-version": "544.0.0",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "client.knative.dev/nonce": "niyiphiquf",
+                  "run.googleapis.com/startupProbeType": "Default"
+                }
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "GOOGLE_CLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/infinityai-images/engine-c-execution:latest",
+                    "ports": [
+                      {
+                        "containerPort": 8000,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "1Gi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8000
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 300
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T05:46:44.420515Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-c-execution/revision_name/infinityai-engine-c-execution-00005-xfm&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-c-execution%22%0Aresource.labels.revision_name%3D%22infinityai-engine-c-execution-00005-xfm%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T06:26:58.337696Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-c-execution/revision_name/infinityai-engine-c-execution-00004-gc8&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-c-execution%22%0Aresource.labels.revision_name%3D%22infinityai-engine-c-execution-00004-gc8%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "Retired",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T05:46:44.420515Z",
+                "message": "The user-provided container failed to start and listen on the port defined provided by the PORT=8000 environment variable within the allocated timeout. This can happen when the container port is misconfigured or if the timeout is too short. The health check timeout can be extended. Logs for this revision might contain more information.\n\nLogs URL: https://console.cloud.google.com/logs/viewer?project=infinity-ai-5ec7c&resource=cloud_run_revision/service_name/infinityai-engine-c-execution/revision_name/infinityai-engine-c-execution-00005-xfm&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22infinityai-engine-c-execution%22%0Aresource.labels.revision_name%3D%22infinityai-engine-c-execution-00005-xfm%22 \nFor more troubleshooting guidance, see https://cloud.google.com/run/docs/troubleshooting#container-failed-to-start",
+                "reason": "HealthCheckContainerError",
+                "status": "False",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "infinityai-engine-c-execution-00005-xfm",
+            "latestReadyRevisionName": "infinityai-engine-c-execution-00003-mvj",
+            "observedGeneration": 6,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "infinityai-engine-c-execution-00003-mvj"
+              }
+            ],
+            "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "run.googleapis.com/build-enable-automatic-updates": "false",
+              "run.googleapis.com/build-id": "d572fdf9-cc09-4beb-8762-26adb35cb085",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/global/builds/d572fdf9-cc09-4beb-8762-26adb35cb085",
+              "run.googleapis.com/client-name": "gcloud",
+              "run.googleapis.com/client-version": "544.0.0",
+              "run.googleapis.com/description": "Chatbot Engine - Multi-engine orchestration",
+              "run.googleapis.com/enable-automatic-updates": "false",
+              "run.googleapis.com/image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-d",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "edf9f174-4329-4b0d-af23-15b9addf3b2b",
+              "run.googleapis.com/urls": "[\"https://infinityai-engine-d-26140490557.us-central1.run.app\",\"https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "raghu42620@gmail.com",
+              "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+            },
+            "creationTimestamp": "2025-10-20T01:18:00.597258Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1"
+            },
+            "name": "infinityai-engine-d",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBzOEKptk",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-d",
+            "uid": "477a9a6e-07bb-4cec-a5c1-c04667e4cdc4"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "10",
+                  "run.googleapis.com/client-name": "gcloud",
+                  "run.googleapis.com/client-version": "544.0.0",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "client.knative.dev/nonce": "iucqqteisv",
+                  "run.googleapis.com/startupProbeType": "Default"
+                }
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "ENGINE_A_URL",
+                        "value": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app"
+                      },
+                      {
+                        "name": "ENGINE_B_URL",
+                        "value": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app"
+                      },
+                      {
+                        "name": "ENGINE_C_URL",
+                        "value": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/infinityai-images/engine-d:latest",
+                    "ports": [
+                      {
+                        "containerPort": 8000,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "1Gi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8000
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 300
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T05:41:04.969433Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T05:39:48.864523Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T05:41:04.924338Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "infinityai-engine-d-00004-hxz",
+            "latestReadyRevisionName": "infinityai-engine-d-00004-hxz",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "infinityai-engine-d-00004-hxz"
+              }
+            ],
+            "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "run.googleapis.com/build-enable-automatic-updates": "false",
+              "run.googleapis.com/build-id": "62fa7193-eff4-46c5-8cc0-41ec3f2f62b1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/global/builds/62fa7193-eff4-46c5-8cc0-41ec3f2f62b1",
+              "run.googleapis.com/client-name": "gcloud",
+              "run.googleapis.com/client-version": "544.0.0",
+              "run.googleapis.com/description": "Dashboard Frontend - Real-time UI & data aggregation",
+              "run.googleapis.com/enable-automatic-updates": "false",
+              "run.googleapis.com/image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-frontend",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "ad2c277e-6ad7-4663-bbe9-51fe881641c4",
+              "run.googleapis.com/urls": "[\"https://infinityai-frontend-26140490557.us-central1.run.app\",\"https://infinityai-frontend-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "raghu42620@gmail.com",
+              "serving.knative.dev/lastModifier": "github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-19T22:16:23.833298Z",
+            "generation": 39,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1"
+            },
+            "name": "infinityai-frontend",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBzjeCxtE",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-frontend",
+            "uid": "4ad2ecee-69b5-4ae9-b9ea-932f803e375a"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "10",
+                  "run.googleapis.com/client-name": "gcloud",
+                  "run.googleapis.com/client-version": "544.0.0",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "client.knative.dev/nonce": "qxiztrteau",
+                  "run.googleapis.com/startupProbeType": "Default"
+                }
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "GOOGLE_CLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      }
+                    ],
+                    "image": "gcr.io/infinity-ai-5ec7c/infinityai-frontend:latest",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "1Gi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 300
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T07:16:50.649809Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T07:16:41.129890Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T07:16:50.613055Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "infinityai-frontend-00039-vpb",
+            "latestReadyRevisionName": "infinityai-frontend-00039-vpb",
+            "observedGeneration": 39,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "infinityai-frontend-00039-vpb"
+              }
+            ],
+            "url": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "saveDhanCredentials",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "saveDhanCredentials",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/saveDhanCredentials/function-source.zip#1761208568410571",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/saveDhanCredentials\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "9757fed1-5fef-4eda-9e64-f274a582d2d4",
+              "run.googleapis.com/urls": "[\"https://savedhancredentials-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/saveDhanCredentials\",\"https://savedhancredentials-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-21T16:52:07.297664Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "savedhancredentials",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "savedhancredentials",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1OHPvc",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/savedhancredentials",
+            "uid": "fa05124d-7f64-4c6c-8e8f-5ec72cb39d34"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "savedhancredentials",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "savedhancredentials-00005-hun"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/saveDhanCredentials"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "saveDhanCredentials"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://savedhancredentials-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.672055Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.375106Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.631726Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "savedhancredentials-00005-hun",
+            "latestReadyRevisionName": "savedhancredentials-00005-hun",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "savedhancredentials-00005-hun"
+              }
+            ],
+            "url": "https://savedhancredentials-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "startTrading",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "startTrading",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/cf52581c-db7e-4a2e-a204-c9e8ae53006a",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/startTrading/function-source.zip#1761208508144632",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/startTrading\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "c7951a44-84b5-44ff-9e27-2674ac37068b",
+              "run.googleapis.com/urls": "[\"https://starttrading-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/startTrading\",\"https://starttrading-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-21T16:52:01.051412Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "starttrading",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "starttrading",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1OCJlQ",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/starttrading",
+            "uid": "5557c6ee-caa7-4901-8386-227479d1524b"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "starttrading",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "starttrading-00005-das"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/startTrading"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "startTrading"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 120
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://starttrading-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.338068Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:10.010844Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.302258Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "starttrading-00005-das",
+            "latestReadyRevisionName": "starttrading-00005-das",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "starttrading-00005-das"
+              }
+            ],
+            "url": "https://starttrading-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "stopTrading",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "stopTrading",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/stopTrading/function-source.zip#1761208568379638",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/stopTrading\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "e7c16ef3-9a44-45ee-b615-4782c48bcc61",
+              "run.googleapis.com/urls": "[\"https://stoptrading-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/stopTrading\",\"https://stoptrading-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-21T16:52:06.650645Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "stoptrading",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "stoptrading",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1OG/F0",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/stoptrading",
+            "uid": "e8f69175-2e14-4dc2-ba08-f4bf1507d5b8"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "stoptrading",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "stoptrading-00005-yow"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/stopTrading"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "stopTrading"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://stoptrading-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.655005Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:10.188815Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.614682Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "stoptrading-00005-yow",
+            "latestReadyRevisionName": "stoptrading-00005-yow",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "stoptrading-00005-yow"
+              }
+            ],
+            "url": "https://stoptrading-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "submitDhanCredentials",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs18",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "submitDhanCredentials",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/92e2d20d-7e94-4ba3-84b8-3a8753006500",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/client-name": "cli-firebase--project-idx",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/submitDhanCredentials\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "6279698b-9528-4f09-9022-429d8d2f318b",
+              "run.googleapis.com/urls": "[\"https://submitdhancredentials-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/submitDhanCredentials\",\"https://submitdhancredentials-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-20T19:09:42.693500Z",
+            "generation": 1,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "goog-cloudfunctions-runtime": "nodejs18",
+              "goog-drz-cloudfunctions-id": "submitdhancredentials",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "submitdhancredentials",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBm9exYOk",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/submitdhancredentials",
+            "uid": "cd6870ef-23dc-4b63-a6c0-e0dfb02b0927"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "12",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs18\"}",
+                  "run.googleapis.com/client-name": "cli-firebase--project-idx",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "submitdhancredentials-00001-jaz"
+              },
+              "spec": {
+                "containerConcurrency": 1,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/functions/submitDhanCredentials"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "0.1666",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "infinity-ai-5ec7c@appspot.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://submitdhancredentials-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-20T19:10:54.726377Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-20T19:09:47.244976Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-20T19:10:54.677914Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "submitdhancredentials-00001-jaz",
+            "latestReadyRevisionName": "submitdhancredentials-00001-jaz",
+            "observedGeneration": 1,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "submitdhancredentials-00001-jaz"
+              }
+            ],
+            "url": "https://submitdhancredentials-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "submitDhanCredentialsV2",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "submitDhanCredentialsV2",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/07381673-eda8-46af-8096-bc6ef893481b",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/submitDhanCredentialsV2/function-source.zip#1761208508269994",
+              "run.googleapis.com/client-name": "cli-firebase",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/submitDhanCredentialsV2\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "2868aab0-3cee-49dd-bd5e-685fb11b8f79",
+              "run.googleapis.com/urls": "[\"https://submitdhancredentialsv2-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/submitDhanCredentialsV2\",\"https://submitdhancredentialsv2-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-20T22:27:25.157843Z",
+            "generation": 6,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "submitdhancredentialsv2",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "submitdhancredentialsv2",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1N+Qqw",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/submitdhancredentialsv2",
+            "uid": "a47676bb-8ae0-461c-a332-ff3deb0a1ac7"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cli-firebase",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "submitdhancredentialsv2",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "submitdhancredentialsv2-00006-pic"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/submitDhanCredentialsV2"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "submitDhanCredentialsV2"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__submit_dhan_credentials_v2:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "256Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 60
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://submitdhancredentialsv2-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.083180Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:14.622110Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:15.027135Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "submitdhancredentialsv2-00006-pic",
+            "latestReadyRevisionName": "submitdhancredentialsv2-00006-pic",
+            "observedGeneration": 6,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "submitdhancredentialsv2-00006-pic"
+              }
+            ],
+            "url": "https://submitdhancredentialsv2-ckxt6xvshq-uc.a.run.app"
+          }
+        },
+        {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "metadata": {
+            "annotations": {
+              "cloudfunctions.googleapis.com/function-id": "syncHoldings",
+              "run.googleapis.com/build-base-image": "us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20",
+              "run.googleapis.com/build-enable-automatic-updates": "true",
+              "run.googleapis.com/build-environment-variables": "{\"GOOGLE_NODE_RUN_SCRIPTS\":\"\"}",
+              "run.googleapis.com/build-function-target": "syncHoldings",
+              "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+              "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/cf52581c-db7e-4a2e-a204-c9e8ae53006a",
+              "run.googleapis.com/build-service-account": "projects/infinity-ai-5ec7c/serviceAccounts/26140490557-compute@developer.gserviceaccount.com",
+              "run.googleapis.com/build-source-location": "gs://gcf-v2-sources-26140490557-us-central1/syncHoldings/function-source.zip#1761208578355800",
+              "run.googleapis.com/client-name": "cloudfunctions",
+              "run.googleapis.com/custom-audiences": "[\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/syncHoldings\"]",
+              "run.googleapis.com/ingress": "all",
+              "run.googleapis.com/ingress-status": "all",
+              "run.googleapis.com/operation-id": "fe675420-28b3-4b0f-ad70-7c8f4cdb42dd",
+              "run.googleapis.com/urls": "[\"https://syncholdings-26140490557.us-central1.run.app\",\"https://us-central1-infinity-ai-5ec7c.cloudfunctions.net/syncHoldings\",\"https://syncholdings-ckxt6xvshq-uc.a.run.app\"]",
+              "serving.knative.dev/creator": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+              "serving.knative.dev/lastModifier": "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+            },
+            "creationTimestamp": "2025-10-21T16:52:07.878689Z",
+            "generation": 5,
+            "labels": {
+              "cloud.googleapis.com/location": "us-central1",
+              "deployment-callable": "true",
+              "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+              "goog-cloudfunctions-runtime": "nodejs20",
+              "goog-drz-cloudfunctions-id": "syncholdings",
+              "goog-drz-cloudfunctions-location": "us-central1",
+              "goog-managed-by": "cloudfunctions"
+            },
+            "name": "syncholdings",
+            "namespace": "26140490557",
+            "resourceVersion": "AAZBz1QfdIw",
+            "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/syncholdings",
+            "uid": "080c28f7-3fef-45a3-8512-b2de733a715b"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "annotations": {
+                  "autoscaling.knative.dev/maxScale": "3",
+                  "cloudfunctions.googleapis.com/trigger-type": "HTTP_TRIGGER",
+                  "run.googleapis.com/base-images": "{\"worker\":\"us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20\"}",
+                  "run.googleapis.com/client-name": "cloudfunctions",
+                  "run.googleapis.com/secrets": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648:projects/infinity-ai-5ec7c/secrets/ENCRYPTION_KEY",
+                  "run.googleapis.com/startup-cpu-boost": "true"
+                },
+                "labels": {
+                  "deployment-callable": "true",
+                  "firebase-functions-hash": "4ed028846d0a3e9694ea7215c9dc4aed6211fdd1",
+                  "goog-drz-cloudfunctions-id": "syncholdings",
+                  "goog-drz-cloudfunctions-location": "us-central1",
+                  "run.googleapis.com/startupProbeType": "Default"
+                },
+                "name": "syncholdings-00005-ziv"
+              },
+              "spec": {
+                "containerConcurrency": 80,
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "FIREBASE_CONFIG",
+                        "value": "{\"projectId\":\"infinity-ai-5ec7c\",\"storageBucket\":\"infinity-ai-5ec7c.firebasestorage.app\"}"
+                      },
+                      {
+                        "name": "GCLOUD_PROJECT",
+                        "value": "infinity-ai-5ec7c"
+                      },
+                      {
+                        "name": "EVENTARC_CLOUD_EVENT_SOURCE",
+                        "value": "projects/infinity-ai-5ec7c/locations/us-central1/services/syncHoldings"
+                      },
+                      {
+                        "name": "FUNCTION_TARGET",
+                        "value": "syncHoldings"
+                      },
+                      {
+                        "name": "LOG_EXECUTION_ID",
+                        "value": "true"
+                      },
+                      {
+                        "name": "FUNCTION_SIGNATURE_TYPE",
+                        "value": "http"
+                      },
+                      {
+                        "name": "ENCRYPTION_KEY",
+                        "valueFrom": {
+                          "secretKeyRef": {
+                            "key": "1",
+                            "name": "secret-7abeecf9-e0d2-3832-81fa-f00f33920648"
+                          }
+                        }
+                      }
+                    ],
+                    "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/gcf-artifacts/infinity--ai--5ec7c__us--central1__start_trading:version_1",
+                    "name": "worker",
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "name": "http1"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi"
+                      }
+                    },
+                    "startupProbe": {
+                      "failureThreshold": 1,
+                      "periodSeconds": 240,
+                      "tcpSocket": {
+                        "port": 8080
+                      },
+                      "timeoutSeconds": 240
+                    }
+                  }
+                ],
+                "runtimeClassName": "run.googleapis.com/linux-base-image-update",
+                "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+                "timeoutSeconds": 120
+              }
+            },
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100
+              }
+            ]
+          },
+          "status": {
+            "address": {
+              "url": "https://syncholdings-ckxt6xvshq-uc.a.run.app"
+            },
+            "conditions": [
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.647244Z",
+                "status": "True",
+                "type": "Ready"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:20.045960Z",
+                "status": "True",
+                "type": "ConfigurationsReady"
+              },
+              {
+                "lastTransitionTime": "2025-10-23T08:36:25.610485Z",
+                "status": "True",
+                "type": "RoutesReady"
+              }
+            ],
+            "latestCreatedRevisionName": "syncholdings-00005-ziv",
+            "latestReadyRevisionName": "syncholdings-00005-ziv",
+            "observedGeneration": 5,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "percent": 100,
+                "revisionName": "syncholdings-00005-ziv"
+              }
+            ],
+            "url": "https://syncholdings-ckxt6xvshq-uc.a.run.app"
+          }
+        }
+      ]
+    },
+    "firestore": {
+      "indexes": "{\n  \"indexes\": [],\n  \"fieldOverrides\": []\n}",
+      "status": "active"
+    },
+    "secrets": {
+      "count": 17,
+      "secrets": [
+        "ENCRYPTION_KEY",
+        "GEMINI_API_KEY",
+        "SERVICE_ACCOUNT_INFINITY_AI_5EC7C",
+        "dhan-access-token",
+        "dhan-api-key",
+        "dhan-api-secret",
+        "dhan-client-id",
+        "firebase-admin-sdk",
+        "firebase-deploy-token",
+        "gemini-api-key",
+        "gemini-api-key-primary",
+        "gemini-api-key-secondary",
+        "huggingface-token",
+        "telegram-bot-token",
+        "telegram-chat-id",
+        "trading-engine-secret",
+        "webhook-verification-token"
+      ]
+    },
+    "iam": {
+      "bindings_count": 44,
+      "service_accounts": [
+        "ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-artifactregistry.iam.gserviceaccount.com",
+        "26140490557@cloudbuild.gserviceaccount.com",
+        "firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "ext-firestore-bigquery-export@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-cloudaicompanion.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-cloudbuild.iam.gserviceaccount.com",
+        "service-26140490557@gcf-admin-robot.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-cloudtasks.iam.gserviceaccount.com",
+        "service-26140490557@compute-system.iam.gserviceaccount.com",
+        "service-26140490557@container-analysis.iam.gserviceaccount.com",
+        "service-26140490557@containerregistry.iam.gserviceaccount.com",
+        "service-26140490557@dataproc-accounts.iam.gserviceaccount.com",
+        "26140490557-compute@developer.gserviceaccount.com",
+        "26140490557@cloudservices.gserviceaccount.com",
+        "infinity-ai-5ec7c@appspot.gserviceaccount.com",
+        "service-26140490557@gcp-sa-eventarc.iam.gserviceaccount.com",
+        "firebase-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-firebase.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-firebasemods.iam.gserviceaccount.com",
+        "service-26140490557@firebase-rules.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-firebasestorage.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-firestore.iam.gserviceaccount.com",
+        "service-26140490557@gcp-sa-pubsub.iam.gserviceaccount.com",
+        "service-26140490557@cloud-ml.google.com.iam.gserviceaccount.com",
+        "service-26140490557@serverless-robot-prod.iam.gserviceaccount.com",
+        "github-actions-secrets@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "573866363639@cloudbuild.gserviceaccount.com"
+      ]
+    }
+  },
+  "recommendations": []
+}
