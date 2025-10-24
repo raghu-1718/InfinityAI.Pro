@@ -154,6 +154,7 @@ export const getAiSignals = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
+    cpu: 0.25, // Reduced CPU to 0.25 to optimize quota usage
   },
   async (request) => {
     if (!request.auth) {
@@ -283,6 +284,7 @@ export const getGeminiAnalysis = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 180,
+    cpu: 0.25, // Reduced CPU to 0.25 to optimize quota usage
   },
   async (request) => {
     if (!request.auth) {

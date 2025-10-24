@@ -151,6 +151,7 @@ exports.getAiSignals = (0, https_1.onCall)({
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
+    cpu: 0.25, // Reduced CPU to 0.25 to optimize quota usage
 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
@@ -261,6 +262,7 @@ exports.getGeminiAnalysis = (0, https_1.onCall)({
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 180,
+    cpu: 0.25, // Reduced CPU to 0.25 to optimize quota usage
 }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "User must be logged in.");

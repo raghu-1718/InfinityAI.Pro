@@ -188,6 +188,7 @@ export const stopTrading = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 60,
+    cpu: 0.25, // Reduced CPU to 0.25 to optimize quota usage
     // Removed secrets configuration to avoid deployment validation issues
     // ENCRYPTION_KEY will be provided via environment variable instead
   },
