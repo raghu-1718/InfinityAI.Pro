@@ -89,7 +89,7 @@ def analyze_all_workflows() -> Dict:
         "total_workflows": len(workflows),
         "deployment_workflows": sum(1 for w in workflows if w.get("deploys_to_gcp", False)),
         "test_workflows": sum(1 for w in workflows if w.get("runs_tests", False)),
-        "workflows_with_secrets": sum(1 for w in workflows if w.get("uses_secrets", False)),
+        "workflows_with_credentials": sum(1 for w in workflows if w.get("uses_secrets", False)),
         "workflow_details": workflows
     }
     
@@ -112,10 +112,10 @@ def generate_workflow_report():
     print(f"  Total Workflows: {analysis['total_workflows']}")
     print(f"  Deployment Workflows: {analysis['deployment_workflows']}")
     print(f"  Test Workflows: {analysis['test_workflows']}")
-    print(f"  Workflows using Secrets: {analysis['workflows_with_secrets']}")
+    print(f"  Workflows with GitHub Credentials: {analysis['workflows_with_credentials']}")
     
     print("\n📋 Workflow Details:\n")
-    print(f"{'Workflow Name':<40} {'Jobs':<6} {'GCP':<5} {'Tests':<6} {'Secrets':<8}")
+    print(f"{'Workflow Name':<40} {'Jobs':<6} {'GCP':<5} {'Tests':<6} {'HasCreds':<10}")
     print("-" * 80)
     
     for workflow in analysis["workflow_details"]:
@@ -127,9 +127,9 @@ def generate_workflow_report():
         jobs = len(workflow["jobs"])
         gcp = "✅" if workflow["deploys_to_gcp"] else "❌"
         tests = "✅" if workflow["runs_tests"] else "❌"
-        secrets = "✅" if workflow["uses_secrets"] else "❌"
+        has_creds = "✅" if workflow["uses_secrets"] else "❌"
         
-        print(f"{name:<40} {jobs:<6} {gcp:<5} {tests:<6} {secrets:<8}")
+        print(f"{name:<40} {jobs:<6} {gcp:<5} {tests:<6} {has_creds:<10}")
     
     print("\n📁 Detailed Workflow Information:\n")
     
@@ -151,7 +151,7 @@ def generate_workflow_report():
         if workflow["runs_tests"]:
             features.append("Testing")
         if workflow["uses_secrets"]:
-            features.append("Uses Secrets")
+            features.append("Uses GitHub Credentials")
         
         if features:
             print(f"   Features: {', '.join(features)}")
@@ -172,8 +172,8 @@ def generate_workflow_report():
     if analysis["deployment_workflows"] < 5:
         print("  ℹ️  Limited deployment workflows. Current setup looks minimal.")
     
-    if analysis["workflows_with_secrets"] > 0:
-        print(f"  ✅ {analysis['workflows_with_secrets']} workflows properly use GitHub Secrets.")
+    if analysis["workflows_with_credentials"] > 0:
+        print(f"  ✅ {analysis['workflows_with_credentials']} workflows properly use GitHub credential storage.")
 
 
 if __name__ == "__main__":
