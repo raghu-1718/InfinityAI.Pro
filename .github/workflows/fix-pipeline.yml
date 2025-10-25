@@ -104,19 +104,23 @@ jobs:
           # Grant required roles
           gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
             --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/run.admin"
+            --role="roles/run.admin" \
+            --condition=None
 
           gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
             --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/iam.serviceAccountUser"
+            --role="roles/iam.serviceAccountUser" \
+            --condition=None
 
           gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
             --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/storage.objectViewer"
+            --role="roles/storage.objectViewer" \
+            --condition=None
 
           gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
             --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/secretmanager.secretAccessor"
+            --role="roles/secretmanager.secretAccessor" \
+            --condition=None
 
       - name: Enable Required APIs
         run: |
