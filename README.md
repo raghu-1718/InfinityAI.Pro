@@ -163,28 +163,12 @@ firebase deploy --only functions
 - **Tech**: Python, FastAPI, OAuth 2.0, Google Secret Manager.
 
 ### 💬 Engine D - AI Chatbot Orchestrator
-- **Purpose**: Natural language interface and multi-engine orchestration.
-- **Tech**: Python, FastAPI, NLP libraries.
-
----
 
 ## 📞 Support & Contact
-
-- **🌐 Website**: https://infinityai.pro
-- **📧 Support**: support@infinityai.pro
-- **🐛 Issues**: GitHub Issues section
 
 ---
 
 ## 🚀 **Engine Specifications**
-
-### **🔵 Engine A - Market Data Ingestion**
-**Purpose**: Real-time market data collection and technical analysis
-
-**Technology Stack**:
-- Python FastAPI with asyncio
-- Google Cloud Run serverless
-- Real-time WebSocket connections
 - Pandas for data processing
 
 **Core Features**:

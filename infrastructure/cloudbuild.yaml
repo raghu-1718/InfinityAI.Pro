@@ -20,7 +20,7 @@ steps:
   args: ['run', 'deploy', 'infinityai-engine-a', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-a', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
-  args: ['run', 'deploy', 'infinityai-engine-b', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-b', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+  args: ['run', 'deploy', 'infinityai-engine-b', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-b', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated', '--memory=2Gi', '--cpu=2', '--timeout=120', '--concurrency=80']
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args: ['run', 'deploy', 'infinityai-engine-c-execution', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']

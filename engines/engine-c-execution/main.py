@@ -133,7 +133,7 @@ def get_secret(secret_id: str) -> str:
     if not GOOGLE_CLOUD_AVAILABLE:
         # Fallback to environment variables
         return os.getenv(secret_id.upper().replace('-', '_'), '')
-    
+
     try:
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/latest"
@@ -148,7 +148,7 @@ def sanitize_input(text: str) -> str:
     """Sanitize input to prevent XSS and injection attacks"""
     if not text:
         return ""
-    
+
     # Remove HTML tags and scripts
     try:
         cleaned = bleach.clean(str(text), tags=[], attributes={}, strip=True)
@@ -160,7 +160,7 @@ def sanitize_input(text: str) -> str:
                   .replace(">", "&gt;")
                   .replace('"', "&quot;")
                   .replace("'", "&#x27;"))
-    
+
     # Remove SQL injection patterns
     sql_patterns = [
         r'union\s+select',
@@ -175,10 +175,10 @@ def sanitize_input(text: str) -> str:
         r'--',
         r'/\*.*\*/'
     ]
-    
+
     for pattern in sql_patterns:
         cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
-    
+
     # Limit length to prevent DoS
     return cleaned[:1000]
 
@@ -186,7 +186,7 @@ def validate_symbol(symbol: str) -> bool:
     """Validate trading symbol"""
     if not symbol:
         return False
-    
+
     # Allow only alphanumeric and basic punctuation
     pattern = r'^[A-Z0-9._-]+$'
     return bool(re.match(pattern, symbol.upper())) and len(symbol) <= 20
@@ -276,7 +276,7 @@ class TradeExecutionService:
                 self.dhan_api_secret = self.dhan_api_secret or 'demo-secret'
             else:
                 raise ValueError("❌ CRITICAL: Dhan credentials not found and demo mode disabled. Configure secrets or enable demo mode.")
-        
+
         self.base_url = "https://api.dhan.co/v2"
 
         # OAuth configuration
@@ -285,34 +285,34 @@ class TradeExecutionService:
         self.redirect_uri = self.cfg.get('dhan', {}).get('redirect_uri', "https://infinityai.pro/auth/dhan/callback")
         self.postback_uri = self.cfg.get('dhan', {}).get('postback_uri', "https://infinityai.pro/api/webhooks/dhan")
         self.oauth_scopes = self.cfg.get('dhan', {}).get('scopes', ['trade', 'funds', 'holdings', 'positions'])
-        
+
         self.headers = {
             "access-token": self.dhan_token,
             "client-id": self.dhan_client_id,
             "Content-Type": "application/json"
         }
-        
+
         self.rt_headers = {
             "x-api-key": self.dhan_api_key,
             "x-api-secret": self.dhan_api_secret,
             "client-id": self.dhan_client_id
         }
-        
+
         # Risk management parameters
         self.max_position_size = 100000  # Max position size in rupees
         self.max_daily_loss = 50000      # Max daily loss limit
         self.max_open_positions = 10     # Max open positions
-        
+
         # In-memory storage (in production, use database)
         self.orders: Dict[str, TradeOrder] = {}
         self.positions: Dict[str, Position] = {}
         self.daily_pnl = 0.0
         # Disable execution in demo mode
         self.execution_enabled = all([self.dhan_token, self.dhan_client_id, self.dhan_api_key, self.dhan_api_secret])
-        
+
         # Kill switch
         self.kill_switch_active = False
-        
+
         logger.info("🎯 Engine C - Trade Execution Service Initialized")
 
     def get_latest_token_from_secret(self) -> str:
@@ -327,21 +327,21 @@ class TradeExecutionService:
         """Update in-memory token and headers safely."""
         self.dhan_token = token
         self.headers["access-token"] = token
-    
+
     async def validate_api_key(self, token: str) -> bool:
         """Validate API access token"""
         # In production, implement proper token validation
         return token == "valid_api_key"
-    
+
     def generate_order_id(self) -> str:
         """Generate unique order ID"""
         return f"ORD_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-    
+
     async def perform_risk_checks(self, symbol: str, quantity: int, price: float, transaction_type: TransactionType) -> RiskCheck:
         """Perform comprehensive risk checks"""
         warnings: List[str] = []
         risk_score = 0.0
-        
+
         # Check kill switch
         if self.kill_switch_active:
             return RiskCheck(
@@ -351,42 +351,42 @@ class TradeExecutionService:
                 max_position_size=0,
                 current_exposure=0.0
             )
-        
+
         # Calculate position value
         position_value = quantity * price
-        
+
         # Check maximum position size
         if position_value > self.max_position_size:
             warnings.append(f"Position size exceeds limit (₹{position_value:,.2f} > ₹{self.max_position_size:,.2f})")
             risk_score += 0.3
-        
+
         # Check daily loss limit
         if self.daily_pnl < -self.max_daily_loss:
             warnings.append(f"Daily loss limit exceeded (₹{self.daily_pnl:,.2f})")
             risk_score += 0.5
-        
+
         # Check open positions count
         if len(self.positions) >= self.max_open_positions:
             warnings.append(f"Maximum open positions reached ({len(self.positions)})")
             risk_score += 0.2
-        
+
         # Calculate current exposure
         current_exposure = sum(
             pos.quantity * float(pos.current_price or 0.0)
             for pos in self.positions.values()
         )
-        
+
         # Check total exposure
         total_exposure = current_exposure + position_value
         max_total_exposure = self.max_position_size * 5  # 5x leverage
-        
+
         if total_exposure > max_total_exposure:
             warnings.append(f"Total exposure limit exceeded")
             risk_score += 0.4
-        
+
         # Risk assessment
         passed = risk_score < 0.7 and len(warnings) == 0
-        
+
         return RiskCheck(
             passed=passed,
             risk_score=risk_score,
@@ -394,7 +394,7 @@ class TradeExecutionService:
             max_position_size=self.max_position_size,
             current_exposure=current_exposure
         )
-    
+
     async def execute_order_with_dhan(self, order: TradeOrder) -> Dict[str, Any]:
         """Execute order through Dhan API"""
         try:
@@ -413,14 +413,14 @@ class TradeExecutionService:
                 "price": str(order.price) if order.order_type != OrderType.MARKET else "0",
                 "afterMarketOrderFlag": "false"
             }
-            
+
             # Execute order
             url = f"{self.base_url}/orders"
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=self.headers, json=payload) as response:
                     response_data = await response.json()
-                    
+
                     if response.status == 200 and response_data.get('status') == 'success':
                         return {
                             'success': True,
@@ -433,18 +433,18 @@ class TradeExecutionService:
                             'error': response_data.get('message', 'Unknown error'),
                             'details': response_data
                         }
-                        
+
         except Exception as e:
             logger.error(f"Error executing order: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
-    
+
     async def place_order(self, symbol: str, quantity: int, price: float, order_type: OrderType, transaction_type: TransactionType) -> TradeOrder:
         """Place a new trade order"""
         order_id = self.generate_order_id()
-        
+
         # Create order object
         order = TradeOrder(
             order_id=order_id,
@@ -456,31 +456,31 @@ class TradeExecutionService:
             status=OrderStatus.PENDING,
             created_at=datetime.now()
         )
-        
+
         try:
             # Perform risk checks
             risk_check = await self.perform_risk_checks(symbol, quantity, price, transaction_type)
-            
+
             if not risk_check.passed:
                 order.status = OrderStatus.REJECTED
                 order.error_message = f"Risk check failed: {', '.join(risk_check.warnings)}"
                 self.orders[order_id] = order
                 logger.warning(f"Order {order_id} rejected: {order.error_message}")
                 return order
-            
+
             # Execute order if execution is enabled
             if self.execution_enabled:
                 execution_result = await self.execute_order_with_dhan(order)
-                
+
                 if execution_result['success']:
                     order.status = OrderStatus.EXECUTED
                     order.executed_at = datetime.now()
                     order.execution_price = float(price)  # In production, get actual execution price
                     order.fees = float(quantity) * float(price) * 0.001  # Simplified fee calculation
-                    
+
                     # Update positions
                     await self.update_positions(order)
-                    
+
                     logger.info(f"✅ Order {order_id} executed: {transaction_type.value} {quantity} {symbol} @ ₹{price}")
                 else:
                     order.status = OrderStatus.REJECTED
@@ -489,7 +489,7 @@ class TradeExecutionService:
             else:
                 order.status = OrderStatus.PENDING
                 logger.info(f"📋 Order {order_id} placed (execution disabled)")
-            
+
             # Store order
             self.orders[order_id] = order
             # Fire-and-forget broadcast to Engine D
@@ -517,21 +517,21 @@ class TradeExecutionService:
             except Exception:
                 pass
             return order
-            
+
         except Exception as e:
             order.status = OrderStatus.REJECTED
             order.error_message = str(e)
             self.orders[order_id] = order
             logger.error(f"Error placing order {order_id}: {e}")
             return order
-    
+
     async def update_positions(self, executed_order: TradeOrder) -> None:
         """Update position after order execution"""
         symbol = executed_order.symbol
-        
+
         if symbol in self.positions:
             position = self.positions[symbol]
-            
+
             if executed_order.transaction_type == TransactionType.BUY:
                 # Add to position
                 avg_price = float(position.average_price)
@@ -559,7 +559,7 @@ class TradeExecutionService:
                     realized_pnl=0.0,
                     entry_time=executed_order.executed_at or datetime.now()
                 )
-    
+
     async def get_account_info(self) -> Dict[str, Any]:
         """Get account information from Dhan"""
         try:
@@ -581,16 +581,16 @@ class TradeExecutionService:
                     except Exception:
                         err_text = ""
                     return {"error": "Failed to fetch account info", "status": response.status, "body": err_text[:500]}
-                        
+
         except Exception as e:
             logger.error(f"Error fetching account info: {e}")
             return {"error": str(e)}
-    
+
     def activate_kill_switch(self, reason: str = "Manual activation"):
         """Activate kill switch to stop all trading"""
         self.kill_switch_active = True
         logger.critical(f"🚨 KILL SWITCH ACTIVATED: {reason}")
-    
+
     def deactivate_kill_switch(self):
         """Deactivate kill switch"""
         self.kill_switch_active = False
@@ -727,6 +727,18 @@ async def health_check():
         "version": "1.1.0",
         "execution_status": "enabled" if execution_service.execution_enabled else "disabled",
         "kill_switch": execution_service.kill_switch_active,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/public/health")
+async def public_health_check():
+    """Lightweight health endpoint intended for unauthenticated monitoring.
+    Note: If the Cloud Run service requires authentication, this will still return 401/403 until IAM allows unauthenticated access.
+    """
+    return {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "public": True,
         "timestamp": datetime.now().isoformat()
     }
 
@@ -1051,11 +1063,11 @@ async def place_order(
         # Validate token
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         # Convert string enums
         order_type_enum = OrderType(order_type.upper())
         transaction_type_enum = TransactionType(transaction_type.upper())
-        
+
         # Place order
         order = await execution_service.place_order(
             symbol=symbol,
@@ -1064,13 +1076,13 @@ async def place_order(
             order_type=order_type_enum,
             transaction_type=transaction_type_enum
         )
-        
+
         return {
             "status": "success",
             "order": order_to_dict(order),
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error placing order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1089,11 +1101,11 @@ async def place_order_alb(
         # Validate token
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         # Convert string enums
         order_type_enum = OrderType(order_type.upper())
         transaction_type_enum = TransactionType(transaction_type.upper())
-        
+
         # Place order
         order = await execution_service.place_order(
             symbol=symbol,
@@ -1102,13 +1114,13 @@ async def place_order_alb(
             order_type=order_type_enum,
             transaction_type=transaction_type_enum
         )
-        
+
         return {
             "status": "success",
             "order": order_to_dict(order),
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error placing order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1125,7 +1137,7 @@ async def place_order_new(request_data: dict):
         transaction_type = sanitize_input(str(request_data.get('transaction_type', 'BUY')))
         price = float(request_data.get('price', 0.0))
         demo = bool(request_data.get('demo', True))  # Default to demo mode
-        
+
         # Comprehensive input validation
         if not symbol or not validate_symbol(symbol):
             raise HTTPException(status_code=400, detail="Invalid or missing symbol")
@@ -1137,11 +1149,11 @@ async def place_order_new(request_data: dict):
             raise HTTPException(status_code=400, detail="Invalid transaction type")
         if price < 0 or price > 100000:  # Price validation
             raise HTTPException(status_code=400, detail="Invalid price range")
-        
+
         # Convert string enums
         order_type_enum = OrderType(order_type.upper())
         transaction_type_enum = TransactionType(transaction_type.upper())
-        
+
         # Place order
         order = await execution_service.place_order(
             symbol=symbol,
@@ -1150,7 +1162,7 @@ async def place_order_new(request_data: dict):
             order_type=order_type_enum,
             transaction_type=transaction_type_enum
         )
-        
+
         return {
             "status": "success",
             "order_id": order.order_id,
@@ -1167,7 +1179,7 @@ async def place_order_new(request_data: dict):
             "demo_mode": demo,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error placing order: {e}")
         return {
@@ -1219,14 +1231,14 @@ async def get_order_status(order_id: str = None):
                     "created_at": order.created_at.isoformat(),
                     "executed_at": order.executed_at.isoformat() if order.executed_at else None
                 })
-            
+
             return {
                 "status": "success",
                 "orders": orders,
                 "count": len(orders),
                 "timestamp": datetime.now().isoformat()
             }
-        
+
     except Exception as e:
         logger.error(f"Error getting order status: {e}")
         return {
@@ -1261,14 +1273,14 @@ async def get_orders(credentials: HTTPAuthorizationCredentials = Depends(securit
     try:
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         return {
             "status": "success",
             "orders": [order_to_dict(order) for order in execution_service.orders.values()],
             "count": len(execution_service.orders),
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting orders: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1279,7 +1291,7 @@ async def get_positions(credentials: HTTPAuthorizationCredentials = Depends(secu
     try:
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         return {
             "status": "success",
             "positions": [position_to_dict(position) for position in execution_service.positions.values()],
@@ -1287,7 +1299,7 @@ async def get_positions(credentials: HTTPAuthorizationCredentials = Depends(secu
             "total_pnl": execution_service.daily_pnl,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting positions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1302,7 +1314,7 @@ async def toggle_kill_switch(
     try:
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         if action == "activate":
             execution_service.activate_kill_switch(reason)
             return {"status": "activated", "reason": reason}
@@ -1311,7 +1323,7 @@ async def toggle_kill_switch(
             return {"status": "deactivated"}
         else:
             raise HTTPException(status_code=400, detail="Invalid action")
-            
+
     except Exception as e:
         logger.error(f"Error toggling kill switch: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1324,9 +1336,9 @@ async def get_portfolio():
         positions_url = f"{execution_service.base_url}/positions"
         holdings_url = f"{execution_service.base_url}/holdings"
         orders_url = f"{execution_service.base_url}/orders"
-        
+
         portfolio_data = {}
-        
+
         async with aiohttp.ClientSession() as session:
             # Fetch positions
             try:
@@ -1338,8 +1350,8 @@ async def get_portfolio():
             except Exception as e:
                 logger.error(f"Error fetching positions: {e}")
                 portfolio_data["positions"] = []
-            
-            # Fetch holdings  
+
+            # Fetch holdings
             try:
                 async with session.get(holdings_url, headers=execution_service.headers) as response:
                     if response.status == 200:
@@ -1352,7 +1364,7 @@ async def get_portfolio():
             except Exception as e:
                 logger.error(f"Error fetching holdings: {e}")
                 portfolio_data["holdings"] = []
-            
+
             # Fetch orders
             try:
                 async with session.get(orders_url, headers=execution_service.headers) as response:
@@ -1363,12 +1375,12 @@ async def get_portfolio():
             except Exception as e:
                 logger.error(f"Error fetching orders: {e}")
                 portfolio_data["orders"] = []
-        
+
         # Calculate summary
         total_pnl = sum(float(pos.get("unrealizedProfit", 0)) for pos in portfolio_data.get("positions", []))
         total_positions = len(portfolio_data.get("positions", []))
         total_orders = len(portfolio_data.get("orders", []))
-        
+
         return {
             "status": "success",
             "data": portfolio_data,
@@ -1381,7 +1393,7 @@ async def get_portfolio():
             "source": "live",
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting portfolio: {e}")
         return {
@@ -1397,7 +1409,7 @@ async def get_account(credentials: HTTPAuthorizationCredentials = Depends(securi
     try:
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         # Fetch live funds from Dhan fundlimit API (same as holdings analysis uses)
         try:
             headers = {
@@ -1414,13 +1426,13 @@ async def get_account(credentials: HTTPAuthorizationCredentials = Depends(securi
         except Exception as e:
             logger.error(f"Error fetching funds from Dhan: {e}")
             account_info = {"error": str(e)}
-        
+
         return {
             "status": "success",
             "account": account_info,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting account info: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1484,7 +1496,7 @@ async def get_positions_alb(credentials: HTTPAuthorizationCredentials = Depends(
     try:
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
-        
+
         return {
             "status": "success",
             "positions": [position_to_dict(position) for position in execution_service.positions.values()],
@@ -1492,7 +1504,7 @@ async def get_positions_alb(credentials: HTTPAuthorizationCredentials = Depends(
             "total_pnl": execution_service.daily_pnl,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting positions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1544,19 +1556,19 @@ async def handle_dhan_oauth_callback(request_data: dict):
         code = sanitize_input(str(request_data.get('code', '')))
         state = sanitize_input(str(request_data.get('state', '')))
         redirect_uri = sanitize_input(str(request_data.get('redirect_uri', '')))
-        
+
         logger.info(f"Processing Dhan OAuth callback: code={code[:10] if code else 'None'}..., state={state}")
-        
+
         # Validation
         if not code or len(code) < 10:
             raise HTTPException(status_code=400, detail="Invalid authorization code")
-        
+
         if not state or len(state) < 5:
             raise HTTPException(status_code=400, detail="Invalid state parameter")
-        
-        if redirect_uri and not redirect_uri.startswith('https://'):  
+
+        if redirect_uri and not redirect_uri.startswith('https://'):
             raise HTTPException(status_code=400, detail="Invalid redirect URI")
-        
+
         # Real Dhan API token exchange
         try:
             # Prepare token exchange request
@@ -1568,9 +1580,9 @@ async def handle_dhan_oauth_callback(request_data: dict):
                 "code": code,
                 "redirect_uri": redirect_uri or execution_service.redirect_uri
             }
-            
+
             logger.info(f"Exchanging authorization code with Dhan API...")
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(token_url, json=token_data) as response:
                     if response.status == 200:
@@ -1578,12 +1590,12 @@ async def handle_dhan_oauth_callback(request_data: dict):
                         access_token = token_response.get('access_token')
                         refresh_token = token_response.get('refresh_token')
                         expires_in = token_response.get('expires_in', 3600)
-                        
+
                         if not access_token:
                             raise Exception("No access token received from Dhan API")
-                        
+
                         logger.info(f"✅ Received access token from Dhan API")
-                        
+
                     else:
                         error_text = await response.text()
                         logger.error(f"Dhan token exchange failed: {response.status} - {error_text}")
@@ -1591,19 +1603,19 @@ async def handle_dhan_oauth_callback(request_data: dict):
                         access_token = f"dhan_dev_token_{uuid.uuid4().hex[:16]}"
                         refresh_token = None
                         expires_in = 3600
-                        
+
         except Exception as api_error:
             logger.error(f"Dhan API error: {api_error}")
             # Fallback to simulated token for development
             access_token = f"dhan_dev_token_{uuid.uuid4().hex[:16]}"
             refresh_token = None
             expires_in = 3600
-        
+
         # Store tokens securely in vault (Google Secret Manager)
         try:
             if GOOGLE_CLOUD_AVAILABLE:
                 client = secretmanager.SecretManagerServiceClient()
-                
+
                 # Store access token
                 secret_data = {
                     "access_token": access_token,
@@ -1613,11 +1625,11 @@ async def handle_dhan_oauth_callback(request_data: dict):
                     "connected_at": datetime.now().isoformat(),
                     "state_verified": state
                 }
-                
+
                 # Create or update secret
                 parent = f"projects/{PROJECT_ID}"
                 secret_id = "dhan-oauth-tokens"
-                
+
                 try:
                     # Try to add new version to existing secret
                     secret_name = f"{parent}/secrets/{secret_id}"
@@ -1646,15 +1658,15 @@ async def handle_dhan_oauth_callback(request_data: dict):
                     logger.info(f"✅ Created and stored OAuth tokens in Secret Manager")
             else:
                 logger.warning("Secret Manager not available, storing in memory only")
-                
+
         except Exception as vault_error:
             logger.error(f"Vault storage error: {vault_error}")
             # Continue with in-memory storage as fallback
-        
+
         # Update service configuration
         execution_service.dhan_token = access_token
         execution_service.headers["access-token"] = access_token
-        
+
         # Fetch user account info if possible
         user_info = {"client_id": execution_service.dhan_client_id, "name": "Raghu"}
         try:
@@ -1675,9 +1687,9 @@ async def handle_dhan_oauth_callback(request_data: dict):
                         logger.info(f"✅ Fetched user profile: {user_info['name']}")
         except Exception as profile_error:
             logger.warning(f"Could not fetch user profile: {profile_error}")
-        
+
         logger.info(f"✅ Dhan OAuth callback processed successfully for {user_info['name']}")
-        
+
         return {
             "status": "success",
             "message": "🧘 Identity aligned. Welcome back, Raghu.",
@@ -1691,7 +1703,7 @@ async def handle_dhan_oauth_callback(request_data: dict):
             "chatbot_message": "🧘 Identity aligned. Welcome back, Raghu.",
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"OAuth callback error: {e}")
         return {
@@ -1786,7 +1798,7 @@ async def handle_dhan_webhook(request: Request):
     try:
         # Get signature from header
         signature = request.headers.get("X-Dhan-Signature", "")
-        
+
         # Read body with size limit (prevent DOS)
         body = b""
         max_size = 1024 * 1024  # 1MB limit
@@ -1794,7 +1806,7 @@ async def handle_dhan_webhook(request: Request):
             body += chunk
             if len(body) > max_size:
                 raise HTTPException(status_code=413, detail="Payload too large")
-        
+
         # Verify signature if webhook secret is configured
         webhook_secret = os.getenv("DHAN_WEBHOOK_SECRET", "")
         if webhook_secret and signature:
@@ -1803,7 +1815,7 @@ async def handle_dhan_webhook(request: Request):
                 raise HTTPException(status_code=403, detail="Invalid signature")
         elif webhook_secret:
             logger.warning("Webhook secret configured but no signature provided")
-        
+
         # Parse and process
         import json
         request_data = json.loads(body.decode('utf-8'))
@@ -1907,7 +1919,7 @@ async def update_dhan_credentials(
             execution_service.dhan_api_key,
             execution_service.dhan_api_secret
         ])
-        
+
         logger.info(f"🔄 Execution enabled status updated: {execution_service.execution_enabled}")
 
         return {
@@ -1958,7 +1970,7 @@ async def update_dhan_access_token(request_data: dict):
             execution_service.dhan_api_key,
             execution_service.dhan_api_secret
         ])
-        
+
         logger.info(f"🔄 Execution enabled status updated: {execution_service.execution_enabled}")
 
         return {
@@ -1990,16 +2002,16 @@ async def initiate_dhan_oauth():
     try:
         if not execution_service.oauth_configured:
             raise HTTPException(
-                status_code=503, 
+                status_code=503,
                 detail="OAuth not configured. Missing client credentials."
             )
-        
+
         # Generate secure state parameter for CSRF protection
         state = hashlib.sha256(f"{uuid.uuid4().hex}{datetime.now().isoformat()}".encode()).hexdigest()[:32]
-        
+
         # Use configured redirect URI
         redirect_uri = execution_service.redirect_uri
-        
+
         # Build Dhan OAuth URL with proper scopes
         scopes = '+'.join(execution_service.oauth_scopes)
         dhan_oauth_url = (
@@ -2010,9 +2022,9 @@ async def initiate_dhan_oauth():
             f"&state={state}"
             f"&scope={scopes}"
         )
-        
+
         logger.info(f"OAuth flow initiated with state: {state}")
-        
+
         return {
             "status": "success",
             "auth_url": dhan_oauth_url,
@@ -2023,7 +2035,7 @@ async def initiate_dhan_oauth():
             "message": "Redirect user to auth_url to complete OAuth flow",
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"OAuth initiation error: {e}")
         return {
@@ -2076,23 +2088,23 @@ async def get_portfolio_data():
                 "source": "demo",
                 "timestamp": datetime.now().isoformat()
             }
-        
+
         # Fetch real portfolio data from Dhan API
         async with aiohttp.ClientSession() as session:
             headers = {
                 "access-token": execution_service.dhan_token,
                 "client-id": execution_service.dhan_client_id
             }
-            
+
             # Get positions
             async with session.get("https://api.dhan.co/v2/positions", headers=headers) as response:
                 if response.status == 200:
                     positions_data = await response.json()
-                    
+
                     # Calculate portfolio summary
                     total_pnl = sum(pos.get('realizedPnl', 0) + pos.get('unrealizedPnl', 0) for pos in positions_data)
                     portfolio_value = sum(pos.get('currentValue', 0) for pos in positions_data)
-                    
+
                     return {
                         "status": "success",
                         "summary": {
@@ -2118,7 +2130,7 @@ async def get_portfolio_data():
                     # Fallback to demo data on API failure
                     logger.warning(f"Dhan API error {response.status}, using demo data")
                     return await get_portfolio_data()  # Recursive call will hit demo path
-        
+
     except Exception as e:
         logger.error(f"Portfolio fetch error: {e}")
         # Return demo data on any error
