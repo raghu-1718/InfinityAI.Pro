@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-10-25T14:32:15.756066+00:00",
+  "timestamp": "2025-10-25T15:38:28.752325+00:00",
   "project_id": "infinity-ai-5ec7c",
   "scores": {
     "code_quality": {
@@ -8,9 +8,9 @@
       "status": "EXCELLENT"
     },
     "integration_health": {
-      "score": 60,
+      "score": 76,
       "max": 100,
-      "status": "FAIR"
+      "status": "GOOD"
     },
     "security": {
       "score": 65,
@@ -43,7 +43,7 @@
       "status": "GOOD"
     },
     "overall": {
-      "score": 76,
+      "score": 79,
       "max": 100,
       "status": "GOOD"
     }
@@ -628,40 +628,40 @@
   },
   "integration_verification": {
     "cloud_run_services": {
+      "engine_c": {
+        "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 403,
+        "latency_ms": 465.48,
+        "error": ""
+      },
+      "engine_d": {
+        "url": "https://infinityai-engine-d-26140490557.us-central1.run.app",
+        "status": "healthy",
+        "status_code": 200,
+        "latency_ms": 513.37,
+        "error": ""
+      },
+      "frontend": {
+        "url": "https://infinityai-frontend-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 403,
+        "latency_ms": 561.6,
+        "error": ""
+      },
+      "engine_b": {
+        "url": "https://infinityai-engine-b-26140490557.us-central1.run.app",
+        "status": "healthy",
+        "status_code": 200,
+        "latency_ms": 3341.52,
+        "error": ""
+      },
       "engine_a": {
         "url": "https://infinityai-engine-a-26140490557.us-central1.run.app",
         "status": "unhealthy",
         "status_code": 0,
         "latency_ms": 0,
-        "error": "HTTPSConnectionPool(host='infinityai-engine-a-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7989460>: Failed to resolve 'infinityai-engine-a-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
-      },
-      "engine_b": {
-        "url": "https://infinityai-engine-b-26140490557.us-central1.run.app",
-        "status": "unhealthy",
-        "status_code": 0,
-        "latency_ms": 0,
-        "error": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f76346b0>: Failed to resolve 'infinityai-engine-b-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
-      },
-      "engine_d": {
-        "url": "https://infinityai-engine-d-26140490557.us-central1.run.app",
-        "status": "unhealthy",
-        "status_code": 0,
-        "latency_ms": 0,
-        "error": "HTTPSConnectionPool(host='infinityai-engine-d-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7635220>: Failed to resolve 'infinityai-engine-d-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
-      },
-      "engine_c": {
-        "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app",
-        "status": "unhealthy",
-        "status_code": 0,
-        "latency_ms": 0,
-        "error": "HTTPSConnectionPool(host='infinityai-engine-c-execution-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f76344a0>: Failed to resolve 'infinityai-engine-c-execution-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
-      },
-      "frontend": {
-        "url": "https://infinityai-frontend-26140490557.us-central1.run.app",
-        "status": "unhealthy",
-        "status_code": 0,
-        "latency_ms": 0,
-        "error": "HTTPSConnectionPool(host='infinityai-frontend-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7635bb0>: Failed to resolve 'infinityai-frontend-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+        "error": "HTTPSConnectionPool(host='infinityai-engine-a-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=5)"
       }
     },
     "firebase": {
@@ -759,7 +759,7 @@
     "Production-ready deployment configuration with Docker and Cloud Run"
   ],
   "critical_issues": [
-    "Unhealthy services detected: engine_a, engine_b, engine_d, engine_c, frontend"
+    "Unhealthy services detected: engine_c, frontend, engine_a"
   ],
   "recommendations": [
     {
@@ -770,7 +770,7 @@
     {
       "category": "Integration",
       "priority": "CRITICAL",
-      "recommendation": "Fix unhealthy services: engine_a, engine_b, engine_d, engine_c, frontend"
+      "recommendation": "Fix unhealthy services: engine_c, frontend, engine_a"
     }
   ],
   "production_ready": true

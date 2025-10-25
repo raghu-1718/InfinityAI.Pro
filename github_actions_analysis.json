@@ -2,7 +2,7 @@
   "total_workflows": 18,
   "deployment_workflows": 10,
   "test_workflows": 18,
-  "workflows_with_secrets": 14,
+  "workflows_with_credentials": 14,
   "workflow_details": [
     {
       "name": "Monorepo CI - Clean Frontend & Engines",
