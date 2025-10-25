@@ -1,0 +1,777 @@
+{
+  "timestamp": "2025-10-25T14:32:15.756066+00:00",
+  "project_id": "infinity-ai-5ec7c",
+  "scores": {
+    "code_quality": {
+      "score": 90,
+      "max": 100,
+      "status": "EXCELLENT"
+    },
+    "integration_health": {
+      "score": 60,
+      "max": 100,
+      "status": "FAIR"
+    },
+    "security": {
+      "score": 65,
+      "max": 100,
+      "status": "FAIR"
+    },
+    "performance": {
+      "score": 70,
+      "max": 100,
+      "status": "GOOD"
+    },
+    "scalability": {
+      "score": 75,
+      "max": 100,
+      "status": "GOOD"
+    },
+    "deployment_readiness": {
+      "score": 100,
+      "max": 100,
+      "status": "EXCELLENT"
+    },
+    "reliability": {
+      "score": 70,
+      "max": 100,
+      "status": "GOOD"
+    },
+    "developer_experience": {
+      "score": 75,
+      "max": 100,
+      "status": "GOOD"
+    },
+    "overall": {
+      "score": 76,
+      "max": 100,
+      "status": "GOOD"
+    }
+  },
+  "codebase_analysis": {
+    "structure": {
+      "engines": {
+        "exists": true,
+        "files": 76,
+        "size_kb": 225.54,
+        "file_types": {
+          ".py": 54,
+          "": 8,
+          ".txt": 6,
+          ".md": 1,
+          ".csv": 1,
+          ".pdf": 1,
+          ".json": 1,
+          ".pkl": 2,
+          ".yaml": 2
+        }
+      },
+      "frontend": {
+        "exists": true,
+        "files": 69,
+        "size_kb": 425.09,
+        "file_types": {
+          "": 2,
+          ".json": 5,
+          ".cjs": 2,
+          ".js": 3,
+          ".ps1": 1,
+          ".html": 1,
+          ".md": 3,
+          ".conf": 1,
+          ".ts": 20,
+          ".css": 1,
+          ".tsx": 30
+        }
+      },
+      "functions": {
+        "exists": true,
+        "files": 22,
+        "size_kb": 213.49,
+        "file_types": {
+          ".json": 3,
+          ".txt": 1,
+          ".js": 8,
+          ".map": 5,
+          ".ts": 5
+        }
+      },
+      "infrastructure": {
+        "exists": true,
+        "files": 6,
+        "size_kb": 30.56,
+        "file_types": {
+          ".json": 1,
+          ".yaml": 2,
+          ".rules": 1,
+          ".tf": 2
+        }
+      },
+      "docs": {
+        "exists": true,
+        "files": 12,
+        "size_kb": 50.94,
+        "file_types": {
+          ".md": 12
+        }
+      },
+      "tests": {
+        "exists": true,
+        "files": 3,
+        "size_kb": 34.0,
+        "file_types": {
+          ".py": 3
+        }
+      }
+    },
+    "dependencies": {
+      "backend": {
+        "engine-a": [
+          "fastapi==0.104.1",
+          "uvicorn[standard]==0.24.0",
+          "pydantic==2.5.0",
+          "python-multipart==0.0.6",
+          "aiohttp==3.9.1",
+          "requests==2.31.0",
+          "numpy==2.3.4",
+          "pandas==2.3.3",
+          "reportlab==4.2.2"
+        ],
+        "engine-b": [
+          "fastapi==0.104.1",
+          "uvicorn==0.24.0",
+          "pydantic==2.5.0",
+          "python-multipart==0.0.6",
+          "aiohttp==3.9.1",
+          "requests==2.31.0",
+          "numpy==1.26.4",
+          "pandas==2.1.4",
+          "scikit-learn==1.4.2",
+          "xgboost==2.1.1",
+          "lightgbm==4.3.0",
+          "statsmodels==0.14.1",
+          "joblib==1.3.2",
+          "PyYAML==6.0.1",
+          "python-dotenv==1.0.1",
+          "google-generativeai==0.8.3",
+          "google-cloud-secret-manager==2.20.0"
+        ],
+        "engine-c-execution": [
+          "requests",
+          "websocket-client",
+          "pandas",
+          "scikit-learn",
+          "python-dotenv",
+          "uvicorn",
+          "fastapi",
+          "aiohttp",
+          "PyYAML"
+        ],
+        "engine-d": [
+          "fastapi>=0.104.1",
+          "uvicorn>=0.24.0",
+          "pydantic>=2.5.0",
+          "aiohttp>=3.9.0",
+          "python-multipart>=0.0.6",
+          "requests>=2.31.0",
+          "python-jose==3.3.0",
+          "passlib[bcrypt]>=1.7.4",
+          "bcrypt==3.2.0",
+          "google-generativeai==0.8.3",
+          "google-cloud-secret-manager==2.20.0"
+        ]
+      },
+      "frontend": {
+        "root": {
+          "dependencies": [
+            "@emotion/react",
+            "@emotion/styled",
+            "@mui/icons-material",
+            "@mui/material",
+            "axios",
+            "firebase",
+            "firebase-admin",
+            "firebase-functions"
+          ],
+          "devDependencies": [
+            "eslint",
+            "prettier",
+            "typescript"
+          ]
+        },
+        "frontend": {
+          "dependencies": [
+            "@tanstack/react-query",
+            "axios",
+            "firebase",
+            "firebase-admin",
+            "lucide-react",
+            "react",
+            "react-dom",
+            "react-router-dom",
+            "recharts",
+            "zustand"
+          ],
+          "devDependencies": [
+            "@types/react",
+            "@types/react-dom",
+            "@typescript-eslint/eslint-plugin",
+            "@typescript-eslint/parser",
+            "@vitejs/plugin-react",
+            "autoprefixer",
+            "eslint",
+            "eslint-plugin-react-hooks",
+            "eslint-plugin-react-refresh",
+            "postcss",
+            "serve",
+            "tailwindcss",
+            "typescript",
+            "vite"
+          ]
+        },
+        "functions": {
+          "dependencies": [
+            "axios",
+            "firebase-admin",
+            "firebase-functions"
+          ],
+          "devDependencies": [
+            "@types/node",
+            "typescript"
+          ]
+        }
+      },
+      "vulnerabilities": []
+    },
+    "code_patterns": {
+      "backend_patterns": {
+        "fastapi_usage": true,
+        "security_middleware": true,
+        "api_versioning": false,
+        "error_handling": true,
+        "logging": true
+      },
+      "frontend_patterns": {
+        "react_usage": true,
+        "typescript": true,
+        "state_management": true,
+        "routing": true,
+        "ui_framework": [
+          "TailwindCSS"
+        ]
+      },
+      "api_endpoints": {
+        "engine-a": [
+          {
+            "method": "GET",
+            "path": "/health"
+          },
+          {
+            "method": "GET",
+            "path": "/version"
+          },
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/api/signals"
+          },
+          {
+            "method": "GET",
+            "path": "/api/marketdata"
+          },
+          {
+            "method": "GET",
+            "path": "/api/market-data/{symbol}"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/positions"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/orders"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/optionchain/{symbol}"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/callback"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/statement"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/statement.csv"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/statement.pdf"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/overview"
+          },
+          {
+            "method": "GET",
+            "path": "/api/exchanges"
+          },
+          {
+            "method": "GET",
+            "path": "/api/optionchain/ai/{index_symbol}"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/pl/history"
+          },
+          {
+            "method": "GET",
+            "path": "/api/optionchain/backtest/{symbol}"
+          }
+        ],
+        "engine-b": [
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/health"
+          },
+          {
+            "method": "GET",
+            "path": "/version"
+          },
+          {
+            "method": "POST",
+            "path": "/api/explain/{symbol}"
+          },
+          {
+            "method": "GET",
+            "path": "/api/ai-signals"
+          },
+          {
+            "method": "POST",
+            "path": "/api/predict/{symbol}"
+          },
+          {
+            "method": "POST",
+            "path": "/api/batch-predict"
+          },
+          {
+            "method": "GET",
+            "path": "/api/sentiment/{symbol}"
+          },
+          {
+            "method": "GET",
+            "path": "/api/models/status"
+          },
+          {
+            "method": "POST",
+            "path": "/api/gemini/analyze"
+          }
+        ],
+        "engine-c-execution": [
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/engine-c"
+          },
+          {
+            "method": "GET",
+            "path": "/health"
+          },
+          {
+            "method": "GET",
+            "path": "/version"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/token/status"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/token/refresh-from-secret"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/token/validate-freshness"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/holdings/analysis"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/positions/analysis"
+          },
+          {
+            "method": "GET",
+            "path": "/engine-c/health"
+          },
+          {
+            "method": "POST",
+            "path": "/api/orders"
+          },
+          {
+            "method": "POST",
+            "path": "/engine-c/api/orders"
+          },
+          {
+            "method": "POST",
+            "path": "/api/orders/place"
+          },
+          {
+            "method": "GET",
+            "path": "/api/orders/status"
+          },
+          {
+            "method": "GET",
+            "path": "/api/orders/demo"
+          },
+          {
+            "method": "GET",
+            "path": "/api/orders"
+          },
+          {
+            "method": "GET",
+            "path": "/api/positions"
+          },
+          {
+            "method": "POST",
+            "path": "/api/kill-switch"
+          },
+          {
+            "method": "GET",
+            "path": "/api/portfolio"
+          },
+          {
+            "method": "GET",
+            "path": "/api/account"
+          },
+          {
+            "method": "GET",
+            "path": "/api/elite/status"
+          },
+          {
+            "method": "POST",
+            "path": "/api/elite/start"
+          },
+          {
+            "method": "POST",
+            "path": "/api/elite/stop"
+          },
+          {
+            "method": "GET",
+            "path": "/metrics"
+          },
+          {
+            "method": "GET",
+            "path": "/engine-c/metrics"
+          },
+          {
+            "method": "GET",
+            "path": "/engine-c/api/positions"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/status"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/callback"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/callback"
+          },
+          {
+            "method": "GET",
+            "path": "/auth/dhan/callback"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/postback"
+          },
+          {
+            "method": "POST",
+            "path": "/api/webhooks/dhan"
+          },
+          {
+            "method": "GET",
+            "path": "/api/dhan/callback-urls"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/credentials"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/token"
+          },
+          {
+            "method": "POST",
+            "path": "/api/dhan/disconnect"
+          },
+          {
+            "method": "GET",
+            "path": "/api/auth/dhan/initiate"
+          },
+          {
+            "method": "GET",
+            "path": "/api/portfolio/summary"
+          },
+          {
+            "method": "POST",
+            "path": "/api/config/dhan"
+          }
+        ],
+        "engine-d": [
+          {
+            "method": "GET",
+            "path": "/health"
+          },
+          {
+            "method": "GET",
+            "path": "/version"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login"
+          },
+          {
+            "method": "GET",
+            "path": "/auth/verify"
+          },
+          {
+            "method": "POST",
+            "path": "/broadcast/trade"
+          },
+          {
+            "method": "POST",
+            "path": "/broadcast/signal"
+          },
+          {
+            "method": "POST",
+            "path": "/broadcast/custom"
+          },
+          {
+            "method": "GET",
+            "path": "/broadcast/stats"
+          },
+          {
+            "method": "GET",
+            "path": "/api/health/comprehensive"
+          },
+          {
+            "method": "GET",
+            "path": "/api/health/simple"
+          },
+          {
+            "method": "GET",
+            "path": "/api/status"
+          },
+          {
+            "method": "POST",
+            "path": "/api/chat"
+          },
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/dashboard"
+          }
+        ]
+      }
+    },
+    "test_coverage": {
+      "test_directory_exists": true,
+      "unit_tests": 0,
+      "integration_tests": 3,
+      "test_files": [
+        "integration_test_suite.py",
+        "integration_analysis_simple.py",
+        "multi_cloud_integration_test.py"
+      ]
+    },
+    "documentation": {
+      "readme_exists": true,
+      "architecture_doc": true,
+      "api_docs": false,
+      "deployment_docs": true,
+      "doc_files": [
+        "FIREBASE_STATUS.md",
+        "ARCHITECTURE.md",
+        "MIGRATION_COMPLETION_REPORT.md",
+        "ANALYSIS_REPORT.md",
+        "FIREBASE_INTEGRATION_EXAMPLES.md",
+        "DOMAIN_SETUP.md",
+        "DHAN_OAUTH_SETTINGS.md",
+        "README_DHAN_SECRETS.md",
+        "SECRETS_STORAGE.md",
+        "FIREBASE_SETUP.md",
+        "CLEANUP_REPORT.md",
+        "SECRETS_SETUP_GUIDE.md"
+      ]
+    }
+  },
+  "integration_verification": {
+    "cloud_run_services": {
+      "engine_a": {
+        "url": "https://infinityai-engine-a-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 0,
+        "latency_ms": 0,
+        "error": "HTTPSConnectionPool(host='infinityai-engine-a-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7989460>: Failed to resolve 'infinityai-engine-a-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      "engine_b": {
+        "url": "https://infinityai-engine-b-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 0,
+        "latency_ms": 0,
+        "error": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f76346b0>: Failed to resolve 'infinityai-engine-b-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      "engine_d": {
+        "url": "https://infinityai-engine-d-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 0,
+        "latency_ms": 0,
+        "error": "HTTPSConnectionPool(host='infinityai-engine-d-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7635220>: Failed to resolve 'infinityai-engine-d-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      "engine_c": {
+        "url": "https://infinityai-engine-c-execution-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 0,
+        "latency_ms": 0,
+        "error": "HTTPSConnectionPool(host='infinityai-engine-c-execution-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f76344a0>: Failed to resolve 'infinityai-engine-c-execution-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      "frontend": {
+        "url": "https://infinityai-frontend-26140490557.us-central1.run.app",
+        "status": "unhealthy",
+        "status_code": 0,
+        "latency_ms": 0,
+        "error": "HTTPSConnectionPool(host='infinityai-frontend-26140490557.us-central1.run.app', port=443): Max retries exceeded with url: /health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f42f7635bb0>: Failed to resolve 'infinityai-frontend-26140490557.us-central1.run.app' ([Errno -5] No address associated with hostname)\"))"
+      }
+    },
+    "firebase": {
+      "functions_count": 0,
+      "functions": [],
+      "hosting_configured": true,
+      "functions_configured": true
+    },
+    "vertex_ai": {
+      "gemini_configured": true
+    },
+    "dhan_api": {
+      "documentation": true
+    },
+    "secret_manager": {},
+    "github_actions": {
+      "workflows_count": 18,
+      "workflows": [
+        "monorepo-ci-clean.yml",
+        "trigger-deploy-production-via-push.yml",
+        "verify-cloudrun-engines.yml",
+        "ci-build.yml",
+        "deploy_production.yml",
+        "deploy-web.yml",
+        "deploy-functions.yml",
+        "deploy-gcp.yml",
+        "fix-pipeline.yml",
+        "deploy-production.yml",
+        "deploy-frontend.yml",
+        "deploy-engine-d.yml",
+        "monorepo-ci.yml",
+        "engine-c.yaml",
+        "frontend.yaml",
+        "engine-b.yaml",
+        "engine-a.yaml",
+        "engine-d.yaml"
+      ]
+    }
+  },
+  "data_flow_analysis": {},
+  "security_audit": {
+    "secret_management": {
+      "env_example_exists": true,
+      "env_file_exists": true,
+      "env_in_gitignore": true,
+      "uses_secret_manager": true
+    },
+    "authentication": {
+      "firebase_auth": false,
+      "oauth": true
+    },
+    "api_security": {
+      "security_middleware": true
+    },
+    "vulnerabilities": [],
+    "recommendations": [
+      "Consider implementing rate limiting"
+    ]
+  },
+  "performance_analysis": {},
+  "deployment_readiness": {
+    "docker": {
+      "docker_compose": true,
+      "dockerfiles": [
+        "engine-a",
+        "engine-b",
+        "engine-c-execution",
+        "engine-d"
+      ]
+    },
+    "cloud_run": {
+      "cloudbuild_yaml": true
+    },
+    "ci_cd": {
+      "deploy_workflows": [
+        "trigger-deploy-production-via-push.yml",
+        "deploy_production.yml",
+        "deploy-web.yml",
+        "deploy-functions.yml",
+        "deploy-gcp.yml",
+        "deploy-production.yml",
+        "deploy-frontend.yml",
+        "deploy-engine-d.yml"
+      ]
+    },
+    "infrastructure": {
+      "config_files": [
+        "config.json",
+        "cloudbuild.yaml"
+      ]
+    }
+  },
+  "strengths": [
+    "Well-structured codebase with clear separation of concerns",
+    "Production-ready deployment configuration with Docker and Cloud Run"
+  ],
+  "critical_issues": [
+    "Unhealthy services detected: engine_a, engine_b, engine_d, engine_c, frontend"
+  ],
+  "recommendations": [
+    {
+      "category": "Security",
+      "priority": "HIGH",
+      "recommendation": "Implement rate limiting on all public API endpoints"
+    },
+    {
+      "category": "Integration",
+      "priority": "CRITICAL",
+      "recommendation": "Fix unhealthy services: engine_a, engine_b, engine_d, engine_c, frontend"
+    }
+  ],
+  "production_ready": true
+}
