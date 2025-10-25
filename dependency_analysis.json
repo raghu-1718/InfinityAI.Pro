@@ -1,0 +1,131 @@
+{
+  "python_dependencies": [
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/engines/engine-a/requirements.txt",
+      "total_packages": 9,
+      "vulnerabilities": [],
+      "outdated": [],
+      "note": "pip-audit not installed, skipping vulnerability check"
+    },
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/engines/engine-b/requirements.txt",
+      "total_packages": 17,
+      "vulnerabilities": [],
+      "outdated": [],
+      "note": "pip-audit not installed, skipping vulnerability check"
+    },
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/engines/engine-c-execution/requirements.txt",
+      "total_packages": 9,
+      "vulnerabilities": [],
+      "outdated": [],
+      "note": "pip-audit not installed, skipping vulnerability check"
+    },
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/engines/engine-d/requirements.txt",
+      "total_packages": 11,
+      "vulnerabilities": [],
+      "outdated": [],
+      "note": "pip-audit not installed, skipping vulnerability check"
+    }
+  ],
+  "npm_dependencies": [
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/package.json",
+      "total_packages": 11,
+      "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.4",
+        "@mui/material": "^7.3.4",
+        "axios": "^1.6.8",
+        "firebase": "^12.4.0",
+        "firebase-admin": "^12.5.0",
+        "firebase-functions": "^6.6.0"
+      },
+      "devDependencies": {
+        "eslint": "^9.0.0",
+        "prettier": "^3.3.3",
+        "typescript": "^5.6.3"
+      },
+      "vulnerabilities": [],
+      "audit_summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/frontend/package.json",
+      "total_packages": 24,
+      "dependencies": {
+        "@tanstack/react-query": "^5.17.0",
+        "axios": "^1.6.5",
+        "firebase": "^12.4.0",
+        "firebase-admin": "^13.5.0",
+        "lucide-react": "^0.307.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.21.1",
+        "recharts": "^2.10.3",
+        "zustand": "^4.5.0"
+      },
+      "devDependencies": {
+        "@types/react": "^18.2.48",
+        "@types/react-dom": "^18.2.18",
+        "@typescript-eslint/eslint-plugin": "^6.18.1",
+        "@typescript-eslint/parser": "^6.18.1",
+        "@vitejs/plugin-react": "^4.2.1",
+        "autoprefixer": "^10.4.16",
+        "eslint": "^8.56.0",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.5",
+        "postcss": "^8.4.33",
+        "serve": "^14.2.1",
+        "tailwindcss": "^3.4.1",
+        "typescript": "^5.3.3",
+        "vite": "^7.1.12"
+      },
+      "vulnerabilities": [],
+      "audit_summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    {
+      "file": "/home/runner/work/InfinityAI.Pro/InfinityAI.Pro/functions/package.json",
+      "total_packages": 5,
+      "dependencies": {
+        "axios": "^1.6.8",
+        "firebase-admin": "^12.5.0",
+        "firebase-functions": "^6.6.0"
+      },
+      "devDependencies": {
+        "@types/node": "^20.14.10",
+        "typescript": "^5.6.3"
+      },
+      "vulnerabilities": [],
+      "audit_summary": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    }
+  ],
+  "summary": {
+    "total_python_packages": 46,
+    "total_npm_packages": 40,
+    "python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0
+  }
+}
