@@ -152,32 +152,6 @@ export const submitDhanCredentialsV2 = onCall(
 export const saveDhanCredentials = submitDhanCredentialsV2;
 
 /**
- * TEMPORARY: Force complete the migration of the old function
- * This will be removed after successful deployment
- */
-export const submitDhanCredentials = onCall(
-  {
-    region: "us-central1",
-    memory: "256MiB",
-    timeoutSeconds: 60,
-    cpu: 0.25, // Use minimal resources for migration completion
-  },
-  async (request) => {
-    // This is a temporary function to complete the v2 migration
-    // Redirect to the new function implementation
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be logged in to save credentials.");
-    }
-    
-    return {
-      message: "Function migrated to submitDhanCredentialsV2. Please use the new version.",
-      status: "deprecated",
-      redirectTo: "submitDhanCredentialsV2"
-    };
-  }
-);
-
-/**
  * Helper function to retrieve and decrypt credentials
  * Used by other functions that need Dhan API access
  */
