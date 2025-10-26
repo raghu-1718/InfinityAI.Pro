@@ -34,11 +34,15 @@ class AIModelService:
         self.mz.train_tabular(X, y)
         logger.info("✅ ModelZoo tabular models bootstrapped with synthetic data")
 
-    async def predict_symbol(self, symbol: str) -> AISignal:
+    async def predict_symbol(self, symbol: str, fast: bool = False) -> AISignal:
+        """
+        Predict a single symbol.
+        - fast=True: skip news sentiment (set neutral), minimizing I/O and CPU.
+        """
         snap = await self.connector.fetch_snapshot(symbol)
-        news = await self.connector.fetch_news(5)
+        news = [] if fast else await self.connector.fetch_news(5)
         curr_price = float(snap.get("price") or snap.get("last_price") or 100.0)
-        news_sent = self.sentiment.score_news(news)
+        news_sent = 0.0 if fast else self.sentiment.score_news(news)
         X = extract_snapshot_features(snap)
         comp = self.mz.predict_tabular(X)
         sentiment_tilt = curr_price * 0.002 * news_sent
@@ -71,11 +75,11 @@ class AIModelService:
             timestamp=utc_now()
         )
 
-    async def batch_signals(self, symbols: List[str]) -> List[AISignal]:
+    async def batch_signals(self, symbols: List[str], fast: bool = False) -> List[AISignal]:
         out = []
         for s in symbols:
             try:
-                out.append(await self.predict_symbol(s))
+                out.append(await self.predict_symbol(s, fast=fast))
             except Exception as e:
                 logger.error(f"Signal error {s}: {e}")
         return out

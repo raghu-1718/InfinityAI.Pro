@@ -86,7 +86,7 @@ if ($LASTEXITCODE -eq 0) {
 # Step 3: Deploy Frontend
 Write-Host "`n🌐 Deploying Frontend..." -ForegroundColor Yellow
 
-Set-Location "frontend-new"
+Set-Location "frontend"
 
 # Build frontend
 npm run build
@@ -166,12 +166,12 @@ foreach ($name in $endpoints.Keys) {
     try {
         $response = Invoke-WebRequest -Uri $url -TimeoutSec 10 -ErrorAction Stop
         if ($response.StatusCode -eq 200) {
-            Write-Status "$name: Healthy" "Success"
+            Write-Status "${name}: Healthy" "Success"
         } else {
-            Write-Status "$name: Unhealthy (Status: $($response.StatusCode))" "Error"
+            Write-Status "${name}: Unhealthy (Status: $($response.StatusCode))" "Error"
         }
     } catch {
-        Write-Status "$name: Connection failed - $($_.Exception.Message)" "Error"
+        Write-Status "${name}: Connection failed - $($_.Exception.Message)" "Error"
     }
 }
 
