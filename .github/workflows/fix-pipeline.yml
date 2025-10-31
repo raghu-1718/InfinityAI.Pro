@@ -94,9 +94,73 @@ jobs:
             echo "No visible Access Context Manager policies or insufficient permissions (this is OK in many setups)."
           fi
 
-  fix-firebase-auth:
+  fix-gcp-permissions:
     runs-on: ubuntu-latest
     needs: preflight-diagnostics
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Grant Cloud Functions deploy roles to GitHub Service Account
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
+          SA_EMAIL=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['client_email'])" "${{ github.workspace }}/gcp-sa-key.json")
+          echo "Using service account: ${SA_EMAIL}"
+
+          for ROLE in \
+            roles/cloudfunctions.developer \
+            roles/iam.serviceAccountUser \
+            roles/run.admin \
+            roles/eventarc.admin \
+            roles/cloudbuild.builds.editor \
+            roles/artifactregistry.writer \
+            roles/secretmanager.secretAccessor \
+            roles/firebase.admin \
+            roles/appengine.appAdmin; do
+            gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
+              --member="serviceAccount:${SA_EMAIL}" \
+              --role="$ROLE" \
+              --condition=None || true
+          done
+
+          rm -f ${{ github.workspace }}/gcp-sa-key.json
+
+      - name: Configure IAM Permissions for Cloud Build
+        run: |
+          PROJECT_NUMBER=$(gcloud projects describe $GCP_PROJECT_ID --format="value(projectNumber)")
+          CLOUDBUILD_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
+          echo "Granting permissions to Cloud Build service account: $CLOUDBUILD_SA"
+          for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/storage.objectViewer roles/secretmanager.secretAccessor; do
+            gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
+              --member="serviceAccount:$CLOUDBUILD_SA" \
+              --role="$ROLE" \
+              --condition=None || true
+          done
+
+      - name: Enable Required APIs
+        run: |
+          gcloud services enable cloudbuild.googleapis.com || true
+          gcloud services enable run.googleapis.com || true
+          gcloud services enable secretmanager.googleapis.com || true
+          gcloud services enable firebase.googleapis.com || true
+          gcloud services enable cloudfunctions.googleapis.com || true
+          gcloud services enable eventarc.googleapis.com || true
+          gcloud services enable artifactregistry.googleapis.com || true
+          gcloud services enable appengine.googleapis.com || true
+
+  fix-firebase-auth:
+    runs-on: ubuntu-latest
+    needs: fix-gcp-permissions
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -190,104 +254,6 @@ jobs:
       - name: Clean up credentials
         run: rm -f ${{ github.workspace }}/gcp-sa-key.json
 
-  fix-gcp-permissions:
-    runs-on: ubuntu-latest
-    needs: fix-firebase-auth
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Grant Cloud Functions deploy roles to GitHub Service Account
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Write SA JSON locally to extract email
-          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
-          SA_EMAIL=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['client_email'])" "${{ github.workspace }}/gcp-sa-key.json")
-          echo "Using service account: ${SA_EMAIL}"
-
-          # Bind minimal roles for Cloud Functions v2 deploys
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/cloudfunctions.developer" \
-            --condition=None || true
-
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/iam.serviceAccountUser" \
-            --condition=None || true
-
-          # Gen2 also needs Cloud Run and Eventarc admin on deployer
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/run.admin" \
-            --condition=None || true
-
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/eventarc.admin" \
-            --condition=None || true
-
-          # Allow Cloud Build usage explicitly
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/cloudbuild.builds.editor" \
-            --condition=None || true
-
-          # Optional but helpful for builds and artifact publishing in Gen2
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/artifactregistry.writer" \
-            --condition=None || true
-
-          rm -f ${{ github.workspace }}/gcp-sa-key.json
-
-      - name: Configure IAM Permissions
-        run: |
-          # Get the Cloud Build service account
-          PROJECT_NUMBER=$(gcloud projects describe $GCP_PROJECT_ID --format="value(projectNumber)")
-          CLOUDBUILD_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
-
-          echo "Granting permissions to Cloud Build service account: $CLOUDBUILD_SA"
-
-          # Grant required roles
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/run.admin" \
-            --condition=None
-
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/iam.serviceAccountUser" \
-            --condition=None
-
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/storage.objectViewer" \
-            --condition=None
-
-          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
-            --member="serviceAccount:$CLOUDBUILD_SA" \
-            --role="roles/secretmanager.secretAccessor" \
-            --condition=None
-
-      - name: Enable Required APIs
-        run: |
-          gcloud services enable cloudbuild.googleapis.com
-          gcloud services enable run.googleapis.com
-          gcloud services enable secretmanager.googleapis.com
-          gcloud services enable firebase.googleapis.com
-          gcloud services enable cloudfunctions.googleapis.com
-          gcloud services enable eventarc.googleapis.com
-          gcloud services enable artifactregistry.googleapis.com
 
   deploy-engines:
     runs-on: ubuntu-latest
