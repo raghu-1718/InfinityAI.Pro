@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy-and-verify:
     name: Deploy & Verify Production Environment
@@ -69,40 +73,73 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@latest
 
-      - name: Deploy Engine A (Market Data)
+      - name: Deploy Engine A (Market Data) with retry
+        shell: bash
         run: |
-          gcloud run deploy infinityai-engine-a \
-            --source ./engines/engine-a \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --allow-unauthenticated \
-            --set-secrets="DHAN_API_KEY=dhan-api-key:latest"
+          set -euo pipefail
+          for i in {1..5}; do
+            if gcloud run deploy infinityai-engine-a \
+              --source ./engines/engine-a \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --allow-unauthenticated \
+              --set-secrets="DHAN_API_KEY=dhan-api-key:latest"; then
+              echo "Deploy engine-a succeeded on attempt $i"; break;
+            else
+              echo "Deploy engine-a failed (attempt $i). Backing off..."; sleep $((2**i));
+            fi
+          done
 
-      - name: Deploy Engine B (AI/ML)
+      - name: Deploy Engine B (AI/ML) with retry
+        shell: bash
         run: |
+          set -euo pipefail
+          # Best-effort clear env vars
           gcloud run services update infinityai-engine-b --clear-env-vars --region=us-central1 --project=infinity-ai-5ec7c || true
-          gcloud run deploy infinityai-engine-b \
-            --source ./engines/engine-b \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --allow-unauthenticated \
-            --set-secrets="GEMINI_API_KEY_PRIMARY=gemini-api-key-primary:latest,GEMINI_API_KEY_SECONDARY=gemini-api-key-secondary:latest"
+          for i in {1..5}; do
+            if gcloud run deploy infinityai-engine-b \
+              --source ./engines/engine-b \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --allow-unauthenticated \
+              --set-secrets="GEMINI_API_KEY_PRIMARY=gemini-api-key-primary:latest,GEMINI_API_KEY_SECONDARY=gemini-api-key-secondary:latest"; then
+              echo "Deploy engine-b succeeded on attempt $i"; break;
+            else
+              echo "Deploy engine-b failed (attempt $i). Backing off..."; sleep $((2**i));
+            fi
+          done
 
-      - name: Deploy Engine C (Trade Execution)
+      - name: Deploy Engine C (Trade Execution) with retry
+        shell: bash
         run: |
-          gcloud run deploy infinityai-engine-c-execution \
-            --source ./engines/engine-c-execution \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --no-allow-unauthenticated
+          set -euo pipefail
+          for i in {1..5}; do
+            if gcloud run deploy infinityai-engine-c-execution \
+              --source ./engines/engine-c-execution \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --no-allow-unauthenticated; then
+              echo "Deploy engine-c-execution succeeded on attempt $i"; break;
+            else
+              echo "Deploy engine-c-execution failed (attempt $i). Backing off..."; sleep $((2**i));
+            fi
+          done
 
-      - name: Deploy Engine D (Orchestrator)
+      - name: Deploy Engine D (Orchestrator) with retry
+        shell: bash
         run: |
-          gcloud run deploy infinityai-engine-d \
-            --source ./engines/engine-d \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --allow-unauthenticated
+          set -euo pipefail
+          for i in {1..5}; do
+            if gcloud run deploy infinityai-engine-d \
+              --source ./engines/engine-d \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --allow-unauthenticated; then
+              echo "Deploy engine-d succeeded on attempt $i"; break;
+            else
+              echo "Deploy engine-d failed (attempt $i). Backing off..."; sleep $((2**i));
+            fi
+          done
 
       - name: Set up Google Cloud credentials for Firebase
         run: |
@@ -133,13 +170,21 @@ jobs:
       - name: Clean up credentials file
         run: rm -f ${{ github.workspace }}/gcp-sa-key.json
 
-      - name: Deploy Frontend
+      - name: Deploy Frontend with retry
+        shell: bash
         run: |
-          gcloud run deploy infinityai-frontend \
-            --source ./frontend \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --allow-unauthenticated
+          set -euo pipefail
+          for i in {1..5}; do
+            if gcloud run deploy infinityai-frontend \
+              --source ./frontend \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --allow-unauthenticated; then
+              echo "Deploy frontend succeeded on attempt $i"; break;
+            else
+              echo "Deploy frontend failed (attempt $i). Backing off..."; sleep $((2**i));
+            fi
+          done
 
       - name: Wait for services to stabilize
         run: sleep 60
