@@ -59,11 +59,14 @@ jobs:
           PROJECT_ID: ${{ env.GCP_PROJECT_ID }}
         run: |
           set -euo pipefail
-          BILLING_ENABLED=$(gcloud beta billing projects describe "$PROJECT_ID" --format='value(billingEnabled)' || echo "")
-          echo "Billing enabled: $BILLING_ENABLED"
-          if [ "$BILLING_ENABLED" != "True" ] && [ "$BILLING_ENABLED" != "TRUE" ]; then
-            echo "❌ Billing is not enabled for project $PROJECT_ID. Enable billing and re-run." >&2
+          BILLING_ENABLED=$(gcloud beta billing projects describe "$PROJECT_ID" --format='value(billingEnabled)' 2>/dev/null || echo "")
+          echo "Billing enabled: ${BILLING_ENABLED:-unknown}"
+          if [ "$BILLING_ENABLED" = "False" ] || [ "$BILLING_ENABLED" = "FALSE" ]; then
+            echo "❌ Billing is disabled for project $PROJECT_ID. Enable billing and re-run." >&2
             exit 1
+          fi
+          if [ -z "$BILLING_ENABLED" ]; then
+            echo "⚠️ Unable to verify billing status (insufficient permissions). Proceeding optimistically."
           fi
 
       - name: List Org Policies related to Cloud Functions/Artifact Registry (best-effort)
@@ -138,11 +141,14 @@ jobs:
 
       - name: Check Billing Status (fail fast if disabled)
         run: |
-          BILLING_ENABLED=$(gcloud beta billing projects describe $FIREBASE_PROJECT_ID --format='value(billingEnabled)' || echo "")
-          echo "Billing enabled: $BILLING_ENABLED"
-          if [ "$BILLING_ENABLED" != "True" ] && [ "$BILLING_ENABLED" != "TRUE" ]; then
-            echo "❌ Billing is not enabled for project $FIREBASE_PROJECT_ID. Enable billing and re-run." >&2
+          BILLING_ENABLED=$(gcloud beta billing projects describe $FIREBASE_PROJECT_ID --format='value(billingEnabled)' 2>/dev/null || echo "")
+          echo "Billing enabled: ${BILLING_ENABLED:-unknown}"
+          if [ "$BILLING_ENABLED" = "False" ] || [ "$BILLING_ENABLED" = "FALSE" ]; then
+            echo "❌ Billing is disabled for project $FIREBASE_PROJECT_ID. Enable billing and re-run." >&2
             exit 1
+          fi
+          if [ -z "$BILLING_ENABLED" ]; then
+            echo "⚠️ Unable to verify billing status (insufficient permissions). Proceeding optimistically."
           fi
 
       - name: Ensure App Engine app exists (one-time init)
