@@ -34,8 +34,9 @@ Immediate remediation checklist:
 ### Preflight diagnostics (GitHub Actions)
 
 - Run: fix-pipeline.yml on branch `recovery/v4.6-stabilization`
-- Time: 2025-10-31T02:42:44Z
-- Result: FAILED at step "Check Project Billing Status"
+- Attempts:
+  - 2025-10-31T02:42:44Z → FAILED at step "Check Project Billing Status"
+  - 2025-10-31T02:46:50Z → FAILED at step "Check Project Billing Status"
 - Action: Enable billing for project `infinity-ai-5ec7c` and re-run the preflight workflow.
 
 ---
