@@ -39,6 +39,19 @@ Immediate remediation checklist:
   - 2025-10-31T02:46:50Z → FAILED at step "Check Project Billing Status"
 - Action: Enable billing for project `infinity-ai-5ec7c` and re-run the preflight workflow.
 
+## Post-deploy verification (after engine redeploy)
+
+- Verifier report: `infinityai_verification_report_20251031_085537.json`
+- Overall status: DEVELOPMENT_PHASE
+- Success rate: 36.0% (9/25 tests passed)
+
+Observed state after CI:
+
+- Engines A, B, D redeployed via Cloud Run (jobs succeeded); Engine C deployed as private (no-unauth)
+- Firebase Functions deploy step failed in CI (fix-firebase-auth job). Functions callable endpoints still accessible from previous deploys.
+- Frontend and several engine health checks still returning 500; inter-service calls 503.
+- Action: Triage Firebase Functions deploy error logs in Actions run 18961317327 (step "Deploy Firebase Functions"). Ensure SA roles include Firebase Admin and App Engine Admin (added), confirm functions/runtime config, and re-run.
+
 ---
 
 ## Generated: 2025-10-24 12:18:58 UTC
@@ -53,7 +66,7 @@ Immediate remediation checklist:
   - Response Time: ~380ms
 
 - **Engine B (AI/ML)**: <https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app>
-  - Health: ✅ Working  
+  - Health: ✅ Working
   - Gemini Integration: ⚠️ Requires testing
   - Response Time: ~380ms
 
