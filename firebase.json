@@ -5,12 +5,6 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
-      }
     ]
   },
   "firestore": {

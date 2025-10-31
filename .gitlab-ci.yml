@@ -57,9 +57,9 @@ build_and_deploy:
   image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
   variables:
     <<: *gcp_vars
-  id_tokens:
-    GCP_ID_TOKEN:
-      aud: https://gitlab.com
+  # Disabled — GitHub Actions is the canonical deploy source (avoid parallel deploys)
+  rules:
+    - when: never
   before_script:
     - echo "Authenticating to GCP via OIDC/WIF"
     - echo "$CI_JOB_JWT_V2" > /tmp/oidc_token
@@ -78,10 +78,8 @@ build_and_deploy:
     - gcloud config set project ${PROJECT_ID}
   script:
     - gcloud --version
-    # Trigger Cloud Build using existing cloudbuild.yaml
+    # Trigger Cloud Build using existing cloudbuild.yaml (disabled by rules)
     - gcloud builds submit --config cloudbuild.yaml --region=${REGION} --substitutions=_REGION=${REGION}
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
 
 verify_production:
   stage: verify
