@@ -97,6 +97,34 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Grant Cloud Functions deploy roles to GitHub Service Account
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Write SA JSON locally to extract email
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
+          SA_EMAIL=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['client_email'])" "${{ github.workspace }}/gcp-sa-key.json")
+          echo "Using service account: ${SA_EMAIL}"
+
+          # Bind minimal roles for Cloud Functions v2 deploys
+          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
+            --member="serviceAccount:${SA_EMAIL}" \
+            --role="roles/cloudfunctions.developer" \
+            --condition=None || true
+
+          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
+            --member="serviceAccount:${SA_EMAIL}" \
+            --role="roles/iam.serviceAccountUser" \
+            --condition=None || true
+
+          # Optional but helpful for builds and artifact publishing in Gen2
+          gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
+            --member="serviceAccount:${SA_EMAIL}" \
+            --role="roles/artifactregistry.writer" \
+            --condition=None || true
+
+          rm -f ${{ github.workspace }}/gcp-sa-key.json
+
       - name: Configure IAM Permissions
         run: |
           # Get the Cloud Build service account
@@ -132,6 +160,9 @@ jobs:
           gcloud services enable run.googleapis.com
           gcloud services enable secretmanager.googleapis.com
           gcloud services enable firebase.googleapis.com
+          gcloud services enable cloudfunctions.googleapis.com
+          gcloud services enable eventarc.googleapis.com
+          gcloud services enable artifactregistry.googleapis.com
 
   deploy-engines:
     runs-on: ubuntu-latest
