@@ -53,6 +53,20 @@ jobs:
           gcloud config set project $FIREBASE_PROJECT_ID
           firebase use $FIREBASE_PROJECT_ID
 
+      - name: Check Billing Status (fail fast if disabled)
+        run: |
+          BILLING_ENABLED=$(gcloud beta billing projects describe $FIREBASE_PROJECT_ID --format='value(billingEnabled)' || echo "")
+          echo "Billing enabled: $BILLING_ENABLED"
+          if [ "$BILLING_ENABLED" != "True" ] && [ "$BILLING_ENABLED" != "TRUE" ]; then
+            echo "❌ Billing is not enabled for project $FIREBASE_PROJECT_ID. Enable billing and re-run." >&2
+            exit 1
+          fi
+
+      - name: Ensure App Engine app exists (one-time init)
+        run: |
+          gcloud app describe --project $FIREBASE_PROJECT_ID >/dev/null 2>&1 || \
+          gcloud app create --project $FIREBASE_PROJECT_ID --region=us-central || true
+
       - name: Delete orphaned functions (if any)
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
@@ -73,6 +87,11 @@ jobs:
 
           # Set the encryption key as an environment variable for deployment
           export ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+
+          # Also set Firebase Functions config (preferred by runtime code)
+          if [ -n "${{ secrets.ENCRYPTION_KEY }}" ]; then
+            firebase functions:config:set secrets.encryption_key="${{ secrets.ENCRYPTION_KEY }}" --project $FIREBASE_PROJECT_ID || true
+          fi
 
           # Deploy functions - this bypasses the secret manager validation issue
           firebase deploy --only functions --project $FIREBASE_PROJECT_ID --non-interactive
