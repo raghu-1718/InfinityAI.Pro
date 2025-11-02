@@ -39,18 +39,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Frontend to Vercel
-        uses: Vercel/vercel-action@v30
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          cwd: ./frontend
-          vercel-env-vars: |
-            VITE_FIREBASE_API_KEY=${{ secrets.VITE_API_KEY }}
-            VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_AUTH_DOMAIN }}
-            VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_PROJECT_ID }}
-            VITE_API_BASE=https://engines.infinityai.pro
-            VITE_WS_BASE=wss://engines.infinityai.pro
+          working-directory: ./frontend
+          vercel-args: '--prod'
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_PROJECT_ID }}
+          VITE_API_BASE: https://engines.infinityai.pro
+          VITE_WS_BASE: wss://engines.infinityai.pro
 
   # --- Job 3: Deploy Webhooks API to Vercel ---
   deploy-webhooks:
@@ -60,16 +61,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Webhooks API to Vercel
-        uses: Vercel/vercel-action@v30
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-          cwd: ./api-webhooks
-          vercel-env-vars: |
-            DHAN_WEBHOOK_SECRET=${{ secrets.DHAN_WEBHOOK_SECRET }}
-            ENGINE_C_INTERNAL_URL=https://engines.infinityai.pro/engine-c
-            FRONTEND_VERCEL_URL=https://infinityai.pro
+          working-directory: ./api-webhooks
+          vercel-args: '--prod'
+        env:
+          DHAN_WEBHOOK_SECRET: ${{ secrets.DHAN_WEBHOOK_SECRET }}
+          ENGINE_C_INTERNAL_URL: https://engines.infinityai.pro/engine-c
+          FRONTEND_VERCEL_URL: https://infinityai.pro
 
   # --- Job 4: Deploy Firebase Functions ---
   deploy-functions:
@@ -96,12 +98,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine C to Northflank
-        uses: northflank/actions/deploy@v3
+        uses: northflank/deploy-to-northflank@v1
         with:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project: infinity-ai
-          service: engine-c-execution
-          dockerfile: ./engines/engine-c-execution/Dockerfile
+          project-id: infinity-ai
+          service-id: engine-c-execution
+          context: ./engines/engine-c-execution
+          dockerfile: Dockerfile
 
   # --- Job 6: Deploy Engine-A to Northflank ---
   deploy-engine-a:
@@ -111,12 +114,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine A to Northflank
-        uses: northflank/actions/deploy@v3
+        uses: northflank/deploy-to-northflank@v1
         with:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project: infinity-ai
-          service: engine-a
-          dockerfile: ./engines/engine-a/Dockerfile
+          project-id: infinity-ai
+          service-id: engine-a
+          context: ./engines/engine-a
+          dockerfile: Dockerfile
 
   # --- Job 7: Deploy Engine-B to Northflank ---
   deploy-engine-b:
@@ -126,12 +130,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine B to Northflank
-        uses: northflank/actions/deploy@v3
+        uses: northflank/deploy-to-northflank@v1
         with:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project: infinity-ai
-          service: engine-b
-          dockerfile: ./engines/engine-b/Dockerfile
+          project-id: infinity-ai
+          service-id: engine-b
+          context: ./engines/engine-b
+          dockerfile: Dockerfile
 
   # --- Job 8: Deploy Engine-D to Northflank ---
   deploy-engine-d:
@@ -141,9 +146,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine D to Northflank
-        uses: northflank/actions/deploy@v3
+        uses: northflank/deploy-to-northflank@v1
         with:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project: infinity-ai
-          service: engine-d
-          dockerfile: ./engines/engine-d/Dockerfile
+          project-id: infinity-ai
+          service-id: engine-d
+          context: ./engines/engine-d
+          dockerfile: Dockerfile

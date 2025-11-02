@@ -1,0 +1,52 @@
+====================================================================================
+❌ DEPLOYMENT BLOCKED: BILLING NOT ENABLED
+====================================================================================
+
+PROJECT DETAILS:
+- Project ID: infinitygt-b2287
+- Project Number: 865466955751
+- Project Name: InfinityAIpro
+
+ISSUE:
+The GCP project does not have an active billing account linked.
+
+REQUIRED SERVICES (Need Billing):
+✅ iam.googleapis.com                - Identity and Access Management (ENABLED)
+❌ run.googleapis.com                - Cloud Run (REQUIRES BILLING)
+❌ artifactregistry.googleapis.com   - Artifact Registry (REQUIRES BILLING)
+❌ cloudbuild.googleapis.com         - Cloud Build (REQUIRES BILLING)
+❌ secretmanager.googleapis.com      - Secret Manager (REQUIRES BILLING)
+❌ firebase.googleapis.com           - Firebase (REQUIRES BILLING)
+
+====================================================================================
+📋 ACTION REQUIRED: ENABLE BILLING
+====================================================================================
+
+1. Go to: https://console.cloud.google.com/billing/linkedaccount?project=infinitygt-b2287
+
+2. Link a billing account to the project
+
+3. Once billing is enabled, run this command to enable all required APIs:
+   gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com cloudbuild.googleapis.com firebase.googleapis.com --project=infinitygt-b2287
+
+====================================================================================
+⚠️  DEPLOYMENT STATUS
+====================================================================================
+
+COMPLETED:
+✅ Repository restructured to root-level services
+✅ All workflow paths corrected
+✅ Dhan real-time integration verified (production SDK)
+✅ GCP project references updated to infinitygt-b2287
+✅ Service account created with correct roles
+✅ GitHub Secret GCP_SERVICE_ACCOUNT_KEY updated
+✅ IAM API enabled
+
+BLOCKED:
+❌ Cloud Run, Firebase, and other services require billing to be enabled
+❌ Cannot deploy engines, frontend, or functions without active billing
+
+NEXT STEP:
+Enable billing on the infinitygt-b2287 project, then re-run the workflows.
+
+====================================================================================
