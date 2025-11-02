@@ -21,14 +21,14 @@ jobs:
           python-version: '3.11'
 
       - name: Install Engine-C Dependencies
-        working-directory: ./InfinityGT-Project/engines/engine-c-execution
+        working-directory: ./engines/engine-c-execution
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
       - name: Run Engine-C Pytest
-        working-directory: ./InfinityGT-Project/engines/engine-c-execution
+        working-directory: ./engines/engine-c-execution
         run: pytest -q
 
   # --- Job 2: Deploy Frontend to Vercel ---
@@ -44,7 +44,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          cwd: ./InfinityGT-Project/frontend
+          cwd: ./frontend
           vercel-env-vars: |
             VITE_FIREBASE_API_KEY=${{ secrets.VITE_API_KEY }}
             VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_AUTH_DOMAIN }}
@@ -86,7 +86,7 @@ jobs:
           projectId: infinitygt-b2287
           channelId: live
           target: infinitygt-b2287
-          entryPoint: ./InfinityGT-Project/functions
+          entryPoint: ./functions
 
   # --- Job 5: Deploy Engine-C to Northflank ---
   deploy-engine-c:
@@ -101,7 +101,7 @@ jobs:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
           project: infinity-ai
           service: engine-c-execution
-          dockerfile: ./InfinityGT-Project/engines/engine-c-execution/Dockerfile
+          dockerfile: ./engines/engine-c-execution/Dockerfile
 
   # --- Job 6: Deploy Engine-A to Northflank ---
   deploy-engine-a:
@@ -116,7 +116,7 @@ jobs:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
           project: infinity-ai
           service: engine-a
-          dockerfile: ./InfinityGT-Project/engines/engine-a/Dockerfile
+          dockerfile: ./engines/engine-a/Dockerfile
 
   # --- Job 7: Deploy Engine-B to Northflank ---
   deploy-engine-b:
@@ -131,7 +131,7 @@ jobs:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
           project: infinity-ai
           service: engine-b
-          dockerfile: ./InfinityGT-Project/engines/engine-b/Dockerfile
+          dockerfile: ./engines/engine-b/Dockerfile
 
   # --- Job 8: Deploy Engine-D to Northflank ---
   deploy-engine-d:
@@ -146,4 +146,4 @@ jobs:
           token: ${{ secrets.NORTHFLANK_TOKEN }}
           project: infinity-ai
           service: engine-d
-          dockerfile: ./InfinityGT-Project/engines/engine-d/Dockerfile
+          dockerfile: ./engines/engine-d/Dockerfile
