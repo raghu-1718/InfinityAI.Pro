@@ -48,6 +48,8 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
           vercel-args: '--prod'
+          working-directory: ./frontend
+          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           VITE_API_URL: https://engines.infinityai.pro
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
@@ -72,6 +74,8 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
           vercel-args: '--prod'
+          working-directory: ./api-webhooks
+          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           DHAN_WEBHOOK_SECRET: ${{ secrets.DHAN_WEBHOOK_SECRET }}
           ENGINE_C_INTERNAL_URL: https://engines.infinityai.pro/engine-c
@@ -98,7 +102,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
       - name: Deploy to Firebase Functions
-        run: firebase deploy --only functions --project infinitygt-b2287 --non-interactive
+        run: firebase deploy --only functions --project infinitygt-b2287 --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
@@ -107,9 +111,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
-    defaults:
-      run:
-        working-directory: ./engines/engine-c-execution
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine C to Vercel
@@ -119,6 +120,8 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_C }}
           vercel-args: '--prod'
+          working-directory: ./engines/engine-c-execution
+          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
@@ -154,12 +157,24 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-      - name: Deploy Engine B to Cloud Run
+      - name: Ensure Artifact Registry repository exists
+        run: |
+          gcloud artifacts repositories create cloud-run-source-deploy \
+            --repository-format=docker \
+            --location=us-central1 \
+          || echo "Repo exists"
+      - name: Build and push image for Engine B
+        working-directory: ./engines/engine-b
+        run: |
+          IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-b:${{ github.sha }}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          gcloud builds submit --tag "$IMAGE" --project ${{ secrets.GCP_PROJECT_ID }}
+      - name: Deploy Engine B to Cloud Run (image)
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: infinityai-engine-b
           region: us-central1
-          source: ./engines/engine-b
+          image: ${{ env.IMAGE }}
           env_vars: |
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
 
@@ -168,9 +183,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
-    defaults:
-      run:
-        working-directory: ./engines/engine-d
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Engine D to Vercel
@@ -180,6 +192,8 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_D }}
           vercel-args: '--prod'
+          working-directory: ./engines/engine-d
+          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           ENGINE_A_URL: ${{ secrets.ENGINE_A_URL }}
