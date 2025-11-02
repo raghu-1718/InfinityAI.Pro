@@ -1,0 +1,123 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/build-enable-automatic-updates": "false",
+      "run.googleapis.com/build-id": "5390111f-75d9-400b-9b47-fc20a7afead8",
+      "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-d",
+      "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/5390111f-75d9-400b-9b47-fc20a7afead8",
+      "run.googleapis.com/build-source-location": "gs://run-sources-infinity-ai-5ec7c-us-central1/services/infinityai-engine-d/1761501069.314204-aa0313744b6046818b61f3c083594eb2.zip#1761501069409753",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "544.0.0",
+      "run.googleapis.com/description": "Chatbot Engine - Multi-engine orchestration",
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all",
+      "run.googleapis.com/operation-id": "75e465d2-82c9-4e58-abb6-4a6bb6573e2c",
+      "run.googleapis.com/urls": "[\"https://infinityai-engine-d-26140490557.us-central1.run.app\",\"https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app\"]",
+      "serving.knative.dev/creator": "raghu42620@gmail.com",
+      "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+    },
+    "creationTimestamp": "2025-10-20T01:18:00.597258Z",
+    "generation": 32,
+    "labels": {
+      "cloud.googleapis.com/location": "us-central1"
+    },
+    "name": "infinityai-engine-d",
+    "namespace": "26140490557",
+    "resourceVersion": "AAZCOnQC6C4",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-d",
+    "uid": "477a9a6e-07bb-4cec-a5c1-c04667e4cdc4"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "10",
+          "run.googleapis.com/client-name": "gcloud",
+          "run.googleapis.com/client-version": "544.0.0",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "labels": {
+          "client.knative.dev/nonce": "ucprwgerab",
+          "run.googleapis.com/startupProbeType": "Default"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "GOOGLE_CLOUD_PROJECT",
+                "value": "infinity-ai-5ec7c"
+              }
+            ],
+            "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-d@sha256:e0af4af32f2972e6f8613c876ab57d2d53042ae2dd08006df69067d6a5d8df31",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8080
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ],
+        "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+        "timeoutSeconds": 600
+      }
+    },
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100
+      }
+    ]
+  },
+  "status": {
+    "address": {
+      "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2025-10-28T16:24:42.147886Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2025-10-28T16:24:24.233102Z",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2025-10-28T16:24:42.112359Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "infinityai-engine-d-00031-8gk",
+    "latestReadyRevisionName": "infinityai-engine-d-00031-8gk",
+    "observedGeneration": 32,
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "infinityai-engine-d-00031-8gk"
+      }
+    ],
+    "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app"
+  }
+}

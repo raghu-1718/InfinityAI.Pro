@@ -1,0 +1,132 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/build-enable-automatic-updates": "false",
+      "run.googleapis.com/build-id": "10714185-bdd6-4fe5-a477-5d400b6d7792",
+      "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-a",
+      "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/10714185-bdd6-4fe5-a477-5d400b6d7792",
+      "run.googleapis.com/build-source-location": "gs://run-sources-infinity-ai-5ec7c-us-central1/services/infinityai-engine-a/1761500524.2828-338e5b70e9334c24a2f0097bb430de31.zip#1761500524466180",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "544.0.0",
+      "run.googleapis.com/description": "Market Data Engine - Real-time NIFTY/BANKNIFTY data",
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all",
+      "run.googleapis.com/operation-id": "7f4444c4-f8bf-49fa-91b2-ca5d0c5a5bc3",
+      "run.googleapis.com/urls": "[\"https://infinityai-engine-a-26140490557.us-central1.run.app\",\"https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app\"]",
+      "serving.knative.dev/creator": "raghu42620@gmail.com",
+      "serving.knative.dev/lastModifier": "github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+    },
+    "creationTimestamp": "2025-10-20T01:07:01.596174Z",
+    "generation": 39,
+    "labels": {
+      "cloud.googleapis.com/location": "us-central1"
+    },
+    "name": "infinityai-engine-a",
+    "namespace": "26140490557",
+    "resourceVersion": "AAZCE1DvXbI",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-a",
+    "uid": "c769d8e8-76e3-4920-b3d6-ce3611b9cca1"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "10",
+          "run.googleapis.com/client-name": "gcloud",
+          "run.googleapis.com/client-version": "544.0.0",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "labels": {
+          "client.knative.dev/nonce": "jvmxfvlmxc",
+          "run.googleapis.com/startupProbeType": "Default"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "GOOGLE_CLOUD_PROJECT",
+                "value": "infinity-ai-5ec7c"
+              },
+              {
+                "name": "DHAN_API_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "dhan-api-key"
+                  }
+                }
+              }
+            ],
+            "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-a@sha256:7996477b1b4385f0f47286db2fb955b0eed5ff8839cf3bd424b1c82ba2c17135",
+            "ports": [
+              {
+                "containerPort": 8000,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8000
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ],
+        "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+        "timeoutSeconds": 300
+      }
+    },
+    "traffic": [
+      {
+        "percent": 100,
+        "revisionName": "infinityai-engine-a-00001-vmn"
+      }
+    ]
+  },
+  "status": {
+    "address": {
+      "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2025-10-26T17:43:09.026731Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2025-10-26T17:43:09.047296Z",
+        "reason": "Retired",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2025-10-20T13:18:33.909285Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "infinityai-engine-a-00035-b7x",
+    "latestReadyRevisionName": "infinityai-engine-a-00001-vmn",
+    "observedGeneration": 39,
+    "traffic": [
+      {
+        "percent": 100,
+        "revisionName": "infinityai-engine-a-00001-vmn"
+      }
+    ],
+    "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app"
+  }
+}

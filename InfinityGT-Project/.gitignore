@@ -1,0 +1,17 @@
+# Gitignore for the convenience folder - actual repo ignores are at root
+# This file is intentionally minimal and only applies if anyone treats this folder as a separate project.
+node_modules/
+.env
+dist/
+node_modules/
+dist/
+build/
+.env
+.env.local
+.firebase/
+/.firebase
+**/__pycache__/
+*.pyc
+venv/
+__pycache__/
+*.log

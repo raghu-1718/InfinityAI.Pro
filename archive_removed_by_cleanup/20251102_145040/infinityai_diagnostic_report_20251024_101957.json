@@ -1,0 +1,50 @@
+{
+  "diagnostic_timestamp": "2025-10-24T04:49:57.022318",
+  "project_id": "infinity-ai-5ec7c",
+  "issues_found": [
+    {
+      "timestamp": "2025-10-24T04:48:39.383050",
+      "category": "MISSING_ENDPOINT",
+      "description": "Market data endpoint returns 404: https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/api/market-data/NIFTY",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2025-10-24T04:48:44.607888",
+      "category": "TIMEOUT",
+      "description": "Gemini analysis endpoint timeout: https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/api/gemini/analyze",
+      "severity": "MEDIUM"
+    },
+    {
+      "timestamp": "2025-10-24T04:48:49.762601",
+      "category": "TIMEOUT",
+      "description": "AI signals endpoint timeout: https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/api/ai-signals",
+      "severity": "MEDIUM"
+    },
+    {
+      "timestamp": "2025-10-24T04:48:51.347928",
+      "category": "MISSING_ENDPOINT",
+      "description": "Engine D status endpoint returns 404: https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/api/status",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2025-10-24T04:49:03.838921",
+      "category": "FIREBASE_ERROR",
+      "description": "Exception listing functions: argument of type 'NoneType' is not iterable",
+      "severity": "HIGH"
+    }
+  ],
+  "fixes_applied": [],
+  "current_service_urls": {
+    "engine_a": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
+    "engine_b": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
+    "engine_c": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
+    "engine_d": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app",
+    "frontend": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
+  },
+  "summary": {
+    "total_issues": 5,
+    "high_severity": 3,
+    "medium_severity": 2,
+    "low_severity": 0
+  }
+}

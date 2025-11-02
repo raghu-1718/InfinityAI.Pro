@@ -1,0 +1,329 @@
+{
+  "timestamp": "2025-10-26T16:15:36.194027+00:00",
+  "project_id": "infinity-ai-5ec7c",
+  "system_architecture": {
+    "engine_d_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:36.628622+00:00",
+      "details": {
+        "status": "ok",
+        "service": "engine-d-orchestration",
+        "websocket_connections": {
+          "total_connections": 0,
+          "channels": {
+            "dashboard": 0,
+            "trades": 0,
+            "signals": 0,
+            "health": 0
+          }
+        },
+        "timestamp": "2025-10-26 16:15:36 UTC",
+        "uptime_seconds": 82801.8
+      },
+      "latency_ms": 420.82
+    },
+    "engine_b_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:36.647354+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "engine-b",
+        "latency_ms": 0,
+        "timestamp": "2025-10-26T16:15:36.518580"
+      },
+      "latency_ms": 438.73
+    },
+    "engine_c_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:36.733768+00:00",
+      "details": {
+        "status": "protected"
+      },
+      "latency_ms": 525.93
+    },
+    "frontend_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:36.875760+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "frontend",
+        "timestamp": "2025-10-26T16:15:36+00:00"
+      },
+      "latency_ms": 666.84
+    },
+    "engine_a_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:45.056042+00:00",
+      "details": {
+        "status": "healthy",
+        "service": "engine-a",
+        "version": "7.0.0",
+        "timestamp": "2025-10-17 UTC"
+      },
+      "latency_ms": 8845.78
+    },
+    "inter_service_communication_d": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:45.538085+00:00",
+      "details": {
+        "status": "operational",
+        "service": "engine-d-orchestration",
+        "version": "4.6.0",
+        "uptime_seconds": 82810.8,
+        "health_summary": {
+          "healthy_engines": 0,
+          "total_engines": 3,
+          "health_percentage": 0,
+          "avg_response_time_ms": 51,
+          "overall_status": "critical"
+        },
+        "websocket_connections": {
+          "total_connections": 0,
+          "channels": {
+            "dashboard": 0,
+            "trades": 0,
+            "signals": 0,
+            "health": 0
+          }
+        },
+        "event_stats": {
+          "total_events": 0,
+          "connections": {
+            "total_connections": 0,
+            "channels": {
+              "dashboard": 0,
+              "trades": 0,
+              "signals": 0,
+              "health": 0
+            }
+          }
+        },
+        "engines_status": {
+          "A": false,
+          "B": false,
+          "C": false
+        },
+        "timestamp": "2025-10-26 16:15:45 UTC",
+        "features": [
+          "chatbot",
+          "websocket",
+          "orchestration",
+          "health-monitoring",
+          "jwt-auth"
+        ],
+        "last_health_check": 1761495345.294731
+      },
+      "latency_ms": 479.57
+    }
+  },
+  "data_flow": {
+    "firebase_function_getGeminiAnalysis": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:46.034831+00:00",
+      "details": "Function accessible",
+      "latency_ms": 496.75
+    },
+    "firebase_function_analyzePortfolio": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:46.533435+00:00",
+      "details": "Function accessible",
+      "latency_ms": 498.6
+    },
+    "firebase_function_getDhanOverview": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:47.035396+00:00",
+      "details": "Function accessible",
+      "latency_ms": 501.96
+    },
+    "firebase_function_submitDhanCredentialsV2": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:47.531443+00:00",
+      "details": "Function accessible",
+      "latency_ms": 492.13
+    },
+    "firebase_function_startTrading": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:48.029603+00:00",
+      "details": "Function accessible",
+      "latency_ms": 497.39
+    },
+    "firestore_write_test": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:48.522814+00:00",
+      "details": "Firestore accessible",
+      "latency_ms": 487.54
+    },
+    "real_time_orchestration": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:15:48.874884+00:00",
+      "details": {
+        "status": "operational",
+        "service": "engine-d-orchestration",
+        "version": "4.6.0",
+        "uptime_seconds": 82814.1,
+        "health_summary": {
+          "healthy_engines": 0,
+          "total_engines": 3,
+          "health_percentage": 0,
+          "avg_response_time_ms": 51,
+          "overall_status": "critical"
+        },
+        "websocket_connections": {
+          "total_connections": 0,
+          "channels": {
+            "dashboard": 0,
+            "trades": 0,
+            "signals": 0,
+            "health": 0
+          }
+        },
+        "event_stats": {
+          "total_events": 0,
+          "connections": {
+            "total_connections": 0,
+            "channels": {
+              "dashboard": 0,
+              "trades": 0,
+              "signals": 0,
+              "health": 0
+            }
+          }
+        },
+        "engines_status": {
+          "A": false,
+          "B": false,
+          "C": false
+        },
+        "timestamp": "2025-10-26 16:15:48 UTC",
+        "features": [
+          "chatbot",
+          "websocket",
+          "orchestration",
+          "health-monitoring",
+          "jwt-auth"
+        ],
+        "last_health_check": 1761495345.294731
+      },
+      "latency_ms": 341.73
+    }
+  },
+  "ai_integrations": {
+    "gemini_api": {
+      "status": "WARNING",
+      "timestamp": "2025-10-26T16:16:49.047545+00:00",
+      "details": "HTTPSConnectionPool(host='infinityai-engine-b-26140490557.us-central1.run.app', port=443): Read timed out. (read timeout=60)"
+    },
+    "vertex_ai": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:49.533438+00:00",
+      "details": "Vertex AI endpoint accessible",
+      "latency_ms": 484.65
+    },
+    "ai_signal_generation": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:50.704955+00:00",
+      "details": "Generated 10 signals",
+      "latency_ms": 1165.67
+    }
+  },
+  "market_data": {
+    "market_data_generic": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:51.065154+00:00",
+      "details": "Data points: 3",
+      "latency_ms": 355.26
+    },
+    "optionchain_ai_NIFTY": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:51.451460+00:00",
+      "details": "Option chain AI available",
+      "latency_ms": 386.31
+    }
+  },
+  "frontend": {
+    "accessibility": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:51.884736+00:00",
+      "details": "Content size: 493 bytes",
+      "latency_ms": 433.28
+    },
+    "react_app_detection": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:51.884736+00:00",
+      "details": "React app detected"
+    },
+    "api_health_check": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:52.249470+00:00",
+      "details": "API endpoint accessible",
+      "latency_ms": 364.73
+    }
+  },
+  "trading": {
+    "dhan_api_connectivity": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:52.727187+00:00",
+      "details": "Dhan endpoints accessible",
+      "latency_ms": 473.8
+    },
+    "engine_c_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:53.126517+00:00",
+      "details": "Health endpoint protected (401/403)",
+      "latency_ms": 394.34
+    }
+  },
+  "performance": {
+    "response_time_analysis": {
+      "status": "PASS",
+      "timestamp": "2025-10-26T16:16:53.131476+00:00",
+      "details": {
+        "average_latency_ms": 892.94,
+        "max_latency": {
+          "category": "system_architecture",
+          "test": "engine_a_health",
+          "latency_ms": 8845.78,
+          "status": "PASS"
+        },
+        "min_latency": {
+          "category": "data_flow",
+          "test": "real_time_orchestration",
+          "latency_ms": 341.73,
+          "status": "PASS"
+        },
+        "total_tests": 21
+      }
+    },
+    "slow_response_detection": {
+      "status": "WARNING",
+      "timestamp": "2025-10-26T16:16:53.131476+00:00",
+      "details": "Found 1 slow responses (>2s): ['engine_a_health']"
+    },
+    "bottleneck_identification": {
+      "status": "WARNING",
+      "timestamp": "2025-10-26T16:16:53.136647+00:00",
+      "details": {
+        "summary": "Found 1 potential bottlenecks/failures",
+        "items": [
+          "LATENCY: system_architecture.engine_a_health is very slow (8846ms)"
+        ]
+      }
+    }
+  },
+  "security": {},
+  "recommendations": [
+    "\u26a0\ufe0f System is near production-ready but requires attention to failed components",
+    "\ud83d\udd27 Address failing tests before production deployment",
+    "\ud83d\udcca Implement comprehensive monitoring for identified issues",
+    "\ud83e\uddea Conduct load testing and stress testing",
+    "\ud83d\udd10 Implement proper authentication for all Firebase Functions",
+    "\ud83d\udcf1 Develop mobile app integration roadmap",
+    "\ud83d\udcb0 Implement cost monitoring and optimization strategies",
+    "\ud83c\udf10 Set up CDN and edge caching for better global performance",
+    "\ud83d\udd04 Implement proper error handling and circuit breakers",
+    "\ud83d\udcca Add comprehensive logging and observability",
+    "\ud83e\uddea Set up automated testing pipelines",
+    "\ud83d\udd12 Conduct security audit and penetration testing"
+  ],
+  "overall_status": "NEAR_PRODUCTION"
+}

@@ -1,0 +1,564 @@
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.batchPredictionServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-vertex-nb.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.colabServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.featurestoreAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-aiplatform-vm.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.notebookServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-aiplatform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/aiplatform.user"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-gae-service.iam.gserviceaccount.com"
+      ],
+      "role": "roles/appengine.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.admin"
+    },
+    {
+      "condition": {
+        "expression": "request.time < timestamp(\"2025-10-23T18:16:56.851Z\")",
+        "title": "developer-connect-connection-setup"
+      },
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.attachmentReader"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.createOnPushRepoAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.reader"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.repoAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:service-26140490557@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.writer"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-bigquery-export@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/bigquery.dataEditor"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-bigquery-export@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/bigquery.user"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-bigquerydatatransfer.iam.gserviceaccount.com"
+      ],
+      "role": "roles/bigquerydatatransfer.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-binaryauthorization.iam.gserviceaccount.com"
+      ],
+      "role": "roles/binaryauthorization.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.codeToolsAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.individualUser"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:service-26140490557@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.editor"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcf-admin-robot.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-cloudscheduler.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudscheduler.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-cloudtasks.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudtasks.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@compute-system.iam.gserviceaccount.com"
+      ],
+      "role": "roles/compute.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@container-engine-robot.iam.gserviceaccount.com"
+      ],
+      "role": "roles/container.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@container-analysis.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containeranalysis.ServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@containerregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containerregistry.ServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-containerscanning.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containerscanning.ServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@dataflow-service-producer-prod.iam.gserviceaccount.com"
+      ],
+      "role": "roles/dataflow.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-dataform.iam.gserviceaccount.com"
+      ],
+      "role": "roles/dataform.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@dataproc-accounts.iam.gserviceaccount.com"
+      ],
+      "role": "roles/dataproc.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-bigquery-export@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/datastore.user"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557-compute@developer.gserviceaccount.com",
+        "serviceAccount:26140490557@cloudservices.gserviceaccount.com",
+        "serviceAccount:infinity-ai-5ec7c@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557-compute@developer.gserviceaccount.com"
+      ],
+      "role": "roles/eventarc.eventReceiver"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-bigquery-export@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/eventarc.publisher"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-eventarc.iam.gserviceaccount.com"
+      ],
+      "role": "roles/eventarc.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.analyticsAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.developAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-firebase.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.managementServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.sdkAdminServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseabt.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseappcheck.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseappdistro.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseapphosting.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-firebaseapphosting.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseapphosting.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseauth.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasehosting.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseml.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-firebasemods.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasemods.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@firebase-rules.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaserules.system"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasestorage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:service-26140490557@gcp-sa-firebasestorage.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasestorage.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasevertexai.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:service-26140490557@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/geminicloudassist.investigationAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/geminicloudassist.investigationOwner"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/geminicodeassistmanagement.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountCreator"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:service-26140490557@gcp-sa-pubsub.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountTokenCreator"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountUser"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/managedidentities.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@cloud-ml.google.com.iam.gserviceaccount.com"
+      ],
+      "role": "roles/ml.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-notebooks.iam.gserviceaccount.com"
+      ],
+      "role": "roles/notebooks.serviceAgent"
+    },
+    {
+      "members": [
+        "user:raghu42620@gmail.com",
+        "user:raghuyuvi10@gmail.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/resourcemanager.projectIamAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/run.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-26140490557@serverless-robot-prod.iam.gserviceaccount.com"
+      ],
+      "role": "roles/run.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-secrets@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/secretmanager.admin"
+    },
+    {
+      "condition": {
+        "expression": "request.time < timestamp(\"2025-10-23T18:16:56.851Z\")",
+        "title": "developer-connect-connection-setup"
+      },
+      "members": [
+        "serviceAccount:service-26140490557@gcp-sa-devconnect.iam.gserviceaccount.com"
+      ],
+      "role": "roles/secretmanager.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557-compute@developer.gserviceaccount.com",
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:infinity-ai-5ec7c@appspot.gserviceaccount.com"
+      ],
+      "role": "roles/secretmanager.secretAccessor"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceusage.serviceUsageAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:573866363639@cloudbuild.gserviceaccount.com",
+        "serviceAccount:github-actions-fix@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceusage.serviceUsageConsumer"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com",
+        "serviceAccount:github-actions@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.bucketViewer"
+    },
+    {
+      "members": [
+        "serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.folderAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:ext-firestore-multimodal-genai@infinity-ai-5ec7c.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.objectAdmin"
+    },
+    {
+      "members": [
+        "serviceAccount:26140490557@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/storage.objectViewer"
+    }
+  ],
+  "etag": "BwZCayl7x8M=",
+  "version": 3
+}

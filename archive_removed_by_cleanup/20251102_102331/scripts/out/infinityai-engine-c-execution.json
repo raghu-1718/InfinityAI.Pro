@@ -1,0 +1,123 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/build-enable-automatic-updates": "false",
+      "run.googleapis.com/build-id": "60066816-acd5-45ca-8df1-6840a1327957",
+      "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-c-execution",
+      "run.googleapis.com/build-name": "projects/26140490557/locations/us-central1/builds/60066816-acd5-45ca-8df1-6840a1327957",
+      "run.googleapis.com/build-source-location": "gs://run-sources-infinity-ai-5ec7c-us-central1/services/infinityai-engine-c-execution/1761500934.153005-f9234ab03b5e4ef2b3d1ef7ccb2f0ebb.zip#1761500934248892",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "544.0.0",
+      "run.googleapis.com/description": "Trading Engine - Secure OAuth & order execution",
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all",
+      "run.googleapis.com/operation-id": "5e1997c2-1971-4099-8989-50769b6c653d",
+      "run.googleapis.com/urls": "[\"https://infinityai-engine-c-execution-26140490557.us-central1.run.app\",\"https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app\"]",
+      "serving.knative.dev/creator": "raghu42620@gmail.com",
+      "serving.knative.dev/lastModifier": "raghu42620@gmail.com"
+    },
+    "creationTimestamp": "2025-10-20T01:15:43.835588Z",
+    "generation": 37,
+    "labels": {
+      "cloud.googleapis.com/location": "us-central1"
+    },
+    "name": "infinityai-engine-c-execution",
+    "namespace": "26140490557",
+    "resourceVersion": "AAZCOnVnYXc",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/26140490557/services/infinityai-engine-c-execution",
+    "uid": "dc5d45b7-3f44-4226-8fab-76b75b1b5015"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "10",
+          "run.googleapis.com/client-name": "gcloud",
+          "run.googleapis.com/client-version": "544.0.0",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "labels": {
+          "client.knative.dev/nonce": "qcwybspsfc",
+          "run.googleapis.com/startupProbeType": "Default"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "GOOGLE_CLOUD_PROJECT",
+                "value": "infinity-ai-5ec7c"
+              }
+            ],
+            "image": "us-central1-docker.pkg.dev/infinity-ai-5ec7c/cloud-run-source-deploy/infinityai-engine-c-execution@sha256:90c4d3e37f5e5f8df29cac6f092b210c2d4e13f1fc88671e0ab5df7f793b424c",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8080
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ],
+        "serviceAccountName": "26140490557-compute@developer.gserviceaccount.com",
+        "timeoutSeconds": 300
+      }
+    },
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100
+      }
+    ]
+  },
+  "status": {
+    "address": {
+      "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2025-10-28T16:25:05.509751Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2025-10-28T16:24:56.587323Z",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2025-10-28T16:25:05.472564Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "infinityai-engine-c-execution-00036-h6r",
+    "latestReadyRevisionName": "infinityai-engine-c-execution-00036-h6r",
+    "observedGeneration": 37,
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "infinityai-engine-c-execution-00036-h6r"
+      }
+    ],
+    "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app"
+  }
+}

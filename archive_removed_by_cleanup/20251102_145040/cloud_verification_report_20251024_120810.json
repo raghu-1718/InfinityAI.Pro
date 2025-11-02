@@ -1,0 +1,296 @@
+{
+  "timestamp": "2025-10-24T06:37:07.751937+00:00",
+  "cloud_run_services": {
+    "analyzeimagewithroboticser": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:10.987867+00:00"
+    },
+    "analyzeportfolio": {
+      "url": "https://analyzeportfolio-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 952.88,
+      "last_tested": "2025-10-24T06:37:11.943743+00:00"
+    },
+    "getaisignals": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:11.944857+00:00"
+    },
+    "getbatchaisignals": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:11.944857+00:00"
+    },
+    "getdhanoverview": {
+      "url": "https://getdhanoverview-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 397.56,
+      "last_tested": "2025-10-24T06:37:12.346294+00:00"
+    },
+    "getenginebstatus": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:12.347298+00:00"
+    },
+    "getgeminianalysis": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:12.347298+00:00"
+    },
+    "getvertexaianalysis": {
+      "url": "",
+      "health_status": "no_url",
+      "response_time": 0,
+      "last_tested": "2025-10-24T06:37:12.347298+00:00"
+    },
+    "infinityai-engine-a": {
+      "url": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
+      "health_status": "healthy",
+      "response_time": 367.64,
+      "last_tested": "2025-10-24T06:37:12.718860+00:00"
+    },
+    "infinityai-engine-b": {
+      "url": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
+      "health_status": "healthy",
+      "response_time": 380.2,
+      "last_tested": "2025-10-24T06:37:13.101192+00:00"
+    },
+    "infinityai-engine-c-execution": {
+      "url": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
+      "health_status": "healthy",
+      "response_time": 375.98,
+      "last_tested": "2025-10-24T06:37:13.480542+00:00"
+    },
+    "infinityai-engine-d": {
+      "url": "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app",
+      "health_status": "healthy",
+      "response_time": 1357.82,
+      "last_tested": "2025-10-24T06:37:14.840985+00:00"
+    },
+    "infinityai-frontend": {
+      "url": "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app",
+      "health_status": "healthy",
+      "response_time": 390.23,
+      "last_tested": "2025-10-24T06:37:15.232612+00:00"
+    },
+    "savedhancredentials": {
+      "url": "https://savedhancredentials-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 387.48,
+      "last_tested": "2025-10-24T06:37:15.628334+00:00"
+    },
+    "starttrading": {
+      "url": "https://starttrading-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 498.14,
+      "last_tested": "2025-10-24T06:37:16.130053+00:00"
+    },
+    "stoptrading": {
+      "url": "https://stoptrading-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 394.91,
+      "last_tested": "2025-10-24T06:37:16.525668+00:00"
+    },
+    "submitdhancredentials": {
+      "url": "https://submitdhancredentials-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 380.35,
+      "last_tested": "2025-10-24T06:37:16.906021+00:00"
+    },
+    "submitdhancredentialsv2": {
+      "url": "https://submitdhancredentialsv2-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 400.81,
+      "last_tested": "2025-10-24T06:37:17.309050+00:00"
+    },
+    "syncholdings": {
+      "url": "https://syncholdings-ckxt6xvshq-uc.a.run.app",
+      "health_status": "unhealthy",
+      "response_time": 419.47,
+      "last_tested": "2025-10-24T06:37:17.735395+00:00"
+    }
+  },
+  "firebase_status": {
+    "cli_access": true,
+    "projects": "\u001b[90m\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u001b[39m\n\u001b[90m\u2502\u001b[39m\u001b[32m Project Display Name \u001b[39m\u001b[90m\u2502\u001b[39m\u001b[32m Project ID                  \u001b[39m\u001b[90m\u2502\u001b[39m\u001b[32m Project Number \u001b[39m\u001b[90m\u2502\u001b[39m\u001b[32m Resource Location ID \u001b[39m\u001b[90m\u2502\u001b[39m\n\u001b[90m\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\u001b[39m\n\u001b[90m\u2502\u001b[39m Infinity AI          \u001b[90m\u2502\u001b[39m \u001b[36m\u001b[1minfinity-ai-5ec7c (current)\u001b[22m\u001b[39m \u001b[90m\u2502\u001b[39m 26140490557    \u001b[90m\u2502\u001b[39m \u001b[33m[Not specified]\u001b[39m      \u001b[90m\u2502\u001b[39m\n\u001b[90m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[39m\u001b[90m\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u001b[39m\n\n1 project(s) total.\n"
+  },
+  "firestore_status": {},
+  "secrets_status": {
+    "ENCRYPTION_KEY": {
+      "accessible": true,
+      "length": 220
+    },
+    "GEMINI_API_KEY": {
+      "accessible": true,
+      "length": 39
+    },
+    "SERVICE_ACCOUNT_INFINITY_AI_5EC7C": {
+      "accessible": true,
+      "length": 1
+    },
+    "dhan-access-token": {
+      "accessible": true,
+      "length": 448
+    },
+    "dhan-api-key": {
+      "accessible": true,
+      "length": 8
+    },
+    "dhan-api-secret": {
+      "accessible": true,
+      "length": 36
+    },
+    "dhan-client-id": {
+      "accessible": true,
+      "length": 10
+    },
+    "firebase-admin-sdk": {
+      "accessible": false,
+      "error": "ERROR: (gcloud.secrets.versions.access) NOT_FOUND: Secret [projects/26140490557/secrets/firebase-admin-sdk] not found or has no versions. This command is authenticated as raghu42620@gmail.com which is the active account specified by the [core/account] property.\n"
+    },
+    "firebase-deploy-token": {
+      "accessible": true,
+      "length": 103
+    },
+    "gemini-api-key": {
+      "accessible": true,
+      "length": 39
+    },
+    "gemini-api-key-primary": {
+      "accessible": true,
+      "length": 39
+    },
+    "gemini-api-key-secondary": {
+      "accessible": true,
+      "length": 39
+    },
+    "huggingface-token": {
+      "accessible": false,
+      "error": "ERROR: (gcloud.secrets.versions.access) NOT_FOUND: Secret [projects/26140490557/secrets/huggingface-token] not found or has no versions. This command is authenticated as raghu42620@gmail.com which is the active account specified by the [core/account] property.\n"
+    },
+    "telegram-bot-token": {
+      "accessible": false,
+      "error": "ERROR: (gcloud.secrets.versions.access) NOT_FOUND: Secret [projects/26140490557/secrets/telegram-bot-token] not found or has no versions. This command is authenticated as raghu42620@gmail.com which is the active account specified by the [core/account] property.\n"
+    },
+    "telegram-chat-id": {
+      "accessible": true,
+      "length": 10
+    },
+    "trading-engine-secret": {
+      "accessible": false,
+      "error": "ERROR: (gcloud.secrets.versions.access) NOT_FOUND: Secret [projects/26140490557/secrets/trading-engine-secret] not found or has no versions. This command is authenticated as raghu42620@gmail.com which is the active account specified by the [core/account] property.\n"
+    },
+    "webhook-verification-token": {
+      "accessible": false,
+      "error": "ERROR: (gcloud.secrets.versions.access) NOT_FOUND: Secret [projects/26140490557/secrets/webhook-verification-token] not found or has no versions. This command is authenticated as raghu42620@gmail.com which is the active account specified by the [core/account] property.\n"
+    }
+  },
+  "domain_status": {
+    "error": "ERROR: (gcloud.run.domain-mappings.list) unrecognized arguments:\n  \n --region flag is available in one or more alternate release tracks. Try:\n\n  gcloud alpha run domain-mappings list --region\n  gcloud beta run domain-mappings list --region\n\n  --region=us-central1 (did you mean '--uri'?)\n  To search the help text of gcloud commands, run:\n  gcloud help -- SEARCH_TERMS\n"
+  },
+  "issues": [
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 403",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:11.941752+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 400",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:12.343306+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 403",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:15.620096+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 403",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:16.126910+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 403",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:16.525668+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 400",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:16.906021+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 400",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:17.307373+00:00"
+    },
+    {
+      "category": "SERVICE_UNHEALTHY",
+      "description": "Service health check failed: HTTP 403",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:17.728522+00:00"
+    },
+    {
+      "category": "SECRET_ACCESS",
+      "description": "Cannot access secret firebase-admin-sdk",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:37:48.036085+00:00"
+    },
+    {
+      "category": "SECRET_ACCESS",
+      "description": "Cannot access secret huggingface-token",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:38:00.504360+00:00"
+    },
+    {
+      "category": "SECRET_ACCESS",
+      "description": "Cannot access secret telegram-bot-token",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:38:02.582072+00:00"
+    },
+    {
+      "category": "SECRET_ACCESS",
+      "description": "Cannot access secret trading-engine-secret",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:38:06.807695+00:00"
+    },
+    {
+      "category": "SECRET_ACCESS",
+      "description": "Cannot access secret webhook-verification-token",
+      "severity": "MEDIUM",
+      "timestamp": "2025-10-24T06:38:08.728100+00:00"
+    }
+  ],
+  "fixes_applied": [],
+  "summary": {
+    "services": {
+      "total": 19,
+      "healthy": 5,
+      "health_percentage": 26.3
+    },
+    "secrets": {
+      "total": 17,
+      "accessible": 12,
+      "access_percentage": 70.6
+    },
+    "issues": {
+      "total": 13,
+      "high": 0,
+      "medium": 13
+    },
+    "overall_status": "HEALTHY"
+  }
+}

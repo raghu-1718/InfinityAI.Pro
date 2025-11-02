@@ -1,0 +1,202 @@
+{
+  "timestamp": "2025-10-31T02:36:09.605869+00:00",
+  "project_id": "infinity-ai-5ec7c",
+  "system_architecture": {
+    "frontend_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:11.068596+00:00",
+      "details": "Health check for frontend failed with status 500"
+    },
+    "engine_d_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:11.090672+00:00",
+      "details": "Health check for engine_d failed with status 500"
+    },
+    "engine_b_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:11.092766+00:00",
+      "details": "Health check for engine_b failed with status 500"
+    },
+    "engine_c_health": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:11.177473+00:00",
+      "details": {
+        "status": "protected"
+      },
+      "latency_ms": 1536.84
+    },
+    "engine_a_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:11.210774+00:00",
+      "details": "Health check for engine_a failed with status 500"
+    },
+    "inter_service_communication_d": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:12.822172+00:00",
+      "details": "Status: 503"
+    }
+  },
+  "data_flow": {
+    "firebase_function_getGeminiAnalysis": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:14.439297+00:00",
+      "details": "Function accessible",
+      "latency_ms": 1599.66
+    },
+    "firebase_function_analyzePortfolio": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:16.194762+00:00",
+      "details": "Function accessible",
+      "latency_ms": 1754.47
+    },
+    "firebase_function_getDhanOverview": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:17.648203+00:00",
+      "details": "Function accessible",
+      "latency_ms": 1453.44
+    },
+    "firebase_function_submitDhanCredentialsV2": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:18.996050+00:00",
+      "details": "Function accessible",
+      "latency_ms": 1347.85
+    },
+    "firebase_function_startTrading": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:20.310372+00:00",
+      "details": "Function accessible",
+      "latency_ms": 1314.32
+    },
+    "firestore_write_test": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:21.768899+00:00",
+      "details": "Status: 503"
+    },
+    "real_time_orchestration": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:23.208693+00:00",
+      "details": "Status: 503",
+      "latency_ms": 1432.71
+    }
+  },
+  "ai_integrations": {
+    "gemini_api": {
+      "status": "WARNING",
+      "timestamp": "2025-10-31T02:36:25.037638+00:00",
+      "details": "Status: 503, Response: \n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>503 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The service you requested is not available yet.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"
+    },
+    "vertex_ai": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:26.788406+00:00",
+      "details": "Vertex AI endpoint accessible",
+      "latency_ms": 1745.74
+    },
+    "ai_signal_generation": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:28.147656+00:00",
+      "details": "Status: 503"
+    }
+  },
+  "market_data": {
+    "market_data_generic": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:29.782506+00:00",
+      "details": "Status: 503"
+    },
+    "optionchain_ai_NIFTY": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:31.408546+00:00",
+      "details": "Status: 503"
+    }
+  },
+  "frontend": {
+    "accessibility": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:32.975482+00:00",
+      "details": "Status: 503"
+    },
+    "api_health_check": {
+      "status": "WARNING",
+      "timestamp": "2025-10-31T02:36:34.709505+00:00",
+      "details": "Status: 503"
+    }
+  },
+  "trading": {
+    "dhan_api_connectivity": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:36.469076+00:00",
+      "details": "Endpoint is not properly secured. Status: 503"
+    },
+    "engine_c_health": {
+      "status": "FAIL",
+      "timestamp": "2025-10-31T02:36:38.033368+00:00",
+      "details": "Status: 503",
+      "latency_ms": 1558.72
+    }
+  },
+  "performance": {
+    "response_time_analysis": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:38.039553+00:00",
+      "details": {
+        "average_latency_ms": 1527.08,
+        "max_latency": {
+          "category": "data_flow",
+          "test": "firebase_function_analyzePortfolio",
+          "latency_ms": 1754.47,
+          "status": "PASS"
+        },
+        "min_latency": {
+          "category": "data_flow",
+          "test": "firebase_function_startTrading",
+          "latency_ms": 1314.32,
+          "status": "PASS"
+        },
+        "total_tests": 9
+      }
+    },
+    "slow_response_detection": {
+      "status": "PASS",
+      "timestamp": "2025-10-31T02:36:38.040583+00:00",
+      "details": "All critical responses under 2 seconds"
+    },
+    "bottleneck_identification": {
+      "status": "WARNING",
+      "timestamp": "2025-10-31T02:36:38.041577+00:00",
+      "details": {
+        "summary": "Found 13 potential bottlenecks/failures",
+        "items": [
+          "FAIL: system_architecture.frontend_health - Health check for frontend failed with status 500",
+          "FAIL: system_architecture.engine_d_health - Health check for engine_d failed with status 500",
+          "FAIL: system_architecture.engine_b_health - Health check for engine_b failed with status 500",
+          "FAIL: system_architecture.engine_a_health - Health check for engine_a failed with status 500",
+          "FAIL: system_architecture.inter_service_communication_d - Status: 503",
+          "FAIL: data_flow.firestore_write_test - Status: 503",
+          "FAIL: data_flow.real_time_orchestration - Status: 503",
+          "FAIL: ai_integrations.ai_signal_generation - Status: 503",
+          "FAIL: market_data.market_data_generic - Status: 503",
+          "FAIL: market_data.optionchain_ai_NIFTY - Status: 503",
+          "FAIL: frontend.accessibility - Status: 503",
+          "FAIL: trading.dhan_api_connectivity - Endpoint is not properly secured. Status: 503",
+          "FAIL: trading.engine_c_health - Status: 503"
+        ]
+      }
+    }
+  },
+  "security": {},
+  "recommendations": [
+    "\u26a0\ufe0f System requires significant development work before production",
+    "\ud83c\udfd7\ufe0f Focus on core functionality and service stability",
+    "\ud83d\udd27 Address fundamental architecture and integration issues",
+    "\ud83d\udcda Review system design and implementation patterns",
+    "\ud83d\udd10 Implement proper authentication for all Firebase Functions",
+    "\ud83d\udcf1 Develop mobile app integration roadmap",
+    "\ud83d\udcb0 Implement cost monitoring and optimization strategies",
+    "\ud83c\udf10 Set up CDN and edge caching for better global performance",
+    "\ud83d\udd04 Implement proper error handling and circuit breakers",
+    "\ud83d\udcca Add comprehensive logging and observability",
+    "\ud83e\uddea Set up automated testing pipelines",
+    "\ud83d\udd12 Conduct security audit and penetration testing"
+  ],
+  "overall_status": "DEVELOPMENT_PHASE"
+}
