@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Frontend to Vercel
@@ -44,10 +47,9 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          working-directory: ./frontend
           vercel-args: '--prod'
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_API_URL: https://engines.infinityai.pro
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_PROJECT_ID }}
           VITE_API_BASE: https://engines.infinityai.pro
@@ -58,6 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    defaults:
+      run:
+        working-directory: ./api-webhooks
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Webhooks API to Vercel
@@ -66,7 +71,6 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-          working-directory: ./api-webhooks
           vercel-args: '--prod'
         env:
           DHAN_WEBHOOK_SECRET: ${{ secrets.DHAN_WEBHOOK_SECRET }}
@@ -78,78 +82,101 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    defaults:
+      run:
+        working-directory: ./functions
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Firebase Functions
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
-          projectId: infinitygt-b2287
-          channelId: live
-          target: infinitygt-b2287
-          entryPoint: ./functions
+          node-version: '20'
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      - name: Deploy to Firebase Functions
+        run: firebase deploy --only functions --project infinitygt-b2287 --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
-  # --- Job 5: Deploy Engine-C to Northflank ---
+  # --- Job 5: Deploy Engine-C to Vercel ---
   deploy-engine-c:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    defaults:
+      run:
+        working-directory: ./engines/engine-c-execution
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine C to Northflank
-        uses: northflank/deploy-to-northflank@v1
+      - name: Deploy Engine C to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project-id: infinity-ai
-          service-id: engine-c-execution
-          context: ./engines/engine-c-execution
-          dockerfile: Dockerfile
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_C }}
+          vercel-args: '--prod'
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
 
-  # --- Job 6: Deploy Engine-A to Northflank ---
+  # --- Job 6: Deploy Engine-A to Google Cloud Run ---
   deploy-engine-a:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine A to Northflank
-        uses: northflank/deploy-to-northflank@v1
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project-id: infinity-ai
-          service-id: engine-a
-          context: ./engines/engine-a
-          dockerfile: Dockerfile
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Deploy Engine A to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: infinityai-engine-a
+          region: us-central1
+          source: ./engines/engine-a
+          env_vars: |
+            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
 
-  # --- Job 7: Deploy Engine-B to Northflank ---
+  # --- Job 7: Deploy Engine-B to Google Cloud Run ---
   deploy-engine-b:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine B to Northflank
-        uses: northflank/deploy-to-northflank@v1
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project-id: infinity-ai
-          service-id: engine-b
-          context: ./engines/engine-b
-          dockerfile: Dockerfile
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Deploy Engine B to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: infinityai-engine-b
+          region: us-central1
+          source: ./engines/engine-b
+          env_vars: |
+            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
 
-  # --- Job 8: Deploy Engine-D to Northflank ---
+  # --- Job 8: Deploy Engine-D to Vercel ---
   deploy-engine-d:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    defaults:
+      run:
+        working-directory: ./engines/engine-d
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine D to Northflank
-        uses: northflank/deploy-to-northflank@v1
+      - name: Deploy Engine D to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          token: ${{ secrets.NORTHFLANK_TOKEN }}
-          project-id: infinity-ai
-          service-id: engine-d
-          context: ./engines/engine-d
-          dockerfile: Dockerfile
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_D }}
+          vercel-args: '--prod'
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          ENGINE_A_URL: ${{ secrets.ENGINE_A_URL }}
+          ENGINE_B_URL: ${{ secrets.ENGINE_B_URL }}

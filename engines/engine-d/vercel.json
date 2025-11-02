@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "github": {
+    "enabled": false
+  },
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.11"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
+  "env": {
+    "GCP_PROJECT_ID": "@gcp_project_id",
+    "ENGINE_A_URL": "@engine_a_url",
+    "ENGINE_B_URL": "@engine_b_url"
+  }
+}
