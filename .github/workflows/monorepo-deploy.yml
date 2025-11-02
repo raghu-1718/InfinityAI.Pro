@@ -41,14 +41,14 @@ jobs:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Frontend to Vercel
-        uses: vercel/vercel-action@v30
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          working-directory: ./frontend
-          prod: true
+          node-version: '20'
+      - name: Deploy Frontend to Vercel (CLI)
+        working-directory: ./frontend
+        run: |
+          npx vercel@25.1.0 --prod -t "${{ secrets.VERCEL_TOKEN }}" --confirm --yes --project "${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}"
         env:
           VITE_API_URL: https://engines.infinityai.pro
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
@@ -66,14 +66,14 @@ jobs:
         working-directory: ./api-webhooks
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Webhooks API to Vercel
-        uses: vercel/vercel-action@v30
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-          working-directory: ./api-webhooks
-          prod: true
+          node-version: '20'
+      - name: Deploy Webhooks API to Vercel (CLI)
+        working-directory: ./api-webhooks
+        run: |
+          npx vercel@25.1.0 --prod -t "${{ secrets.VERCEL_TOKEN }}" --confirm --yes --project "${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}"
         env:
           DHAN_WEBHOOK_SECRET: ${{ secrets.DHAN_WEBHOOK_SECRET }}
           ENGINE_C_INTERNAL_URL: https://engines.infinityai.pro/engine-c
@@ -111,14 +111,14 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine C via Northflank
-        uses: northflank/actions/deploy@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          apiKey: ${{ secrets.NORTHFLANK_TOKEN }}
-          projectId: infinity-ai
-          serviceId: engine-c
-          repositoryDirectory: ./engines/engine-c-execution
-          wait: true
+          node-version: '20'
+      - name: Deploy Engine C to Vercel (CLI)
+        working-directory: ./engines/engine-c-execution
+        run: |
+          npx vercel@25.1.0 --prod -t "${{ secrets.VERCEL_TOKEN }}" --confirm --yes --project "${{ secrets.VERCEL_PROJECT_ID_ENGINE_C }}"
 
   # --- Job 6: Deploy Engine-A to Google Cloud Run ---
   deploy-engine-a:
@@ -179,11 +179,11 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Engine D via Northflank
-        uses: northflank/actions/deploy@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          apiKey: ${{ secrets.NORTHFLANK_TOKEN }}
-          projectId: infinity-ai
-          serviceId: engine-d
-          repositoryDirectory: ./engines/engine-d
-          wait: true
+          node-version: '20'
+      - name: Deploy Engine D to Vercel (CLI)
+        working-directory: ./engines/engine-d
+        run: |
+          npx vercel@25.1.0 --prod -t "${{ secrets.VERCEL_TOKEN }}" --confirm --yes --project "${{ secrets.VERCEL_PROJECT_ID_ENGINE_D }}"
