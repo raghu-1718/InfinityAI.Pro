@@ -113,6 +113,7 @@ except Exception:
 # Event broadcaster import with fallback
 try:
     from services.event_broadcaster import EventBroadcaster  # type: ignore
+    from services.dhan_marketfeed import marketfeed_service  # type: ignore
 except Exception:
     class EventBroadcaster:  # type: ignore
         def __init__(self, ws_mgr: Any):
@@ -149,7 +150,19 @@ STARTED_AT = time.time()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[Engine-D] Starting up at {datetime.now(timezone.utc).isoformat()}, PID={os.getpid()}")
+    # Optionally start Dhan MarketFeed background client
+    try:
+        if os.getenv("START_DHAN_MARKETFEED", "false").lower() == "true":
+            marketfeed_service.start(event_broadcaster)
+            print("[Engine-D] Dhan MarketFeed client started")
+    except Exception as _mf_err:
+        print(f"[Engine-D] MarketFeed start error: {_mf_err}")
     yield
+    # Stop MarketFeed on shutdown
+    try:
+        await marketfeed_service.stop()
+    except Exception:
+        pass
     print(f"[Engine-D] Shutting down at {datetime.now(timezone.utc).isoformat()}, PID={os.getpid()}")
 
 app.router.lifespan_context = lifespan

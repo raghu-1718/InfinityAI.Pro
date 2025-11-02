@@ -1,0 +1,28 @@
+{
+  "firebase": {
+    "projectId": "infinitygt-b2287",
+    "projectNumber": "865466955751",
+    "webApiKey": "AIzaSyBDwYJbIiLFRTqyJ1QDQle6_dFIpGGKw30",
+    "messagingSenderId": "865466955751",
+    "appId": "1:865466955751:web:8d9935a2472acf94156f42",
+    "measurementId": "G-X687PXV2TD",
+    "authDomain": "infinitygt-b2287.firebaseapp.com",
+    "storageBucket": "infinitygt-b2287.firebasestorage.app"
+  },
+  "serviceAccount": {
+    "email": "firebase-adminsdk-fbsvc@infinitygt-b2287.iam.gserviceaccount.com",
+    "projectId": "infinitygt-b2287",
+    "clientId": "111775112526044110386"
+  },
+  "cloudMessaging": {
+    "senderId": "865466955751",
+    "webPushCertificate": "BCKNEzRg-oR68tbz4ZD_x38fhXyIdDuXHeqfQ1E9CYOhYnM9ruSOFtY8JVwoifzaosOtpBXJj12CelpL-1_znH4"
+  },
+  "notes": [
+    "Firebase Admin SDK service account JSON stored in GitHub secret: FIREBASE_SERVICE_ACCOUNT_KEY_JSON",
+    "Web API key stored in GitHub secrets: VITE_API_KEY",
+    "Firebase project name: InfinityAIpro",
+    "Environment type: Unspecified",
+    "Web app nickname: InfinityGT"
+  ]
+}

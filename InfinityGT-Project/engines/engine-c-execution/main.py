@@ -36,6 +36,38 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import base64
+from typing import cast
+from dataclasses import asdict as _asdict
+
+# New execution core (managers and shared types)
+try:
+    from core.execution.order_manager import OrderManager as EOrderManager
+    from core.execution.position_manager import PositionManager as EPositionManager
+    from core.execution.risk_manager import RiskManager as ERiskManager
+    from core.execution.types import (
+        OrderType,
+        TransactionType,
+        OrderStatus,
+        TradeOrder,
+        Position,
+        RiskCheck,
+    )
+    _EXEC_CORE_AVAILABLE = True
+except Exception as _exec_err:
+    _EXEC_CORE_AVAILABLE = False
+    print(f"Execution core not available: {_exec_err}")
+
+# Optional multi-broker adapters and notifications
+try:
+    from core.broker.adapter_factory import get_adapter
+except Exception:
+    def get_adapter(_broker: str):
+        raise RuntimeError("adapter factory unavailable")
+try:
+    from core.notifications import notify_telegram
+except Exception:
+    def notify_telegram(_msg: str, chat_id: str | None = None, token: str | None = None) -> bool:
+        return False
 
 # Ensure repository root is in sys.path for namespace imports (backend.*)
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -191,53 +223,7 @@ def validate_symbol(symbol: str) -> bool:
     pattern = r'^[A-Z0-9._-]+$'
     return bool(re.match(pattern, symbol.upper())) and len(symbol) <= 20
 
-class OrderType(Enum):
-    MARKET = "MARKET"
-    LIMIT = "LIMIT"
-    STOP_LOSS = "STOP_LOSS"
-
-class TransactionType(Enum):
-    BUY = "BUY"
-    SELL = "SELL"
-
-class OrderStatus(Enum):
-    PENDING = "PENDING"
-    EXECUTED = "EXECUTED"
-    CANCELLED = "CANCELLED"
-    REJECTED = "REJECTED"
-
-@dataclass
-class TradeOrder:
-    order_id: str
-    symbol: str
-    quantity: int
-    price: float
-    order_type: OrderType
-    transaction_type: TransactionType
-    status: OrderStatus
-    created_at: datetime
-    executed_at: Optional[datetime] = None
-    execution_price: Optional[float] = None
-    fees: float = 0.0
-    error_message: Optional[str] = None
-
-@dataclass
-class Position:
-    symbol: str
-    quantity: int
-    average_price: float
-    current_price: float
-    unrealized_pnl: float
-    realized_pnl: float
-    entry_time: datetime
-
-@dataclass
-class RiskCheck:
-    passed: bool
-    risk_score: float
-    warnings: List[str]
-    max_position_size: int
-    current_exposure: float
+# Note: Using shared domain types from core.execution.types (OrderType, TransactionType, OrderStatus, TradeOrder, Position, RiskCheck)
 
 class TradeExecutionService:
     def __init__(self):
@@ -599,6 +585,25 @@ class TradeExecutionService:
 # Global service instance
 execution_service = TradeExecutionService()
 
+# Initialize execution managers with current risk thresholds
+if _EXEC_CORE_AVAILABLE:
+    position_manager = EPositionManager()
+    risk_manager = ERiskManager(
+        max_position_size_inr=execution_service.max_position_size,
+        max_daily_loss_inr=execution_service.max_daily_loss,
+        max_open_positions=execution_service.max_open_positions,
+    )
+    order_manager = EOrderManager(risk_manager, position_manager, kill_switch=execution_service.kill_switch_active)
+
+# Realtime order update client (optional)
+try:
+    from realtime.order_updates import DhanOrderUpdateClient  # type: ignore
+    _ORDER_UPDATES_AVAILABLE = True
+except Exception as _ou_err:
+    _ORDER_UPDATES_AVAILABLE = False
+    print(f"Order update client unavailable: {_ou_err}")
+_order_updates_client = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -609,11 +614,79 @@ async def lifespan(app: FastAPI):
             elite_runtime.start()
     except Exception as e:
         logger.warning(f"Could not start Elite runtime on startup: {e}")
+    # Optionally start Dhan order updates client
+    try:
+        if _ORDER_UPDATES_AVAILABLE and os.getenv("START_DHAN_ORDERUPDATES", "false").lower() == "true":
+            async def _on_update(evt: Dict[str, Any]):
+                # Normalize fields with best-effort
+                oid = evt.get("order_id") or evt.get("orderId") or evt.get("id")
+                status = str(evt.get("status", "")).upper()
+                symbol = evt.get("symbol") or evt.get("tradingSymbol") or "?"
+                qty = int(evt.get("quantity") or evt.get("qty") or 0)
+                price = float(evt.get("price") or evt.get("executionPrice") or 0.0)
+
+                # Map status
+                status_map: Dict[str, OrderStatus] = {
+                    "EXECUTED": OrderStatus.EXECUTED,
+                    "REJECTED": OrderStatus.REJECTED,
+                    "PENDING": OrderStatus.PENDING,
+                }
+                if hasattr(OrderStatus, "CANCELLED"):
+                    try:
+                        status_map["CANCELLED"] = getattr(OrderStatus, "CANCELLED")
+                    except Exception:
+                        pass
+                new_status = status_map.get(status, OrderStatus.PENDING)
+
+                # Update in-memory order
+                if oid and oid in execution_service.orders:
+                    o = execution_service.orders[oid]
+                    o.status = new_status
+                    if new_status == OrderStatus.EXECUTED:
+                        o.executed_at = datetime.now()
+                        if price:
+                            o.execution_price = price
+                            try:
+                                await execution_service.update_positions(o)
+                            except Exception:
+                                pass
+                elif oid:
+                    # Create minimal order record if unknown
+                    execution_service.orders[oid] = TradeOrder(
+                        order_id=oid,
+                        symbol=str(symbol),
+                        quantity=int(qty or 0),
+                        price=float(price or 0.0),
+                        order_type=OrderType.MARKET,
+                        transaction_type=TransactionType.BUY,
+                        status=new_status,
+                        created_at=datetime.now(),
+                    )
+                # Fire broadcast to Engine D
+                try:
+                    engine_d_url = os.getenv("ENGINE_D_URL", "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app")
+                    payload = {"event_type": "order_update", "data": {"order_id": oid, "status": status, "symbol": symbol, "quantity": qty, "price": price}}
+                    async with aiohttp.ClientSession() as session:
+                        await session.post(f"{engine_d_url}/broadcast/custom", json=payload, timeout=5)
+                except Exception:
+                    pass
+
+            global _order_updates_client
+            _order_updates_client = DhanOrderUpdateClient(on_update=_on_update)
+            _order_updates_client.start()
+            logger.info("Started Dhan OrderUpdate client")
+    except Exception as e:
+        logger.warning(f"Could not start order updates client: {e}")
     yield
     # Shutdown
     try:
         if elite_runtime and elite_runtime.running:
             await elite_runtime.stop()
+    except Exception:
+        pass
+    try:
+        if _order_updates_client:
+            await _order_updates_client.stop()
     except Exception:
         pass
     logger.info("🛑 Engine C - Trade Execution Service shutting down...")
@@ -1247,6 +1320,121 @@ async def get_order_status(order_id: str = None):
             "timestamp": datetime.now().isoformat()
         }
 
+@app.post("/api/orders/broker/place")
+async def place_order_with_broker(request_data: dict):
+    """Place order via selected broker.
+
+    Body:
+      {
+        "broker": "dhan" | "angel",
+        "symbol": "RELIANCE",
+        "quantity": 10,
+        "price": 0,
+        "order_type": "MARKET",
+        "transaction_type": "BUY"
+      }
+    """
+    try:
+        broker = sanitize_input(str(request_data.get("broker", "dhan")))
+        symbol = sanitize_input(str(request_data.get("symbol", "").upper()))
+        quantity = int(request_data.get("quantity", 1))
+        price = float(request_data.get("price", 0))
+        order_type = sanitize_input(str(request_data.get("order_type", "MARKET")))
+        transaction_type = sanitize_input(str(request_data.get("transaction_type", "BUY")))
+
+        if not symbol or not validate_symbol(symbol):
+            raise HTTPException(status_code=400, detail="Invalid symbol")
+        if quantity <= 0:
+            raise HTTPException(status_code=400, detail="Quantity must be > 0")
+
+        if broker.lower() == "dhan" and _EXEC_CORE_AVAILABLE:
+            # New manager-based flow using adapters and centralized risk
+            try:
+                # Keep kill switch in sync
+                try:
+                    order_manager.kill_switch = execution_service.kill_switch_active
+                except Exception:
+                    pass
+
+                new_order = TradeOrder(
+                    order_id=execution_service.generate_order_id(),
+                    symbol=symbol,
+                    quantity=quantity,
+                    price=price,
+                    order_type=OrderType(order_type.upper()),
+                    transaction_type=TransactionType(transaction_type.upper()),
+                    status=OrderStatus.PENDING,
+                    created_at=datetime.now(),
+                )
+                broker_ctx = {
+                    "client_id": execution_service.dhan_client_id,
+                    "access_token": execution_service.dhan_token,
+                }
+                result = await order_manager.place_order(
+                    broker="dhan",
+                    broker_context=broker_ctx,
+                    order=new_order,
+                )
+                # Optional Telegram notification
+                try:
+                    notify_telegram(
+                        f"Trade: {new_order.transaction_type.value} {new_order.symbol} x{new_order.quantity} @ {new_order.price} (status={new_order.status.value})"
+                    )
+                except Exception:
+                    pass
+                return {
+                    "status": "success" if result.get("ok") else "error",
+                    "broker": "dhan",
+                    "order": result.get("order", {}),
+                    "risk": result.get("risk", {}),
+                    "broker_result": result.get("broker_result", {}),
+                    "timestamp": datetime.now().isoformat(),
+                }
+            except Exception as e:
+                logger.error(f"Manager-driven dhan order error: {e}")
+                # Fallback to legacy path on error
+                order = await execution_service.place_order(
+                    symbol=symbol,
+                    quantity=quantity,
+                    price=price,
+                    order_type=OrderType(order_type.upper()),
+                    transaction_type=TransactionType(transaction_type.upper()),
+                )
+                notify_telegram(
+                    f"Trade: {order.transaction_type.value} {order.symbol} x{order.quantity} @ {order.price} (status={order.status.value})"
+                )
+                return {
+                    "status": "success",
+                    "broker": "dhan",
+                    "order": order_to_dict(order),
+                    "timestamp": datetime.now().isoformat(),
+                }
+
+        # Other brokers via adapter factory (minimal implementation)
+        adapter = get_adapter(broker)
+        if adapter is None:
+            raise HTTPException(status_code=400, detail=f"Unsupported broker: {broker}")
+
+        # For now, only market orders are implemented in the stub adapter
+        result = cast(dict, adapter.place_market_order(symbol=symbol, action=transaction_type, quantity=quantity))
+        status = result.get("status")
+        if status != "success":
+            return {"status": "error", "broker": broker.lower(), "result": result}
+
+        # Optional Telegram notification
+        notify_telegram(f"Broker={broker} Trade: {transaction_type} {symbol} x{quantity} (market)")
+        return {
+            "status": "success",
+            "broker": broker.lower(),
+            "result": result,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"place_order_with_broker error: {e}")
+        return {"status": "error", "error": str(e), "timestamp": datetime.now().isoformat()}
+
 @app.get("/api/orders/demo")
 async def get_demo_orders():
     """Get demo orders for testing"""
@@ -1292,11 +1480,21 @@ async def get_positions(credentials: HTTPAuthorizationCredentials = Depends(secu
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
 
+        if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE:
+            pos_map = position_manager.snapshot()
+            positions = [position_to_dict(p) for p in pos_map.values()]
+            count = len(pos_map)
+            total_pnl = position_manager.get_daily_pnl()
+        else:
+            positions = [position_to_dict(position) for position in execution_service.positions.values()]
+            count = len(execution_service.positions)
+            total_pnl = execution_service.daily_pnl
+
         return {
             "status": "success",
-            "positions": [position_to_dict(position) for position in execution_service.positions.values()],
-            "count": len(execution_service.positions),
-            "total_pnl": execution_service.daily_pnl,
+            "positions": positions,
+            "count": count,
+            "total_pnl": total_pnl,
             "timestamp": datetime.now().isoformat()
         }
 
@@ -1460,12 +1658,15 @@ async def elite_stop():
 async def get_metrics():
     """Get service metrics"""
     elite_flag = os.getenv("START_ENGINEC_ELITE", "false").lower() == "true"
+    active_positions = len(position_manager.positions) if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE else len(execution_service.positions)
+    daily_pnl = position_manager.get_daily_pnl() if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE else execution_service.daily_pnl
+    executed_orders = len([o for o in execution_service.orders.values() if o.status == OrderStatus.EXECUTED])
     return {
         "service": "engine-c-execution",
         "total_orders": len(execution_service.orders),
-        "executed_orders": len([o for o in execution_service.orders.values() if o.status == OrderStatus.EXECUTED]),
-        "active_positions": len(execution_service.positions),
-        "daily_pnl": execution_service.daily_pnl,
+        "executed_orders": executed_orders,
+        "active_positions": active_positions,
+        "daily_pnl": daily_pnl,
         "kill_switch": execution_service.kill_switch_active,
         "execution_enabled": execution_service.execution_enabled,
         "elite_available": elite_available,
@@ -1477,12 +1678,15 @@ async def get_metrics():
 async def get_metrics_alb():
     """Get service metrics (ALB compatible)"""
     elite_flag = os.getenv("START_ENGINEC_ELITE", "false").lower() == "true"
+    active_positions = len(position_manager.positions) if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE else len(execution_service.positions)
+    daily_pnl = position_manager.get_daily_pnl() if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE else execution_service.daily_pnl
+    executed_orders = len([o for o in execution_service.orders.values() if o.status == OrderStatus.EXECUTED])
     return {
         "service": "Engine C - Trade Execution Service",
         "total_orders": len(execution_service.orders),
-        "executed_orders": len([o for o in execution_service.orders.values() if o.status == OrderStatus.EXECUTED]),
-        "active_positions": len(execution_service.positions),
-        "daily_pnl": execution_service.daily_pnl,
+        "executed_orders": executed_orders,
+        "active_positions": active_positions,
+        "daily_pnl": daily_pnl,
         "kill_switch": execution_service.kill_switch_active,
         "execution_enabled": execution_service.execution_enabled,
         "elite_available": elite_available,
@@ -1497,11 +1701,21 @@ async def get_positions_alb(credentials: HTTPAuthorizationCredentials = Depends(
         if not await execution_service.validate_api_key(credentials.credentials):
             raise HTTPException(status_code=401, detail="Invalid API key")
 
+        if '_EXEC_CORE_AVAILABLE' in globals() and _EXEC_CORE_AVAILABLE:
+            pos_map = position_manager.snapshot()
+            positions = [position_to_dict(p) for p in pos_map.values()]
+            count = len(pos_map)
+            total_pnl = position_manager.get_daily_pnl()
+        else:
+            positions = [position_to_dict(position) for position in execution_service.positions.values()]
+            count = len(execution_service.positions)
+            total_pnl = execution_service.daily_pnl
+
         return {
             "status": "success",
-            "positions": [position_to_dict(position) for position in execution_service.positions.values()],
-            "count": len(execution_service.positions),
-            "total_pnl": execution_service.daily_pnl,
+            "positions": positions,
+            "count": count,
+            "total_pnl": total_pnl,
             "timestamp": datetime.now().isoformat()
         }
 
@@ -1833,6 +2047,50 @@ async def get_dhan_callback_urls():
         "redirect_url": execution_service.redirect_uri,
         "postback_url": execution_service.postback_uri,
         "engine_c_base": "https://infinityai.pro/api/engine-c"
+    }
+
+# --- eDIS scaffolding (placeholders until full broker docs are integrated) ---
+@app.get("/api/dhan/edis/status")
+async def edis_status():
+    """Report eDIS integration status. Placeholder implementation."""
+    return {
+        "status": "partial",
+        "configured": bool(execution_service.dhan_client_id),
+        "redirect_uri": os.getenv("DHAN_EDIS_REDIRECT_URI", execution_service.redirect_uri),
+        "notes": "Live eDIS flow requires broker-specific endpoints. This placeholder exposes config only.",
+        "timestamp": datetime.now().isoformat(),
+    }
+
+@app.post("/api/dhan/edis/initiate")
+async def edis_initiate(request: dict):
+    """Initiate eDIS authorization for selling holdings. Placeholder implementation."""
+    try:
+        isin = sanitize_input(str(request.get("isin", "")))
+        qty = int(request.get("quantity", 0))
+        if not isin or qty <= 0:
+            raise HTTPException(status_code=400, detail="Provide valid isin and quantity")
+        # Normally: redirect user to broker eDIS page or send OTP/TPIN initiation
+        return {
+            "status": "pending",
+            "message": "eDIS initiation created. Complete authorization in broker portal.",
+            "isin": isin,
+            "quantity": qty,
+            "redirect": os.getenv("DHAN_EDIS_PORTAL_URL", ""),
+            "timestamp": datetime.now().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "error": str(e), "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/dhan/edis/callback")
+async def edis_callback(status: str = "", ref: str = ""):
+    """Handle eDIS callback from broker. Placeholder implementation."""
+    return {
+        "status": status or "unknown",
+        "reference": ref,
+        "message": "Callback received. Update order workflow accordingly.",
+        "timestamp": datetime.now().isoformat(),
     }
 
 @app.post("/api/dhan/credentials")

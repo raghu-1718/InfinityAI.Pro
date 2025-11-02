@@ -1,0 +1,149 @@
+name: Deploy Multi-Cloud Monorepo
+
+on:
+  push:
+    branches:
+      - main
+      - recovery/v4.6-stabilization
+  workflow_dispatch:
+
+jobs:
+  # --- Job 1: Test Engine-C ---
+  test-engine-c:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Engine-C Dependencies
+        working-directory: ./InfinityGT-Project/engines/engine-c-execution
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run Engine-C Pytest
+        working-directory: ./InfinityGT-Project/engines/engine-c-execution
+        run: pytest -q
+
+  # --- Job 2: Deploy Frontend to Vercel ---
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Frontend to Vercel
+        uses: Vercel/vercel-action@v30
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+          cwd: ./InfinityGT-Project/frontend
+          vercel-env-vars: |
+            VITE_FIREBASE_API_KEY=${{ secrets.VITE_API_KEY }}
+            VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_AUTH_DOMAIN }}
+            VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_PROJECT_ID }}
+            VITE_API_BASE=https://engines.infinityai.pro
+            VITE_WS_BASE=wss://engines.infinityai.pro
+
+  # --- Job 3: Deploy Webhooks API to Vercel ---
+  deploy-webhooks:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Webhooks API to Vercel
+        uses: Vercel/vercel-action@v30
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
+          cwd: ./api-webhooks
+          vercel-env-vars: |
+            DHAN_WEBHOOK_SECRET=${{ secrets.DHAN_WEBHOOK_SECRET }}
+            ENGINE_C_INTERNAL_URL=https://engines.infinityai.pro/engine-c
+            FRONTEND_VERCEL_URL=https://infinityai.pro
+
+  # --- Job 4: Deploy Firebase Functions ---
+  deploy-functions:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Firebase Functions
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}
+          projectId: infinitygt-b2287
+          channelId: live
+          target: infinitygt-b2287
+          entryPoint: ./InfinityGT-Project/functions
+
+  # --- Job 5: Deploy Engine-C to Northflank ---
+  deploy-engine-c:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Engine C to Northflank
+        uses: northflank/actions/deploy@v3
+        with:
+          token: ${{ secrets.NORTHFLANK_TOKEN }}
+          project: infinity-ai
+          service: engine-c-execution
+          dockerfile: ./InfinityGT-Project/engines/engine-c-execution/Dockerfile
+
+  # --- Job 6: Deploy Engine-A to Northflank ---
+  deploy-engine-a:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Engine A to Northflank
+        uses: northflank/actions/deploy@v3
+        with:
+          token: ${{ secrets.NORTHFLANK_TOKEN }}
+          project: infinity-ai
+          service: engine-a
+          dockerfile: ./InfinityGT-Project/engines/engine-a/Dockerfile
+
+  # --- Job 7: Deploy Engine-B to Northflank ---
+  deploy-engine-b:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Engine B to Northflank
+        uses: northflank/actions/deploy@v3
+        with:
+          token: ${{ secrets.NORTHFLANK_TOKEN }}
+          project: infinity-ai
+          service: engine-b
+          dockerfile: ./InfinityGT-Project/engines/engine-b/Dockerfile
+
+  # --- Job 8: Deploy Engine-D to Northflank ---
+  deploy-engine-d:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Engine D to Northflank
+        uses: northflank/actions/deploy@v3
+        with:
+          token: ${{ secrets.NORTHFLANK_TOKEN }}
+          project: infinity-ai
+          service: engine-d
+          dockerfile: ./InfinityGT-Project/engines/engine-d/Dockerfile

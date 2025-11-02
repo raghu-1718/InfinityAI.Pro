@@ -7,3 +7,5 @@ uvicorn
 fastapi
 aiohttp
 PyYAML
+python-dateutil
+dhanhq>=2.1.0

@@ -1,0 +1,37 @@
+name: Engine C - Tests
+
+on:
+  push:
+    paths:
+      - 'InfinityGT-Project/engines/engine-c-execution/**'
+  pull_request:
+    paths:
+      - 'InfinityGT-Project/engines/engine-c-execution/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime dependencies
+        working-directory: InfinityGT-Project/engines/engine-c-execution
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Install test dependencies
+        working-directory: InfinityGT-Project/engines/engine-c-execution
+        run: |
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run tests
+        working-directory: InfinityGT-Project/engines/engine-c-execution
+        run: |
+          pytest -q
