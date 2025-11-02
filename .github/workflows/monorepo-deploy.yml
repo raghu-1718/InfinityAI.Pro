@@ -49,7 +49,6 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
           vercel-args: '--prod'
           working-directory: ./frontend
-          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           VITE_API_URL: https://engines.infinityai.pro
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
@@ -75,7 +74,6 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
           vercel-args: '--prod'
           working-directory: ./api-webhooks
-          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           DHAN_WEBHOOK_SECRET: ${{ secrets.DHAN_WEBHOOK_SECRET }}
           ENGINE_C_INTERNAL_URL: https://engines.infinityai.pro/engine-c
@@ -121,7 +119,6 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_C }}
           vercel-args: '--prod'
           working-directory: ./engines/engine-c-execution
-          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
@@ -193,7 +190,6 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ENGINE_D }}
           vercel-args: '--prod'
           working-directory: ./engines/engine-d
-          scope: ${{ secrets.VERCEL_ORG_ID }}
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           ENGINE_A_URL: ${{ secrets.ENGINE_A_URL }}
