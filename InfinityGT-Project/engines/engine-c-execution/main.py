@@ -231,8 +231,10 @@ class TradeExecutionService:
         self.cfg = {
             "service": {"allow_demo": True},
             "dhan": {
-                "redirect_uri": "https://infinityai.pro/auth/dhan/callback",
-                "postback_uri": "https://infinityai.pro/api/webhooks/dhan",
+                # Final production OAuth/redirect endpoints
+                "redirect_uri": "https://infinityai.pro/auth/callback",
+                # Webhook (postback) handled by Vercel Edge API (api-webhooks service)
+                "postback_uri": "https://api.infinityai.pro/api/webhook/dhan",
                 "scopes": ['trade', 'funds', 'holdings', 'positions']
             }
         }
@@ -267,9 +269,9 @@ class TradeExecutionService:
 
         # OAuth configuration
         self.oauth_configured = bool(self.dhan_client_id and self.dhan_api_key and self.dhan_api_secret)
-        # Standardize OAuth redirect and postback
-        self.redirect_uri = self.cfg.get('dhan', {}).get('redirect_uri', "https://infinityai.pro/auth/dhan/callback")
-        self.postback_uri = self.cfg.get('dhan', {}).get('postback_uri', "https://infinityai.pro/api/webhooks/dhan")
+        # Standardize OAuth redirect and postback (defaults match production)
+        self.redirect_uri = self.cfg.get('dhan', {}).get('redirect_uri', "https://infinityai.pro/auth/callback")
+        self.postback_uri = self.cfg.get('dhan', {}).get('postback_uri', "https://api.infinityai.pro/api/webhook/dhan")
         self.oauth_scopes = self.cfg.get('dhan', {}).get('scopes', ['trade', 'funds', 'holdings', 'positions'])
 
         self.headers = {
