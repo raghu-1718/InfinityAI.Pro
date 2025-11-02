@@ -8,4 +8,4 @@ fastapi
 aiohttp
 PyYAML
 python-dateutil
-dhanhq>=2.1.0
+ dhanhq==2.0.2
