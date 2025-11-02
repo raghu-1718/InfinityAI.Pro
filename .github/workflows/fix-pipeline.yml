@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GCP_PROJECT_ID: infinity-ai-5ec7c
-  FIREBASE_PROJECT_ID: infinity-ai-5ec7c
+  GCP_PROJECT_ID: after-yesterday-473512-k3
+  FIREBASE_PROJECT_ID: after-yesterday-473512-k3
 
 jobs:
   preflight-diagnostics:

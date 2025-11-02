@@ -39,7 +39,7 @@ jobs:
           echo "---- project config ----"
           gcloud config list project
           echo "---- checking artifact registry repository ----"
-          gcloud artifacts repositories describe cloud-run-source-deploy --location=us-central1 --project=infinity-ai-5ec7c || echo "Repository does not exist, will create it"
+          gcloud artifacts repositories describe cloud-run-source-deploy --location=us-central1 --project=infinitygt-b2287 || echo "Repository does not exist, will create it"
 
       - name: Create Artifact Registry Repository if needed
         run: |
@@ -48,22 +48,22 @@ jobs:
             --repository-format=docker \
             --location=us-central1 \
             --description="Repository used by Cloud Run source deploy" \
-            --project=infinity-ai-5ec7c || echo "Repository may already exist"
+            --project=infinitygt-b2287 || echo "Repository may already exist"
 
           # Grant necessary permissions
           gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
             --location=us-central1 \
-            --member="serviceAccount:github-actions-deployer@infinity-ai-5ec7c.iam.gserviceaccount.com" \
+            --member="serviceAccount:github-actions-deployer@infinitygt-b2287.iam.gserviceaccount.com" \
             --role="roles/artifactregistry.reader" \
-            --project=infinity-ai-5ec7c || true
+            --project=infinitygt-b2287 || true
 
           # Grant Cloud Build service account writer access
-          PROJECT_NUMBER=$(gcloud projects describe infinity-ai-5ec7c --format='value(projectNumber)')
+          PROJECT_NUMBER=$(gcloud projects describe infinitygt-b2287 --format='value(projectNumber)')
           gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
             --location=us-central1 \
             --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
             --role="roles/artifactregistry.writer" \
-            --project=infinity-ai-5ec7c || true
+            --project=infinitygt-b2287 || true
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -81,7 +81,7 @@ jobs:
             if gcloud run deploy infinityai-engine-a \
               --source ./engines/engine-a \
               --region us-central1 \
-              --project infinity-ai-5ec7c \
+              --project infinitygt-b2287 \
               --allow-unauthenticated \
               --set-secrets="DHAN_API_KEY=dhan-api-key:latest"; then
               echo "Deploy engine-a succeeded on attempt $i"; break;
@@ -95,12 +95,12 @@ jobs:
         run: |
           set -euo pipefail
           # Best-effort clear env vars
-          gcloud run services update infinityai-engine-b --clear-env-vars --region=us-central1 --project=infinity-ai-5ec7c || true
+          gcloud run services update infinityai-engine-b --clear-env-vars --region=us-central1 --project=infinitygt-b2287 || true
           for i in {1..5}; do
             if gcloud run deploy infinityai-engine-b \
               --source ./engines/engine-b \
               --region us-central1 \
-              --project infinity-ai-5ec7c \
+              --project infinitygt-b2287 \
               --allow-unauthenticated \
               --set-secrets="GEMINI_API_KEY_PRIMARY=gemini-api-key-primary:latest,GEMINI_API_KEY_SECONDARY=gemini-api-key-secondary:latest"; then
               echo "Deploy engine-b succeeded on attempt $i"; break;
@@ -117,7 +117,7 @@ jobs:
             if gcloud run deploy infinityai-engine-c-execution \
               --source ./engines/engine-c-execution \
               --region us-central1 \
-              --project infinity-ai-5ec7c \
+              --project infinitygt-b2287 \
               --no-allow-unauthenticated; then
               echo "Deploy engine-c-execution succeeded on attempt $i"; break;
             else
@@ -133,7 +133,7 @@ jobs:
             if gcloud run deploy infinityai-engine-d \
               --source ./engines/engine-d \
               --region us-central1 \
-              --project infinity-ai-5ec7c \
+              --project infinitygt-b2287 \
               --allow-unauthenticated; then
               echo "Deploy engine-d succeeded on attempt $i"; break;
             else
@@ -146,7 +146,7 @@ jobs:
           echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcp-sa-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
           gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
-          gcloud config set project infinity-ai-5ec7c
+          gcloud config set project infinitygt-b2287
 
       - name: Validate credentials file
         run: |
@@ -157,7 +157,7 @@ jobs:
       - name: Clean up orphaned Firebase Functions
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/gcp-sa-key.json"
-          firebase functions:delete submitDhanCredentials --region us-central1 --force --project infinity-ai-5ec7c || echo "Function may not exist or already deleted"
+          firebase functions:delete submitDhanCredentials --region us-central1 --force --project infinitygt-b2287 || echo "Function may not exist or already deleted"
 
       - name: Deploy Firebase Functions
         run: |
@@ -165,7 +165,7 @@ jobs:
           cd functions
           npm install
           cd ..
-          firebase deploy --only functions --project infinity-ai-5ec7c --non-interactive
+          firebase deploy --only functions --project infinitygt-b2287 --non-interactive
 
       - name: Clean up credentials file
         run: rm -f ${{ github.workspace }}/gcp-sa-key.json
@@ -178,7 +178,7 @@ jobs:
             if gcloud run deploy infinityai-frontend \
               --source ./frontend \
               --region us-central1 \
-              --project infinity-ai-5ec7c \
+              --project infinitygt-b2287 \
               --allow-unauthenticated; then
               echo "Deploy frontend succeeded on attempt $i"; break;
             else
@@ -215,3 +215,4 @@ jobs:
         run: |
           echo "✅ All services deployed and verified successfully."
           echo "Production environment is live and healthy."
+

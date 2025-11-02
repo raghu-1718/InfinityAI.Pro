@@ -39,4 +39,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           channelId: live
-          projectId: infinity-ai-5ec7c
+          projectId: infinitygt-b2287

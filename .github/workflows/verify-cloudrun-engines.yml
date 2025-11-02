@@ -18,4 +18,5 @@ jobs:
       - name: Verify Cloud Run Services
         run: |
           echo "Checking all engines..."
-          gcloud run services list --project infinity-ai-5ec7c --region=us-central1
+          gcloud run services list --project infinitygt-b2287 --region=us-central1
+
