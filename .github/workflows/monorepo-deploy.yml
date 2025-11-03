@@ -145,6 +145,12 @@ jobs:
           fi
           echo "Deploying $ENGINE as Cloud Run service $SERVICE_NAME from $SRC_PATH"
           echo "  CPU: $CPU, Memory: $MEMORY, Max Instances: $MAX_INSTANCES"
+          # GCP requires concurrency <= 80 when CPU < 1
+          if [ "$CPU" = "0.5" ]; then
+            CONCURRENCY_FLAG="--concurrency 80"
+          else
+            CONCURRENCY_FLAG=""
+          fi
           gcloud run deploy "$SERVICE_NAME" \
             --source "$SRC_PATH" \
             --region "$REGION" \
@@ -155,6 +161,7 @@ jobs:
             --cpu "$CPU" \
             --memory "$MEMORY" \
             --timeout 300 \
+            $CONCURRENCY_FLAG \
             --quiet
 
       - name: Output Service URL
