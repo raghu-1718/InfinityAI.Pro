@@ -84,7 +84,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
       - name: Deploy to Firebase Functions
-        run: firebase deploy --only functions --project infinitygt-b2287 --non-interactive --force
+        run: firebase deploy --only functions --project after-yesterday-473512-k3 --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
@@ -114,7 +114,13 @@ jobs:
         run: |
           set -euo pipefail
           ENGINE="${{ matrix.engine }}"
-          SERVICE_NAME="infinityai-${ENGINE}"
+          case "$ENGINE" in
+            engine-a) SERVICE_NAME="engine-a" ;;
+            engine-b) SERVICE_NAME="engine-b-ai-ml-prod" ;;
+            engine-c-execution) SERVICE_NAME="engine-c-execution-prod" ;;
+            engine-d) SERVICE_NAME="engine-d-orchestration-prod" ;;
+            *) echo "Unknown engine $ENGINE"; exit 1;;
+          esac
           SRC_PATH="./engines/${ENGINE}"
           if [ ! -d "$SRC_PATH" ]; then
             echo "Source path not found: $SRC_PATH"; exit 1;
@@ -133,6 +139,11 @@ jobs:
           REGION: us-central1
         run: |
           ENGINE="${{ matrix.engine }}"
-          SERVICE_NAME="infinityai-${ENGINE}"
+          case "$ENGINE" in
+            engine-a) SERVICE_NAME="engine-a" ;;
+            engine-b) SERVICE_NAME="engine-b-ai-ml-prod" ;;
+            engine-c-execution) SERVICE_NAME="engine-c-execution-prod" ;;
+            engine-d) SERVICE_NAME="engine-d-orchestration-prod" ;;
+          esac
           URL=$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$GCP_PROJECT_ID" --format='value(status.url)')
           echo "Cloud Run URL for $ENGINE: $URL"
