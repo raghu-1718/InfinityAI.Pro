@@ -32,38 +32,36 @@ jobs:
         run: pytest -q
 
   # --- Job 2: Deploy Frontend to Vercel ---
-  # Temporarily disabled - requires Vercel re-authentication
-  # deploy-frontend:
-  #   runs-on: ubuntu-latest
-  #   needs: test-engine-c
-  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Deploy Frontend to Vercel
-  #       uses: amondnet/vercel-action@v25
-  #       with:
-  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
-  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-  #         working-directory: ./frontend
-  #         vercel-args: '--prod'
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Frontend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
 
   # --- Job 3: Deploy Webhooks API to Vercel ---
-  # Temporarily disabled - requires Vercel re-authentication  
-  # deploy-webhooks:
-  #   runs-on: ubuntu-latest
-  #   needs: test-engine-c
-  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Deploy Webhooks API to Vercel
-  #       uses: amondnet/vercel-action@v25
-  #       with:
-  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
-  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-  #         working-directory: ./api-webhooks
-  #         vercel-args: '--prod'
+  deploy-webhooks:
+    runs-on: ubuntu-latest
+    needs: test-engine-c
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Webhooks API to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
+          working-directory: ./api-webhooks
+          vercel-args: '--prod'
 
   # --- Job 4: Deploy Firebase Functions ---
   deploy-functions:
