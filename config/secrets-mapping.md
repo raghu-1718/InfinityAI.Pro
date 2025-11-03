@@ -1,107 +1,86 @@
 # GitHub Secrets Mapping & Status
 
-## Firebase/GCP Secrets
+## GCP/Firebase Infrastructure Secrets
 
 | Required by Workflow | GitHub Secret Name | Status | Source |
 |---------------------|-------------------|--------|--------|
-| `FIREBASE_SERVICE_ACCOUNT_KEY_JSON` | `FIREBASE_SERVICE_ACCOUNT_KEY_JSON` | ✅ SET | Firebase Console Service Account |
-| Firebase Project ID | `FIREBASE_PROJECT_ID` | ✅ EXISTS | infinitygt-b2287 |
-| Firebase Token | `FIREBASE_TOKEN` | ✅ EXISTS | CI/CD token |
-| GCP Project ID | `GCP_PROJECT_ID` | ✅ EXISTS | after-yesterday-473512-k3 |
-| GCP Region | `GCP_REGION` | ✅ EXISTS | us-central1 |
-| GCP Service Account | `GCP_SERVICE_ACCOUNT_KEY` | ✅ EXISTS | GCP Console IAM |
+| Firebase Token | `FIREBASE_TOKEN` | ✅ SET | CI/CD token |
+| Firebase Project ID | `FIREBASE_PROJECT_ID` | ✅ SET | after-yesterday-473512-k3 |
+| GCP Service Account | `GCP_SERVICE_ACCOUNT_KEY` | ✅ SET | GCP Console IAM |
+| GCP Project ID | `GCP_PROJECT_ID` | ✅ SET | after-yesterday-473512-k3 |
+| GCP Region | `GCP_REGION` | ✅ SET | us-central1 |
 
-## Vercel Secrets
+## Engine-Specific Firebase Service Accounts
 
-| Required by Workflow | GitHub Secret Name | Status | Value |
-|---------------------|-------------------|--------|-------|
-| Vercel Token | `VERCEL_TOKEN` | ✅ SET | Manual input |
-| Vercel Org ID | `VERCEL_ORG_ID` | ✅ SET | infinityaipro |
-| Frontend Project ID | `VERCEL_PROJECT_ID_FRONTEND` | ✅ SET | prj_DZGuGnAqA3ntefoQZ8b53xOjwaBf |
-| Webhooks Project ID | `VERCEL_PROJECT_ID_WEBHOOKS` | ✅ SET | prj_EHBU9CqlyO8zaN7mwLe7r8MpL2bW |
+| Engine | GitHub Secret Name | Status | Purpose |
+|--------|-------------------|--------|---------|
+| Engine A | `FIREBASE_SERVICE_ACCOUNT_KEY_ENGINE_A` | ✅ SET | Market Data Processing |
+| Engine B | `FIREBASE_SERVICE_ACCOUNT_KEY_ENGINE_B` | ✅ SET | AI/ML Processing |
+| Engine C | `FIREBASE_SERVICE_ACCOUNT_KEY_ENGINE_C` | ✅ SET | Trade Execution |
+| Engine D | `FIREBASE_SERVICE_ACCOUNT_KEY_ENGINE_D` | ✅ SET | Orchestration |
 
-## Northflank Secrets
+## API Keys
 
-| Required by Workflow | GitHub Secret Name | Status | Action Required |
-|---------------------|-------------------|--------|-----------------|
-| Northflank API Token | `NORTHFLANK_TOKEN` | ✅ SET | deployment-role, All projects |
+| API Provider | GitHub Secret Name | Status | Purpose |
+|--------------|-------------------|--------|---------|
+| Gemini Primary | `GEMINI_API_KEY_PRIMARY` | ✅ SET | AI Analysis |
+| Gemini Secondary | `GEMINI_API_KEY_SECONDARY` | ✅ SET | Failover |
+| OpenAI | `OPENAI_API_KEY` | ✅ SET | AI Processing |
+| Dhan Client | `DHAN_CLIENT_ID` | ✅ SET | Trading Broker Integration |
 
-## Dhan/Broker Secrets
+## Platform Architecture
 
-| Required by Workflow | GitHub Secret Name | Status | Source |
-|---------------------|-------------------|--------|--------|
-| Dhan Client ID | `DHAN_CLIENT_ID` | ✅ EXISTS | Dhan API Console |
-| Dhan Webhook Secret | `DHAN_WEBHOOK_SECRET` | ✅ SET | Auto-generated 64-char alphanumeric |
+**Complete GCP/Firebase Stack:**
+- ✅ Frontend: Firebase Hosting (infinityai.pro)
+- ✅ API Webhooks: Firebase Cloud Functions
+- ✅ Engine A: Cloud Run (infinityai-engine-a)
+- ✅ Engine B: Cloud Run (infinityai-engine-b)
+- ✅ Engine C: Cloud Run (infinityai-engine-c-execution)
+- ✅ Engine D: Cloud Run (infinityai-engine-d)
+- ✅ Backend Functions: Firebase Cloud Functions (13 functions)
 
-## Frontend Environment Variables (Vite)
-
-| Variable | GitHub Secret Name | Status | Value |
-|----------|-------------------|--------|-------|
-| `VITE_FIREBASE_API_KEY` | `VITE_API_KEY` | ✅ EXISTS | AIzaSyBDwYJbIiLFRTqyJ1QDQle6_dFIpGGKw30 |
-| `VITE_FIREBASE_PROJECT_ID` | `VITE_PROJECT_ID` | ✅ EXISTS | infinitygt-b2287 |
-| `VITE_FIREBASE_AUTH_DOMAIN` | `VITE_AUTH_DOMAIN` | ✅ EXISTS | infinitygt-b2287.firebaseapp.com |
-| `VITE_FIREBASE_STORAGE_BUCKET` | `VITE_STORAGE_BUCKET` | ✅ EXISTS | infinitygt-b2287.firebasestorage.app |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | `VITE_MESSAGING_SENDER_ID` | ✅ EXISTS | 865466955751 |
-| `VITE_FIREBASE_APP_ID` | `VITE_APP_ID` | ✅ EXISTS | 1:865466955751:web:8d9935a2472acf94156f42 |
-| `VITE_FIREBASE_MEASUREMENT_ID` | `VITE_MEASUREMENT_ID` | ✅ EXISTS | G-X687PXV2TD |
-
-## Progress Summary
-
-**Completed: 7 of 7 required secrets ✅**
-
-**All secrets configured and ready for deployment!**
-
-**Total GitHub Secrets:** 31 existing + 7 newly set = 38 total
+**Cost Optimization:**
+- Engines A/B/D: 0.5 CPU, 256Mi memory, max 5 instances
+- Engine C: 1 CPU, 512Mi memory, max 10 instances (trading execution)
+- All engines: min-instances=0 (scale to zero when idle)
 
 ---
 
-## Firebase Configuration Details
+## Firebase Configuration
 
-**Project:** InfinityAIpro  
-**Project ID:** infinitygt-b2287  
-**Project Number:** 865466955751  
-**Web API Key:** AIzaSyBDwYJbIiLFRTqyJ1QDQle6_dFIpGGKw30  
-
-**Service Account Email:** firebase-adminsdk-fbsvc@infinitygt-b2287.iam.gserviceaccount.com  
-**Client ID:** 111775112526044110386  
-
-**Web App:**
-- Nickname: InfinityGT
-- App ID: 1:865466955751:web:8d9935a2472acf94156f42
-
-**Cloud Messaging:**
-- Sender ID: 865466955751
-- Web Push Certificate: BCKNEzRg-oR68tbz4ZD_x38fhXyIdDuXHeqfQ1E9CYOhYnM9ruSOFtY8JVwoifzaosOtpBXJj12CelpL-1_znH4
+**Production Project:** after-yesterday-473512-k3  
+**Project Number:** 573866363639  
+**Region:** us-central1  
+**Billing Account:** 017B9F-F463F6-7BA3A7 (OPEN)
 
 ---
 
-## ✅ All Secrets Configured - Ready for Deployment!
+## Verification Commands
 
-### Quick Verification
-Run this to confirm all secrets are set:
+### List All Secrets
 ```powershell
-gh secret list | Select-String -Pattern "VERCEL|FIREBASE_SERVICE_ACCOUNT_KEY_JSON|NORTHFLANK|DHAN_WEBHOOK"
+gh secret list
 ```
 
-### Important: DHAN_WEBHOOK_SECRET Value
-The generated webhook secret is:
-```
-kMDXOZHGS04K25eRQYbwTWhILCAutzmBiaoJ38cE7r1qxpd9UnfPljyvgN6sVF
+### Verify GCP Authentication
+```bash
+gcloud auth list
+gcloud projects list
+gcloud config get-value project
 ```
 
-**You must configure this same value in:**
-1. **Dhan API Console** - Webhook settings
-2. **Vercel api-webhooks project** - Environment variable
-   ```bash
-   vercel env add DHAN_WEBHOOK_SECRET production
-   # Paste the value above when prompted
-   ```
+### Verify Firebase Configuration
+```bash
+firebase projects:list
+firebase use
+```
 
 ---
 
-## Next Actions
+## Next Steps
 
-1. ✅ **All secrets configured** - No manual steps needed
-2. 🔧 **Update workflow placeholders** in `.github/workflows/monorepo-deploy.yml`
-3. 🚀 **Test deployment** - Push to trigger CI/CD pipeline
-4. 📊 **Monitor** - Check GitHub Actions for successful deployment
+1. ✅ All secrets configured for GCP/Firebase-only stack
+2. ✅ Vercel and Northflank completely removed
+3. 🚀 Deploy via GitHub Actions to GCP Cloud Run + Firebase
+4. 📊 Monitor costs via GCP Billing Dashboard
+

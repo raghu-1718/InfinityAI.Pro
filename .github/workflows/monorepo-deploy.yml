@@ -31,39 +31,32 @@ jobs:
         working-directory: ./engines/engine-c-execution
         run: pytest -q
 
-  # --- Job 2: Deploy Frontend to Vercel ---
+  # --- Job 2: Deploy Frontend to Firebase Hosting ---
   deploy-frontend:
     runs-on: ubuntu-latest
     needs: test-engine-c
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy Frontend to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
+          node-version: '20'
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      - name: Deploy to Firebase Hosting
+        working-directory: .
+        run: firebase deploy --only hosting --project after-yesterday-473512-k3 --non-interactive --force
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
-  # --- Job 3: Deploy Webhooks API to Vercel ---
-  deploy-webhooks:
-    runs-on: ubuntu-latest
-    needs: test-engine-c
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/recovery/v4.6-stabilization'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Webhooks API to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-          working-directory: ./api-webhooks
-          vercel-args: '--prod'
-
-  # --- Job 4: Deploy Firebase Functions ---
+  # --- Job 3: Deploy Firebase Functions ---
   deploy-functions:
     runs-on: ubuntu-latest
     needs: test-engine-c
@@ -88,7 +81,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
-  # --- Job 5: Deploy Engines to Google Cloud Run ---
+  # --- Job 4: Deploy Engines to Google Cloud Run (Cost Optimized) ---
   deploy-engines-gcp:
     runs-on: ubuntu-latest
     needs: test-engine-c
@@ -118,11 +111,32 @@ jobs:
           set -euo pipefail
           ENGINE="${{ matrix.engine }}"
           # Use consistent service naming: infinityai-{engine-name}
+          # Cost optimization: engines A/B/D use 0.5 CPU + 256Mi, engine C uses 1 CPU + 512Mi
           case "$ENGINE" in
-            engine-a) SERVICE_NAME="infinityai-engine-a" ;;
-            engine-b) SERVICE_NAME="infinityai-engine-b" ;;
-            engine-c-execution) SERVICE_NAME="infinityai-engine-c-execution" ;;
-            engine-d) SERVICE_NAME="infinityai-engine-d" ;;
+            engine-a) 
+              SERVICE_NAME="infinityai-engine-a"
+              CPU="0.5"
+              MEMORY="256Mi"
+              MAX_INSTANCES=5
+              ;;
+            engine-b) 
+              SERVICE_NAME="infinityai-engine-b"
+              CPU="0.5"
+              MEMORY="256Mi"
+              MAX_INSTANCES=5
+              ;;
+            engine-c-execution) 
+              SERVICE_NAME="infinityai-engine-c-execution"
+              CPU="1"
+              MEMORY="512Mi"
+              MAX_INSTANCES=10
+              ;;
+            engine-d) 
+              SERVICE_NAME="infinityai-engine-d"
+              CPU="0.5"
+              MEMORY="256Mi"
+              MAX_INSTANCES=5
+              ;;
             *) echo "Unknown engine $ENGINE"; exit 1;;
           esac
           SRC_PATH="./engines/${ENGINE}"
@@ -130,15 +144,16 @@ jobs:
             echo "Source path not found: $SRC_PATH"; exit 1;
           fi
           echo "Deploying $ENGINE as Cloud Run service $SERVICE_NAME from $SRC_PATH"
+          echo "  CPU: $CPU, Memory: $MEMORY, Max Instances: $MAX_INSTANCES"
           gcloud run deploy "$SERVICE_NAME" \
             --source "$SRC_PATH" \
             --region "$REGION" \
             --project "$GCP_PROJECT_ID" \
             --allow-unauthenticated \
             --min-instances 0 \
-            --max-instances 10 \
-            --cpu 1 \
-            --memory 512Mi \
+            --max-instances "$MAX_INSTANCES" \
+            --cpu "$CPU" \
+            --memory "$MEMORY" \
             --timeout 300 \
             --quiet
 
