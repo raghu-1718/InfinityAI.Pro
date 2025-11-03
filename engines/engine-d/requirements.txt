@@ -11,4 +11,5 @@ passlib[bcrypt]>=1.7.4
 bcrypt==3.2.0
 google-generativeai==0.8.3
 google-cloud-secret-manager==2.20.0
-dhanhq>=2.1.0
+# Pin to latest available on PyPI to avoid build failures in Cloud Build
+dhanhq==2.0.2
