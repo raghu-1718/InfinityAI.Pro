@@ -1,0 +1,35 @@
+{
+  "Warnings": [
+    "No Firebase Functions found or deployment pending",
+    "Engine-A: Min instances =  (not scale-to-zero)",
+    "Engine-B: Min instances =  (not scale-to-zero)",
+    "Engine-C: Min instances =  (not scale-to-zero)",
+    "Engine-D: Min instances =  (not scale-to-zero)",
+    "Manual action required: Disable Vercel GitHub App at github.com/raghu-1718/InfinityAI.Pro/settings/installations",
+    "Manual action required: Delete Vercel projects at vercel.com/infinityaipro",
+    "GSM_STATUS.md file not found at archive_removed_by_cleanup/20251102_145040/GSM_STATUS.md",
+    "Legacy project has 2 Cloud Run services still active"
+  ],
+  "CompletedTodos": [
+    "Deployment completed successfully (Run 19040392055)",
+    "Engine-A/health responded in 517ms",
+    "Engine-A/api/market-data/NIFTY responded in 338ms",
+    "Engine-B/health responded in 4167ms",
+    "Engine-C/health responded in 394ms",
+    "Engine-C/api/orders/status responded in 314ms",
+    "Firebase Hosting configured",
+    "Billing account active: My Billing Account",
+    "Domain mapped: infinityai.pro",
+    "Secret Manager: 12 secrets configured",
+    "Engine-A: HTTPS enforced",
+    "Engine-B: HTTPS enforced",
+    "Engine-C: HTTPS enforced"
+  ],
+  "FailedTodos": [
+    "Engine-B/api/ai-signals : The request was canceled due to the configured HttpClient.Timeout of 10 seconds elapsing.",
+    "Engine-D service URL : Service not found or not deployed",
+    "Engine-D: HTTPS not enforced : URL does not use HTTPS"
+  ],
+  "Timestamp": "2025-11-03 21:18:03",
+  "Project": "after-yesterday-473512-k3"
+}
