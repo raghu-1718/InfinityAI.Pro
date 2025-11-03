@@ -39,13 +39,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Frontend to Vercel
-        uses: BetaHuhn/deploy-to-vercel-action@v21
+        uses: amondnet/vercel-action@v25
         with:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          WORKING_DIRECTORY: ./frontend
-          PRODUCTION: true
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
 
   # --- Job 3: Deploy Webhooks API to Vercel ---
   deploy-webhooks:
@@ -55,13 +55,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Deploy Webhooks API to Vercel
-        uses: BetaHuhn/deploy-to-vercel-action@v21
+        uses: amondnet/vercel-action@v25
         with:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
-          WORKING_DIRECTORY: ./api-webhooks
-          PRODUCTION: true
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBHOOKS }}
+          working-directory: ./api-webhooks
+          vercel-args: '--prod'
 
   # --- Job 4: Deploy Firebase Functions ---
   deploy-functions:
@@ -100,12 +100,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up gcloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          export_default_credentials: true
 
       - name: Deploy ${{ matrix.engine }} to Cloud Run
         env:
