@@ -119,11 +119,12 @@ jobs:
         run: |
           set -euo pipefail
           ENGINE="${{ matrix.engine }}"
+          # Use consistent service naming: infinityai-{engine-name}
           case "$ENGINE" in
-            engine-a) SERVICE_NAME="engine-a" ;;
-            engine-b) SERVICE_NAME="engine-b-ai-ml-prod" ;;
-            engine-c-execution) SERVICE_NAME="engine-c-execution-prod" ;;
-            engine-d) SERVICE_NAME="engine-d-orchestration-prod" ;;
+            engine-a) SERVICE_NAME="infinityai-engine-a" ;;
+            engine-b) SERVICE_NAME="infinityai-engine-b" ;;
+            engine-c-execution) SERVICE_NAME="infinityai-engine-c-execution" ;;
+            engine-d) SERVICE_NAME="infinityai-engine-d" ;;
             *) echo "Unknown engine $ENGINE"; exit 1;;
           esac
           SRC_PATH="./engines/${ENGINE}"
@@ -136,6 +137,11 @@ jobs:
             --region "$REGION" \
             --project "$GCP_PROJECT_ID" \
             --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 10 \
+            --cpu 1 \
+            --memory 512Mi \
+            --timeout 300 \
             --quiet
 
       - name: Output Service URL
@@ -145,10 +151,10 @@ jobs:
         run: |
           ENGINE="${{ matrix.engine }}"
           case "$ENGINE" in
-            engine-a) SERVICE_NAME="engine-a" ;;
-            engine-b) SERVICE_NAME="engine-b-ai-ml-prod" ;;
-            engine-c-execution) SERVICE_NAME="engine-c-execution-prod" ;;
-            engine-d) SERVICE_NAME="engine-d-orchestration-prod" ;;
+            engine-a) SERVICE_NAME="infinityai-engine-a" ;;
+            engine-b) SERVICE_NAME="infinityai-engine-b" ;;
+            engine-c-execution) SERVICE_NAME="infinityai-engine-c-execution" ;;
+            engine-d) SERVICE_NAME="infinityai-engine-d" ;;
           esac
           URL=$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$GCP_PROJECT_ID" --format='value(status.url)')
           echo "Cloud Run URL for $ENGINE: $URL"
