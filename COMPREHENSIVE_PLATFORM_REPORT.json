@@ -1,0 +1,220 @@
+{
+  "Integration": {},
+  "Engines": {
+    "EngineD": {
+      "Name": "Engine D",
+      "Technologies": [
+        "FastAPI",
+        "Python",
+        "Gemini AI",
+        "WebSocket",
+        "JWT Auth"
+      ],
+      "Endpoints": {},
+      "Error": "Response status code does not indicate success: 404 (Not Found).",
+      "Purpose": "AI chatbot orchestrator coordinating all engines",
+      "Status": "Degraded",
+      "URL": "https://infinityai-engine-d-573866363639.us-central1.run.app",
+      "Capabilities": [
+        "Multi-engine health monitoring",
+        "AI chatbot (Gemini-powered)",
+        "Real-time WebSocket data aggregation",
+        "JWT authentication",
+        "Event broadcasting to frontend",
+        "Dashboard orchestration"
+      ]
+    },
+    "EngineB": {
+      "Name": "Engine B",
+      "Technologies": [
+        "FastAPI",
+        "Python",
+        "TensorFlow 2.x",
+        "scikit-learn",
+        "Gemini AI",
+        "NLTK"
+      ],
+      "Endpoints": {},
+      "Error": "Response status code does not indicate success: 404 (Not Found).",
+      "Purpose": "AI-powered price predictions and sentiment analysis",
+      "Status": "Degraded",
+      "URL": "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
+      "Capabilities": [
+        "LSTM-based price prediction",
+        "News sentiment analysis",
+        "Market trend forecasting",
+        "Risk assessment scoring",
+        "AI-powered trading signals"
+      ]
+    },
+    "EngineC": {
+      "Name": "Engine C",
+      "Technologies": [
+        "FastAPI",
+        "Python",
+        "Dhan API",
+        "OAuth 2.0",
+        "Google Secret Manager"
+      ],
+      "Endpoints": {},
+      "Error": "Response status code does not indicate success: 404 (Not Found).",
+      "Purpose": "Secure trade execution via Dhan broker integration",
+      "Status": "Degraded",
+      "URL": "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
+      "Capabilities": [
+        "Dhan OAuth authentication",
+        "Real-time order placement (Market/Limit/SL)",
+        "Portfolio management",
+        "Risk management & validation",
+        "Order status tracking",
+        "Trade history retrieval"
+      ]
+    },
+    "EngineA": {
+      "Name": "Engine A",
+      "Technologies": [
+        "FastAPI",
+        "Python",
+        "yfinance",
+        "pandas",
+        "Technical Analysis libraries"
+      ],
+      "Endpoints": {},
+      "Error": "Response status code does not indicate success: 404 (Not Found).",
+      "Purpose": "Real-time market data ingestion from NSE/BSE/MCX",
+      "Status": "Degraded",
+      "URL": "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
+      "Capabilities": [
+        "NSE/BSE real-time price feeds",
+        "Technical indicators (RSI, MACD, Bollinger Bands)",
+        "Market depth analysis",
+        "Historical data retrieval",
+        "Candlestick pattern recognition"
+      ]
+    }
+  },
+  "Cost": {
+    "After": {
+      "Firebase": "-10/month (free tier)",
+      "GCP": "-30/month (optimized Cloud Run)",
+      "Total": "-40/month"
+    },
+    "Savings": {
+      "Percentage": "85%",
+      "Amount": "-120/month"
+    },
+    "Before": {
+      "Vercel": "-40/month",
+      "Firebase": "-20/month",
+      "GCP": "-100/month",
+      "Total": "-160/month"
+    },
+    "Optimizations": [
+      "Engine A/B/D: 0.5 CPU, 256Mi (60% reduction)",
+      "Engine C: 1 CPU, 512Mi (trading performance)",
+      "Min instances: 0 (scale-to-zero when idle)",
+      "Max instances: 5 (A/B/D), 10 (C)",
+      "Concurrency: 80 (CPU < 1 optimization)"
+    ]
+  },
+  "Firebase": {
+    "Firestore": {
+      "Collections": [
+        "users",
+        "portfolios",
+        "trades",
+        "orders",
+        "credentials"
+      ],
+      "Status": "Active"
+    },
+    "Hosting": {
+      "Framework": "React + Vite + TypeScript",
+      "Domain": "infinityai.pro",
+      "Features": [
+        "SPA routing",
+        "PWA support",
+        "Asset caching",
+        "HTTPS enforced"
+      ],
+      "Status": "Live"
+    },
+    "Functions": {
+      "Runtime": "Node.js 20",
+      "Count": 13,
+      "Functions": [
+        "submitDhanCredentialsV2",
+        "saveDhanCredentials",
+        "startTrading",
+        "stopTrading",
+        "analyzePortfolio",
+        "syncHoldings",
+        "getAiSignals",
+        "getVertexAiAnalysis",
+        "getGeminiAnalysis",
+        "analyzeImageWithRoboticsER",
+        "getBatchAiSignals",
+        "getEngineBStatus",
+        "getDhanOverview"
+      ],
+      "Status": "Pending Deployment"
+    },
+    "Authentication": {
+      "Providers": [
+        "Email/Password",
+        "Google"
+      ],
+      "Status": "Configured"
+    }
+  },
+  "Performance": {
+    "EngineA_Health": "N/A",
+    "EngineA_MarketData": "N/A",
+    "EngineD_Health": "N/A",
+    "AverageResponseTime": 0,
+    "EngineB_Health": "N/A",
+    "EngineC_Health": "N/A",
+    "EngineC_Orders": "N/A"
+  },
+  "Architecture": {
+    "Deployment": "Cloud Run (serverless containers)",
+    "Region": "us-central1 (Iowa, USA)",
+    "Communication": "HTTP APIs + WebSocket",
+    "Frontend": "React SPA on Firebase Hosting",
+    "Type": "Microservices (4 independent engines)",
+    "DataFlow": "User → Frontend (React) \r\n    → Engine D (Orchestrator) \r\n    → Engine A (Market Data) \r\n    → Engine B (AI Predictions) \r\n    → Engine C (Trade Execution)\r\n    ← Real-time updates via WebSocket",
+    "Security": [
+      "HTTPS enforced on all services",
+      "JWT authentication (Engine D)",
+      "OAuth 2.0 for Dhan integration",
+      "Secrets in Google Secret Manager",
+      "CORS properly configured"
+    ],
+    "Platform": "100% Google Cloud (GCP + Firebase)"
+  },
+  "Timestamp": "2025-11-03 16:04:25 UTC",
+  "Project": "after-yesterday-473512-k3",
+  "Security": {
+    "HTTPS": "Enforced on all services",
+    "SecretManager": {
+      "TotalSecrets": 12,
+      "Secrets": [
+        "Infinity-ghe-private-key-a8f2c4",
+        "Infinity-ghe-webhook-secret-f1a42f",
+        "dhan-access-token",
+        "dhan-api-key",
+        "dhan-api-secret",
+        "dhan-client-id",
+        "dhan-webhook-secret",
+        "firebase-service-account",
+        "huggingface-api-token",
+        "jwt-secret-key",
+        "valid-api-key",
+        "vertex-ai-api-key"
+      ]
+    },
+    "CORS": "Configured (allow specific origins)",
+    "IAM": "Service accounts with least privilege",
+    "Authentication": "JWT (Engine D) + OAuth 2.0 (Dhan)"
+  }
+}

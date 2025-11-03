@@ -1,0 +1,26 @@
+[
+  {
+    "Status": "created",
+    "Service": "infinityai-engine-a",
+    "DNSRecords": null,
+    "Domain": "engine-a.infinityai.pro"
+  },
+  {
+    "Status": "created",
+    "Service": "infinityai-engine-b",
+    "DNSRecords": null,
+    "Domain": "engine-b.infinityai.pro"
+  },
+  {
+    "Status": "created",
+    "Service": "infinityai-engine-c-execution",
+    "DNSRecords": null,
+    "Domain": "engine-c.infinityai.pro"
+  },
+  {
+    "Status": "failed",
+    "Service": "infinityai-engine-d",
+    "DNSRecords": null,
+    "Domain": "engine-d.infinityai.pro"
+  }
+]
