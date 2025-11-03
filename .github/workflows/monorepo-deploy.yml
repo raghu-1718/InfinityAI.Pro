@@ -147,22 +147,32 @@ jobs:
           echo "  CPU: $CPU, Memory: $MEMORY, Max Instances: $MAX_INSTANCES"
           # GCP requires concurrency <= 80 when CPU < 1
           if [ "$CPU" = "0.5" ]; then
-            CONCURRENCY_FLAG="--concurrency 80"
+            echo "  Setting concurrency to 80 for CPU < 1"
+            gcloud run deploy "$SERVICE_NAME" \
+              --source "$SRC_PATH" \
+              --region "$REGION" \
+              --project "$GCP_PROJECT_ID" \
+              --allow-unauthenticated \
+              --min-instances 0 \
+              --max-instances "$MAX_INSTANCES" \
+              --cpu "$CPU" \
+              --memory "$MEMORY" \
+              --timeout 300 \
+              --concurrency 80 \
+              --quiet
           else
-            CONCURRENCY_FLAG=""
+            gcloud run deploy "$SERVICE_NAME" \
+              --source "$SRC_PATH" \
+              --region "$REGION" \
+              --project "$GCP_PROJECT_ID" \
+              --allow-unauthenticated \
+              --min-instances 0 \
+              --max-instances "$MAX_INSTANCES" \
+              --cpu "$CPU" \
+              --memory "$MEMORY" \
+              --timeout 300 \
+              --quiet
           fi
-          gcloud run deploy "$SERVICE_NAME" \
-            --source "$SRC_PATH" \
-            --region "$REGION" \
-            --project "$GCP_PROJECT_ID" \
-            --allow-unauthenticated \
-            --min-instances 0 \
-            --max-instances "$MAX_INSTANCES" \
-            --cpu "$CPU" \
-            --memory "$MEMORY" \
-            --timeout 300 \
-            $CONCURRENCY_FLAG \
-            --quiet
 
       - name: Output Service URL
         env:
