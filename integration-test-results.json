@@ -1,0 +1,337 @@
+{
+  "timestamp": "2025-11-04T15:13:53.524729",
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "warnings": 1,
+    "total": 13
+  },
+  "tests": [
+    {
+      "test": "Engine A Health",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Engine A healthy - engine-a v7.0.0",
+        "response_time_ms": 8842,
+        "data": {
+          "status": "healthy",
+          "service": "engine-a",
+          "version": "7.0.0",
+          "timestamp": "2025-10-17 UTC"
+        }
+      }
+    },
+    {
+      "test": "Engine B Health",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Engine B healthy - engine-b vunknown",
+        "response_time_ms": 2351,
+        "data": {
+          "status": "healthy",
+          "service": "engine-b",
+          "latency_ms": 0,
+          "timestamp": "2025-11-04T15:13:18.158199"
+        }
+      }
+    },
+    {
+      "test": "Engine C Health",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Engine C healthy - engine-c-execution v1.1.0",
+        "response_time_ms": 4543,
+        "data": {
+          "status": "healthy",
+          "service": "engine-c-execution",
+          "version": "1.1.0",
+          "execution_status": "disabled",
+          "kill_switch": false,
+          "timestamp": "2025-11-04T15:13:22.698636"
+        }
+      }
+    },
+    {
+      "test": "Engine D Health",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Engine D healthy - engine-d-orchestration vunknown",
+        "response_time_ms": 8009,
+        "data": {
+          "status": "ok",
+          "service": "engine-d-orchestration",
+          "websocket_connections": {
+            "total_connections": 0,
+            "channels": {
+              "dashboard": 0,
+              "trades": 0,
+              "signals": 0,
+              "health": 0
+            }
+          },
+          "timestamp": "2025-11-04 15:13:30 UTC",
+          "uptime_seconds": 0.0
+        }
+      }
+    },
+    {
+      "test": "Engine A - Market Data NIFTY",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Market data retrieved for NIFTY",
+        "response_time_ms": 6082,
+        "data": {
+          "status": "success",
+          "symbol": "NIFTY",
+          "market_data": {
+            "ltp": 19450.75,
+            "change": 125.8,
+            "change_percent": 0.65,
+            "volume": 182500000,
+            "high": 19485.3,
+            "low": 19420.15,
+            "open": 19435.5,
+            "previous_close": 19324.95
+          },
+          "timestamp": "2025-11-04T15:13:36.810038",
+          "message": "Sample data - analytics service unavailable"
+        }
+      }
+    },
+    {
+      "test": "Engine A - General Market Data",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "General market data endpoint working",
+        "response_time_ms": 366,
+        "sample_data": "{'status': 'success', 'market_data': [], 'timestamp': '2025-11-04T15:13:37.193532', 'message': 'Analytics service unavailable, returning empty data.'}"
+      }
+    },
+    {
+      "test": "Engine B - AI Signals",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "AI signals generated successfully",
+        "response_time_ms": 13831,
+        "signal_count": 1
+      }
+    },
+    {
+      "test": "Engine B - Models Status",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Models status retrieved",
+        "data": {
+          "status": "success",
+          "models": [
+            {
+              "name": "rf_price",
+              "type": "RandomForestRegressor",
+              "trained": true,
+              "last_trained": "2025-11-04T15:13:48.290057",
+              "samples_seen": 0,
+              "metrics": {
+                "rmse": 0.8954552333635418
+              }
+            },
+            {
+              "name": "xgb_price",
+              "type": "XGBRegressor",
+              "trained": true,
+              "last_trained": "2025-11-04T15:13:49.523616",
+              "samples_seen": 0,
+              "metrics": {
+                "rmse": 0.18624523514747415
+              }
+            },
+            {
+              "name": "lgb_price",
+              "type": "LGBMRegressor",
+              "trained": true,
+              "last_trained": "2025-11-04T15:13:50.372650",
+              "samples_seen": 0,
+              "metrics": {
+                "rmse": 1.423557655697332
+              }
+            }
+          ],
+          "timestamp": "2025-11-04T15:13:51.360587"
+        }
+      }
+    },
+    {
+      "test": "Engine C - Dhan Status",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Dhan status: success",
+        "data": {
+          "status": "success",
+          "oauth_active": true,
+          "oauth_configured": true,
+          "client_id": "demo-client",
+          "redirect_uri": "https://infinityai.pro/auth/dhan/callback",
+          "postback_uri": "https://infinityai.pro/api/webhooks/dhan",
+          "scopes": [
+            "trade",
+            "funds",
+            "holdings",
+            "positions"
+          ],
+          "connected": false,
+          "account_details": {
+            "client_id": "demo-client",
+            "status": "disconnected"
+          },
+          "connected_users": 1,
+          "endpoints": {
+            "callback": "/api/dhan/callback",
+            "postback": "/api/webhooks/dhan",
+            "initiate": "/api/auth/dhan/initiate",
+            "token_update": "/api/dhan/token",
+            "callback_urls": "/api/dhan/callback-urls"
+          },
+          "integration_status": "fully_configured",
+          "timestamp": "2025-11-04T15:13:51.777788"
+        }
+      }
+    },
+    {
+      "test": "Engine C - Token Status",
+      "status": "WARN",
+      "details": {
+        "status": "warn",
+        "message": "No Dhan access token found - OAuth flow needed",
+        "data": {
+          "client_id": "demo-client",
+          "has_token": false,
+          "exp": 0,
+          "seconds_remaining": 0,
+          "is_fresh": false,
+          "checked_at_utc": "2025-11-04T15:13:52.151548"
+        }
+      }
+    },
+    {
+      "test": "Engine C - Orders Status",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Orders endpoint working",
+        "data": {
+          "status": "success",
+          "orders": [],
+          "count": 0,
+          "timestamp": "2025-11-04T15:13:52.497716"
+        }
+      }
+    },
+    {
+      "test": "Engine D - Status",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Engine D status endpoint working",
+        "data": {
+          "status": "operational",
+          "service": "engine-d-orchestration",
+          "version": "4.6.0",
+          "uptime_seconds": 22.3,
+          "health_summary": {
+            "healthy_engines": 2,
+            "total_engines": 3,
+            "health_percentage": 67,
+            "avg_response_time_ms": 78,
+            "overall_status": "healthy"
+          },
+          "websocket_connections": {
+            "total_connections": 0,
+            "channels": {
+              "dashboard": 0,
+              "trades": 0,
+              "signals": 0,
+              "health": 0
+            }
+          },
+          "event_stats": {
+            "total_events": 0,
+            "connections": {
+              "total_connections": 0,
+              "channels": {
+                "dashboard": 0,
+                "trades": 0,
+                "signals": 0,
+                "health": 0
+              }
+            }
+          },
+          "engines_status": {
+            "A": true,
+            "B": true,
+            "C": false
+          },
+          "timestamp": "2025-11-04 15:13:53 UTC",
+          "features": [
+            "chatbot",
+            "websocket",
+            "orchestration",
+            "health-monitoring",
+            "jwt-auth"
+          ],
+          "last_health_check": 1762269232.866113
+        }
+      }
+    },
+    {
+      "test": "Engine D - Comprehensive Health",
+      "status": "PASS",
+      "details": {
+        "status": "pass",
+        "message": "Comprehensive health check completed",
+        "data": {
+          "timestamp": 1762269232.866113,
+          "summary": {
+            "healthy_engines": 2,
+            "total_engines": 3,
+            "health_percentage": 67,
+            "avg_response_time_ms": 78,
+            "overall_status": "healthy"
+          },
+          "engines": {
+            "A": {
+              "healthy": true,
+              "status": "operational",
+              "response_time_ms": 62,
+              "details": "engine-a"
+            },
+            "B": {
+              "healthy": true,
+              "status": "operational",
+              "response_time_ms": 39,
+              "details": "engine-b"
+            },
+            "C": {
+              "healthy": false,
+              "status": "error",
+              "response_time_ms": 133,
+              "details": "Cannot connect to host api.infinityai.pro:443 ssl:"
+            }
+          },
+          "system_status": {
+            "orchestration": "active",
+            "monitoring": "enabled",
+            "last_update": "2025-11-04 15:13:52 UTC"
+          }
+        }
+      }
+    }
+  ]
+}
