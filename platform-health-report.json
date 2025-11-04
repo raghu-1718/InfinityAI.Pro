@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-11-03T19:08:03.947237",
+  "overall_status": "degraded",
+  "services_checked": 5,
+  "services_healthy": 4,
+  "services": [
+    {
+      "name": "Firebase Hosting",
+      "url": "https://infinityai.pro",
+      "status": "ssl_provisioning",
+      "status_code": 0,
+      "error": "SSL certificate still provisioning"
+    },
+    {
+      "name": "Engine A",
+      "url": "https://infinityai-engine-a-573866363639.us-central1.run.app/health",
+      "status": "healthy",
+      "status_code": 200,
+      "response_time_ms": 424
+    },
+    {
+      "name": "Engine B",
+      "url": "https://infinityai-engine-b-573866363639.us-central1.run.app/health",
+      "status": "healthy",
+      "status_code": 200,
+      "response_time_ms": 401
+    },
+    {
+      "name": "Engine C",
+      "url": "https://infinityai-engine-c-execution-573866363639.us-central1.run.app/health",
+      "status": "healthy",
+      "status_code": 200,
+      "response_time_ms": 432
+    },
+    {
+      "name": "Engine D",
+      "url": "https://infinityai-engine-d-573866363639.us-central1.run.app/health",
+      "status": "healthy",
+      "status_code": 200,
+      "response_time_ms": 336
+    }
+  ]
+}

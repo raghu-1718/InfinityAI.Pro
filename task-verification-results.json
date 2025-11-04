@@ -1,0 +1,502 @@
+[
+  {
+    "Description": "DNS A record for infinityai.pro",
+    "Status": "PASS",
+    "Task": 1
+  },
+  {
+    "Description": "DNS CNAME for www.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 2
+  },
+  {
+    "Description": "DNS propagation for infinityai.pro",
+    "Status": "PASS",
+    "Task": 3
+  },
+  {
+    "Description": "DNS propagation for www.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 4
+  },
+  {
+    "Description": "DNS propagation for engine-a.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 5
+  },
+  {
+    "Description": "DNS propagation for engine-b.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 6
+  },
+  {
+    "Description": "DNS propagation for engine-c.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 7
+  },
+  {
+    "Description": "DNS propagation for engine-d.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 8
+  },
+  {
+    "Description": "SSL certificate for all domains",
+    "Status": "FAIL",
+    "Task": 9
+  },
+  {
+    "Description": "HTTPS access to infinityai.pro",
+    "Status": "FAIL",
+    "Task": 10
+  },
+  {
+    "Description": "HTTPS access to www.infinityai.pro",
+    "Status": "FAIL",
+    "Task": 11
+  },
+  {
+    "Description": "HTTPS access to engine-a.infinityai.pro/health",
+    "Status": "FAIL",
+    "Task": 12
+  },
+  {
+    "Description": "HTTPS access to engine-b.infinityai.pro/health",
+    "Status": "FAIL",
+    "Task": 13
+  },
+  {
+    "Description": "HTTPS access to engine-c.infinityai.pro/health",
+    "Status": "FAIL",
+    "Task": 14
+  },
+  {
+    "Description": "HTTPS access to engine-d.infinityai.pro/health",
+    "Status": "FAIL",
+    "Task": 15
+  },
+  {
+    "Description": "Legacy Cloud Run services deleted",
+    "Status": "PASS",
+    "Task": 16
+  },
+  {
+    "Description": "Only 4 production engines running",
+    "Status": "PASS",
+    "Task": 17
+  },
+  {
+    "Description": "Azure references removed",
+    "Status": "SKIP",
+    "Task": 18
+  },
+  {
+    "Description": "AWS references removed",
+    "Status": "SKIP",
+    "Task": 19
+  },
+  {
+    "Description": "Archive old artifacts",
+    "Status": "SKIP",
+    "Task": 20
+  },
+  {
+    "Description": "Engine A deployed",
+    "Status": "PASS",
+    "Task": 21
+  },
+  {
+    "Description": "Engine A health endpoint",
+    "Status": "PASS",
+    "Task": 22
+  },
+  {
+    "Description": "Engine A API test",
+    "Status": "SKIP",
+    "Task": 23
+  },
+  {
+    "Description": "Engine A API test",
+    "Status": "SKIP",
+    "Task": 24
+  },
+  {
+    "Description": "Engine A API test",
+    "Status": "SKIP",
+    "Task": 25
+  },
+  {
+    "Description": "Engine A resources configured",
+    "Status": "PASS",
+    "Task": 26
+  },
+  {
+    "Description": "Engine A min instances = 0",
+    "Status": "PASS",
+    "Task": 27
+  },
+  {
+    "Description": "Engine B deployed",
+    "Status": "PASS",
+    "Task": 28
+  },
+  {
+    "Description": "Engine B health endpoint",
+    "Status": "PASS",
+    "Task": 29
+  },
+  {
+    "Description": "Engine B API/model test",
+    "Status": "SKIP",
+    "Task": 30
+  },
+  {
+    "Description": "Engine B API/model test",
+    "Status": "SKIP",
+    "Task": 31
+  },
+  {
+    "Description": "Engine B API/model test",
+    "Status": "SKIP",
+    "Task": 32
+  },
+  {
+    "Description": "Engine B API/model test",
+    "Status": "SKIP",
+    "Task": 33
+  },
+  {
+    "Description": "Engine B API/model test",
+    "Status": "SKIP",
+    "Task": 34
+  },
+  {
+    "Description": "Engine B min instances = 0",
+    "Status": "PASS",
+    "Task": 35
+  },
+  {
+    "Description": "Engine C deployed",
+    "Status": "PASS",
+    "Task": 36
+  },
+  {
+    "Description": "Engine C health endpoint",
+    "Status": "PASS",
+    "Task": 37
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 38
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 39
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 40
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 41
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 42
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 43
+  },
+  {
+    "Description": "Engine C OAuth/trading test",
+    "Status": "SKIP",
+    "Task": 44
+  },
+  {
+    "Description": "Engine C resources configured",
+    "Status": "FAIL",
+    "Task": 45
+  },
+  {
+    "Description": "dhan-api-key secret exists",
+    "Status": "PASS",
+    "Task": 46
+  },
+  {
+    "Description": "dhan-client-id secret exists",
+    "Status": "PASS",
+    "Task": 47
+  },
+  {
+    "Description": "Secret rotation",
+    "Status": "SKIP",
+    "Task": 48
+  },
+  {
+    "Description": "Secret rotation",
+    "Status": "SKIP",
+    "Task": 49
+  },
+  {
+    "Description": "Secret rotation",
+    "Status": "SKIP",
+    "Task": 50
+  },
+  {
+    "Description": "Engine D deployed",
+    "Status": "PASS",
+    "Task": 51
+  },
+  {
+    "Description": "Engine D health endpoint",
+    "Status": "PASS",
+    "Task": 52
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 53
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 54
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 55
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 56
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 57
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 58
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 59
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 60
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 61
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 62
+  },
+  {
+    "Description": "Engine D API/WebSocket test",
+    "Status": "SKIP",
+    "Task": 63
+  },
+  {
+    "Description": "Engine D min instances = 0",
+    "Status": "PASS",
+    "Task": 64
+  },
+  {
+    "Description": "Engine D max instances ≤ 3",
+    "Status": "PASS",
+    "Task": 65
+  },
+  {
+    "Description": "Firebase Hosting deployed",
+    "Status": "FAIL",
+    "Task": 66
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 67
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 68
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 69
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 70
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 71
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 72
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 73
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 74
+  },
+  {
+    "Description": "Firebase test",
+    "Status": "SKIP",
+    "Task": 75
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 76
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 77
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 78
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 79
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 80
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 81
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 82
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 83
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 84
+  },
+  {
+    "Description": "Integration test",
+    "Status": "SKIP",
+    "Task": 85
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 86
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 87
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 88
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 89
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 90
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 91
+  },
+  {
+    "Description": "Monitoring setup",
+    "Status": "SKIP",
+    "Task": 92
+  },
+  {
+    "Description": "Review current billing",
+    "Status": "PASS",
+    "Task": 93
+  },
+  {
+    "Description": "Cost optimization",
+    "Status": "SKIP",
+    "Task": 94
+  },
+  {
+    "Description": "Cost optimization",
+    "Status": "SKIP",
+    "Task": 95
+  },
+  {
+    "Description": "Cost optimization",
+    "Status": "SKIP",
+    "Task": 96
+  },
+  {
+    "Description": "Cost optimization",
+    "Status": "SKIP",
+    "Task": 97
+  },
+  {
+    "Description": "Cost optimization",
+    "Status": "SKIP",
+    "Task": 98
+  },
+  {
+    "Description": "README updated",
+    "Status": "PASS",
+    "Task": 99
+  },
+  {
+    "Description": "Deployment roadmap exists",
+    "Status": "PASS",
+    "Task": 100
+  }
+]
