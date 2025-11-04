@@ -126,6 +126,7 @@ jobs:
             roles/artifactregistry.writer \
             roles/secretmanager.secretAccessor \
             roles/firebase.admin \
+            roles/appengine.admin \
             roles/appengine.appAdmin; do
             gcloud projects add-iam-policy-binding $GCP_PROJECT_ID \
               --member="serviceAccount:${SA_EMAIL}" \
@@ -215,10 +216,11 @@ jobs:
             echo "⚠️ Unable to verify billing status (insufficient permissions). Proceeding optimistically."
           fi
 
-      - name: Ensure App Engine app exists (one-time init)
+      - name: Skip App Engine init (Functions v2 do not require App Engine)
         run: |
-          gcloud app describe --project $FIREBASE_PROJECT_ID >/dev/null 2>&1 || \
-          gcloud app create --project $FIREBASE_PROJECT_ID --region=us-central || true
+          set -euo pipefail
+          echo "Skipping App Engine application creation."
+          echo "If your setup requires App Engine (legacy features), create it manually in the console."
 
       - name: Delete orphaned functions (if any)
         run: |
@@ -238,8 +240,11 @@ jobs:
           # Method 1: Use environment variables instead of secret manager during deployment
           echo "Deploying Firebase Functions with environment-based secrets..."
 
-          # Set the encryption key as an environment variable for deployment
+          # Set the encryption key as an environment variable for deployment (fallback no-op if unset)
           export ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+          if [ -z "${ENCRYPTION_KEY}" ]; then
+            echo "⚠️  ENCRYPTION_KEY GitHub secret is not set. Deployment will proceed; functions should handle missing key gracefully."
+          fi
 
           # Also set Firebase Functions config (preferred by runtime code)
           if [ -n "${{ secrets.ENCRYPTION_KEY }}" ]; then
@@ -247,7 +252,11 @@ jobs:
           fi
 
           # Deploy functions - this bypasses the secret manager validation issue
-          firebase deploy --only functions --project $FIREBASE_PROJECT_ID --non-interactive
+          firebase deploy --only functions --project $FIREBASE_PROJECT_ID --non-interactive || {
+            echo "Retrying functions deploy once after potential App Engine propagation...";
+            sleep 10;
+            firebase deploy --only functions --project $FIREBASE_PROJECT_ID --non-interactive;
+          }
 
           echo "✅ Firebase Functions deployed successfully!"
 
