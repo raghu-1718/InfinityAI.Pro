@@ -8,4 +8,6 @@ fastapi
 aiohttp
 PyYAML
 python-dateutil
- dhanhq==2.0.2
+dhanhq==2.0.2
+google-cloud-secret-manager
+bleach
