@@ -9,7 +9,12 @@ __pycache__/
 # Environments & secrets
 .env
 .env.*
+*.env
+**/*.env
 dhan_credentials_secure.json
+engines/**/jwt-secret-key.txt
+engines/**/temp_api_key.txt
+.firebase/
 
 # Logs & reports
 logs/
