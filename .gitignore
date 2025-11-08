@@ -30,9 +30,6 @@ frontend/web/build/
 .idea/
 .vscode/
 
-# Vercel
-.vercel
-
 # Misc
 *.db
 *.sqlite3
