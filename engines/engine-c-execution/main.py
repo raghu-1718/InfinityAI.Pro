@@ -674,12 +674,13 @@ async def add_security_headers(request, call_next):
     return response
 
 # Add CORS middleware
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://infinityai.pro,https://www.infinityai.pro,http://localhost:5173,http://127.0.0.1:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for public access and health checks
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # --- JWT helpers (decode without verification just for expiry checks) ---

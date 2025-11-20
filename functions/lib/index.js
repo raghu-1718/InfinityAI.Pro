@@ -39,7 +39,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDhanOverview = exports.getEngineBStatus = exports.getBatchAiSignals = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getAiSignals = exports.syncHoldings = exports.analyzePortfolio = exports.stopTrading = exports.startTrading = exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
+exports.angelOrderUpdate = exports.getDhanOverview = exports.getEngineBStatus = exports.getBatchAiSignals = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getAiSignals = exports.syncHoldings = exports.analyzePortfolio = exports.stopTrading = exports.startTrading = exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
 const admin = __importStar(require("firebase-admin"));
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -60,4 +60,6 @@ Object.defineProperty(exports, "analyzeImageWithRoboticsER", { enumerable: true,
 Object.defineProperty(exports, "getBatchAiSignals", { enumerable: true, get: function () { return analyzePortfolio_1.getBatchAiSignals; } });
 Object.defineProperty(exports, "getEngineBStatus", { enumerable: true, get: function () { return analyzePortfolio_1.getEngineBStatus; } });
 Object.defineProperty(exports, "getDhanOverview", { enumerable: true, get: function () { return analyzePortfolio_1.getDhanOverview; } });
+var angelOrderUpdate_1 = require("./angelOrderUpdate");
+Object.defineProperty(exports, "angelOrderUpdate", { enumerable: true, get: function () { return angelOrderUpdate_1.angelOrderUpdate; } });
 //# sourceMappingURL=index.js.map

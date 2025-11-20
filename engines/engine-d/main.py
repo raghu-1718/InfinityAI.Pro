@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from engines.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ import google.generativeai as genai
 from google.cloud import secretmanager
 
 # Google Cloud Project Configuration
-PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT', 'infinity-ai-5ec7c') # Default to your project ID
+PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT', 'after-yesterday-473512-k3')
 
 def get_gemini_api_key() -> str:
     """Get Gemini API key from GCP Secret Manager or environment variables."""
@@ -140,8 +141,17 @@ app = FastAPI(title="InfinityAI Engine D - Chatbot & Orchestration", description
 security = HTTPBearer()
 event_broadcaster = EventBroadcaster(ws_manager)
 
-# CORS
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+# Security Headers and CORS
+# Use shared security headers across services
+app.add_middleware(SharedSecurityHeaders)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://infinityai.pro,https://www.infinityai.pro,http://localhost:5173,http://127.0.0.1:5173").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+)
 
 # Lifespan
 STARTED_AT = time.time()
@@ -362,6 +372,19 @@ async def websocket_signals(websocket: WebSocket):
         print(f"WebSocket error: {e}")
     finally:
         ws_manager.disconnect(websocket, "signals")
+
+# HTTP GET probes for WebSocket readiness (for uptime/verification tools)
+@app.get("/ws/dashboard")
+async def websocket_dashboard_probe():
+    return {"status": "ok", "websocket": "available", "path": "/ws/dashboard"}
+
+@app.get("/ws/trades")
+async def websocket_trades_probe():
+    return {"status": "ok", "websocket": "available", "path": "/ws/trades"}
+
+@app.get("/ws/signals")
+async def websocket_signals_probe():
+    return {"status": "ok", "websocket": "available", "path": "/ws/signals"}
 
 
 @app.post("/broadcast/trade")

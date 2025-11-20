@@ -8,14 +8,19 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Create engines dir and copy shared security middleware
+RUN mkdir -p engines
+COPY security_middleware.py engines/
+COPY __init__.py engines/
+
+# Copy requirements first for better caching (from engine-d subdir relative to build context)
+COPY engine-d/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY . .
+# Copy application files (from engine-d subdir relative to build context)
+COPY engine-d/ .
 
 # Create logs directory
 RUN mkdir -p /app/logs

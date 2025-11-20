@@ -22,12 +22,13 @@ app = FastAPI(
 )
 
 # CORS and Security
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://infinityai.pro,https://www.infinityai.pro").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 add_security_headers(app)
 
@@ -94,10 +95,10 @@ def get_secret(secret_id: str) -> str:
 # Import provider modules (real implementations) - wrapped in try/except for graceful degradation
 try:
     from providers.dhan import DhanProvider
-    # Securely fetch credentials and initialize the provider
-    dhan_api_key = get_secret("dhan-api-key")
-    dhan_api_secret = get_secret("dhan-api-secret")
-    dhan = DhanProvider(api_key=dhan_api_key, api_secret=dhan_api_secret)
+    # Securely fetch credentials and initialize the provider (access token + client id)
+    dhan_access_token = get_secret("dhan-access-token")
+    dhan_client_id = get_secret("dhan-client-id")
+    dhan = DhanProvider(access_token=dhan_access_token, client_id=dhan_client_id)
     logger.info("DhanProvider loaded successfully")
 except Exception as e:
     logger.warning(f"Failed to load DhanProvider: {e}")

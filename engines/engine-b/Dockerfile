@@ -6,7 +6,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY . .
+
+# Create engines dir and copy shared security middleware + __init__.py
+RUN mkdir -p engines
+COPY engines/security_middleware.py engines/
+COPY engines/__init__.py engines/
+
+# Copy engine-b specific files
+COPY engines/engine-b/ .
 
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -24,3 +24,4 @@ export {
   getEngineBStatus,
   getDhanOverview,
 } from "./analyzePortfolio";
+export { angelOrderUpdate } from "./angelOrderUpdate";

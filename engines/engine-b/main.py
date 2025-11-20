@@ -1,15 +1,10 @@
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from engines.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders
 import uvicorn, os, yaml, asyncio, time
 from datetime import datetime
 from dataclasses import asdict
 import numpy as np
-# Lazy imports - imported inside init_services() to avoid module-level import failures
-# from services.ai_model_service import AIModelService
-# from services.sentiment_service import SentimentService
-# from services.explainability_service import ExplainabilityService
-# from models.schemas import PredictionResponse, ModelStatus
 
 app = FastAPI(
     title="InfinityAI Engine B",
@@ -17,10 +12,15 @@ app = FastAPI(
     version="4.6.0"
 )
 
+# Use shared security middleware for consistent headers across services
+app.add_middleware(SharedSecurityHeaders)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://infinityai.pro,https://www.infinityai.pro,http://localhost:5173,http://127.0.0.1:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"]
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # Global services - lazily initialized
@@ -209,6 +209,10 @@ async def predict_symbol(symbol: str):
     if not ai:
         raise HTTPException(status_code=503, detail="AI service not initialized")
     try:
+        # Basic symbol validation: uppercase letters, digits, dot, underscore, hyphen, length <= 20
+        import re
+        if not re.match(r"^[A-Za-z0-9._-]{1,20}$", symbol or ""):
+            raise HTTPException(status_code=422, detail="Invalid symbol format")
         s = await ai.predict_symbol(symbol.upper())
         return {"status":"success", "signal": {**asdict(s), "timestamp": s.timestamp.isoformat()}}
     except Exception as e:
