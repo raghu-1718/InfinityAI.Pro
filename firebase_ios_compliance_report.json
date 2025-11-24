@@ -1,28 +1,28 @@
 {
-  "timestamp": "2025-10-23T12:43:47.069043",
+  "timestamp": "2025-11-25T00:25:44.096437",
   "project_id": "infinity-ai-5ec7c",
   "tests": {
     "auth_api": {
-      "status": "PASS",
-      "details": "Proper validation"
+      "status": "WARN",
+      "details": "Unexpected error: {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'errors': [{'message': 'API key not valid. Please pass a valid API key.', 'domain': 'global', 'reason': 'badRequest'}], 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'identitytoolkit.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}"
     },
     "hosting": {
-      "status": "PASS",
-      "details": "Firebase hosting operational"
+      "status": "FAIL",
+      "details": "Status: 404"
     },
     "oauth_format": {
       "status": "PASS",
       "details": "Proper OAuth format"
     },
     "functions": {
-      "status": "PASS",
-      "details": "Functions accessible"
+      "status": "WARN",
+      "details": "Status: 404"
     },
     "security": {
       "status": "PASS",
       "details": "Security rules enforced"
     }
   },
-  "compliance_score": 100.0,
-  "status": "FULLY_COMPLIANT"
+  "compliance_score": 40.0,
+  "status": "NEEDS_WORK"
 }

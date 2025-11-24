@@ -1,3 +1,6 @@
+# Archived from `engines/engine-d` on 2025-11-25
+
+```dockerfile
 FROM python:3.11-slim
 
 # Set working directory
@@ -38,9 +41,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Run the application with Uvicorn (bind to Cloud Run PORT)
 CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
-"""
-DEPRECATED: Engine D Dockerfile archived.
-See `archive/engine-d-deprecated-2025-11-25/Dockerfile` for original content.
-"""
-
-raise RuntimeError("Engine D Dockerfile archived. See archive folder.")
+```

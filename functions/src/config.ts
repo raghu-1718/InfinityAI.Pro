@@ -13,5 +13,5 @@ export const ENGINE_URLS = {
   // Engine C: Secure trade execution
   C: process.env.ENGINE_C_URL || "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
   // Engine D: AI chatbot and orchestration
-  D: process.env.ENGINE_D_URL || "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app",
+  D: process.env.ENGINE_C_URL || "https://infinityai-engine-c-ckxt6xvshq-uc.a.run.app",
 };

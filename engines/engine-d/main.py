@@ -1,3 +1,10 @@
+"""
+DEPRECATED: Engine D has been archived.
+The original implementation was moved to `archive/engine-d-deprecated-2025-11-25`.
+Do not use this module. Use Engine C equivalents under `engines/engine-c-execution/services/`.
+"""
+
+raise RuntimeError("Engine D archived. See archive/engine-d-deprecated-2025-11-25")
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from engines.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders

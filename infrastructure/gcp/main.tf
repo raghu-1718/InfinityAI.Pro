@@ -643,7 +643,7 @@ resource "google_sql_database" "infinityai" {
 resource "google_sql_user" "infinityai" {
   name     = "infinityai_admin"
   instance = google_sql_database_instance.infinityai.name
-  password = "infinityai_secure_pass"
+  password = var.db_password
 }
 
 # Redis instance (Memorystore)
@@ -800,7 +800,7 @@ resource "google_secret_manager_secret" "database_password" {
 
 resource "google_secret_manager_secret_version" "database_password" {
   secret      = google_secret_manager_secret.database_password.id
-  secret_data = "infinityai_secure_pass"
+  secret_data = var.db_password
 }
 
 # Vertex AI model endpoints (placeholder for custom models)

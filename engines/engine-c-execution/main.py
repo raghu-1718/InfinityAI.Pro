@@ -265,17 +265,17 @@ class TradeExecutionService:
         self.dhan_api_key = get_secret('dhan-api-key')
         self.dhan_api_secret = get_secret('dhan-api-secret')
 
-        # Allow demo mode if secrets are missing
-        allow_demo = bool(self.cfg.get('service', {}).get('allow_demo', True)) or os.getenv('ENGINEC_ALLOW_DEMO', 'true').lower() == 'true'
+        # Allow demo mode only if explicitly enabled in settings or env. Do NOT populate demo credentials.
+        allow_demo = bool(self.cfg.get('service', {}).get('allow_demo', False)) or os.getenv('ENGINEC_ALLOW_DEMO', 'false').lower() == 'true'
         if not all([self.dhan_token, self.dhan_client_id, self.dhan_api_key, self.dhan_api_secret]):
             if allow_demo:
-                logger.warning("⚠️ Dhan credentials not found; starting Engine C in DEMO mode (execution disabled)")
-                self.dhan_token = self.dhan_token or ''
-                self.dhan_client_id = self.dhan_client_id or 'demo-client'
-                self.dhan_api_key = self.dhan_api_key or 'demo-key'
-                self.dhan_api_secret = self.dhan_api_secret or 'demo-secret'
+                logger.warning("⚠️ Dhan credentials not found; demo mode explicitly enabled. Execution disabled and credentials will NOT be auto-filled.")
+                # Ensure execution is disabled when creds missing
+                self.execution_enabled = False
             else:
-                raise ValueError("❌ CRITICAL: Dhan credentials not found and demo mode disabled. Configure secrets or enable demo mode.")
+                # Leave fields as-is (empty) and disable execution to avoid accidental use of placeholders
+                logger.error("❌ Dhan credentials missing. Execution disabled. Configure secrets in Secret Manager or set environment variables.")
+                self.execution_enabled = False
 
         self.base_url = "https://api.dhan.co/v2"
 
@@ -492,28 +492,35 @@ class TradeExecutionService:
 
             # Store order
             self.orders[order_id] = order
-            # Fire-and-forget broadcast to Engine D
+            # Fire-and-forget broadcast: prefer in-process EventBroadcaster if available,
+            # otherwise fall back to HTTP to ENGINE_D_URL for compatibility.
             try:
-                engine_d_url = os.getenv("ENGINE_D_URL", "https://engine-d-orchestration-prod-573866363639.us-central1.run.app")
-                event = {
-                    "event_type": "trade",
-                    "data": {
-                        "order_id": order.order_id,
-                        "symbol": order.symbol,
-                        "quantity": order.quantity,
-                        "price": order.price,
-                        "status": order.status.value,
-                        "transaction_type": order.transaction_type.value,
-                        "timestamp": datetime.now().isoformat()
-                    }
+                payload = {
+                    "order_id": order.order_id,
+                    "symbol": order.symbol,
+                    "quantity": order.quantity,
+                    "price": order.price,
+                    "status": order.status.value,
+                    "transaction_type": order.transaction_type.value,
+                    "timestamp": datetime.now().isoformat()
                 }
-                async def _post_event():
+                if globals().get('event_broadcaster') is not None:
                     try:
-                        async with aiohttp.ClientSession() as session:
-                            await session.post(f"{engine_d_url}/broadcast/trade", json=event, timeout=5)
+                        asyncio.create_task(event_broadcaster.broadcast_trade_event(payload))
                     except Exception:
                         pass
-                asyncio.create_task(_post_event())
+                else:
+                    # Maintain backward compatibility: post to ENGINE_D_URL if configured
+                    engine_d_url = os.getenv("ENGINE_D_URL", "")
+                    if engine_d_url:
+                        event = {"event_type": "trade", "data": payload}
+                        async def _post_event():
+                            try:
+                                async with aiohttp.ClientSession() as session:
+                                    await session.post(f"{engine_d_url}/broadcast/trade", json=event, timeout=5)
+                            except Exception:
+                                pass
+                        asyncio.create_task(_post_event())
             except Exception:
                 pass
             return order
@@ -683,6 +690,28 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
+# Optional migrated services from former Engine D (WebSocket, Event Broadcaster, Auth)
+try:
+    from services.ws_manager import ws_manager  # type: ignore
+    from services.event_broadcaster import EventBroadcaster  # type: ignore
+    from services.auth_service import auth_service  # type: ignore
+    event_broadcaster = EventBroadcaster(ws_manager)
+    # Health orchestrator and chatbot (migrated from Engine D)
+    try:
+        from services.health_orchestrator import health_orchestrator  # type: ignore
+    except Exception:
+        health_orchestrator = None
+    try:
+        from services.chatbot import classify_intent, generate_response  # type: ignore
+    except Exception:
+        classify_intent = None
+        generate_response = None
+except Exception as _e:
+    ws_manager = None
+    event_broadcaster = None
+    auth_service = None
+    logger.warning(f"Optional engine-d migrated services unavailable: {_e}")
+
 # --- JWT helpers (decode without verification just for expiry checks) ---
 def _b64pad(s: str) -> str:
     return s + "=" * (-len(s) % 4)
@@ -742,6 +771,130 @@ async def public_health_check():
         "public": True,
         "timestamp": datetime.now().isoformat()
     }
+
+
+@app.get("/api/health/comprehensive")
+async def comprehensive_health():
+    if globals().get('health_orchestrator') is None:
+        raise HTTPException(status_code=503, detail="Health orchestrator not available")
+    try:
+        return await health_orchestrator.get_comprehensive_health()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/chat")
+async def chat_endpoint(request_data: dict):
+    if not classify_intent or not generate_response:
+        raise HTTPException(status_code=503, detail="Chat service not available")
+    try:
+        message = request_data.get('message', '')
+        user_id = request_data.get('user_id', 'anonymous')
+        intent, confidence = classify_intent(message)
+        response_text = await generate_response(intent, message, confidence)
+        return {"status": "success", "message_id": f"msg_{int(time.time())}", "response": response_text, "intent": intent, "confidence": confidence, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        return {"status": "error", "response": str(e)}
+
+
+# WebSocket endpoints (migrated from Engine D) - only enabled if ws_manager is present
+if ws_manager is not None:
+    from fastapi import WebSocket, WebSocketDisconnect
+
+    @app.websocket("/ws/dashboard")
+    async def websocket_dashboard(websocket: WebSocket):
+        await ws_manager.connect(websocket, "dashboard")
+        try:
+            await ws_manager.send_personal({"type": "connection", "message": "Connected to InfinityAI.Pro Dashboard", "timestamp": datetime.now().isoformat()}, websocket)
+            while True:
+                try:
+                    data = await websocket.receive_text()
+                    await ws_manager.send_personal({"type": "echo", "data": data, "timestamp": datetime.now().isoformat()}, websocket)
+                except WebSocketDisconnect:
+                    break
+        except Exception as e:
+            logger.warning(f"WebSocket error: {e}")
+        finally:
+            ws_manager.disconnect(websocket, "dashboard")
+
+    @app.websocket("/ws/trades")
+    async def websocket_trades(websocket: WebSocket):
+        await ws_manager.connect(websocket, "trades")
+        try:
+            await ws_manager.send_personal({"type": "connection", "message": "Connected to Trade Execution Feed", "timestamp": datetime.now().isoformat()}, websocket)
+            while True:
+                try:
+                    await websocket.receive_text()
+                except WebSocketDisconnect:
+                    break
+        except Exception as e:
+            logger.warning(f"WebSocket error: {e}")
+        finally:
+            ws_manager.disconnect(websocket, "trades")
+
+    @app.websocket("/ws/signals")
+    async def websocket_signals(websocket: WebSocket):
+        await ws_manager.connect(websocket, "signals")
+        try:
+            await ws_manager.send_personal({"type": "connection", "message": "Connected to AI Signals Feed", "timestamp": datetime.now().isoformat()}, websocket)
+            while True:
+                try:
+                    await websocket.receive_text()
+                except WebSocketDisconnect:
+                    break
+        except Exception as e:
+            logger.warning(f"WebSocket error: {e}")
+        finally:
+            ws_manager.disconnect(websocket, "signals")
+
+    @app.get("/ws/dashboard")
+    async def websocket_dashboard_probe():
+        return {"status": "ok", "websocket": "available", "path": "/ws/dashboard"}
+
+    @app.get("/ws/trades")
+    async def websocket_trades_probe():
+        return {"status": "ok", "websocket": "available", "path": "/ws/trades"}
+
+    @app.get("/ws/signals")
+    async def websocket_signals_probe():
+        return {"status": "ok", "websocket": "available", "path": "/ws/signals"}
+
+    @app.post("/broadcast/trade")
+    async def broadcast_trade(request_data: dict):
+        try:
+            if event_broadcaster is None:
+                raise RuntimeError("Event broadcaster not available")
+            await event_broadcaster.broadcast_trade_event(request_data)
+            return {"status": "success", "message": "Trade event broadcasted", "connections": ws_manager.get_connection_stats()}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Broadcast failed: {str(e)}")
+
+    @app.post("/broadcast/signal")
+    async def broadcast_signal(request_data: dict):
+        try:
+            if event_broadcaster is None:
+                raise RuntimeError("Event broadcaster not available")
+            await event_broadcaster.broadcast_signal_event(request_data)
+            return {"status": "success", "message": "Signal event broadcasted", "connections": ws_manager.get_connection_stats()}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Broadcast failed: {str(e)}")
+
+    @app.post("/broadcast/custom")
+    async def broadcast_custom(request_data: dict):
+        try:
+            if event_broadcaster is None:
+                raise RuntimeError("Event broadcaster not available")
+            event_type = request_data.get("event_type", "custom")
+            data = request_data.get("data", {})
+            channel = request_data.get("channel", "dashboard")
+            await event_broadcaster.broadcast_custom_event(event_type, data, channel)
+            return {"status": "success", "message": f"{event_type} event broadcasted to {channel}", "connections": ws_manager.get_connection_stats()}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Broadcast failed: {str(e)}")
+
+    @app.get("/broadcast/stats")
+    async def broadcast_stats():
+        return {"status": "success", "data": event_broadcaster.get_stats(), "timestamp": datetime.now().isoformat()}
 
 @app.get("/version")
 async def version_info():

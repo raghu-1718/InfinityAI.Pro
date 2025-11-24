@@ -93,7 +93,7 @@ VITE_API_BASE_URL={self.current_urls["engine-d"]}
 VITE_ENGINE_A_URL={self.current_urls["engine-a"]}
 VITE_ENGINE_B_URL={self.current_urls["engine-b"]}
 VITE_ENGINE_C_URL={self.current_urls["engine-c"]}
-VITE_ENGINE_D_URL={self.current_urls["engine-d"]}
+    VITE_ENGINE_C_URL={self.current_urls.get("engine-c", self.current_urls.get("engine-d"))}
 
 # WebSocket Endpoints (Engine D orchestration)
 VITE_WS_DASHBOARD_URL=wss://{self.current_urls["engine-d"].replace("https://", "")}/ws/dashboard
@@ -229,7 +229,7 @@ VITE_AUTH_REQUIRED=true
 ENGINE_A_URL="{self.current_urls["engine-a"]}"
 ENGINE_B_URL="{self.current_urls["engine-b"]}"
 ENGINE_C_URL="{self.current_urls["engine-c"]}"
-ENGINE_D_URL="{self.current_urls["engine-d"]}"
+    ENGINE_C_URL="{self.current_urls.get("engine-c", self.current_urls.get("engine-d"))}"
 FRONTEND_URL="{self.current_urls["frontend"]}"
 ```
 
@@ -310,7 +310,7 @@ gh secret set GOOGLE_CLOUD_REGION --body "{self.region}"
 gh secret set ENGINE_A_URL --body "{self.current_urls["engine-a"]}"
 gh secret set ENGINE_B_URL --body "{self.current_urls["engine-b"]}"
 gh secret set ENGINE_C_URL --body "{self.current_urls["engine-c"]}"
-gh secret set ENGINE_D_URL --body "{self.current_urls["engine-d"]}"
+    gh secret set ENGINE_C_URL --body "{self.current_urls.get("engine-c", self.current_urls.get("engine-d"))}"
 gh secret set FRONTEND_URL --body "{self.current_urls["frontend"]}"
 
 # Service account key (get from GCP)

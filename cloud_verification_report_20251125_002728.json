@@ -1,0 +1,105 @@
+{
+  "timestamp": "2025-11-24T18:55:58.623147+00:00",
+  "project_id": "infinity-ai-5ec7c",
+  "cloud_run_services": {},
+  "firebase_functions": {},
+  "firestore_collections": {},
+  "domain_mappings": {},
+  "secrets": {},
+  "integration_tests": {},
+  "issues_found": [
+    {
+      "timestamp": "2025-11-24T18:56:11.789285+00:00",
+      "category": "GCLOUD_ERROR",
+      "description": "Failed to list Cloud Run services: ERROR: (gcloud.run.services.list) [raghuyuvi10@gmail.com] does not have permission to access namespaces instance [infinity-ai-5ec7c] (or it may not exist): Permission denied on resource project infinity-ai-5ec7c. This command is authenticated as raghuyuvi10@gmail.com which is the active account specified by the [core/account] property.\r\nPermission denied on resource project infinity-ai-5ec7c.\r\nGoogle developers console\r\nhttps://console.developers.google.com\r\n- '@type': type.googleapis.com/google.rpc.ErrorInfo\r\n  domain: googleapis.com\r\n  metadata:\r\n    consumer: projects/infinity-ai-5ec7c\r\n    containerInfo: infinity-ai-5ec7c\r\n    service: run.googleapis.com\r\n  reason: CONSUMER_INVALID\r\n",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:03.454800+00:00",
+      "category": "FIREBASE_ERROR",
+      "description": "Failed to list Firebase Functions: Command 'firebase functions:list --project=infinity-ai-5ec7c' timed out after 30 seconds",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:06.438401+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:09.807597+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:12.580540+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:15.609599+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:18.886312+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:21.994546+00:00",
+      "category": "FIRESTORE_ACCESS",
+      "description": "Cannot access Firestore database",
+      "severity": "HIGH",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:24.804307+00:00",
+      "category": "DOMAIN_ERROR",
+      "description": "Failed to list domain mappings: ERROR: (gcloud.run.domain-mappings.list) unrecognized arguments:\r\n  \r\n --region flag is available in one or more alternate release tracks. Try:\r\n\r\n  gcloud alpha run domain-mappings list --region\r\n  gcloud beta run domain-mappings list --region\r\n\r\n  --region=us-central1 (did you mean '--uri'?)\r\n  To search the help text of gcloud commands, run:\r\n  gcloud help -- SEARCH_TERMS\r\n",
+      "severity": "MEDIUM",
+      "resource": ""
+    },
+    {
+      "timestamp": "2025-11-24T18:57:28.167744+00:00",
+      "category": "SECRETS_ERROR",
+      "description": "Failed to list secrets: ERROR: (gcloud.secrets.list) [raghuyuvi10@gmail.com] does not have permission to access projects instance [infinity-ai-5ec7c] (or it may not exist): Permission denied on resource project infinity-ai-5ec7c. This command is authenticated as raghuyuvi10@gmail.com which is the active account specified by the [core/account] property.\r\nPermission denied on resource project infinity-ai-5ec7c.\r\nGoogle developers console\r\nhttps://console.developers.google.com\r\n- '@type': type.googleapis.com/google.rpc.ErrorInfo\r\n  domain: googleapis.com\r\n  metadata:\r\n    consumer: projects/infinity-ai-5ec7c\r\n    containerInfo: infinity-ai-5ec7c\r\n    service: secretmanager.googleapis.com\r\n  reason: CONSUMER_INVALID\r\n",
+      "severity": "HIGH",
+      "resource": ""
+    }
+  ],
+  "fixes_applied": [],
+  "summary": {
+    "total_issues": 10,
+    "high_severity_issues": 9,
+    "medium_severity_issues": 1,
+    "fixes_applied": 0,
+    "cloud_run_services": {
+      "total": 0,
+      "healthy": 0,
+      "health_percentage": 0
+    },
+    "firebase_functions": {
+      "total": 0,
+      "working": 0,
+      "success_percentage": 0
+    },
+    "secrets": {
+      "total": 0,
+      "accessible": 0,
+      "access_percentage": 0
+    },
+    "overall_health": "NEEDS_ATTENTION"
+  }
+}

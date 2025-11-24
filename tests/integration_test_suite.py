@@ -336,7 +336,7 @@ class InfinityAIIntegrationTester:
     async def test_cross_engine_communication(self) -> Dict[str, Any]:
         """Test communication between engines"""
         # Test if Engine D can communicate with other engines
-        engine_d_url = f"{self.urls['engine_d_alb']}/chat"
+        engine_d_url = f"{self.urls.get('engine_c_alb', self.urls.get('engine_c'))}/chat"
 
         # Send a message that should trigger cross-engine communication
         payload = {

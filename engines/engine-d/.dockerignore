@@ -1,3 +1,9 @@
+"""
+DEPRECATED: Engine D .dockerignore archived.
+See `archive/engine-d-deprecated-2025-11-25/.dockerignore` for original content.
+"""
+
+raise RuntimeError("Engine D archived. See archive folder.")
 .git
 node_modules
 logs

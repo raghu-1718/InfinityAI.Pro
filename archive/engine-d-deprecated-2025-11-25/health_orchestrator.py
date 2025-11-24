@@ -1,10 +1,6 @@
-"""
-DEPRECATED: Engine D health_orchestrator archived.
-Moved to `archive/engine-d-deprecated-2025-11-25/health_orchestrator.py` for reference.
-Use `engines/engine-c-execution/services/health_orchestrator.py` instead.
-"""
+# Archived from `engines/engine-d/health_orchestrator.py` on 2025-11-25
 
-raise RuntimeError("Engine D health_orchestrator archived. See archive folder.")
+```python
 import asyncio
 import aiohttp
 import time
@@ -156,3 +152,4 @@ class HealthOrchestrator:
 
 # Global instance
 health_orchestrator = HealthOrchestrator()
+```

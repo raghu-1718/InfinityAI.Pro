@@ -11,8 +11,8 @@ services:
       - ENVIRONMENT=production
       - REDIS_URL=redis://infinityai-redis:6379
       - KAFKA_BOOTSTRAP_SERVERS=infinityai-kafka:9092
-      - API_KEYS_YAHOO_FINANCE=${YAHOO_FINANCE_API_KEY:-demo_key}
-      - API_KEYS_ALPHA_VANTAGE=${ALPHA_VANTAGE_API_KEY:-demo_key}
+      - API_KEYS_YAHOO_FINANCE=${YAHOO_FINANCE_API_KEY}
+      - API_KEYS_ALPHA_VANTAGE=${ALPHA_VANTAGE_API_KEY}
       - ENABLE_CACHE=true
       - CACHE_TTL=300
       - LOG_LEVEL=INFO
@@ -61,18 +61,17 @@ services:
       - "8003:8003"
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://infinityai:infinityai_secure_pass@infinityai-postgres:5432/infinityai
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://infinityai-redis:6379
       - KAFKA_BOOTSTRAP_SERVERS=infinityai-kafka:9092
       - KAFKA_ENABLED=false
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-infinityai-super-secret-key-2024}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your-encryption-key-32-chars-long}
-      - ALPACA_API_KEY=${ALPACA_API_KEY:-demo_key}
-      - ALPACA_SECRET_KEY=${ALPACA_SECRET_KEY:-demo_secret}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ALPACA_API_KEY=${ALPACA_API_KEY}
+      - ALPACA_SECRET_KEY=${ALPACA_SECRET_KEY}
       - ALPACA_BASE_URL=https://paper-api.alpaca.markets
       - ENGINE_A_URL=http://infinityai-engine-a-prod:8001
       - ENGINE_B_URL=http://infinityai-engine-b-prod:8002
-      - ENGINE_D_URL=http://infinityai-engine-d-prod:8004
       - LOG_LEVEL=INFO
     networks:
       - infinityai-network
@@ -87,34 +86,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Engine D: AI Chatbot
-  engine-d:
-    image: infinityai/engine-d:latest
-    container_name: infinityai-engine-d-prod
-    ports:
-      - "8004:8004"
-    environment:
-      - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://infinityai:infinityai_secure_pass@infinityai-postgres:5432/infinityai
-      - REDIS_URL=redis://infinityai-redis:6379
-      - KAFKA_BOOTSTRAP_SERVERS=infinityai-kafka:9092
-      - KAFKA_ENABLED=false
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-demo_key}
-      - ENGINE_A_URL=http://infinityai-engine-a-prod:8001
-      - ENGINE_B_URL=http://infinityai-engine-b-prod:8002
-      - ENGINE_C_URL=http://infinityai-engine-c-prod:8003
-      - LOG_LEVEL=INFO
-    networks:
-      - infinityai-network
-    depends_on:
-      - engine-c
-    # External dependencies: infinityai-postgres, infinityai-redis, infinityai-kafka
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
 
 networks:
   infinityai-network:

@@ -1,7 +1,7 @@
 service:
   name: "InfinityAI Engine C"
   version: "4.0.0"
-  allow_demo: true
+  allow_demo: false
 security:
   allowed_origins:
     - "https://infinityai.pro"
