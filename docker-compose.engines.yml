@@ -3,10 +3,12 @@ version: '3.8'
 services:
   # Engine A: Data Ingestion & Preprocessing
   engine-a:
-    image: infinityai/engine-a:latest
+    build:
+      context: ./backend/engine-core/src
+      dockerfile: Dockerfile
     container_name: infinityai-engine-a-prod
     ports:
-      - "8001:8001"
+      - "8001:8080"
     environment:
       - ENVIRONMENT=production
       - REDIS_URL=redis://infinityai-redis:6379
@@ -28,10 +30,12 @@ services:
 
   # Engine B: AI/ML GPU Processing
   engine-b:
-    image: infinityai/engine-b:latest
+    build:
+      context: ./backend/engine-analytics/src
+      dockerfile: Dockerfile
     container_name: infinityai-engine-b-prod
     ports:
-      - "8002:8002"
+      - "8002:8080"
     environment:
       - ENVIRONMENT=production
       - REDIS_URL=redis://infinityai-redis:6379
@@ -55,10 +59,12 @@ services:
 
   # Engine C: Orchestrator & Trading Engine
   engine-c:
-    image: infinityai/engine-c:latest
+    build:
+      context: ./backend/engine-execution/src
+      dockerfile: Dockerfile
     container_name: infinityai-engine-c-prod
     ports:
-      - "8003:8003"
+      - "8003:8080"
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=${DATABASE_URL}

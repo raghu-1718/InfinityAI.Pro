@@ -72,7 +72,7 @@ jobs:
       - name: Deploy Engine A (Market Data)
         run: |
           gcloud run deploy infinityai-engine-a \
-            --source ./engines/engine-a \
+            --source ./backend/engine-core/src \
             --region us-central1 \
             --project infinity-ai-5ec7c \
             --allow-unauthenticated \
@@ -82,7 +82,7 @@ jobs:
         run: |
           gcloud run services update infinityai-engine-b --clear-env-vars --region=us-central1 --project=infinity-ai-5ec7c || true
           gcloud run deploy infinityai-engine-b \
-            --source ./engines/engine-b \
+            --source ./backend/engine-analytics/src \
             --region us-central1 \
             --project infinity-ai-5ec7c \
             --allow-unauthenticated \
@@ -91,18 +91,22 @@ jobs:
       - name: Deploy Engine C (Trade Execution)
         run: |
           gcloud run deploy infinityai-engine-c-execution \
-            --source ./engines/engine-c-execution \
+            --source ./backend/engine-execution/src \
             --region us-central1 \
             --project infinity-ai-5ec7c \
             --no-allow-unauthenticated
 
       - name: Deploy Engine D (Orchestrator)
         run: |
-          gcloud run deploy infinityai-engine-d \
-            --source ./engines/engine-d \
-            --region us-central1 \
-            --project infinity-ai-5ec7c \
-            --allow-unauthenticated
+          if [ -d ./backend/engine-d/src ]; then
+            gcloud run deploy infinityai-engine-d \
+              --source ./backend/engine-d/src \
+              --region us-central1 \
+              --project infinity-ai-5ec7c \
+              --allow-unauthenticated
+          else
+            echo "Engine D not present in repository, skipping deployment"
+          fi
 
       - name: Set up Google Cloud credentials for Firebase
         run: |

@@ -37,7 +37,7 @@ class HealthOrchestrator:
         try:
             async with session.get(f"{url}/health", timeout=aiohttp.ClientTimeout(total=self.timeout)) as response:
                 response_time = round((time.time() - start_time) * 1000)
-                
+
                 if response.status == 200:
                     try:
                         data = await response.json()
@@ -56,7 +56,7 @@ class HealthOrchestrator:
                         "response_time_ms": response_time,
                         "details": "bad_response"
                     }
-                    
+
         except asyncio.TimeoutError:
             return name, {
                 "healthy": False,
@@ -75,7 +75,7 @@ class HealthOrchestrator:
     async def get_comprehensive_health(self) -> Dict[str, Any]:
         """Get health status of all engines with caching"""
         current_time = time.time()
-        
+
         # Return cached result if still valid
         if (current_time - self._last_check) < self.cache_duration and self._health_cache:
             return self._health_cache
@@ -83,17 +83,17 @@ class HealthOrchestrator:
         # Check all engines concurrently
         async with aiohttp.ClientSession() as session:
             tasks = [
-                self.check_engine_health(session, name, url) 
+                self.check_engine_health(session, name, url)
                 for name, url in self.engines.items()
             ]
-            
+
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
         # Process results
         engine_health = {}
         healthy_count = 0
         total_response_time = 0
-        
+
         for result in results:
             if isinstance(result, tuple):
                 name, health_data = result
@@ -137,16 +137,16 @@ class HealthOrchestrator:
         # Cache the result
         self._health_cache = comprehensive_health
         self._last_check = current_time
-        
+
         return comprehensive_health
 
     def get_simple_health_status(self) -> Dict[str, bool]:
         """Get simple boolean health status for backward compatibility"""
         if not self._health_cache:
             return dict.fromkeys(self.engines.keys(), False)
-        
+
         return {
-            name: data["healthy"] 
+            name: data["healthy"]
             for name, data in self._health_cache.get("engines", {}).items()
         }
 

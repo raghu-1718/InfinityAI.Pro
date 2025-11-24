@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "engines/engine-c-execution/**"
+      - "backend/engine-execution/**"
 
 jobs:
   deploy:
@@ -24,6 +24,6 @@ jobs:
         with:
           service: infinityai-engine-c
           region: us-central1
-          source: ./engines/engine-c-execution
+          source: ./backend/engine-execution/src
           project_id: infinity-ai-5ec7c
 

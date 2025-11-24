@@ -16,7 +16,7 @@ class EventBroadcaster:
     def __init__(self, ws_manager):
         self.ws_manager = ws_manager
         self.event_count = 0
-    
+
     async def broadcast_trade_event(self, trade_data: Dict[str, Any]):
         """Broadcast trade execution event"""
         self.event_count += 1
@@ -29,7 +29,7 @@ class EventBroadcaster:
         await self.ws_manager.broadcast(event, channel="trades")
         await self.ws_manager.broadcast(event, channel="dashboard")
         logger.info(f"Broadcasted trade event: {trade_data.get('symbol', 'unknown')}")
-    
+
     async def broadcast_signal_event(self, signal_data: Dict[str, Any]):
         """Broadcast AI signal event"""
         self.event_count += 1
@@ -42,7 +42,7 @@ class EventBroadcaster:
         await self.ws_manager.broadcast(event, channel="signals")
         await self.ws_manager.broadcast(event, channel="dashboard")
         logger.info(f"Broadcasted signal event: {signal_data.get('symbol', 'unknown')}")
-    
+
     async def broadcast_health_event(self, health_data: Dict[str, Any]):
         """Broadcast health status update"""
         self.event_count += 1
@@ -54,7 +54,7 @@ class EventBroadcaster:
         }
         await self.ws_manager.broadcast(event, channel="health")
         await self.ws_manager.broadcast(event, channel="dashboard")
-    
+
     async def broadcast_market_event(self, market_data: Dict[str, Any]):
         """Broadcast market data update"""
         self.event_count += 1
@@ -65,7 +65,7 @@ class EventBroadcaster:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await self.ws_manager.broadcast(event, channel="dashboard")
-    
+
     async def broadcast_custom_event(self, event_type: str, data: Dict[str, Any], channel: str = "dashboard"):
         """Broadcast custom event"""
         self.event_count += 1
@@ -76,7 +76,7 @@ class EventBroadcaster:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await self.ws_manager.broadcast(event, channel=channel)
-    
+
     def get_stats(self) -> dict:
         """Get broadcaster statistics"""
         return {
