@@ -1,10 +1,6 @@
 """
-InfinityAI.Pro - Dhan Market Data Provider (DATA ONLY)
-Real-time market data feeds for NSE/BSE/MCX
-NO TRADING FUNCTIONALITY - Data streaming only for Engine A and Engine B
-
-⚠️ IMPORTANT: This provider is ONLY for market data.
-   All trading/execution is handled by Angel SmartAPI in Engine C.
+InfinityAI.Pro - Dhan Trading and Market Data Provider
+Real-time market data feeds and trading for NSE/BSE/MCX
 """
 
 import aiohttp
@@ -17,18 +13,13 @@ logger = logging.getLogger(__name__)
 
 class DhanProvider:
     """
-    Dhan Market Data Provider - DATA ONLY
+    Dhan Trading and Market Data Provider
 
-    Provides real-time market data for NSE/BSE/MCX exchanges.
-    NO trading, NO OAuth, NO order execution.
-
-    Used by: Engine A (market data ingestion), Engine B (AI/ML features)
-    Trading Provider: Angel SmartAPI (Engine C)
+    Provides real-time market data and trading for NSE/BSE/MCX exchanges.
     """
 
     def __init__(self, access_token: str = "", client_id: str = ""):
         self.base_url = "https://api.dhan.co"
-        # Use API keys for data-only access (no OAuth tokens)
         self.access_token = access_token or os.getenv("DHAN_API_KEY", "")
         self.client_id = client_id or os.getenv("DHAN_API_SECRET", "")
         self.headers = {
@@ -37,10 +28,10 @@ class DhanProvider:
             "Content-Type": "application/json",
         }
         self._timeout = aiohttp.ClientTimeout(total=15)
-        logger.info("📊 Dhan Data Provider initialized (DATA ONLY - No trading)")
+        logger.info("Dhan Provider initialized")
 
     async def _get(self, path: str) -> Any:
-        """Internal GET request for market data only"""
+        """Internal GET request"""
         url = f"{self.base_url}{path}"
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             async with session.get(url, headers=self.headers) as resp:
@@ -53,7 +44,7 @@ class DhanProvider:
                 return data
 
     async def _post(self, path: str, payload: Dict[str, Any]) -> Any:
-        """Internal POST request for market data only"""
+        """Internal POST request"""
         url = f"{self.base_url}{path}"
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             async with session.post(url, headers=self.headers, json=payload) as resp:
@@ -66,7 +57,7 @@ class DhanProvider:
                 return data
 
     # ========================================================================
-    # MARKET DATA ENDPOINTS (ALLOWED)
+    # MARKET DATA ENDPOINTS
     # ========================================================================
 
     async def get_market_quote(self, symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
@@ -123,73 +114,29 @@ class DhanProvider:
         return await self._post("/v2/marketdepth", payload)
 
     # ========================================================================
-    # TRADING ENDPOINTS (REMOVED - Use Angel SmartAPI in Engine C)
+    # TRADING ENDPOINTS
     # ========================================================================
 
     async def get_positions(self) -> Any:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        All trading functionality has been migrated to Angel One.
-        """
-        logger.warning("get_positions() called on data-only provider - use Angel SmartAPI")
-        return {"error": "Trading endpoints disabled - use Angel SmartAPI", "positions": []}
+        """Get open positions"""
+        return await self._get("/v2/positions")
 
     async def get_orders(self) -> Any:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        All trading functionality has been migrated to Angel One.
-        """
-        logger.warning("get_orders() called on data-only provider - use Angel SmartAPI")
-        return {"error": "Trading endpoints disabled - use Angel SmartAPI", "orders": []}
+        """Get all orders"""
+        return await self._get("/v2/orders")
 
     async def get_holdings(self) -> Any:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        All trading functionality has been migrated to Angel One.
-        """
-        logger.warning("get_holdings() called on data-only provider - use Angel SmartAPI")
-        return {"error": "Trading endpoints disabled - use Angel SmartAPI", "holdings": []}
+        """Get all holdings"""
+        return await self._get("/v2/holdings")
 
     async def get_fundlimit(self) -> Any:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        All trading functionality has been migrated to Angel One.
-        """
-        logger.warning("get_fundlimit() called on data-only provider - use Angel SmartAPI")
-        return {"error": "Trading endpoints disabled - use Angel SmartAPI", "funds": {}}
-
-    async def handle_callback(self, code: str) -> Dict[str, Any]:
-        """
-        ⚠️ DEPRECATED: OAuth removed from Dhan provider
-
-        Dhan OAuth/callback functionality removed.
-        Angel SmartAPI uses TOTP authentication (no OAuth).
-        """
-        logger.warning("handle_callback() called - OAuth removed from Dhan provider")
-        return {"error": "OAuth disabled - Angel uses TOTP authentication"}
-
+        """Get fund limits"""
+        return await self._get("/v2/fundlimit")
+        
     async def get_profile(self) -> Dict[str, Any]:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        """
-        logger.warning("get_profile() called on data-only provider")
-        return {"error": "Profile endpoints disabled"}
+        """Get user profile"""
+        return await self._get("/v2/profile")
 
     async def get_statement(self) -> Dict[str, Any]:
-        """
-        ⚠️ DEPRECATED: Use Angel SmartAPI in Engine C
-
-        This endpoint is no longer available in the data-only Dhan provider.
-        """
-        logger.warning("get_statement() called on data-only provider")
-        return {"source": "none", "rows": [], "error": "Statement endpoints disabled"}
+        """Get account statement"""
+        return await self._get("/v2/statement")
