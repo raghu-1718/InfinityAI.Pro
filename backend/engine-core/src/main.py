@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 # This is a test comment to trigger the CI/CD pipeline
 
 app = FastAPI(
-    title="InfinityAI Engine A - Modular",
+    title="InfinityAI Engine Core",
     description="Market Data, Option Chain, AI, Dhan Integration",
     version="7.0.0"
 )
@@ -37,7 +37,7 @@ add_security_headers(app)
 async def health_check():
     return {
         "status": "healthy",
-        "service": "engine-a",
+        "service": "engine-core",
         "version": "7.0.0",
         "timestamp": os.getenv("CURRENT_TIMESTAMP", "2025-10-17 UTC")
     }
@@ -48,7 +48,7 @@ async def version_info():
     """Version and build information for deployment tracking"""
     from datetime import datetime
     return {
-        "service": "engine-a-market-data",
+        "service": "engine-core-market-data",
         "version": "7.0.0",
         "build_date": "2025-10-18",
         "commit_sha": os.getenv("GIT_COMMIT", "local"),
@@ -60,10 +60,10 @@ async def version_info():
 @app.get("/")
 async def root():
     return {
-        "service": "InfinityAI Engine A",
+        "service": "InfinityAI Engine Core",
         "version": "7.0.0",
         "status": "operational",
-        "description": "Modular Engine A for market data, analytics, and AI endpoints"
+        "description": "Modular Engine Core for market data, analytics, and AI endpoints"
     }
 
 # --- Secret Manager Integration ---
@@ -565,5 +565,5 @@ async def backtest_option_strategy(symbol: str, strategy: str = "bull_call_sprea
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8080))
-    logger.info(f"Starting Engine A on port {port}")
+    logger.info(f"Starting Engine Core on port {port}")
     uvicorn.run("main:app", host="0.0.0.0", port=port)

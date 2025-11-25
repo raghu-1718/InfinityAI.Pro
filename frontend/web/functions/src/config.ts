@@ -6,12 +6,10 @@
  */
 
 export const ENGINE_URLS = {
-  // Engine A: Market data ingestion
-  A: process.env.ENGINE_A_URL || "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
-  // Engine B: AI/ML processing
-  B: process.env.ENGINE_B_URL || "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
-  // Engine C: Secure trade execution
-  C: process.env.ENGINE_C_URL || "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
-  // Engine D: AI chatbot and orchestration
-  D: process.env.ENGINE_C_URL || "https://infinityai-engine-c-ckxt6xvshq-uc.a.run.app",
+  // Engine Analytics: AI/ML processing
+  ANALYTICS: process.env.ENGINE_ANALYTICS_URL || "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app",
+  // Engine Core: Market data ingestion
+  CORE: process.env.ENGINE_CORE_URL || "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app",
+  // Engine Execution: Secure trade execution
+  EXECUTION: process.env.ENGINE_EXECUTION_URL || "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app",
 };

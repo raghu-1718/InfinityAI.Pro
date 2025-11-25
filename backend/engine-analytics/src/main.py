@@ -7,18 +7,14 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 # Shared security middleware lives under engine-core; import explicitly
-try:
-    from backend.engine_core.src.core.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders
-except Exception:
-    # Fallback to legacy name if present
-    from engines.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders
+from backend.engine-core.src.core.security_middleware import SecurityHeadersMiddleware as SharedSecurityHeaders
 import uvicorn, os, yaml, asyncio, time
 from datetime import datetime
 from dataclasses import asdict
 import numpy as np
 
 app = FastAPI(
-    title="InfinityAI Engine B",
+    title="InfinityAI Engine Analytics",
     description="Advanced AI/ML intelligence for Indian markets",
     version="4.6.0"
 )
@@ -121,7 +117,7 @@ async def root():
     models_list = list(ai.mz.models.keys()) if ai else []
     version = CFG.get("service", {}).get("version", "4.6.0") if CFG else "4.6.0"
     return {
-        "service": "Engine B - AI/ML Intelligence",
+        "service": "Engine Analytics - AI/ML Intelligence",
         "version": version,
         "status": "operational",
         "models": models_list,
@@ -135,7 +131,7 @@ async def health():
     latency_ms = int((time.time() - start) * 1000)
     return {
         "status": "healthy",
-        "service": "engine-b",
+        "service": "engine-analytics",
         "latency_ms": latency_ms,
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -144,7 +140,7 @@ async def health():
 async def version_info():
     """Version and build information for deployment tracking"""
     return {
-        "service": "engine-b-ai-ml",
+        "service": "engine-analytics-ai-ml",
         "version": "4.6.0",
         "build_date": "2025-10-18",
         "commit_sha": os.getenv("GIT_COMMIT", "local"),

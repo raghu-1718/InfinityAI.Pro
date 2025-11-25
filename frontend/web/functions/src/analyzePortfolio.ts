@@ -61,10 +61,10 @@ export const syncHoldings = onCall(
 
       console.log(`📊 Fetching holdings for user: ${uid}`);
 
-      // ARCHITECTURE FIX: Point to Engine A, the data hub, not Engine C.
+      // ARCHITECTURE FIX: Point to Engine ANALYTICS, the data hub, not Engine C.
       // The Cloud Function securely provides the credentials to the trusted engine.
       // We will use the more efficient `overview` endpoint which includes holdings.
-      const response = await axios.get(`${ENGINE_URLS.A}/api/dhan/overview`, {
+      const response = await axios.get(`${ENGINE_URLS.ANALYTICS}/api/dhan/overview`, {
         headers: {
           "x-client-id": credentials.clientId,
           "Authorization": `Bearer ${credentials.accessToken}`
@@ -72,7 +72,7 @@ export const syncHoldings = onCall(
         timeout: 30000,
       });
 
-      // The overview endpoint in Engine A returns holdings in a `holdings` field.
+      // The overview endpoint in Engine ANALYTICS returns holdings in a `holdings` field.
       const holdings: DhanHolding[] = response.data.holdings || [];
 
       console.log(`✅ Retrieved ${holdings.length} holdings from Dhan API`);
@@ -143,9 +143,9 @@ export const syncHoldings = onCall(
 );
 
 /**
- * Get AI Signals from Engine B
+ * Get AI Signals from Engine CORE
  *
- * Fetches AI/ML trading signals from the dedicated Engine B.
+ * Fetches AI/ML trading signals from the dedicated Engine CORE.
  * @param data - { symbol }
  * @returns { signals }
  */
@@ -167,23 +167,23 @@ export const getAiSignals = onCall(
     }
 
     try {
-      console.log(`🤖 Fetching AI signals for ${symbol} from Engine B`);
+      console.log(`🤖 Fetching AI signals for ${symbol} from Engine CORE`);
 
       // CORRECTED: Call the endpoint for a single symbol prediction.
-      const response = await axios.post(`${ENGINE_URLS.B}/api/predict/${symbol}`);
+      const response = await axios.post(`${ENGINE_URLS.CORE}/api/predict/${symbol}`);
 
       return {
         message: `Successfully fetched signals for ${symbol}`,
         signal: response.data.signal,
       };
     } catch (error: any) {
-      console.error(`❌ Error fetching signals from Engine B:`, error);
+      console.error(`❌ Error fetching signals from Engine CORE:`, error);
       throw new HttpsError("internal", `Failed to get AI signals: ${error.message}`);
     }
   });
 
 /**
- * Get Batch AI Signals from Engine B
+ * Get Batch AI Signals from Engine CORE
  *
  * Fetches AI/ML trading signals for a list of symbols.
  * @param data - { symbols: string[] }
@@ -206,10 +206,10 @@ export const getBatchAiSignals = onCall(
     }
 
     try {
-      console.log(`🤖 Fetching batch AI signals for ${symbols.length} symbols from Engine B`);
+      console.log(`🤖 Fetching batch AI signals for ${symbols.length} symbols from Engine CORE`);
 
-      // GATEWAY PATTERN: Call Engine B's batch-predict endpoint
-      const response = await axios.post(`${ENGINE_URLS.B}/api/batch-predict`, symbols);
+      // GATEWAY PATTERN: Call Engine CORE's batch-predict endpoint
+      const response = await axios.post(`${ENGINE_URLS.CORE}/api/batch-predict`, symbols);
 
       return {
         message: `Successfully fetched ${response.data.count} signals.`,
@@ -217,18 +217,18 @@ export const getBatchAiSignals = onCall(
         count: response.data.count,
       };
     } catch (error: any) {
-      console.error(`❌ Error fetching batch signals from Engine B:`, error);
+      console.error(`❌ Error fetching batch signals from Engine CORE:`, error);
       if (error.response) {
-        console.error('Engine B Error Response:', error.response.data);
+        console.error('Engine CORE Error Response:', error.response.data);
       }
       throw new HttpsError("internal", `Failed to get AI signals: ${error.message}`);
     }
   });
 
 /**
- * Get Vertex AI Analysis from Engine A
+ * Get Vertex AI Analysis from Engine ANALYTICS
  *
- * Relays a prompt to Engine A for processing with Google's Vertex AI.
+ * Relays a prompt to Engine ANALYTICS for processing with Google's Vertex AI.
  * @param data - { prompt: string, context?: any }
  * @returns { analysis }
  */
@@ -249,10 +249,10 @@ export const getVertexAiAnalysis = onCall(
     }
 
     try {
-      console.log(`🧠 Relaying prompt to Engine A (Vertex AI)`);
+      console.log(`🧠 Relaying prompt to Engine ANALYTICS (Vertex AI)`);
 
-      // GATEWAY PATTERN: Call Engine A's Vertex AI endpoint
-      const response = await axios.post(`${ENGINE_URLS.A}/api/vertex/analyze`, {
+      // GATEWAY PATTERN: Call Engine ANALYTICS's Vertex AI endpoint
+      const response = await axios.post(`${ENGINE_URLS.ANALYTICS}/api/vertex/analyze`, {
         prompt,
         context: context || {},
         userId: request.auth.uid,
@@ -266,16 +266,16 @@ export const getVertexAiAnalysis = onCall(
         analysis: response.data,
       };
     } catch (error: any) {
-      console.error(`❌ Error fetching analysis from Engine A (Vertex AI):`, error);
+      console.error(`❌ Error fetching analysis from Engine ANALYTICS (Vertex AI):`, error);
       throw new HttpsError("internal", `Failed to get Vertex AI analysis: ${error.message}`);
     }
   }
 );
 
 /**
- * Get Gemini Analysis from Engine B
+ * Get Gemini Analysis from Engine CORE
  *
- * Relays a prompt to Engine B for processing with its native Gemini models.
+ * Relays a prompt to Engine CORE for processing with its native Gemini models.
  * @param data - { prompt: string, context?: any }
  * @returns { analysis }
  */
@@ -297,10 +297,10 @@ export const getGeminiAnalysis = onCall(
     }
 
     try {
-      console.log(`🧠 Relaying prompt to Engine B (Gemini)`);
+      console.log(`🧠 Relaying prompt to Engine CORE (Gemini)`);
 
-      // GATEWAY PATTERN: Call Engine B's Gemini endpoint
-      const response = await axios.post(`${ENGINE_URLS.B}/api/gemini/analyze`, {
+      // GATEWAY PATTERN: Call Engine CORE's Gemini endpoint
+      const response = await axios.post(`${ENGINE_URLS.CORE}/api/gemini/analyze`, {
         prompt,
         context: context || {},
         userId: request.auth.uid,
@@ -314,16 +314,16 @@ export const getGeminiAnalysis = onCall(
         analysis: response.data,
       };
     } catch (error: any) {
-      console.error(`❌ Error fetching analysis from Engine B (Gemini):`, error);
+      console.error(`❌ Error fetching analysis from Engine CORE (Gemini):`, error);
       throw new HttpsError("internal", `Failed to get Gemini analysis: ${error.message}`);
     }
   }
 );
 
 /**
- * Get Robotics ER Analysis from Engine B
+ * Get Robotics ER Analysis from Engine CORE
  *
- * Relays an image and prompt to Engine B for processing with Gemini Robotics-ER.
+ * Relays an image and prompt to Engine CORE for processing with Gemini Robotics-ER.
  * @param data - { prompt: string, image: string (base64) }
  * @returns { analysis }
  */
@@ -344,11 +344,11 @@ export const analyzeImageWithRoboticsER = onCall(
     }
 
     try {
-      console.log(`🤖 Relaying image and prompt to Engine B (Robotics-ER)`);
+      console.log(`🤖 Relaying image and prompt to Engine CORE (Robotics-ER)`);
 
-      // GATEWAY PATTERN: Call Engine B's Robotics-ER endpoint
+      // GATEWAY PATTERN: Call Engine CORE's Robotics-ER endpoint
       // The image is passed as a base64 string in the JSON payload.
-      const response = await axios.post(`${ENGINE_URLS.B}/api/robotics/analyze`, {
+      const response = await axios.post(`${ENGINE_URLS.CORE}/api/robotics/analyze`, {
         prompt,
         image, // Your Python engine will decode this base64 string
         userId: request.auth.uid,
@@ -362,9 +362,9 @@ export const analyzeImageWithRoboticsER = onCall(
         analysis: response.data,
       };
     } catch (error: any) {
-      console.error(`❌ Error fetching analysis from Engine B (Robotics-ER):`, error);
+      console.error(`❌ Error fetching analysis from Engine CORE (Robotics-ER):`, error);
       if (error.response) {
-        console.error('Engine B Error Response:', error.response.data);
+        console.error('Engine CORE Error Response:', error.response.data);
       }
       throw new HttpsError("internal", `Failed to get Robotics-ER analysis: ${error.message}`);
     }
@@ -372,9 +372,9 @@ export const analyzeImageWithRoboticsER = onCall(
 );
 
 /**
- * Get Engine B Model Status
+ * Get Engine CORE Model Status
  *
- * Fetches the operational status of the AI models inside Engine B.
+ * Fetches the operational status of the AI models inside Engine CORE.
  * @returns { status }
  */
 export const getEngineBStatus = onCall(
@@ -390,14 +390,14 @@ export const getEngineBStatus = onCall(
     }
 
     try {
-      console.log(`🩺 Fetching model status from Engine B`);
+      console.log(`🩺 Fetching model status from Engine CORE`);
 
-      const response = await axios.get(`${ENGINE_URLS.B}/api/models/status`);
+      const response = await axios.get(`${ENGINE_URLS.CORE}/api/models/status`);
 
       return response.data;
     } catch (error: any) {
-      console.error(`❌ Error fetching status from Engine B:`, error);
-      throw new HttpsError("internal", `Failed to get Engine B status: ${error.message}`);
+      console.error(`❌ Error fetching status from Engine CORE:`, error);
+      throw new HttpsError("internal", `Failed to get Engine CORE status: ${error.message}`);
     }
   });
 
@@ -571,7 +571,7 @@ Keep it concise (max 200 words).`,
 }
 
 /**
- * Get Dhan Account Overview from Engine A
+ * Get Dhan Account Overview from Engine ANALYTICS
  *
  * Fetches a consolidated overview of the user's Dhan account, including
  * funds, holdings, positions, and profile information.
@@ -593,10 +593,10 @@ export const getDhanOverview = onCall(
     const uid = request.auth.uid;
 
     try {
-      console.log(`📋 Fetching Dhan overview for user ${uid} from Engine A`);
+      console.log(`📋 Fetching Dhan overview for user ${uid} from Engine ANALYTICS`);
 
-      // This endpoint in Engine A will need the user's credentials.
-      // We assume Engine A's /api/dhan/overview is a POST endpoint that accepts credentials.
+      // This endpoint in Engine ANALYTICS will need the user's credentials.
+      // We assume Engine ANALYTICS's /api/dhan/overview is a POST endpoint that accepts credentials.
       // If it's a GET, the credentials would need to be passed in headers.
       const { clientId, accessToken } = await getDecryptedCredentials(uid);
 
@@ -605,7 +605,7 @@ export const getDhanOverview = onCall(
       }
 
       // Pass credentials securely in headers, which is a more standard practice.
-      const response = await axios.get(`${ENGINE_URLS.A}/api/dhan/overview`, {
+      const response = await axios.get(`${ENGINE_URLS.ANALYTICS}/api/dhan/overview`, {
         headers: {
           "x-client-id": clientId,
           "Authorization": `Bearer ${accessToken}`
@@ -614,14 +614,14 @@ export const getDhanOverview = onCall(
 
       return response.data;
     } catch (error: any) {
-      console.error(`❌ Error fetching Dhan overview from Engine A:`, error);
+      console.error(`❌ Error fetching Dhan overview from Engine ANALYTICS:`, error);
       throw new HttpsError("internal", `Failed to get Dhan overview: ${error.message}`);
     }
   }
 );
 
 /**
- * Get Dhan Callback URLs from Engine A
+ * Get Dhan Callback URLs from Engine ANALYTICS
  *
  * Fetches the configured Redirect and Postback URLs that users need
  * to set up their own Dhan developer applications.
@@ -641,9 +641,9 @@ export const getDhanCallbackUrls = onCall(
     }
 
     try {
-      console.log(`🔗 Fetching Dhan callback URLs from Engine C`);
-      // Fetch URLs from Engine C, which is the authority for trading OAuth.
-      const response = await axios.get(`${ENGINE_URLS.C}/api/dhan/callback-urls`);
+      console.log(`🔗 Fetching Dhan callback URLs from Engine ANALYTICS`);
+      // Fetch URLs from Engine ANALYTICS, which is the authority for trading OAuth.
+      const response = await axios.get(`${ENGINE_URLS.ANALYTICS}/api/dhan/callback-urls`);
       return response.data;
     } catch (error: any) {
       console.error(`❌ Error fetching Dhan callback URLs:`, error);

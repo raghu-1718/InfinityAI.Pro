@@ -2,5 +2,3 @@
 
 **Timestamp:** $(date)
 
-## File Categorization
-
