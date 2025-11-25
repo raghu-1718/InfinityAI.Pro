@@ -96,7 +96,7 @@ jobs:
 
       - name: Deploy Service
         run: |
-          IMAGE_URI="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ matrix.service }}:latest"
+          IMAGE_ URI="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ matrix.service }}:latest"
           
           # Base deploy command
           DEPLOY_COMMAND="gcloud run deploy ${{ matrix.name }} --image=$IMAGE_URI --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} --platform=managed --allow-unauthenticated"
@@ -141,13 +141,14 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
           
-      - name: Install Function Dependencies
-        run: cd frontend/web/functions && npm install
-
       - name: Install and Build Frontend
         run: |
+          cd frontend/web
           npm install
           npm run build
+
+      - name: Install Function Dependencies
+        run: cd frontend/web/functions && npm install
 
       - name: Deploy to Firebase Hosting and Functions
         run: |
