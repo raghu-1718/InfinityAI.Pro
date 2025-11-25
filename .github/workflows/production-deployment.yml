@@ -55,7 +55,7 @@ jobs:
           docker build -t $IMAGE_URI $SOURCE_DIR
           docker push $IMAGE_URI
 
-deploy_cloud_run_services:
+  deploy_cloud_run_services:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
     needs: build_and_push_images # This job runs after images are built
@@ -105,7 +105,7 @@ deploy_cloud_run_services:
           echo "Executing: $DEPLOY_COMMAND"
           $DEPLOY_COMMAND
 
-deploy_frontend_and_firebase:
+  deploy_frontend_and_firebase:
     name: Deploy Frontend and Firebase Functions
     runs-on: ubuntu-latest
     permissions:
@@ -134,7 +134,7 @@ deploy_frontend_and_firebase:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Install Dependencies and Build Frontend & Functions
+      - name: Install Dependencies and Build
         run: |
           npm install
           npm run build --workspace=frontend
