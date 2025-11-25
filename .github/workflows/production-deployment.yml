@@ -144,7 +144,7 @@ jobs:
       - name: Install Function Dependencies
         run: cd frontend/web/functions && npm install
 
-      - name. Install and Build Frontend
+      - name: Install and Build Frontend
         run: |
           npm install
           npm run build
