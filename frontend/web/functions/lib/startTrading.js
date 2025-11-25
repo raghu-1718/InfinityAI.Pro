@@ -111,7 +111,7 @@ exports.startTrading = (0, https_1.onCall)({
             console.log(`🤖 Requesting initial signal from Engine B for strategy: ${strategy}`);
             // We need a representative symbol for the strategy to get a signal
             const representativeSymbol = strategy === "mcx" ? "CRUDEOIL" : "NIFTY";
-            const signalResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.B}/api/predict/${representativeSymbol}`);
+            const signalResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.CORE}/api/predict/${representativeSymbol}`);
             const aiSignal = signalResponse.data.signal;
             if (!aiSignal || !aiSignal.signal_type || aiSignal.signal_type === "HOLD") {
                 throw new https_1.HttpsError("aborted", "AI signal is HOLD or unavailable. No trade initiated.");
@@ -128,7 +128,7 @@ exports.startTrading = (0, https_1.onCall)({
                 price: 0, // Market order
                 demo: false, // For live trading
             };
-            const engineResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.C}/api/orders/place`, enginePayload, {
+            const engineResponse = await axios_1.default.post(`${config_1.ENGINE_URLS.EXECUTION}/api/orders/place`, enginePayload, {
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -202,7 +202,7 @@ exports.stopTrading = (0, https_1.onCall)({
         }
         // Call Engine C to stop execution
         try {
-            await axios_1.default.post(`${config_1.ENGINE_URLS.C}/stop`, { sessionId }, {
+            await axios_1.default.post(`${config_1.ENGINE_URLS.EXECUTION}/stop`, { sessionId }, {
                 headers: { "Content-Type": "application/json" },
                 timeout: 10000,
             });

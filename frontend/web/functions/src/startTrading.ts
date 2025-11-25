@@ -100,7 +100,7 @@ export const startTrading = onCall(
         console.log(`🤖 Requesting initial signal from Engine B for strategy: ${strategy}`);
         // We need a representative symbol for the strategy to get a signal
         const representativeSymbol = strategy === "mcx" ? "CRUDEOIL" : "NIFTY";
-        const signalResponse = await axios.post(`${ENGINE_URLS.B}/api/predict/${representativeSymbol}`);
+        const signalResponse = await axios.post(`${ENGINE_URLS.CORE}/api/predict/${representativeSymbol}`);
         const aiSignal = signalResponse.data.signal;
 
         if (!aiSignal || !aiSignal.signal_type || aiSignal.signal_type === "HOLD") {
@@ -122,7 +122,7 @@ export const startTrading = onCall(
         };
 
         const engineResponse = await axios.post(
-          `${ENGINE_URLS.C}/api/orders/place`,
+          `${ENGINE_URLS.EXECUTION}/api/orders/place`,
           enginePayload,
           {
             headers: {
@@ -220,7 +220,7 @@ export const stopTrading = onCall(
       // Call Engine C to stop execution
       try {
         await axios.post(
-          `${ENGINE_URLS.C}/stop`,
+          `${ENGINE_URLS.EXECUTION}/stop`,
           { sessionId },
           {
             headers: { "Content-Type": "application/json" },
