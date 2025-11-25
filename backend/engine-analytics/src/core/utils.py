@@ -1,29 +1,12 @@
-import asyncio, datetime, json, random, logging, os
-logger = logging.getLogger("utils")
+import os
+import json
+from typing import Any, Dict
 
-def utc_now() -> datetime.datetime:
-    return datetime.datetime.utcnow()
+def load_config(filename: str) -> Dict[str, Any]:
+    """Load a JSON config file from the config directory."""
+    config_path = os.path.join(os.path.dirname(__file__), '../config', filename)
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-def utc_now_str() -> str:
-    return utc_now().strftime("%Y-%m-%d %H:%M:%S UTC")
-
-async def async_retry(fn, retries=3, delay=1.0, backoff=1.5):
-    exc = None
-    for i in range(retries):
-        try:
-            return await fn()
-        except Exception as e:
-            exc = e
-            logger.warning(f"Retry {i+1}/{retries}: {e}")
-            await asyncio.sleep(delay)
-            delay *= backoff
-    raise exc
-
-def safe_json(obj) -> str:
-    try:
-        return json.dumps(obj, default=str)
-    except Exception:
-        return "{}"
-
-def env(name: str, default: str) -> str:
-    return os.getenv(name, default)
+# Example usage:
+# config = load_config('test_payload.json')

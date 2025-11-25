@@ -1,1 +1,1 @@
-"""Engine analytics src package"""
+"""Engine core src package"""

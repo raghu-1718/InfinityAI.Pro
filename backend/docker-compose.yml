@@ -1,24 +1,24 @@
 services:
-  engine-analytics:
+  engine-core:
     build:
-      context: ./engine-analytics
+      context: ./engine-core
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     env_file:
       - ./.env
     environment:
-      - ENGINE_B_URL=http://engine-core:8000
+      - ENGINE_B_URL=http://engine-analytics:8000
       - ENGINE_C_URL=http://engine-execution:8000
     volumes:
-      - ./engine-analytics/src:/app/src
+      - ./engine-core/src:/app/src
 
-  engine-core:
+  engine-analytics:
     build:
-      context: ./engine-core
+      context: ./engine-analytics
       dockerfile: Dockerfile
     volumes:
-      - ./engine-core/src:/app/src
+      - ./engine-analytics/src:/app/src
       - ./strategies:/app/src/strategies
 
   engine-execution:

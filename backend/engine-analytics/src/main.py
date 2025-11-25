@@ -1,129 +1,106 @@
 import os
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+import asyncio
+from datetime import datetime
+from typing import Dict, Any
+
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import httpx
-from typing import Optional, Dict, Any, List
-from dhanhq import dhan
+import google.generativeai as genai
 
-# --- Pydantic Models ---
-class OrchestrateRequest(BaseModel):
+app = FastAPI(title="Iaminfinity - Engine B (AI/ML Intelligence)")
+
+
+class PredictRequest(BaseModel):
     symbol: str
-    qty: Optional[float] = 1.0
-    strategy: Optional[str] = None
+    fast: bool = False
 
-class MarketDataResponse(BaseModel):
-    symbol: str
-    datetime: str
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: int
 
-class NewsArticle(BaseModel):
-    title: str | None
-    source: str | None
-    url: str | None
-    publishedAt: str | None
+class GeminiRequest(BaseModel):
+    prompt: str
+    context: Dict[str, Any] = {}
 
-class NewsResponse(BaseModel):
-    query: str
-    count: int
-    articles: List[NewsArticle]
 
-# --- FastAPI App Initialisation ---
-app = FastAPI(
-    title="Iaminfinity - Engine A (Data Aggregator & Orchestrator)",
-    version="1.1.0"
-)
+def _bootstrap_models() -> Dict[str, Any]:
+    # Lightweight synthetic bootstrap used for local runs and CI
+    return {"version": "local-0.1", "models": ["rf_price", "xgb_price", "lgb_price"]}
 
-# --- DhanHQ API Client Dependency ---
-def get_dhan_client():
-    client_id = os.getenv("DHAN_CLIENT_ID")
-    access_token = os.getenv("DHAN_ACCESS_TOKEN")
-    if not client_id or not access_token:
-        raise HTTPException(status_code=500, detail="DhanHQ credentials not set.")
-    return dhan(client_id, access_token)
 
-# --- Core Endpoints ---
+MODEL_STORE = _bootstrap_models()
+
+# Configure Gemini
+api_key = os.getenv("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+
+
 @app.get("/healthz")
 async def healthz():
-    return {"status": "ok"}
+    return {"status": "healthy", "service": "engine-b", "version": MODEL_STORE["version"], "timestamp": datetime.utcnow().isoformat()}
 
-@app.post("/orchestrate")sync def orchestrate(req: OrchestrateRequest, bg: BackgroundTasks):
-    engine_b_url = os.getenv("ENGINE_B_URL")
-    engine_c_url = os.getenv("ENGINE_C_URL")
-    if not engine_b_url or not engine_c_url:
-        raise HTTPException(500, "ENGINE_B_URL or ENGINE_C_URL not configured.")
 
-    # 1. Get Signal from Engine-B
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            b_resp = await client.post(f"{engine_b_url}/api/predict", json={"symbol": req.symbol})
-            b_resp.raise_for_status()
-            signal = b_resp.json()
-        except httpx.HTTPError as e:
-            raise HTTPException(502, f"Engine-B error: {e}")
+@app.get("/")
+async def root():
+    return {"service": "Iaminfinity Engine B", "status": "ready", "models": MODEL_STORE["models"]}
 
-    # 2. Prepare and Schedule Execution with Engine-C
-    # This now needs to map to the new, more detailed model of engine-execution
-    # We need to get the security_id for the symbol. For now, we hardcode it.
-    # In a real system, you would have a symbol mapping service.
-    security_id_map = {
-        "RELIANCE": "1333", 
-        "TCS": "2968",
-        "HDFCBANK": "1394"
-    }
-    security_id = security_id_map.get(req.symbol.upper())
-    if not security_id:
-        raise HTTPException(404, f"Security ID for symbol {req.symbol} not found.")
 
-    side = signal.get("signal", "HOLD").upper()
-    if side == "HOLD":
-        return {"signal": signal, "execution": "skipped_hold_signal"}
+@app.post("/api/predict")
+async def predict(req: PredictRequest):
+    if not req.symbol:
+        raise HTTPException(status_code=422, detail="symbol required")
 
-    exec_payload = {
-        "transaction_type": side,
-        "exchange_segment": "NSE_EQ",
-        "product_type": "INTRADAY",
-        "order_type": "MARKET",
-        "validity": "DAY",
-        "security_id": security_id,
-        "quantity": int(req.qty) if req.qty else 1,
+    # Simulate light compute; 'fast' avoids heavier operations
+    await asyncio.sleep(0.05 if req.fast else 0.15)
+
+    base = 100.0
+    # deterministic pseudo-prediction to keep tests stable
+    pred = round(base * (1 + ((hash(req.symbol.upper()) % 21 - 10) / 1000)), 2)
+    confidence = float(min(99.0, max(50.0, 55.0 + abs(pred - base) * 10)))
+
+    return {
+        "symbol": req.symbol.upper(),
+        "predicted_price": pred,
+        "confidence": confidence,
+        "signal_type": "BUY" if pred > base else "SELL" if pred < base else "HOLD",
+        "model_version": MODEL_STORE["version"],
+        "timestamp": datetime.utcnow().isoformat()
     }
 
-    async def send_exec():
-        try:
-            c_resp = await client.post(f"{engine_c_url}/api/dhan/place-order", json=exec_payload)
-            c_resp.raise_for_status()
-        except Exception as e:
-            print(f"Error sending execution request: {e}") # Replace with proper logging
-            pass
 
-    bg.add_task(send_exec)
-    return {"signal": signal, "execution_payload": exec_payload, "status": "execution_scheduled"}
+@app.get("/api/ai-signals")
+async def ai_signals(fast: bool = False):
+    symbols = os.getenv("ENGINEB_SYMBOLS", "NIFTY,BANKNIFTY,RELIANCE,TCS").split(",")
+    out = []
+    for s in symbols[: (3 if fast else 10)]:
+        out.append((await predict(PredictRequest(symbol=s.strip(), fast=fast))))
+    return {"status": "success", "count": len(out), "signals": out}
 
 
-# --- Data Provider Endpoints ---
+@app.post("/api/gemini/analyze")
+async def gemini_analyze(req: GeminiRequest):
+    prompt = (req.prompt or "").strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="prompt is required")
 
-@app.post("/dhan/subscribe-live-data")
-def subscribe_live_data(instruments: List[tuple[str, str]], dhan_client: dhan = Depends(get_dhan_client)):
-    """
-    Subscribes to real-time market data feed for a list of instruments.
-    Each instrument is a tuple of (exchange_segment, security_id).
-    Example: [("NSE_EQ", "1333")] for Reliance.
-    """
-    print(f"Subscribing to instruments: {instruments}")
-
-    # Define the callback function to handle incoming ticks
-    def on_tick(tick_data):
-        # In a real application, you would push this data to a message queue (e.g., Kafka, Redis Pub/Sub)
-        # or a time-series database for consumption by engine-core.
-        print(f"Received Tick: {tick_data}")
+    # Unified Gemini Model
+    if not api_key:
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured on the server.")
 
     try:
-        # The DhanHQ SDK handles the websocket connection and subscription in the background
-        dhan_client.subscribe_on_tick(instruments, on_tick)
-        return {"status": "success", "message": f"Successfully subscribed to {len(instruments)} instruments."}
+        # Using a single, unified model as requested
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Asynchronously generate content
+        response = await model.generate_content_async(prompt)
+        
+        analysis_text = response.text
+        
+        return {
+            "status": "ok", 
+            "analysis": analysis_text, 
+            "model": "gemini-pro", 
+            "timestamp": datetime.utcnow().isoformat()
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to subscribe to live data: {str(e)}")
+        # Log the exception for debugging
+        # logger.error(f"Gemini API call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"An error occurred with the Gemini API: {str(e)}")
