@@ -1,7 +1,7 @@
 
 # This single, consolidated workflow handles the entire production deployment.
 # It is structured as a single job to work around a suspected restrictive Workload Identity Provider policy.
-# Retrying after correcting the GCP_WORKLOAD_IDENTITY_PROVIDER secret.
+# Retrying after granting Firebase Admin to the service account.
 
 name: Deploy Production Environment
 
@@ -110,4 +110,4 @@ jobs:
           npm run build --workspace=functions
 
       - name: Deploy to Firebase Hosting and Functions
-        run: firebase deploy --project=${{ env.GCP_PROJECT_ID }} --non-interactive --force
+        run: firebase deploy --project=infinity-ai-5ec7c --non-interactive --force
