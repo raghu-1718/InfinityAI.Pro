@@ -1,6 +1,7 @@
 
 # This is a simplified workflow to build and push Docker images to the Artifact Registry.
 # It is designed to be as simple as possible to isolate and resolve the authentication and permission issues.
+# This comment is to trigger a new run of the workflow after correcting the IAM permissions.
 
 name: Build and Push Backend Images
 
