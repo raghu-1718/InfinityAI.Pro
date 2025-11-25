@@ -1,6 +1,7 @@
 
 # This single, consolidated workflow handles the entire production deployment.
 # It is structured as a single job to work around a suspected restrictive Workload Identity Provider policy.
+# Retrying after correcting the GCP_WORKLOAD_IDENTITY_PROVIDER secret.
 
 name: Deploy Production Environment
 
