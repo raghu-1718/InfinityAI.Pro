@@ -1,9 +1,8 @@
 
-# This is a simplified workflow to build and push Docker images to the Artifact Registry.
-# It is designed to be as simple as possible to isolate and resolve the authentication and permission issues.
-# Retrying the workflow after user has verified all secrets are correctly configured.
+# This single, consolidated workflow handles the entire production deployment.
+# It builds and deploys all backend engines, the frontend, and Firebase functions.
 
-name: Build and Push Backend Images
+name: Deploy Production Environment
 
 on:
   push:
@@ -55,3 +54,91 @@ jobs:
           
           docker build -t $IMAGE_URI $SOURCE_DIR
           docker push $IMAGE_URI
+
+  deploy_cloud_run_services:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: build_and_push_images # This job runs after images are built
+    permissions:
+      contents: "read"
+      id-token: "write"
+    strategy:
+      matrix:
+        # Map source directories to the final Cloud Run service names
+        include:
+          - service: engine-core
+            name: infinityai-engine-a
+          - service: engine-analytics
+            name: infinityai-engine-b
+          - service: engine-execution
+            name: infinityai-engine-c-execution
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Deploy Service
+        run: |
+          IMAGE_URI="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ matrix.service }}:latest"
+          
+          # Base deploy command
+          DEPLOY_COMMAND="gcloud run deploy ${{ matrix.name }} --image=$IMAGE_URI --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} --platform=managed --allow-unauthenticated"
+          
+          # Add service-specific secrets here
+          # IMPORTANT: Ensure these secrets (e.g., dhan-api-key) exist in Google Secret Manager.
+          if [[ "${{ matrix.name }}" == "infinityai-engine-a" ]]; then
+            DEPLOY_COMMAND="$DEPLOY_COMMAND --set-secrets=DHAN_API_KEY=dhan-api-key:latest"
+          elif [[ "${{ matrix.name }}" == "infinityai-engine-b" ]]; then
+            DEPLOY_COMMAND="$DEPLOY_COMMAND --set-secrets=GEMINI_API_KEY_PRIMARY=gemini-api-key-primary:latest,GEMINI_API_KEY_SECONDARY=gemini-api-key-secondary:latest"
+          fi
+          
+          echo "Executing: $DEPLOY_COMMAND"
+          $DEPLOY_COMMAND
+
+  deploy_frontend_and_firebase:
+    name: Deploy Frontend and Firebase Functions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Authenticate to Google Cloud (for Firebase)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Install Dependencies and Build
+        run: |
+          npm install
+          npm run build --workspace=frontend
+          npm run build --workspace=functions
+
+      - name: Deploy to Firebase Hosting and Functions
+        run: firebase deploy --project=${{ env.GCP_PROJECT_ID }} --non-interactive --force
