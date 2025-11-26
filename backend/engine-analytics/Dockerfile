@@ -17,4 +17,4 @@ COPY ./src /app/src
 EXPOSE 8080
 
 # Run main.py when the container launches
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

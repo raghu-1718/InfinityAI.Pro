@@ -166,7 +166,8 @@ if ($DryRun) {
         $info = $ENGINE_MAP[$engine]
         Write-Host "`n   📦 Deploying $($info.serviceName)..." -ForegroundColor Cyan
         
-        Set-Location $info.directory
+        $fullPath = Join-Path $PSScriptRoot ".." $info.directory
+        Set-Location $fullPath
         
         # Build container
         if (-not $SkipBuild) {
@@ -196,10 +197,10 @@ if ($DryRun) {
             "--min-instances", $info.minInstances.ToString(),
             "--max-instances", $info.maxInstances.ToString(),
             "--timeout", "300s",
-            "--set-env-vars", "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,PORT=$($info.port)"
+            "--set-env-vars", "GOOGLE_CLOUD_PROJECT=$PROJECT_ID"
         )
         
-        # Add engine-specific env vars
+        # Add engine-specific env vars (PORT is set automatically by Cloud Run)
         if ($info.envVars) {
             $deployArgs[$deployArgs.IndexOf("--set-env-vars")+1] += ",$($info.envVars)"
         }
@@ -228,7 +229,8 @@ Write-Host "`n🌐 STEP 4: Deploying Frontend..." -ForegroundColor Yellow
 if ($DryRun) {
     Write-Host "   [DRY RUN] Would build and deploy frontend to Firebase Hosting" -ForegroundColor Gray
 } else {
-    Set-Location "frontend/web"
+    $frontendPath = Join-Path $PSScriptRoot ".." "frontend" "web"
+    Set-Location $frontendPath
     
     if (-not $SkipBuild) {
         Write-Host "   📦 Building frontend..." -ForegroundColor Gray
