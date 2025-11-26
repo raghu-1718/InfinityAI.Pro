@@ -4,3 +4,4 @@ httpx
 yfinance
 dhanhq
 # Cache-busting comment
+google-generativeai
