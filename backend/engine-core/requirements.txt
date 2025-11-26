@@ -1,10 +1,7 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.0
-python-multipart==0.0.6
-aiohttp==3.9.1
-requests==2.31.0
-numpy==1.26.4
+fastapi==0.122.0
+uvicorn[standard]==0.38.0
+httpx==0.28.1
+dhanhq==2.0.2
 pandas==2.1.4
 scikit-learn==1.4.2
 xgboost==2.1.1
@@ -15,8 +12,3 @@ PyYAML==6.0.1
 python-dotenv==1.0.1
 google-generativeai==0.8.3
 google-cloud-secret-manager==2.20.0
-# Optional heavy deps; comment out unless enabled in config
-# transformers==4.40.0
-# torch==2.1.2
-# prophet==1.1.5  # optional; requires heavy build toolchain
-# Cache-busting comment
