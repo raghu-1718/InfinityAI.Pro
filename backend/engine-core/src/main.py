@@ -108,7 +108,7 @@ async def orchestrate(req: OrchestrateRequest, bg: BackgroundTasks):
 # --- Data Provider Endpoints ---
 
 @app.post("/dhan/subscribe-live-data")
-def subscribe_live_data(instruments: List[tuple[str, str]], dhan_client: dhanhqhq.dhanhq = Depends(get_dhan_client)):
+def subscribe_live_data(instruments: List[tuple[str, str]], dhan_client: dhanhq = Depends(get_dhan_client)):
     """
     Subscribes to real-time market data feed for a list of instruments.
     Each instrument is a tuple of (exchange_segment, security_id).
