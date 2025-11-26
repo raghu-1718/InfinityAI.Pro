@@ -17,7 +17,7 @@ interface AppState {
     'engine-a': { status: 'online' | 'offline' | 'error'; lastChecked: Date | null };
     'engine-b': { status: 'online' | 'offline' | 'error'; lastChecked: Date | null };
     'engine-c': { status: 'online' | 'offline' | 'error'; lastChecked: Date | null };
-    'engine-d': { status: 'online' | 'offline' | 'error'; lastChecked: Date | null };
+    // Engine D merged into Engine C (Execution)
   };
 
   // AI Analysis data
@@ -57,7 +57,7 @@ export const useAppStore = create<AppState>()(
       'engine-a': { status: 'offline', lastChecked: null },
       'engine-b': { status: 'offline', lastChecked: null },
       'engine-c': { status: 'offline', lastChecked: null },
-      'engine-d': { status: 'offline', lastChecked: null },
+      // Engine D merged into Engine C
     },
 
     aiAnalysis: {

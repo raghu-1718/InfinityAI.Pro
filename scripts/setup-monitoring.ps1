@@ -51,8 +51,8 @@ $services = @(
         display = "Engine C - Execution"
     },
     @{
-        name = "engine-d-orchestration-prod"
-        url = "engine-d-orchestration-prod-bprmddefsa-uc.a.run.app"
+        name = "engine-c-execution  # Engine D merged-prod"
+        url = "engine-c-execution  # Engine D merged-prod-bprmddefsa-uc.a.run.app"
         path = "/health"
         display = "Engine D - Orchestration"
     },

@@ -15,7 +15,8 @@ interface WebSocketState {
   unsubscribe: (channel: string) => void;
 }
 
-const WS_URL = 'wss://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/ws/dashboard';
+// Updated to use Engine C (Execution) which now handles WebSocket aggregation
+const WS_URL = 'wss://infinityai-engine-c-execution-26140490557.us-central1.run.app/ws/dashboard';
 
 export const useWebSocketStore = create<WebSocketState>((set, get) => ({
   socket: null,

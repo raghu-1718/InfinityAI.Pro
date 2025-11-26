@@ -18,7 +18,7 @@ $SERVICES = @(
     "engine-a",
     "engine-b-ai-ml-prod",
     "engine-c-execution-prod",
-    "engine-d-orchestration-prod"
+    "engine-c-execution  # Engine D merged-prod"
 )
 
 Write-Host "🔐 Granting Firebase Secret Access to Cloud Run Services" -ForegroundColor Cyan

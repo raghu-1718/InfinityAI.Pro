@@ -220,7 +220,7 @@ export const useEngineStatus = () => {
         { name: 'engine-a', url: 'https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app' },
         { name: 'engine-b', url: 'https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app' },
         { name: 'engine-c', url: 'https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app' },
-        { name: 'engine-d', url: 'https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app' }
+        // Engine D merged into Engine C (Execution)
       ]
 
       const statusPromises = engines.map(async (engine) => {

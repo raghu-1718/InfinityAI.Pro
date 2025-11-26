@@ -33,7 +33,7 @@ function Write-Status {
 # Step 1: Deploy all engines with latest code
 Write-Host "`n📦 Deploying All Engines..." -ForegroundColor Yellow
 
-$engines = @("engine-a", "engine-b", "engine-c-execution", "engine-d")
+$engines = @("engine-a", "engine-b", "engine-c-execution")  # Engine D merged into Engine C
 
 foreach ($engine in $engines) {
     Write-Status "Deploying $engine..." "Info"
@@ -157,7 +157,7 @@ $endpoints = @{
     "Engine A" = "https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app/health"
     "Engine B" = "https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app/health"
     "Engine C" = "https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app/health"
-    "Engine D" = "https://infinityai-engine-d-ckxt6xvshq-uc.a.run.app/health"
+    # "Engine D" merged into Engine C
     "Frontend" = "https://infinityai-frontend-ckxt6xvshq-uc.a.run.app"
 }
 
