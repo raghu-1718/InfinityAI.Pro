@@ -50,7 +50,8 @@ def get_dhan_client():
 async def healthz():
     return {"status": "ok"}
 
-@app.post("/orchestrate")sync def orchestrate(req: OrchestrateRequest, bg: BackgroundTasks):
+@app.post("/orchestrate")
+async def orchestrate(req: OrchestrateRequest, bg: BackgroundTasks):
     engine_b_url = os.getenv("ENGINE_B_URL")
     engine_c_url = os.getenv("ENGINE_C_URL")
     if not engine_b_url or not engine_c_url:
