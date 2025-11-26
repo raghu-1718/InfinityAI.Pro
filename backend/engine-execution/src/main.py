@@ -47,7 +47,7 @@ def get_dhan_client():
             detail="DHAN_CLIENT_ID and DHAN_ACCESS_TOKEN must be configured."
         )
     
-    return dhan(client_id, access_token)
+    return dhanhq.dhanhq(client_id, access_token)
 
 # --- API Endpoints ---
 
@@ -59,7 +59,7 @@ async def healthz():
 @app.post("/api/dhan/place-order", tags=["Trading"], response_model=OrderResponse)
 async def place_order(
     order: PlaceOrderRequest,
-    dhan_client: dhan = Depends(get_dhan_client)
+    dhan_client: dhanhq.dhanhq = Depends(get_dhan_client)
 ):
     """
     Receives an order request and places it using the DhanHQ Python SDK.

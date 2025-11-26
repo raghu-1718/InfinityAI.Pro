@@ -43,7 +43,7 @@ def get_dhan_client():
     access_token = os.getenv("DHAN_ACCESS_TOKEN")
     if not client_id or not access_token:
         raise HTTPException(status_code=500, detail="DhanHQ credentials not set.")
-    return dhan(client_id, access_token)
+    return dhanhq.dhanhq(client_id, access_token)
 
 # --- Core Endpoints ---
 @app.get("/healthz")
@@ -107,7 +107,7 @@ async def healthz():
 # --- Data Provider Endpoints ---
 
 @app.post("/dhan/subscribe-live-data")
-def subscribe_live_data(instruments: List[tuple[str, str]], dhan_client: dhan = Depends(get_dhan_client)):
+def subscribe_live_data(instruments: List[tuple[str, str]], dhan_client: dhanhq.dhanhqhq.dhanhq = Depends(get_dhan_client)):
     """
     Subscribes to real-time market data feed for a list of instruments.
     Each instrument is a tuple of (exchange_segment, security_id).
