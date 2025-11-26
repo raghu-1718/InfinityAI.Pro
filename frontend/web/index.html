@@ -1,89 +1,113 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.6.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.6.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.6.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfinityAI.Pro - Trading Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; border-radius: 20px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .header h1 { color: #667eea; font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.1rem; }
+        .status-card { background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .status-card h2 { color: #333; margin-bottom: 15px; font-size: 1.5rem; }
+        .engine-status { display: flex; align-items: center; margin: 10px 0; padding: 15px; background: #f7fafc; border-radius: 10px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
+        .online { background: #48bb78; }
+        .offline { background: #f56565; }
+        .api-url { background: #edf2f7; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; margin-top: 5px; word-break: break-all; }
+        .btn { background: #667eea; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.3s; margin: 5px; }
+        .btn:hover { background: #5568d3; transform: translateY(-2px); }
+        .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-top: 20px; }
     </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 InfinityAI.Pro</h1>
+            <p>AI-Powered Trading Analytics Platform - 3 Engine Architecture</p>
+        </div>
+        
+        <div class="status-card">
+            <h2>�� Engine Status</h2>
+            
+            <div class="engine-status">
+                <span class="status-dot online" id="engine-a-dot"></span>
+                <div style="flex: 1;">
+                    <strong>Engine A - Data Aggregator & Orchestrator</strong>
+                    <div class="api-url">https://infinityai-engine-a-573866363639.us-central1.run.app</div>
+                    <small style="color: #666;">Orchestrates workflows, subscribes to live data</small>
+                </div>
+            </div>
+            
+            <div class="engine-status">
+                <span class="status-dot online" id="engine-b-dot"></span>
+                <div style="flex: 1;">
+                    <strong>Engine B - AI/ML Intelligence</strong>
+                    <div class="api-url">https://infinityai-engine-b-573866363639.us-central1.run.app</div>
+                    <small style="color: #666;">ML models, predictions, Gemini AI analysis</small>
+                </div>
+            </div>
+            
+            <div class="engine-status">
+                <span class="status-dot online" id="engine-c-dot"></span>
+                <div style="flex: 1;">
+                    <strong>Engine C - DhanHQ Execution</strong>
+                    <div class="api-url">https://infinityai-engine-c-execution-573866363639.us-central1.run.app</div>
+                    <small style="color: #666;">Live trade execution via DhanHQ SDK</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>🎯 Quick Actions</h2>
+            <button class="btn" onclick="testEngines()">Test All Engines</button>
+            <button class="btn" onclick="window.open('https://infinityai-engine-a-573866363639.us-central1.run.app/docs', '_blank')">Engine A Docs</button>
+            <button class="btn" onclick="window.open('https://infinityai-engine-b-573866363639.us-central1.run.app/docs', '_blank')">Engine B Docs</button>
+            <button class="btn" onclick="window.open('https://infinityai-engine-c-execution-573866363639.us-central1.run.app/docs', '_blank')">Engine C Docs</button>
+            <div id="test-result" style="margin-top: 20px;"></div>
+        </div>
+        
+        <div class="info-box">
+            <strong>ℹ️ Architecture:</strong> This platform uses a 3-engine microservices architecture. Engine A orchestrates requests and manages live data subscriptions. Engine B provides AI/ML intelligence with predictive models and Gemini AI. Engine C handles actual trade execution through DhanHQ. All engines communicate via REST APIs.
+        </div>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
-
+    
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+        const ENGINES = {
+            'Engine A': 'https://infinityai-engine-a-573866363639.us-central1.run.app',
+            'Engine B': 'https://infinityai-engine-b-573866363639.us-central1.run.app',
+            'Engine C': 'https://infinityai-engine-c-execution-573866363639.us-central1.run.app'
+        };
+        
+        async function testEngines() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '<p style="color: #666;">Testing engines...</p>';
+            let results = '';
+            
+            for (const [name, url] of Object.entries(ENGINES)) {
+                try {
+                    const response = await fetch(url + '/docs');
+                    if (response.ok) {
+                        results += '<p style="color: #48bb78;">✅ ' + name + ': Online (' + response.status + ')</p>';
+                        document.getElementById(name.toLowerCase().replace(' ', '-') + '-dot').className = 'status-dot online';
+                    } else {
+                        results += '<p style="color: #ffc107;">⚠️ ' + name + ': HTTP ' + response.status + '</p>';
+                        document.getElementById(name.toLowerCase().replace(' ', '-') + '-dot').className = 'status-dot offline';
+                    }
+                } catch (error) {
+                    results += '<p style="color: #f56565;">❌ ' + name + ': ' + error.message + '</p>';
+                    document.getElementById(name.toLowerCase().replace(' ', '-') + '-dot').className = 'status-dot offline';
+                }
+            }
+            
+            resultDiv.innerHTML = results;
         }
-      });
+        
+        // Auto-test on load
+        window.addEventListener('load', testEngines);
     </script>
-  </body>
+</body>
 </html>
