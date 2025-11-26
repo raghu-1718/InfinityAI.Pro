@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
 import httpx
 from typing import Optional, Dict, Any, List
-from dhanhq import dhan
+from dhanhq import dhanhq
 
 # --- Pydantic Models ---
 class OrchestrateRequest(BaseModel):

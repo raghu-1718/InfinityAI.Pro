@@ -2,7 +2,7 @@
 import os
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
-from dhanhq import dhan
+from dhanhq import dhanhq
 
 # --- Pydantic Models for Request & Response ---
 
