@@ -33,7 +33,7 @@ class NewsResponse(BaseModel):
 
 # --- FastAPI App Initialisation ---
 app = FastAPI(
-    title="Iaminfinity - Engine A (Data Aggregator & Orchestrator)",
+    title="Iaminfinity - Engine B (Core Orchestration & Data)",
     version="1.1.0"
 )
 
@@ -48,7 +48,7 @@ def get_dhan_client():
 # --- Core Endpoints ---
 @app.get("/healthz")
 async def healthz():
-    return {"status": "ok"}
+    return {"status": "healthy", "service": "engine-b"}
 
 @app.post("/orchestrate")
 async def orchestrate(req: OrchestrateRequest, bg: BackgroundTasks):

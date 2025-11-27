@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import google.generativeai as genai
 
-app = FastAPI(title="Iaminfinity - Engine B (AI/ML Intelligence)")
+app = FastAPI(title="Iaminfinity - Engine A (Market Analytics & AI)")
 
 
 class PredictRequest(BaseModel):
@@ -35,12 +35,12 @@ if api_key:
 
 @app.get("/healthz")
 async def healthz():
-    return {"status": "healthy", "service": "engine-b", "version": MODEL_STORE["version"], "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "healthy", "service": "engine-a", "version": MODEL_STORE["version"], "timestamp": datetime.utcnow().isoformat()}
 
 
 @app.get("/")
 async def root():
-    return {"service": "Iaminfinity Engine B", "status": "ready", "models": MODEL_STORE["models"]}
+    return {"service": "Iaminfinity Engine A", "status": "ready", "models": MODEL_STORE["models"]}
 
 
 @app.post("/api/predict")
