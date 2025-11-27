@@ -1,14 +1,7 @@
 {
   "projects": {
-    "default": "infinity-ai-5ec7c"
+    "default": "after-yesterday-473512-k3"
   },
   "targets": {},
-  "etags": {
-    "infinity-ai-5ec7c": {
-      "extensionInstances": {
-        "firestore-bigquery-export": "c1fc96111eb0907ed8b10410a70185ddaadece3d0f66b78004e99a43664f45c4",
-        "firestore-multimodal-genai": "4a9c49ad6eb028e0a8a87e8e045f1251bdb5173fed4dd7351084400dd0db8fa8"
-      }
-    }
-  }
+  "etags": {}
 }
