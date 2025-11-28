@@ -217,9 +217,9 @@ export const useEngineStatus = () => {
     queryKey: ['engine-status'],
     queryFn: async () => {
       const engines = [
-        { name: 'engine-a', url: 'https://infinityai-engine-a-ckxt6xvshq-uc.a.run.app' },
-        { name: 'engine-b', url: 'https://infinityai-engine-b-ckxt6xvshq-uc.a.run.app' },
-        { name: 'engine-c', url: 'https://infinityai-engine-c-execution-ckxt6xvshq-uc.a.run.app' },
+        { name: 'engine-a', url: 'https://engine-a.infinityai.pro' },
+        { name: 'engine-b', url: 'https://engine-b.infinityai.pro' },
+        { name: 'engine-c', url: 'https://engine-c.infinityai.pro' },
         // Engine D merged into Engine C (Execution)
       ]
 
