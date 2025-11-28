@@ -1,5 +1,4 @@
 fastapi
 uvicorn[standard]
 httpx
-dhanhq
-# Cache-busting comment
+dhanhq>=2.1.0

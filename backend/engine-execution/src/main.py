@@ -1,121 +1,81 @@
-
 import os
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, Field
+from typing import Optional
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from dhanhq import dhanhq
+import uvicorn
 
-# --- Pydantic Models for Request & Response ---
+app = FastAPI(title="Iaminfinity - Engine C (Execution)")
 
-class PlaceOrderRequest(BaseModel):
-    """Defines the structure for a trade execution request, aligned with DhanHQ SDK."""
-    transaction_type: str = Field(..., description="BUY or SELL")
-    exchange_segment: str = Field(..., description="e.g., NSE_EQ, BSE_EQ, NSE_FNO")
-    product_type: str = Field(..., description="e.g., INTRADAY, CNC, MARGIN")
-    order_type: str = Field(..., description="e.g., MARKET, LIMIT, STOP_LOSS")
-    validity: str = Field(..., description="e.g., DAY, IOC")
-    security_id: str = Field(..., description="Dhan security ID for the instrument")
-    quantity: int = Field(..., gt=0, description="Order quantity")
-    price: float = Field(0, description="Required for LIMIT orders")
+# --- Models ---
+class OrderRequest(BaseModel):
+    transaction_type: str  # BUY/SELL
+    exchange_segment: str # NSE_EQ, NSE_FNO, etc.
+    product_type: str # INTRADAY, CNC, etc.
+    order_type: str # MARKET, LIMIT, etc.
+    validity: str # DAY, IOC
+    security_id: str
+    quantity: int
+    price: Optional[float] = 0.0
+    trigger_price: Optional[float] = 0.0
+    disclosed_quantity: Optional[int] = 0
+    after_market_order: Optional[bool] = False
+    amo_time: Optional[str] = "OPEN"
+    bo_profit_value: Optional[float] = 0.0
+    bo_stop_loss_value: Optional[float] = 0.0
+    drv_expiry_date: Optional[str] = None
+    drv_options_type: Optional[str] = None
+    drv_strike_price: Optional[float] = 0.0
 
-class OrderResponse(BaseModel):
-    """Standard response for order placement."""
-    status: str
-    order_id: str | None = None
-    message: str | None = None
-    
-# --- FastAPI Application Setup ---
+# --- Config ---
+DHAN_CLIENT_ID = os.getenv("DHAN_CLIENT_ID")
+DHAN_ACCESS_TOKEN = os.getenv("DHAN_ACCESS_TOKEN")
 
-app = FastAPI(
-    title="InfinityAI - Engine C (DhanHQ Execution)",
-    description="Handles live trade execution using the DhanHQ Python SDK.",
-    version="1.1.0" # Version updated to reflect SDK integration
-)
-
-# --- DhanHQ API Client Dependency ---
-
-def get_dhan_client():
-    """
-    Dependency that provides an initialized DhanHQ client.
-    Requires DHAN_CLIENT_ID and DHAN_ACCESS_TOKEN env vars.
-    """
-    client_id = os.getenv("DHAN_CLIENT_ID")
-    access_token = os.getenv("DHAN_ACCESS_TOKEN")
-    
-    if not client_id or not access_token:
-        raise HTTPException(
-            status_code=500, 
-            detail="DHAN_CLIENT_ID and DHAN_ACCESS_TOKEN must be configured."
-        )
-    
-    return dhanhq(client_id, access_token)
-
-# --- API Endpoints ---
-
-@app.get("/", tags=["System"])
-async def root():
-    """Root endpoint describing Engine C capabilities"""
-    return {
-        "service": "Iaminfinity Engine C",
-        "version": "1.1.0",
-        "status": "operational",
-        "description": "Trade Execution Engine via DhanHQ SDK",
-        "capabilities": [
-            "Live Trade Execution",
-            "Order Placement & Management",
-            "DhanHQ Integration",
-            "Real-time Order Status",
-            "Multi-exchange Support (NSE/BSE)"
-        ],
-        "endpoints": {
-            "place_order": "/api/dhan/place-order - Execute trades via DhanHQ",
-            "health": "/healthz - Service health check",
-            "docs": "/docs - Interactive API documentation"
-        },
-        "supported_exchanges": ["NSE_EQ", "BSE_EQ", "NSE_FNO", "BSE_FNO", "MCX", "CDS"],
-        "order_types": ["MARKET", "LIMIT", "STOP_LOSS", "STOP_LOSS_MARKET"]
-    }
-
-@app.get("/healthz", tags=["System"])
+# --- Health ---
+@app.get("/healthz")
 async def healthz():
-    """Provides a simple health check for the service."""
     return {"status": "healthy", "service": "engine-c-execution"}
 
-@app.post("/api/dhan/place-order", tags=["Trading"], response_model=OrderResponse)
-async def place_order(
-    order: PlaceOrderRequest,
-    dhan_client: dhanhq = Depends(get_dhan_client)
-):
-    """
-    Receives an order request and places it using the DhanHQ Python SDK.
-    """
-    try:
-        # The SDK maps the function arguments to the API payload.
-        response = dhan_client.place_order(
-            security_id=order.security_id,
-            exchange_segment=order.exchange_segment,
-            transaction_type=order.transaction_type,
-            quantity=order.quantity,
-            order_type=order.order_type,
-            product_type=order.product_type,
-            price=order.price,
-            validity=order.validity
-        )
+@app.get("/")
+async def root():
+    return {"service": "Iaminfinity Engine C (Execution)", "status": "ready"}
 
-        # Check the response from the SDK
-        if response and response.get('status') == 'success' and response.get('order_id'):
-            return OrderResponse(
-                status="success", 
-                order_id=response['order_id']
-            )
-        else:
-            # If the status is not success or order_id is missing
-            error_message = response.get("remarks", "Unknown error from DhanHQ SDK")
-            return OrderResponse(status="error", message=error_message)
+# --- Execution Endpoint ---
+@app.post("/api/dhan/place-order")
+async def place_order(order: OrderRequest):
+    if not DHAN_CLIENT_ID or not DHAN_ACCESS_TOKEN:
+        raise HTTPException(500, "Dhan credentials not configured (DHAN_CLIENT_ID, DHAN_ACCESS_TOKEN).")
+
+    try:
+        dhan = dhanhq(DHAN_CLIENT_ID, DHAN_ACCESS_TOKEN)
+        
+        response = dhan.place_order(
+            transaction_type=order.transaction_type,
+            exchange_segment=order.exchange_segment,
+            product_type=order.product_type,
+            order_type=order.order_type,
+            validity=order.validity,
+            security_id=order.security_id,
+            quantity=order.quantity,
+            price=order.price,
+            trigger_price=order.trigger_price,
+            disclosed_quantity=order.disclosed_quantity,
+            after_market_order=order.after_market_order,
+            amo_time=order.amo_time,
+            bo_profit_value=order.bo_profit_value,
+            bo_stop_loss_value=order.bo_stop_loss_value,
+            drv_expiry_date=order.drv_expiry_date,
+            drv_options_type=order.drv_options_type,
+            drv_strike_price=order.drv_strike_price
+        )
+        
+        if isinstance(response, dict) and response.get("status") == "failure":
+             raise HTTPException(400, detail=f"Dhan Order Failed: {response.get("remarks", "Unknown error")}")
+             
+        return {"status": "success", "dhan_response": response}
 
     except Exception as e:
-        # Log the exception for debugging
-        print(f"An unexpected error occurred during order placement: {e}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"An internal error occurred: {str(e)}"
-        )
+        raise HTTPException(500, detail=str(e))
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)

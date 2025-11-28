@@ -2,6 +2,5 @@ fastapi
 uvicorn[standard]
 httpx
 yfinance
-dhanhq
-# Cache-busting comment
-google-generativeai
+dhanhq>=2.1.0
+google-cloud-secret-manager
