@@ -51,6 +51,30 @@ def get_dhan_client():
 
 # --- API Endpoints ---
 
+@app.get("/", tags=["System"])
+async def root():
+    """Root endpoint describing Engine C capabilities"""
+    return {
+        "service": "Iaminfinity Engine C",
+        "version": "1.1.0",
+        "status": "operational",
+        "description": "Trade Execution Engine via DhanHQ SDK",
+        "capabilities": [
+            "Live Trade Execution",
+            "Order Placement & Management",
+            "DhanHQ Integration",
+            "Real-time Order Status",
+            "Multi-exchange Support (NSE/BSE)"
+        ],
+        "endpoints": {
+            "place_order": "/api/dhan/place-order - Execute trades via DhanHQ",
+            "health": "/healthz - Service health check",
+            "docs": "/docs - Interactive API documentation"
+        },
+        "supported_exchanges": ["NSE_EQ", "BSE_EQ", "NSE_FNO", "BSE_FNO", "MCX", "CDS"],
+        "order_types": ["MARKET", "LIMIT", "STOP_LOSS", "STOP_LOSS_MARKET"]
+    }
+
 @app.get("/healthz", tags=["System"])
 async def healthz():
     """Provides a simple health check for the service."""

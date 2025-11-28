@@ -46,6 +46,27 @@ def get_dhan_client():
     return dhanhq(client_id, access_token)
 
 # --- Core Endpoints ---
+@app.get("/")
+async def root():
+    return {
+        "service": "Iaminfinity Engine B",
+        "version": "1.1.0",
+        "status": "operational",
+        "description": "Core Orchestration & Data Aggregation Engine",
+        "capabilities": [
+            "Workflow Orchestration",
+            "Real-time Market Data via DhanHQ",
+            "Live Data Subscriptions",
+            "Multi-Engine Coordination",
+            "News & Sentiment Analysis"
+        ],
+        "endpoints": {
+            "orchestrate": "/orchestrate - Coordinate AI predictions and trade execution",
+            "subscribe": "/dhan/subscribe-live-data - Subscribe to live market data feeds",
+            "docs": "/docs - Interactive API documentation"
+        }
+    }
+
 @app.get("/healthz")
 async def healthz():
     return {"status": "healthy", "service": "engine-b"}
