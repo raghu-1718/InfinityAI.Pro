@@ -1,8 +1,10 @@
 import os
 import asyncio
-from datetime import datetime
-from typing import Dict, Any, Optional, List
 import logging
+import time
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List
+from io import StringIO
 
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +22,25 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
+# Data Sources
+try:
+    import yfinance as yf
+    HAS_YFINANCE = True
+except ImportError:
+    HAS_YFINANCE = False
+
+try:
+    import ta as ta_lib
+    HAS_TA_LIB = True
+except ImportError:
+    HAS_TA_LIB = False
+
+try:
+    import aiohttp
+    HAS_AIOHTTP = True
+except ImportError:
+    HAS_AIOHTTP = False
+
 # NLP for Sentiment
 try:
     from transformers import pipeline
@@ -35,13 +56,16 @@ except ImportError:
     HAS_NLTK = False
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("InfinityAI.EngineB")
 
 app = FastAPI(
-    title="InfinityAI.Pro - Engine B (AI/ML Signal Generation)",
-    description="XGBoost, LightGBM, CatBoost for Trading Signals + NLP Sentiment",
-    version="3.1-ml"
+    title="InfinityAI.Pro - Engine B (Production)",
+    description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference",
+    version="3.4-prod"
 )
 
 # Add CORS middleware
@@ -53,6 +77,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =====================================================================
+# SEBI 2025 MARKET CONFIGURATION
+# =====================================================================
+MARKET_CONFIG = {
+    "LOT_SIZES": {
+        "NIFTY": 75,           # Updated Nov 2024
+        "BANKNIFTY": 30,       # Updated Nov 2024
+        "FINNIFTY": 65,        # Updated Nov 2024
+        "MIDCPNIFTY": 120,     # Updated Nov 2024
+        "NIFTYNXT50": 25,
+        "SENSEX": 20,
+        "BANKEX": 30
+    },
+    "EXPIRY_DAYS": {
+        "MIDCPNIFTY": 0,       # Monday
+        "FINNIFTY": 1,         # Tuesday
+        "BANKNIFTY": 2,        # Wednesday
+        "NIFTY": 3,            # Thursday
+        "SENSEX": 4,           # Friday
+        "BANKEX": 4            # Friday
+    },
+    "MARGIN_RULES_2025": {
+        "OPTION_BUY_PREMIUM": 1.0,  # 100% Upfront
+        "INTRADAY_EQUITY": 0.20,    # 20% Upfront (VaR + ELM)
+        "NO_SPREAD_BENEFIT_EXPIRY": True  # Effective Feb 10, 2025
+    },
+    "HOLIDAYS_2025": [
+        "2025-02-26", "2025-03-14", "2025-03-31", "2025-04-10",
+        "2025-04-14", "2025-04-18", "2025-05-01", "2025-08-15",
+        "2025-08-27", "2025-10-02", "2025-10-21", "2025-10-22",
+        "2025-11-05", "2025-12-25"
+    ],
+    "TRADING_SESSIONS": {
+        "pre_open": {"start": "09:00", "end": "09:08"},
+        "normal": {"start": "09:15", "end": "15:30"},
+        "post_close": {"start": "15:40", "end": "16:00"}
+    }
+}
+
 # --- Secret Manager Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
@@ -63,36 +126,173 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
         response = client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        print(f"Error fetching secret {secret_id}: {e}")
+        logger.warning(f"Secret fetch failed for {secret_id}: {e}")
         return ""
 
-# --- Models ---
+# =====================================================================
+# DYNAMIC SYMBOL MAPPER (Production Grade)
+# =====================================================================
+class SymbolMapper:
+    """
+    Dynamic Symbol Mapping Service.
+    Fetches the daily Master Scrip List from DhanHQ to ensure accurate mapping.
+    """
+    MASTER_URL = "https://images.dhan.co/api-data/api-scrip-master.csv"
+
+    def __init__(self):
+        self.symbol_map: Dict[str, str] = {}  # Symbol -> Security ID
+        self.id_map: Dict[int, str] = {}      # Security ID -> Symbol
+        self.meta_map: Dict[int, Dict] = {}   # Security ID -> Metadata
+        self.last_updated: Optional[datetime] = None
+        self._load_fallback_mapping()
+
+    def _load_fallback_mapping(self):
+        """Load fallback mapping for critical symbols"""
+        fallback = {
+            "NIFTY": "13", "NIFTY50": "13", "BANKNIFTY": "25", "FINNIFTY": "26",
+            "RELIANCE": "1333", "TCS": "2968", "HDFCBANK": "1394", "INFY": "1594",
+            "ICICIBANK": "1270", "HINDUNILVR": "1552", "ITC": "1663", "SBIN": "2837",
+            "BHARTIARTL": "411", "KOTAKBANK": "1922", "LT": "2031", "AXISBANK": "152",
+            "ASIANPAINT": "102", "MARUTI": "2170", "SUNPHARMA": "2936", "TITAN": "3003",
+            "TATAMOTORS": "2975", "WIPRO": "3145", "ULTRACEMCO": "3073", "POWERGRID": "2640",
+            "NTPC": "2379", "M&M": "2142", "TATASTEEL": "3012", "JSWSTEEL": "1828",
+            "INDUSINDBK": "1600", "BAJFINANCE": "163", "BAJAJFINSV": "164",
+            "HCLTECH": "1391", "DRREDDY": "1165", "ADANIENT": "25", "ADANIPORTS": "26"
+        }
+        self.symbol_map = fallback
+        self.id_map = {int(v): k for k, v in fallback.items()}
+
+    async def refresh(self):
+        """Downloads and parses the master scrip CSV from DhanHQ"""
+        if not HAS_AIOHTTP:
+            logger.warning("aiohttp not available, using fallback symbol map")
+            return
+
+        try:
+            logger.info("🔄 Refreshing Master Scrip List from DhanHQ...")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.MASTER_URL, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"Failed to fetch CSV: {resp.status}")
+                    csv_text = await resp.text()
+
+            # Parse CSV
+            df = pd.read_csv(
+                StringIO(csv_text),
+                usecols=['SEM_TRADING_SYMBOL', 'SEM_SMST_SECURITY_ID', 'SEM_EXM_EXCH_ID', 'SEM_SERIES', 'SEM_LOT_UNITS'],
+                low_memory=False
+            )
+
+            # Filter for NSE Equity & Derivatives
+            df = df[df['SEM_EXM_EXCH_ID'].isin(['NSE', 'NSE_FNO'])]
+
+            # Build Maps
+            self.symbol_map = pd.Series(
+                df.SEM_SMST_SECURITY_ID.astype(str).values,
+                index=df.SEM_TRADING_SYMBOL
+            ).to_dict()
+
+            self.id_map = pd.Series(
+                df.SEM_TRADING_SYMBOL.values,
+                index=df.SEM_SMST_SECURITY_ID.astype(int)
+            ).to_dict()
+
+            self.meta_map = df.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
+
+            self.last_updated = datetime.now()
+            logger.info(f"✅ Symbol Map Updated: {len(self.symbol_map)} symbols loaded")
+
+        except Exception as e:
+            logger.error(f"❌ Symbol Map Refresh Failed: {e}, using fallback")
+
+    def get_id(self, symbol: str) -> Optional[str]:
+        return self.symbol_map.get(symbol.upper())
+
+    def get_symbol(self, sec_id: str) -> Optional[str]:
+        try:
+            return self.id_map.get(int(sec_id))
+        except:
+            return None
+
+    def get_metadata(self, sec_id: str) -> Dict:
+        try:
+            return self.meta_map.get(int(sec_id), {})
+        except:
+            return {}
+
+SYMBOL_MAPPER = SymbolMapper()
+
+# =====================================================================
+# API MODELS
+# =====================================================================
 class SignalRequest(BaseModel):
     symbol: str
     fast: bool = False
+    news_headlines: Optional[List[str]] = None  # For sentiment-enhanced signals
+    timeframe: str = "1d"
 
 class SignalResponse(BaseModel):
     symbol: str
     signal: str  # BUY, SELL, HOLD
     confidence: float
     predicted_price: float
+    current_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    target: Optional[float] = None
     timestamp: str
     model_version: str
+    sentiment_score: Optional[float] = None
+    data_source: Optional[str] = None
+    analysis: Optional[Dict[str, Any]] = None
 
-# --- ML Model Store ---
+class TrainingRequest(BaseModel):
+    symbol: str
+    historical_days: int = 365
+    lookahead_days: int = 5
+    n_estimators: int = 100
+    max_depth: int = 6
+    learning_rate: float = 0.1
+    use_sentiment: bool = False
+
+class TrainingResponse(BaseModel):
+    status: str
+    symbol: str
+    historical_days: int
+    samples_used: int
+    features_count: int
+    model_accuracies: Dict[str, float]
+    training_time_seconds: float
+    data_source: str
+    timestamp: str
+
+class SentimentRequest(BaseModel):
+    text: str
+
+class SentimentResponse(BaseModel):
+    text: str
+    sentiment: str
+    confidence: float
+    timestamp: str
+
+# =====================================================================
+# ML MODEL STORE
+# =====================================================================
 class MLModelStore:
     """Centralized ML model management - Gradient Boosting Focus"""
 
     def __init__(self):
         self.models = {}
         self.scalers = {}
-        self.version = "ai-ml-3.1-gradient-boost"
+        self.trained_symbols: set = set()
+        self.version = "v3.4-prod-gradient-boost"
         self.capabilities = {
             "xgboost": True,
             "lightgbm": True,
             "random_forest": True,
             "transformers": HAS_TRANSFORMERS,
-            "nltk_sentiment": HAS_NLTK
+            "nltk_sentiment": HAS_NLTK,
+            "ta_lib": HAS_TA_LIB,
+            "yfinance": HAS_YFINANCE
         }
         self._initialize_models()
 
@@ -101,29 +301,28 @@ class MLModelStore:
         try:
             logger.info("🤖 Initializing Gradient Boosting ML models...")
 
-            # XGBoost - Primary signal model
             self.models['xgboost'] = xgb.XGBClassifier(
                 n_estimators=100,
                 max_depth=6,
-                learning_rate=0.1,
+                learning_rate=0.05,
                 objective='multi:softprob',
                 random_state=42,
                 use_label_encoder=False,
-                eval_metric='mlogloss'
+                eval_metric='mlogloss',
+                n_jobs=-1
             )
             logger.info("✅ XGBoost initialized")
 
-            # LightGBM - Fast inference
             self.models['lightgbm'] = lgb.LGBMClassifier(
                 n_estimators=100,
                 max_depth=6,
-                learning_rate=0.1,
+                learning_rate=0.05,
                 random_state=42,
-                verbose=-1
+                verbose=-1,
+                n_jobs=-1
             )
             logger.info("✅ LightGBM initialized")
 
-            # Random Forest - Ensemble baseline
             self.models['random_forest'] = RandomForestClassifier(
                 n_estimators=100,
                 max_depth=10,
@@ -132,10 +331,8 @@ class MLModelStore:
             )
             logger.info("✅ RandomForest initialized")
 
-            # Initialize scaler
             self.scalers['standard'] = StandardScaler()
 
-            # Initialize NLTK sentiment (lightweight)
             if HAS_NLTK:
                 try:
                     self.models['nltk_sentiment'] = SentimentIntensityAnalyzer()
@@ -143,7 +340,6 @@ class MLModelStore:
                 except Exception as e:
                     logger.warning(f"⚠️ NLTK sentiment init failed: {e}")
 
-            # Initialize Transformers sentiment (if available)
             if HAS_TRANSFORMERS:
                 try:
                     self.models['transformer_sentiment'] = pipeline(
@@ -160,747 +356,473 @@ class MLModelStore:
             logger.error(f"❌ Model initialization error: {e}")
 
     def get_model(self, model_name: str):
-        """Retrieve model by name"""
         return self.models.get(model_name)
 
     def get_capabilities(self) -> Dict[str, Any]:
-        """Return available ML capabilities"""
         return {
             "version": self.version,
             "models": list(self.models.keys()),
-            "frameworks": self.capabilities
+            "frameworks": self.capabilities,
+            "trained_symbols": list(self.trained_symbols)
         }
 
 MODEL_STORE = MLModelStore()
 
-# --- DhanHQ Client Dependency ---
-def get_dhan_client():
-    """Create authenticated DhanHQ client"""
-    client_id = os.getenv("DHAN_CLIENT_ID")
-    access_token = os.getenv("DHAN_ACCESS_TOKEN")
-
-    # Fallback to Secret Manager
-    if not client_id:
-        client_id = get_secret("dhan-client-id")
-    if not access_token:
-        access_token = get_secret("dhan-access-token")
-
-    if not client_id or not access_token:
-        raise HTTPException(
-            status_code=500,
-            detail="DhanHQ credentials not configured (DHAN_CLIENT_ID, DHAN_ACCESS_TOKEN)"
-        )
-
-    return dhanhq(client_id, access_token)
-
-# --- Health & Root ---
-@app.get("/healthz")
-@app.get("/health")
-@app.get("/api/health")
-async def healthz():
-    return {
-        "status": "healthy",
-        "service": "engine-b-ai-ml",
-        "version": MODEL_STORE.version,
-        "capabilities": MODEL_STORE.capabilities,
-        "timestamp": datetime.utcnow().isoformat()
-    }
-
-@app.get("/")
-async def root():
-    return {
-        "service": "InfinityAI.Pro Engine B (AI/ML Signal Generation)",
-        "status": "ready",
-        "models": list(MODEL_STORE.models.keys()),
-        "version": MODEL_STORE.version,
-        "frameworks": MODEL_STORE.capabilities
-    }
-
-@app.get("/api/v1/capabilities")
-async def get_capabilities():
-    """Return detailed ML capabilities"""
-    return MODEL_STORE.get_capabilities()
-
-# --- Primary Signal Generation Endpoint ---
-@app.post("/api/v1/signal", response_model=SignalResponse)
-async def generate_signal(req: SignalRequest):
-    """
-    Generate trading signal using ensemble ML models
-    Returns: BUY, SELL, or HOLD signal with confidence score
-
-    If models are trained, uses real ML predictions.
-    Otherwise, falls back to technical indicator-based signals.
-    """
-    if not req.symbol:
-        raise HTTPException(status_code=422, detail="symbol is required")
-
-    try:
-        # Check if models are trained for this symbol
-        trained_symbols = getattr(MODEL_STORE, 'trained_symbols', set())
-        use_ml = req.symbol.upper() in trained_symbols
-
-        # Simulate AI computation delay
-        await asyncio.sleep(0.05 if req.fast else 0.15)
-
-        if use_ml:
-            # Use trained ML models
-            signal, confidence, predicted_price = await _generate_ml_signal(req.symbol)
-        else:
-            # Fallback to technical indicator-based signal
-            signal, confidence, predicted_price = await _generate_technical_signal(req.symbol)
-
-        return SignalResponse(
-            symbol=req.symbol.upper(),
-            signal=signal,
-            confidence=confidence,
-            predicted_price=predicted_price,
-            timestamp=datetime.utcnow().isoformat(),
-            model_version=MODEL_STORE.version + ("-trained" if use_ml else "-untrained")
-        )
-
-    except Exception as e:
-        logger.error(f"Signal generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Signal generation failed: {str(e)}")
-
-
-async def _generate_ml_signal(symbol: str) -> tuple:
-    """Generate signal using trained ML models"""
-    try:
-        # Fetch recent data
-        df = await MARKET_DATA.fetch_historical_data(symbol, days=100)
-        df = TechnicalIndicators.calculate_all(df)
-        df = df.dropna()
-
-        if len(df) < 1:
-            return await _generate_technical_signal(symbol)
-
-        # Get latest features
-        feature_cols = TechnicalIndicators.get_feature_columns()
-        X = df[feature_cols].iloc[-1:].values
-
-        # Scale features
-        X_scaled = MODEL_STORE.scalers['standard'].transform(X)
-
-        # Get predictions from all models
-        predictions = []
-        probabilities = []
-
-        for model_name in ['xgboost', 'lightgbm', 'random_forest']:
-            model = MODEL_STORE.get_model(model_name)
-            if model and hasattr(model, 'predict_proba'):
-                pred = model.predict(X_scaled)[0]
-                prob = model.predict_proba(X_scaled)[0]
-                predictions.append(pred)
-                probabilities.append(max(prob))
-
-        if not predictions:
-            return await _generate_technical_signal(symbol)
-
-        # Ensemble voting
-        from collections import Counter
-        vote = Counter(predictions).most_common(1)[0][0]
-        avg_confidence = float(np.mean(probabilities))
-
-        # Map prediction to signal
-        signal_map = {0: "SELL", 1: "HOLD", 2: "BUY"}
-        signal = signal_map.get(vote, "HOLD")
-
-        # Get current price
-        current_price = float(df['Close'].iloc[-1])
-
-        # Predict price based on signal
-        if signal == "BUY":
-            predicted_price = round(current_price * 1.015, 2)  # +1.5%
-        elif signal == "SELL":
-            predicted_price = round(current_price * 0.985, 2)  # -1.5%
-        else:
-            predicted_price = round(current_price, 2)
-
-        return signal, round(avg_confidence * 100, 2), predicted_price
-
-    except Exception as e:
-        logger.error(f"ML signal error: {e}")
-        return await _generate_technical_signal(symbol)
-
-
-async def _generate_technical_signal(symbol: str) -> tuple:
-    """Generate signal using technical indicators (fallback)"""
-    try:
-        df = await MARKET_DATA.fetch_historical_data(symbol, days=50)
-        df = TechnicalIndicators.calculate_all(df)
-        df = df.dropna()
-
-        if len(df) < 1:
-            # Ultimate fallback
-            return "HOLD", 55.0, 100.0
-
-        latest = df.iloc[-1]
-        current_price = float(latest['Close'])
-
-        # Scoring system based on technical indicators
-        score = 0
-        signals_count = 0
-
-        # RSI Signal
-        if 'RSI' in latest:
-            if latest['RSI'] < 30:
-                score += 2  # Oversold - BUY
-            elif latest['RSI'] > 70:
-                score -= 2  # Overbought - SELL
-            else:
-                score += 0  # Neutral
-            signals_count += 1
-
-        # MACD Signal
-        if 'MACD' in latest and 'MACD_Signal' in latest:
-            if latest['MACD'] > latest['MACD_Signal']:
-                score += 1  # Bullish crossover
-            else:
-                score -= 1  # Bearish crossover
-            signals_count += 1
-
-        # Moving Average Signal
-        if 'SMA_20' in latest and 'SMA_50' in latest:
-            if current_price > latest['SMA_20'] > latest['SMA_50']:
-                score += 2  # Strong uptrend
-            elif current_price < latest['SMA_20'] < latest['SMA_50']:
-                score -= 2  # Strong downtrend
-            signals_count += 1
-
-        # Stochastic Signal
-        if 'Stoch_K' in latest:
-            if latest['Stoch_K'] < 20:
-                score += 1  # Oversold
-            elif latest['Stoch_K'] > 80:
-                score -= 1  # Overbought
-            signals_count += 1
-
-        # ADX Trend Strength
-        if 'ADX' in latest:
-            if latest['ADX'] > 25:
-                score = int(score * 1.5)  # Strong trend - amplify signal
-            signals_count += 1
-
-        # Determine signal
-        if score >= 2:
-            signal = "BUY"
-            predicted_price = round(current_price * 1.01, 2)
-        elif score <= -2:
-            signal = "SELL"
-            predicted_price = round(current_price * 0.99, 2)
-        else:
-            signal = "HOLD"
-            predicted_price = round(current_price, 2)
-
-        # Calculate confidence
-        confidence = min(85, max(50, 55 + abs(score) * 5))
-
-        return signal, float(confidence), predicted_price
-
-    except Exception as e:
-        logger.error(f"Technical signal error: {e}")
-        return "HOLD", 50.0, 100.0
-
-# --- Dhan Data Endpoints (For AI Model Context) ---
-@app.get("/dhan/holdings")
-def get_holdings(dhan_client: dhanhq = Depends(get_dhan_client)):
-    """Fetch user holdings from DhanHQ"""
-    try:
-        response = dhan_client.get_holdings()
-        if response.get("status") == "success":
-            return {"status": "success", "data": response.get("data", [])}
-        else:
-            raise HTTPException(
-                status_code=502,
-                detail=f"DhanHQ Error: {response.get('remarks', 'Unknown error')}"
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Holdings fetch failed: {str(e)}")
-
-@app.get("/dhan/positions")
-def get_positions(dhan_client: dhanhq = Depends(get_dhan_client)):
-    """Fetch user positions from DhanHQ"""
-    try:
-        response = dhan_client.get_positions()
-        if response.get("status") == "success":
-            return {"status": "success", "data": response.get("data", [])}
-        else:
-            raise HTTPException(
-                status_code=502,
-                detail=f"DhanHQ Error: {response.get('remarks', 'Unknown error')}"
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Positions fetch failed: {str(e)}")
-
-@app.get("/dhan/funds")
-def get_funds(dhan_client: dhanhq = Depends(get_dhan_client)):
-    """Fetch user fund limits from DhanHQ"""
-    try:
-        response = dhan_client.get_fund_limits()
-        if response.get("status") == "success":
-            return {"status": "success", "data": response.get("data", {})}
-        else:
-            raise HTTPException(
-                status_code=502,
-                detail=f"DhanHQ Error: {response.get('remarks', 'Unknown error')}"
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Funds fetch failed: {str(e)}")
-
 # =====================================================================
-# Advanced ML Endpoints
+# MARKET DATA ENGINE (Production Grade)
 # =====================================================================
-
-class SentimentRequest(BaseModel):
-    text: str
-
-class SentimentResponse(BaseModel):
-    text: str
-    sentiment: str  # POSITIVE, NEGATIVE, NEUTRAL
-    confidence: float
-    timestamp: str
-
-@app.post("/api/v1/sentiment", response_model=SentimentResponse)
-async def analyze_sentiment(req: SentimentRequest):
+class MarketDataEngine:
     """
-    Analyze sentiment of news/text using Transformers
-    Useful for news-driven trading decisions
+    Handles Historical Data Fetching (Dhan -> YFinance Fallback)
+    and Technical Indicator Calculation using pandas-ta.
     """
-    if not HAS_TRANSFORMERS:
-        raise HTTPException(
-            status_code=501,
-            detail="Sentiment analysis not available. Install transformers library."
-        )
 
-    try:
-        sentiment_model = MODEL_STORE.get_model('sentiment')
-        if not sentiment_model:
-            raise HTTPException(status_code=500, detail="Sentiment model not initialized")
-
-        result = sentiment_model(req.text[:512])[0]  # Limit to 512 chars
-
-        return SentimentResponse(
-            text=req.text[:100] + "..." if len(req.text) > 100 else req.text,
-            sentiment=result['label'],
-            confidence=result['score'],
-            timestamp=datetime.utcnow().isoformat()
-        )
-    except Exception as e:
-        logger.error(f"Sentiment analysis error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-class BatchSignalRequest(BaseModel):
-    symbols: List[str]
-    fast: bool = True
-
-class BatchSignalResponse(BaseModel):
-    signals: List[SignalResponse]
-    timestamp: str
-    total_symbols: int
-
-@app.post("/api/v1/signal/batch", response_model=BatchSignalResponse)
-async def generate_batch_signals(req: BatchSignalRequest):
-    """
-    Generate signals for multiple symbols simultaneously
-    Optimized for portfolio-level analysis
-    """
-    if not req.symbols or len(req.symbols) == 0:
-        raise HTTPException(status_code=422, detail="symbols list cannot be empty")
-
-    if len(req.symbols) > 50:
-        raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
-
-    signals = []
-
-    # Process symbols concurrently
-    tasks = [
-        generate_signal(SignalRequest(symbol=symbol, fast=req.fast))
-        for symbol in req.symbols
-    ]
-
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    for result in results:
-        if isinstance(result, Exception):
-            logger.error(f"Batch signal error: {result}")
-        else:
-            signals.append(result)
-
-    return BatchSignalResponse(
-        signals=signals,
-        timestamp=datetime.utcnow().isoformat(),
-        total_symbols=len(signals)
-    )
-
-class ModelInfoResponse(BaseModel):
-    name: str
-    type: str
-    framework: str
-    status: str
-
-@app.get("/api/v1/models")
-async def list_models() -> List[ModelInfoResponse]:
-    """
-    List all available ML models and their status
-    """
-    models_info = []
-
-    model_metadata = {
-        'random_forest': {'type': 'ensemble', 'framework': 'scikit-learn'},
-        'xgboost': {'type': 'gradient_boosting', 'framework': 'xgboost'},
-        'lightgbm': {'type': 'gradient_boosting', 'framework': 'lightgbm'},
-        'sentiment': {'type': 'nlp', 'framework': 'transformers'}
+    YAHOO_SYMBOLS = {
+        "NIFTY": "^NSEI", "NIFTY50": "^NSEI", "BANKNIFTY": "^NSEBANK",
+        "NIFTYBANK": "^NSEBANK", "FINNIFTY": "NIFTY_FIN_SERVICE.NS"
     }
 
-    for name, meta in model_metadata.items():
-        model = MODEL_STORE.get_model(name)
-        models_info.append(ModelInfoResponse(
-            name=name,
-            type=meta['type'],
-            framework=meta['framework'],
-            status='loaded' if model else 'not_available'
-        ))
+    def __init__(self):
+        self.dhan = None
+        self.cache: Dict[str, tuple] = {}
+        self.data_source_stats = {"dhan": 0, "yahoo": 0, "synthetic": 0}
+        self._init_dhan_client()
 
-    return models_info
-
-# =====================================================================
-# MARKET DATA & TRAINING SYSTEM
-# =====================================================================
-
-class MarketDataFetcher:
-    """
-    Fetch historical market data from multiple sources:
-    1. DhanHQ API (Primary - Real-time & Historical)
-    2. Yahoo Finance (Backup - via yfinance)
-    3. NSE India (Official - nselib)
-    """
-
-    # NSE Symbol to Security ID mapping
-    NSE_SECURITY_IDS = {
-        "NIFTY": "13",
-        "NIFTY50": "13",
-        "BANKNIFTY": "25",
-        "NIFTYBANK": "25",
-        "RELIANCE": "1333",
-        "TCS": "2968",
-        "HDFCBANK": "1394",
-        "INFY": "1594",
-        "ICICIBANK": "1270",
-        "HINDUNILVR": "1552",
-        "ITC": "1663",
-        "SBIN": "2837",
-        "BHARTIARTL": "411",
-        "KOTAKBANK": "1922",
-        "LT": "2031",
-        "AXISBANK": "152",
-        "ASIANPAINT": "102",
-        "MARUTI": "2170",
-        "SUNPHARMA": "2936",
-        "TITAN": "3003",
-        "TATAMOTORS": "2975",
-        "WIPRO": "3145",
-        "ULTRACEMCO": "3073",
-        "POWERGRID": "2640",
-        "NTPC": "2379",
-        "M&M": "2142",
-        "TATASTEEL": "3012",
-        "JSWSTEEL": "1828",
-        "INDUSINDBK": "1600",
-        "BAJFINANCE": "163"
-    }
-
-    # Financial Knowledge Base
-    MARKET_KNOWLEDGE = {
-        "trading_sessions": {
-            "pre_open": {"start": "09:00", "end": "09:08"},
-            "normal": {"start": "09:15", "end": "15:30"},
-            "post_close": {"start": "15:40", "end": "16:00"}
-        },
-        "expiry_days": {
-            "nifty_weekly": "Thursday",
-            "banknifty_weekly": "Wednesday",
-            "monthly_fo": "Last Thursday"
-        },
-        "lot_sizes": {
-            "NIFTY": 25,
-            "BANKNIFTY": 15,
-            "FINNIFTY": 25
-        },
-        "circuit_limits": {
-            "index": [10, 15, 20],  # Percentage
-            "stocks": [5, 10, 20]
-        },
-        "margin_requirements": {
-            "nifty_futures": 0.12,  # 12%
-            "banknifty_futures": 0.12,
-            "equity_intraday": 0.20,
-            "equity_delivery": 1.0
-        }
-    }
-
-    def __init__(self, dhan_client=None):
-        self.dhan = dhan_client
-        self.cache = {}
-
-    async def fetch_historical_data(
-        self,
-        symbol: str,
-        days: int = 365,
-        interval: str = "1d"
-    ) -> pd.DataFrame:
-        """
-        Fetch historical OHLCV data for a symbol
-        Returns DataFrame with: Date, Open, High, Low, Close, Volume
-        """
+    def _init_dhan_client(self):
+        """Initialize DhanHQ client with GCP secrets"""
         try:
-            # Try DhanHQ first
-            if self.dhan:
-                data = await self._fetch_from_dhan(symbol, days)
-                if data is not None and len(data) > 0:
-                    return data
+            client_id = os.getenv("DHAN_CLIENT_ID") or get_secret("dhan-client-id")
+            access_token = os.getenv("DHAN_ACCESS_TOKEN") or get_secret("dhan-access-token")
 
-            # Fallback: Generate synthetic data for training
-            logger.warning(f"Using synthetic data for {symbol}")
-            return self._generate_synthetic_data(symbol, days)
-
+            if client_id and access_token and client_id != "":
+                self.dhan = dhanhq(client_id, access_token)
+                logger.info("✅ DhanHQ client initialized with credentials")
+            else:
+                logger.warning("⚠️ DhanHQ credentials not found, will use Yahoo Finance")
         except Exception as e:
-            logger.error(f"Data fetch error for {symbol}: {e}")
-            return self._generate_synthetic_data(symbol, days)
+            logger.warning(f"⚠️ DhanHQ init failed: {e}")
 
-    async def _fetch_from_dhan(self, symbol: str, days: int) -> Optional[pd.DataFrame]:
-        """Fetch from DhanHQ Historical API"""
-        try:
-            security_id = self.NSE_SECURITY_IDS.get(symbol.upper())
-            if not security_id:
-                return None
+    async def fetch_data(self, symbol: str, days: int = 365) -> tuple:
+        """
+        Smart Fetch with source tracking:
+        1. Try DhanHQ Historical API
+        2. Fallback to Yahoo Finance
+        3. Generate synthetic data as last resort
+        Returns: (DataFrame, source_name)
+        """
+        symbol = symbol.upper()
+        cache_key = f"{symbol}_{days}"
 
-            from_date = (datetime.now() - pd.Timedelta(days=days)).strftime("%Y-%m-%d")
-            to_date = datetime.now().strftime("%Y-%m-%d")
+        # Check cache (5 min TTL)
+        if cache_key in self.cache:
+            cached_data, cached_time, source = self.cache[cache_key]
+            if (datetime.now() - cached_time).seconds < 300:
+                return cached_data, source
 
-            # DhanHQ historical data endpoint
-            response = self.dhan.historical_daily_data(
-                security_id=security_id,
-                exchange_segment="NSE_EQ",
-                instrument_type="EQUITY",
-                from_date=from_date,
-                to_date=to_date
-            )
+        df = pd.DataFrame()
+        source = "synthetic"
 
-            if response.get("status") == "success":
-                data = response.get("data", [])
-                df = pd.DataFrame(data)
-                df['Date'] = pd.to_datetime(df['timestamp'])
-                df = df.rename(columns={
-                    'open': 'Open',
-                    'high': 'High',
-                    'low': 'Low',
-                    'close': 'Close',
-                    'volume': 'Volume'
-                })
-                return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']].set_index('Date')
+        # Method 1: DhanHQ API
+        if self.dhan:
+            try:
+                sec_id = SYMBOL_MAPPER.get_id(symbol)
+                if sec_id:
+                    to_date = datetime.now().strftime("%Y-%m-%d")
+                    from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-        except Exception as e:
-            logger.warning(f"DhanHQ fetch failed: {e}")
-        return None
+                    # Determine segment
+                    if symbol in ["NIFTY", "NIFTY50", "BANKNIFTY", "NIFTYBANK", "FINNIFTY"]:
+                        exchange_segment = "IDX_I"
+                        instrument_type = "INDEX"
+                    else:
+                        exchange_segment = "NSE_EQ"
+                        instrument_type = "EQUITY"
+
+                    resp = self.dhan.historical_daily_data(
+                        security_id=sec_id,
+                        exchange_segment=exchange_segment,
+                        instrument_type=instrument_type,
+                        from_date=from_date,
+                        to_date=to_date
+                    )
+
+                    if resp and resp.get('status') == 'success' and resp.get('data'):
+                        data = resp['data']
+                        df = pd.DataFrame(data)
+
+                        # Normalize columns
+                        col_map = {
+                            'start_Time': 'Date', 'timestamp': 'Date',
+                            'open': 'Open', 'high': 'High', 'low': 'Low',
+                            'close': 'Close', 'volume': 'Volume'
+                        }
+                        df.rename(columns=col_map, inplace=True)
+
+                        if 'Date' in df.columns:
+                            df['Date'] = pd.to_datetime(df['Date'])
+                            df.set_index('Date', inplace=True)
+
+                        if len(df) >= 50:
+                            source = "dhan"
+                            self.data_source_stats["dhan"] += 1
+                            logger.info(f"📊 Fetched {len(df)} days from DhanHQ for {symbol}")
+            except Exception as e:
+                logger.warning(f"DhanHQ fetch failed for {symbol}: {e}")
+
+        # Method 2: Yahoo Finance Fallback
+        if df.empty and HAS_YFINANCE:
+            try:
+                logger.info(f"Using YFinance fallback for {symbol}")
+                yahoo_symbol = self.YAHOO_SYMBOLS.get(symbol, f"{symbol}.NS")
+                df = yf.download(yahoo_symbol, period=f"{days}d", interval="1d", progress=False)
+
+                if not df.empty and len(df) >= 50:
+                    # Handle MultiIndex columns from yfinance
+                    if isinstance(df.columns, pd.MultiIndex):
+                        df.columns = df.columns.get_level_values(0)
+
+                    # Standardize column names to lowercase
+                    df.columns = [c.lower() for c in df.columns]
+
+                    # Select required columns
+                    required_cols = ['open', 'high', 'low', 'close', 'volume']
+                    if all(col in df.columns for col in required_cols):
+                        df = df[required_cols]
+
+                    source = "yahoo"
+                    self.data_source_stats["yahoo"] += 1
+                    logger.info(f"📊 Fetched {len(df)} days from Yahoo Finance for {symbol}")
+            except Exception as e:
+                logger.warning(f"YFinance fetch failed for {symbol}: {e}")
+
+        # Method 3: Synthetic Data (Last Resort)
+        if df.empty or len(df) < 50:
+            logger.warning(f"⚠️ Using synthetic data for {symbol}")
+            df = self._generate_synthetic_data(symbol, days)
+            source = "synthetic"
+            self.data_source_stats["synthetic"] += 1
+
+        # Cache result
+        self.cache[cache_key] = (df, datetime.now(), source)
+        return df, source
 
     def _generate_synthetic_data(self, symbol: str, days: int) -> pd.DataFrame:
-        """Generate realistic synthetic OHLCV data for training"""
+        """Generate realistic synthetic OHLCV data"""
         np.random.seed(hash(symbol) % 2**32)
 
-        # Base prices for known symbols
         base_prices = {
-            "NIFTY": 24000, "BANKNIFTY": 51500,
+            "NIFTY": 24500, "BANKNIFTY": 52000, "FINNIFTY": 23500,
             "RELIANCE": 2900, "TCS": 4200, "HDFCBANK": 1700,
-            "INFY": 1800, "ICICIBANK": 1250, "ITC": 460,
-            "SBIN": 800, "TATAMOTORS": 970
+            "INFY": 1850, "ICICIBANK": 1280, "ITC": 470,
+            "SBIN": 820, "TATAMOTORS": 980
         }
-        base_price = base_prices.get(symbol.upper(), 1000)
+        base_price = base_prices.get(symbol, 1000)
 
         dates = pd.date_range(end=datetime.now(), periods=days, freq='B')
+        returns = np.random.normal(0.0005, 0.015, days)
 
-        # Generate realistic price movements
-        returns = np.random.normal(0.0005, 0.015, days)  # 0.05% daily return, 1.5% volatility
         prices = [base_price]
         for r in returns[1:]:
             prices.append(prices[-1] * (1 + r))
 
-        # Generate OHLCV
         data = []
-        for i, (date, close) in enumerate(zip(dates, prices)):
+        for date, close in zip(dates, prices):
             daily_range = close * np.random.uniform(0.01, 0.025)
             high = close + daily_range * np.random.uniform(0.3, 0.7)
             low = close - daily_range * np.random.uniform(0.3, 0.7)
             open_price = low + (high - low) * np.random.uniform(0.2, 0.8)
-            volume = int(np.random.uniform(500000, 5000000) * (base_price / 1000))
+            volume = int(np.random.uniform(500000, 5000000))
 
             data.append({
-                'Date': date,
-                'Open': round(open_price, 2),
-                'High': round(high, 2),
-                'Low': round(low, 2),
-                'Close': round(close, 2),
-                'Volume': volume
+                'open': round(open_price, 2),
+                'high': round(high, 2),
+                'low': round(low, 2),
+                'close': round(close, 2),
+                'volume': volume
             })
 
-        return pd.DataFrame(data).set_index('Date')
+        df = pd.DataFrame(data, index=dates)
+        df.index.name = 'Date'
+        return df
 
+    def add_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Production Feature Engineering using ta library (if available)
+        Falls back to manual calculation if ta library not installed
+        """
+        if df.empty:
+            return df
 
-class TechnicalIndicators:
-    """
-    Calculate technical indicators for ML features
-    Implements 50+ indicators used by professional traders
-    """
-
-    @staticmethod
-    def calculate_all(df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate all technical indicators"""
         df = df.copy()
 
-        # Moving Averages
-        df['SMA_5'] = df['Close'].rolling(window=5).mean()
-        df['SMA_10'] = df['Close'].rolling(window=10).mean()
-        df['SMA_20'] = df['Close'].rolling(window=20).mean()
-        df['SMA_50'] = df['Close'].rolling(window=50).mean()
-        df['SMA_200'] = df['Close'].rolling(window=200).mean()
+        # Normalize column names to lowercase
+        df.columns = [c.lower() for c in df.columns]
 
-        # Exponential Moving Averages
-        df['EMA_9'] = df['Close'].ewm(span=9, adjust=False).mean()
-        df['EMA_21'] = df['Close'].ewm(span=21, adjust=False).mean()
-        df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
+        if HAS_TA_LIB:
+            try:
+                # Trend Indicators using ta library
+                df['EMA_9'] = ta_lib.trend.ema_indicator(df['close'], window=9)
+                df['EMA_21'] = ta_lib.trend.ema_indicator(df['close'], window=21)
+                df['EMA_50'] = ta_lib.trend.ema_indicator(df['close'], window=50)
+                df['SMA_20'] = ta_lib.trend.sma_indicator(df['close'], window=20)
+                df['SMA_50'] = ta_lib.trend.sma_indicator(df['close'], window=50)
+
+                # MACD
+                macd = ta_lib.trend.MACD(df['close'])
+                df['MACD_12_26_9'] = macd.macd()
+                df['MACDh_12_26_9'] = macd.macd_diff()
+                df['MACDs_12_26_9'] = macd.macd_signal()
+
+                # ADX
+                df['ADX_14'] = ta_lib.trend.adx(df['high'], df['low'], df['close'], window=14)
+
+                # Momentum Indicators
+                df['RSI_14'] = ta_lib.momentum.rsi(df['close'], window=14)
+
+                # Stochastic
+                stoch = ta_lib.momentum.StochasticOscillator(df['high'], df['low'], df['close'])
+                df['STOCHk_14_3_3'] = stoch.stoch()
+                df['STOCHd_14_3_3'] = stoch.stoch_signal()
+
+                df['CCI_20_0.015'] = ta_lib.trend.cci(df['high'], df['low'], df['close'], window=20)
+                df['WILLR_14'] = ta_lib.momentum.williams_r(df['high'], df['low'], df['close'], lbp=14)
+                df['MFI_14'] = ta_lib.volume.money_flow_index(df['high'], df['low'], df['close'], df['volume'], window=14)
+
+                # Volatility - Bollinger Bands
+                bb = ta_lib.volatility.BollingerBands(df['close'], window=20, window_dev=2)
+                df['BBL_20_2.0'] = bb.bollinger_lband()
+                df['BBM_20_2.0'] = bb.bollinger_mavg()
+                df['BBU_20_2.0'] = bb.bollinger_hband()
+                df['ATRr_14'] = ta_lib.volatility.average_true_range(df['high'], df['low'], df['close'], window=14)
+
+                # Volume
+                df['OBV'] = ta_lib.volume.on_balance_volume(df['close'], df['volume'])
+
+                return df.dropna()
+            except Exception as e:
+                logger.warning(f"ta library failed: {e}, using manual calculation")
+
+        # Fallback: Manual calculation
+        return self._calculate_features_manual(df)
+
+    def _calculate_features_manual(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Manual feature calculation fallback - uses lowercase column names"""
+        # Moving Averages
+        df['SMA_20'] = df['close'].rolling(window=20).mean()
+        df['SMA_50'] = df['close'].rolling(window=50).mean()
+        df['EMA_9'] = df['close'].ewm(span=9, adjust=False).mean()
+        df['EMA_21'] = df['close'].ewm(span=21, adjust=False).mean()
+        df['EMA_50'] = df['close'].ewm(span=50, adjust=False).mean()
 
         # MACD
-        ema12 = df['Close'].ewm(span=12, adjust=False).mean()
-        ema26 = df['Close'].ewm(span=26, adjust=False).mean()
-        df['MACD'] = ema12 - ema26
-        df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
-        df['MACD_Histogram'] = df['MACD'] - df['MACD_Signal']
+        ema12 = df['close'].ewm(span=12, adjust=False).mean()
+        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+        df['MACD_12_26_9'] = ema12 - ema26
+        df['MACDs_12_26_9'] = df['MACD_12_26_9'].ewm(span=9, adjust=False).mean()
+        df['MACDh_12_26_9'] = df['MACD_12_26_9'] - df['MACDs_12_26_9']
 
         # RSI
-        delta = df['Close'].diff()
+        delta = df['close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
-        df['RSI'] = 100 - (100 / (1 + rs))
+        df['RSI_14'] = 100 - (100 / (1 + rs))
 
         # Bollinger Bands
-        df['BB_Middle'] = df['Close'].rolling(window=20).mean()
-        bb_std = df['Close'].rolling(window=20).std()
-        df['BB_Upper'] = df['BB_Middle'] + (bb_std * 2)
-        df['BB_Lower'] = df['BB_Middle'] - (bb_std * 2)
-        df['BB_Width'] = (df['BB_Upper'] - df['BB_Lower']) / df['BB_Middle']
+        df['BBM_20_2.0'] = df['close'].rolling(window=20).mean()
+        bb_std = df['close'].rolling(window=20).std()
+        df['BBU_20_2.0'] = df['BBM_20_2.0'] + (bb_std * 2)
+        df['BBL_20_2.0'] = df['BBM_20_2.0'] - (bb_std * 2)
+        df['BBB_20_2.0'] = (df['BBU_20_2.0'] - df['BBL_20_2.0']) / df['BBM_20_2.0']
 
-        # ATR (Average True Range)
-        high_low = df['High'] - df['Low']
-        high_close = np.abs(df['High'] - df['Close'].shift())
-        low_close = np.abs(df['Low'] - df['Close'].shift())
+        # ATR
+        high_low = df['high'] - df['low']
+        high_close = np.abs(df['high'] - df['close'].shift())
+        low_close = np.abs(df['low'] - df['close'].shift())
         tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
-        df['ATR'] = tr.rolling(window=14).mean()
+        df['ATRr_14'] = tr.rolling(window=14).mean()
 
-        # Stochastic Oscillator
-        low14 = df['Low'].rolling(window=14).min()
-        high14 = df['High'].rolling(window=14).max()
-        df['Stoch_K'] = 100 * (df['Close'] - low14) / (high14 - low14)
-        df['Stoch_D'] = df['Stoch_K'].rolling(window=3).mean()
+        # Stochastic
+        low14 = df['low'].rolling(window=14).min()
+        high14 = df['high'].rolling(window=14).max()
+        df['STOCHk_14_3_3'] = 100 * (df['close'] - low14) / (high14 - low14)
+        df['STOCHd_14_3_3'] = df['STOCHk_14_3_3'].rolling(window=3).mean()
 
-        # ADX (Average Directional Index)
-        plus_dm = df['High'].diff()
-        minus_dm = df['Low'].diff()
+        # ADX
+        plus_dm = df['high'].diff()
+        minus_dm = df['low'].diff()
         plus_dm[plus_dm < 0] = 0
         minus_dm[minus_dm > 0] = 0
-
         tr14 = tr.rolling(window=14).sum()
         plus_di = 100 * (plus_dm.rolling(window=14).sum() / tr14)
         minus_di = 100 * (minus_dm.abs().rolling(window=14).sum() / tr14)
         dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di)
-        df['ADX'] = dx.rolling(window=14).mean()
-        df['Plus_DI'] = plus_di
-        df['Minus_DI'] = minus_di
+        df['ADX_14'] = dx.rolling(window=14).mean()
 
-        # OBV (On-Balance Volume)
+        # Williams %R
+        df['WILLR_14'] = -100 * (high14 - df['close']) / (high14 - low14)
+
+        # CCI
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        df['CCI_14_0.015'] = (tp - tp.rolling(window=14).mean()) / (0.015 * tp.rolling(window=14).std())
+
+        # Volume indicators
+        df['Volume_SMA'] = df['volume'].rolling(window=20).mean()
+        df['Volume_Ratio'] = df['volume'] / df['Volume_SMA']
+
+        # OBV
         obv = [0]
         for i in range(1, len(df)):
-            if df['Close'].iloc[i] > df['Close'].iloc[i-1]:
-                obv.append(obv[-1] + df['Volume'].iloc[i])
-            elif df['Close'].iloc[i] < df['Close'].iloc[i-1]:
-                obv.append(obv[-1] - df['Volume'].iloc[i])
+            if df['close'].iloc[i] > df['close'].iloc[i-1]:
+                obv.append(obv[-1] + df['volume'].iloc[i])
+            elif df['close'].iloc[i] < df['close'].iloc[i-1]:
+                obv.append(obv[-1] - df['volume'].iloc[i])
             else:
                 obv.append(obv[-1])
         df['OBV'] = obv
 
-        # Volume SMA
-        df['Volume_SMA'] = df['Volume'].rolling(window=20).mean()
-        df['Volume_Ratio'] = df['Volume'] / df['Volume_SMA']
+        return df.dropna()
 
-        # Price Rate of Change
-        df['ROC_5'] = ((df['Close'] - df['Close'].shift(5)) / df['Close'].shift(5)) * 100
-        df['ROC_10'] = ((df['Close'] - df['Close'].shift(10)) / df['Close'].shift(10)) * 100
+    def get_feature_columns(self) -> List[str]:
+        """Return feature columns based on available indicators"""
+        if HAS_TA_LIB:
+            return [
+                'EMA_9', 'EMA_21', 'EMA_50', 'SMA_20', 'SMA_50',
+                'MACD_12_26_9', 'MACDs_12_26_9', 'MACDh_12_26_9',
+                'RSI_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
+                'ADX_14', 'ATRr_14', 'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0',
+                'WILLR_14', 'CCI_20_0.015', 'MFI_14', 'OBV'
+            ]
+        else:
+            return [
+                'EMA_9', 'EMA_21', 'EMA_50', 'SMA_20', 'SMA_50',
+                'MACD_12_26_9', 'MACDs_12_26_9', 'MACDh_12_26_9',
+                'RSI_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
+                'ADX_14', 'ATRr_14', 'BBB_20_2.0',
+                'WILLR_14', 'CCI_14_0.015', 'Volume_Ratio'
+            ]
 
-        # Williams %R
-        df['Williams_R'] = -100 * (high14 - df['Close']) / (high14 - low14)
+MARKET_ENGINE = MarketDataEngine()
 
-        # CCI (Commodity Channel Index)
-        tp = (df['High'] + df['Low'] + df['Close']) / 3
-        df['CCI'] = (tp - tp.rolling(window=20).mean()) / (0.015 * tp.rolling(window=20).std())
+# =====================================================================
+# RISK MANAGEMENT (SEBI 2025 Compliant)
+# =====================================================================
+class RiskManager:
+    """SEBI 2025 Compliant Risk Management"""
 
-        # Money Flow Index
-        mf = tp * df['Volume']
-        pos_mf = mf.where(tp > tp.shift(), 0).rolling(window=14).sum()
-        neg_mf = mf.where(tp < tp.shift(), 0).rolling(window=14).sum()
-        df['MFI'] = 100 - (100 / (1 + pos_mf / neg_mf))
+    def check_order_validity(self, symbol: str, side: str, qty: int, price: float, funds_available: float) -> tuple:
+        """Validates order against SEBI Feb 2025 Rules"""
+        # 1. Trading Holiday Check
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if today_str in MARKET_CONFIG["HOLIDAYS_2025"]:
+            return False, "Market Holiday"
 
-        # Trend Strength
-        df['Trend_5'] = np.where(df['Close'] > df['SMA_5'], 1, -1)
-        df['Trend_20'] = np.where(df['Close'] > df['SMA_20'], 1, -1)
-        df['Trend_50'] = np.where(df['Close'] > df['SMA_50'], 1, -1)
+        # 2. Weekend Check
+        if datetime.now().weekday() >= 5:
+            return False, "Weekend - Market Closed"
 
-        # Candlestick Patterns (simplified)
-        df['Body'] = df['Close'] - df['Open']
-        df['Body_Pct'] = df['Body'] / df['Open'] * 100
-        df['Upper_Shadow'] = df['High'] - df[['Open', 'Close']].max(axis=1)
-        df['Lower_Shadow'] = df[['Open', 'Close']].min(axis=1) - df['Low']
+        sec_id = SYMBOL_MAPPER.get_id(symbol)
+        if not sec_id:
+            return False, "Symbol Not Found in Master"
 
-        # Gap Analysis
-        df['Gap'] = df['Open'] - df['Close'].shift(1)
-        df['Gap_Pct'] = df['Gap'] / df['Close'].shift(1) * 100
+        meta = SYMBOL_MAPPER.get_metadata(sec_id)
+        series = meta.get('SEM_SERIES', 'EQ')
 
-        return df
+        # 3. T2T / ESM Ban Check
+        if series in ['BE', 'BZ', 'SM', 'ST']:
+            return False, f"Intraday Banned for Series {series}"
 
-    @staticmethod
-    def get_feature_columns() -> List[str]:
-        """Return list of feature columns for ML training"""
-        return [
-            'SMA_5', 'SMA_10', 'SMA_20', 'SMA_50',
-            'EMA_9', 'EMA_21',
-            'MACD', 'MACD_Signal', 'MACD_Histogram',
-            'RSI', 'BB_Width', 'ATR',
-            'Stoch_K', 'Stoch_D',
-            'ADX', 'Plus_DI', 'Minus_DI',
-            'Volume_Ratio', 'ROC_5', 'ROC_10',
-            'Williams_R', 'CCI', 'MFI',
-            'Trend_5', 'Trend_20', 'Trend_50',
-            'Body_Pct', 'Gap_Pct'
-        ]
+        # 4. 2025 Margin Rules
+        is_option = "CE" in symbol or "PE" in symbol
 
+        if is_option and side == "BUY":
+            # Option Buy: 100% Premium Upfront
+            required_margin = price * qty * MARKET_CONFIG["MARGIN_RULES_2025"]["OPTION_BUY_PREMIUM"]
+        else:
+            # Equity Intraday: ~20% (VaR + ELM)
+            required_margin = price * qty * MARKET_CONFIG["MARGIN_RULES_2025"]["INTRADAY_EQUITY"]
 
+        if funds_available < required_margin:
+            return False, f"Insufficient Funds. Required: ₹{required_margin:.2f}, Available: ₹{funds_available:.2f}"
+
+        return True, "Valid"
+
+    def calculate_position_size(self, capital: float, risk_per_trade: float, stop_loss_pct: float) -> float:
+        """Calculate optimal position size based on risk"""
+        risk_amount = capital * risk_per_trade
+        position_size = risk_amount / stop_loss_pct
+        return round(position_size, 2)
+
+    def get_stop_loss_target(self, price: float, atr: float, signal: str) -> tuple:
+        """Calculate SL and Target based on ATR"""
+        if signal == "BUY":
+            stop_loss = price - (2 * atr)
+            target = price + (3 * atr)
+        elif signal == "SELL":
+            stop_loss = price + (2 * atr)
+            target = price - (3 * atr)
+        else:
+            stop_loss = price
+            target = price
+        return round(stop_loss, 2), round(target, 2)
+
+RISK_ENGINE = RiskManager()
+
+# =====================================================================
+# MODEL TRAINER
+# =====================================================================
 class ModelTrainer:
-    """
-    Train and validate ML models for trading signals
-    """
+    """Train and validate ML models for trading signals"""
 
     def __init__(self, model_store: MLModelStore):
         self.model_store = model_store
         self.training_history = {}
+        self.hyperparams = {
+            "n_estimators": 100,
+            "max_depth": 6,
+            "learning_rate": 0.05
+        }
+
+    def update_hyperparams(self, n_estimators: int, max_depth: int, learning_rate: float):
+        """Update model hyperparameters"""
+        self.hyperparams = {
+            "n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate
+        }
+
+        self.model_store.models['xgboost'] = xgb.XGBClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            learning_rate=learning_rate,
+            objective='multi:softprob',
+            random_state=42,
+            use_label_encoder=False,
+            eval_metric='mlogloss',
+            n_jobs=-1
+        )
+
+        self.model_store.models['lightgbm'] = lgb.LGBMClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            learning_rate=learning_rate,
+            random_state=42,
+            verbose=-1,
+            n_jobs=-1
+        )
+
+        self.model_store.models['random_forest'] = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth + 4,
+            random_state=42,
+            n_jobs=-1
+        )
+
+        logger.info(f"🔧 Updated hyperparameters: {self.hyperparams}")
 
     def prepare_training_data(self, df: pd.DataFrame, lookahead: int = 5) -> tuple:
-        """
-        Prepare features and labels for training
-
-        Labels:
-        - 0 = SELL (price will drop > 1%)
-        - 1 = HOLD (price change < 1%)
-        - 2 = BUY (price will rise > 1%)
-        """
-        df = TechnicalIndicators.calculate_all(df)
+        """Prepare features and labels for training"""
+        df = MARKET_ENGINE.add_features(df)
 
         # Create labels based on future returns
         df['Future_Return'] = (df['Close'].shift(-lookahead) - df['Close']) / df['Close']
@@ -908,14 +830,13 @@ class ModelTrainer:
         df.loc[df['Future_Return'] > 0.01, 'Label'] = 2  # BUY
         df.loc[df['Future_Return'] < -0.01, 'Label'] = 0  # SELL
 
-        # Get features
-        feature_cols = TechnicalIndicators.get_feature_columns()
-
-        # Drop rows with NaN
         df = df.dropna()
 
         if len(df) < 100:
             raise ValueError("Insufficient data for training (need at least 100 samples)")
+
+        # Get available feature columns
+        feature_cols = [col for col in MARKET_ENGINE.get_feature_columns() if col in df.columns]
 
         X = df[feature_cols].values
         y = df['Label'].values
@@ -925,13 +846,12 @@ class ModelTrainer:
     def train_all_models(self, X: np.ndarray, y: np.ndarray, symbol: str) -> Dict[str, Any]:
         """Train all ensemble models"""
         from sklearn.model_selection import train_test_split
-        from sklearn.metrics import accuracy_score, classification_report
+        from sklearn.metrics import accuracy_score
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, shuffle=False
         )
 
-        # Scale features
         scaler = self.model_store.scalers['standard']
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
@@ -943,10 +863,7 @@ class ModelTrainer:
         xgb_model = self.model_store.get_model('xgboost')
         xgb_model.fit(X_train_scaled, y_train)
         xgb_pred = xgb_model.predict(X_test_scaled)
-        results['xgboost'] = {
-            'accuracy': accuracy_score(y_test, xgb_pred),
-            'predictions': len(xgb_pred)
-        }
+        results['xgboost'] = {'accuracy': accuracy_score(y_test, xgb_pred)}
         logger.info(f"✅ XGBoost accuracy: {results['xgboost']['accuracy']:.2%}")
 
         # Train LightGBM
@@ -954,10 +871,7 @@ class ModelTrainer:
         lgb_model = self.model_store.get_model('lightgbm')
         lgb_model.fit(X_train_scaled, y_train)
         lgb_pred = lgb_model.predict(X_test_scaled)
-        results['lightgbm'] = {
-            'accuracy': accuracy_score(y_test, lgb_pred),
-            'predictions': len(lgb_pred)
-        }
+        results['lightgbm'] = {'accuracy': accuracy_score(y_test, lgb_pred)}
         logger.info(f"✅ LightGBM accuracy: {results['lightgbm']['accuracy']:.2%}")
 
         # Train Random Forest
@@ -965,10 +879,7 @@ class ModelTrainer:
         rf_model = self.model_store.get_model('random_forest')
         rf_model.fit(X_train_scaled, y_train)
         rf_pred = rf_model.predict(X_test_scaled)
-        results['random_forest'] = {
-            'accuracy': accuracy_score(y_test, rf_pred),
-            'predictions': len(rf_pred)
-        }
+        results['random_forest'] = {'accuracy': accuracy_score(y_test, rf_pred)}
         logger.info(f"✅ Random Forest accuracy: {results['random_forest']['accuracy']:.2%}")
 
         # Store training history
@@ -979,79 +890,302 @@ class ModelTrainer:
             'results': results
         }
 
-        # Store trained state
-        self.model_store.trained_symbols = getattr(self.model_store, 'trained_symbols', set())
         self.model_store.trained_symbols.add(symbol.upper())
 
         return results
 
-
-# Initialize global instances
-MARKET_DATA = MarketDataFetcher()
 MODEL_TRAINER = ModelTrainer(MODEL_STORE)
 
+# =====================================================================
+# SENTIMENT ANALYZER
+# =====================================================================
+class SentimentAnalyzer:
+    """Multi-source sentiment analysis"""
 
-class TrainingRequest(BaseModel):
-    symbol: str
-    historical_days: int = 365
-    lookahead_days: int = 5
+    def analyze(self, text: str) -> tuple:
+        """Returns (sentiment, confidence)"""
+        if HAS_TRANSFORMERS and MODEL_STORE.get_model('transformer_sentiment'):
+            try:
+                result = MODEL_STORE.get_model('transformer_sentiment')(text[:512])[0]
+                return result['label'], result['score']
+            except:
+                pass
 
-class TrainingResponse(BaseModel):
-    status: str
-    symbol: str
-    historical_days: int
-    samples_used: int
-    features_count: int
-    model_accuracies: Dict[str, float]
-    training_time_seconds: float
-    timestamp: str
+        if HAS_NLTK and MODEL_STORE.get_model('nltk_sentiment'):
+            try:
+                scores = MODEL_STORE.get_model('nltk_sentiment').polarity_scores(text)
+                compound = scores['compound']
+                if compound >= 0.05:
+                    return "POSITIVE", abs(compound)
+                elif compound <= -0.05:
+                    return "NEGATIVE", abs(compound)
+                else:
+                    return "NEUTRAL", 0.5
+            except:
+                pass
+
+        return "NEUTRAL", 0.5
+
+    def aggregate_headlines(self, headlines: List[str]) -> float:
+        """Aggregate sentiment score from multiple headlines (-1 to 1)"""
+        if not headlines:
+            return 0.0
+
+        scores = []
+        for headline in headlines:
+            sentiment, confidence = self.analyze(headline)
+            if sentiment == "POSITIVE":
+                scores.append(confidence)
+            elif sentiment == "NEGATIVE":
+                scores.append(-confidence)
+            else:
+                scores.append(0)
+
+        return sum(scores) / len(scores) if scores else 0.0
+
+SENTIMENT_ANALYZER = SentimentAnalyzer()
+
+# =====================================================================
+# API ENDPOINTS
+# =====================================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Bootstrap application state"""
+    await SYMBOL_MAPPER.refresh()
+    logger.info("🚀 InfinityAI Engine B Started")
+
+@app.get("/healthz")
+@app.get("/health")
+@app.get("/api/health")
+async def healthz():
+    return {
+        "status": "healthy",
+        "service": "engine-b-ai-ml-prod",
+        "version": MODEL_STORE.version,
+        "capabilities": MODEL_STORE.capabilities,
+        "dhan_connected": MARKET_ENGINE.dhan is not None,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/")
+async def root():
+    return {
+        "service": "InfinityAI.Pro Engine B (AI/ML Signal Generation)",
+        "status": "ready",
+        "version": MODEL_STORE.version,
+        "models": list(MODEL_STORE.models.keys()),
+        "trained_symbols": list(MODEL_STORE.trained_symbols),
+        "capabilities": MODEL_STORE.capabilities
+    }
+
+@app.get("/api/v1/capabilities")
+async def get_capabilities():
+    return MODEL_STORE.get_capabilities()
+
+@app.get("/api/v1/market/status")
+async def market_status():
+    """Returns current market status based on 2025 calendar"""
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+
+    is_holiday = date_str in MARKET_CONFIG["HOLIDAYS_2025"]
+    is_weekend = now.weekday() >= 5
+
+    market_open = now.replace(hour=9, minute=15, second=0)
+    market_close = now.replace(hour=15, minute=30, second=0)
+    is_open_time = market_open <= now <= market_close
+
+    status = "CLOSED"
+    if not is_holiday and not is_weekend and is_open_time:
+        status = "OPEN"
+
+    next_holiday = next((h for h in MARKET_CONFIG["HOLIDAYS_2025"] if h > date_str), "2026-01-01")
+
+    return {
+        "status": status,
+        "is_holiday": is_holiday,
+        "is_weekend": is_weekend,
+        "server_time": now.isoformat(),
+        "next_holiday": next_holiday,
+        "trading_sessions": MARKET_CONFIG["TRADING_SESSIONS"]
+    }
+
+@app.post("/api/v1/signal", response_model=SignalResponse)
+async def generate_signal(req: SignalRequest):
+    """Generate trading signal with ML + Technical + Sentiment analysis"""
+    symbol = req.symbol.upper()
+
+    # Fetch data
+    df, data_source = await MARKET_ENGINE.fetch_data(symbol, days=200)
+    if df.empty or len(df) < 50:
+        raise HTTPException(status_code=404, detail=f"Insufficient data for {symbol}")
+
+    # Normalize column names to lowercase if needed
+    df.columns = [c.lower() for c in df.columns]
+    current_price = float(df['close'].iloc[-1])
+
+    # Add features
+    df_features = MARKET_ENGINE.add_features(df)
+    if df_features.empty:
+        raise HTTPException(status_code=500, detail="Feature calculation failed")
+
+    latest = df_features.iloc[-1]
+
+    # Initialize scoring
+    score = 0
+    reasons = []
+
+    # RSI Analysis
+    rsi = latest.get('RSI_14')
+    if rsi is not None:
+        if rsi < 30:
+            score += 2
+            reasons.append("RSI Oversold")
+        elif rsi > 70:
+            score -= 2
+            reasons.append("RSI Overbought")
+
+    # EMA Trend
+    ema_50 = latest.get('EMA_50')
+    if ema_50 is not None:
+        if current_price > ema_50:
+            score += 1
+            reasons.append("Above EMA 50")
+        else:
+            score -= 1
+            reasons.append("Below EMA 50")
+
+    # MACD
+    macd = latest.get('MACD_12_26_9')
+    macd_signal = latest.get('MACDs_12_26_9')
+    if macd is not None and macd_signal is not None:
+        if macd > macd_signal:
+            score += 1
+            reasons.append("MACD Bullish")
+        else:
+            score -= 1
+            reasons.append("MACD Bearish")
+
+    # ADX Trend Strength
+    adx = latest.get('ADX_14')
+    if adx is not None and adx > 25:
+        score = int(score * 1.5)
+        reasons.append(f"Strong Trend (ADX: {adx:.1f})")
+
+    # Sentiment Analysis (if headlines provided)
+    sentiment_score = None
+    if req.news_headlines:
+        sentiment_score = SENTIMENT_ANALYZER.aggregate_headlines(req.news_headlines)
+        if sentiment_score > 0.3:
+            score += 2
+            reasons.append(f"Positive Sentiment ({sentiment_score:.2f})")
+        elif sentiment_score < -0.3:
+            score -= 2
+            reasons.append(f"Negative Sentiment ({sentiment_score:.2f})")
+
+    # ML Model Enhancement (if trained)
+    ml_used = False
+    if symbol in MODEL_STORE.trained_symbols:
+        try:
+            feature_cols = [c for c in MARKET_ENGINE.get_feature_columns() if c in df_features.columns]
+            X = df_features[feature_cols].iloc[-1:].values
+            X_scaled = MODEL_STORE.scalers['standard'].transform(X)
+
+            predictions = []
+            for model_name in ['xgboost', 'lightgbm', 'random_forest']:
+                model = MODEL_STORE.get_model(model_name)
+                if model:
+                    pred = model.predict(X_scaled)[0]
+                    predictions.append(pred)
+
+            if predictions:
+                from collections import Counter
+                vote = Counter(predictions).most_common(1)[0][0]
+                if vote == 2:
+                    score += 2
+                elif vote == 0:
+                    score -= 2
+                ml_used = True
+                reasons.append("ML Model Confirmation")
+        except Exception as e:
+            logger.warning(f"ML inference failed: {e}")
+
+    # Determine final signal
+    if score >= 3:
+        signal = "BUY"
+    elif score <= -3:
+        signal = "SELL"
+    else:
+        signal = "HOLD"
+
+    # Calculate confidence
+    confidence = min(95, max(30, 50 + abs(score) * 8))
+
+    # Risk calculations
+    atr = latest.get('ATRr_14', current_price * 0.02)
+    stop_loss, target = RISK_ENGINE.get_stop_loss_target(current_price, atr, signal)
+
+    # Predicted price
+    if signal == "BUY":
+        predicted_price = round(current_price * 1.02, 2)
+    elif signal == "SELL":
+        predicted_price = round(current_price * 0.98, 2)
+    else:
+        predicted_price = round(current_price, 2)
+
+    return SignalResponse(
+        symbol=symbol,
+        signal=signal,
+        confidence=confidence,
+        predicted_price=predicted_price,
+        current_price=round(current_price, 2),
+        stop_loss=stop_loss,
+        target=target,
+        timestamp=datetime.utcnow().isoformat(),
+        model_version=MODEL_STORE.version + ("-ml" if ml_used else "-rules"),
+        sentiment_score=sentiment_score,
+        data_source=data_source,
+        analysis={
+            "rsi": round(rsi, 2) if rsi else None,
+            "adx": round(adx, 2) if adx else None,
+            "trend": "Bullish" if score > 0 else "Bearish" if score < 0 else "Neutral",
+            "key_factors": reasons,
+            "score": score
+        }
+    )
+
+@app.post("/api/v1/sentiment", response_model=SentimentResponse)
+async def analyze_sentiment(req: SentimentRequest):
+    """Analyze sentiment of news/text"""
+    sentiment, confidence = SENTIMENT_ANALYZER.analyze(req.text)
+    return SentimentResponse(
+        text=req.text[:100] + "..." if len(req.text) > 100 else req.text,
+        sentiment=sentiment,
+        confidence=confidence,
+        timestamp=datetime.utcnow().isoformat()
+    )
 
 @app.post("/api/v1/train", response_model=TrainingResponse)
 async def train_model(req: TrainingRequest):
-    """
-    Train ML models on historical market data
-
-    Process:
-    1. Fetch historical OHLCV data (DhanHQ/Synthetic)
-    2. Calculate 30+ technical indicators
-    3. Prepare training labels (BUY/HOLD/SELL)
-    4. Train XGBoost, LightGBM, Random Forest
-    5. Return accuracy metrics
-
-    Args:
-        symbol: Stock/Index symbol (NIFTY, BANKNIFTY, RELIANCE, etc.)
-        historical_days: Number of days of historical data (default: 365)
-        lookahead_days: Days to look ahead for label generation (default: 5)
-    """
-    import time
+    """Train ML models with hyperparameter tuning"""
     start_time = time.time()
 
     try:
-        logger.info(f"🎓 Starting training for {req.symbol} with {req.historical_days} days data")
+        logger.info(f"🎓 Training {req.symbol} with {req.historical_days} days data")
 
-        # 1. Fetch historical data
-        df = await MARKET_DATA.fetch_historical_data(
-            symbol=req.symbol,
-            days=req.historical_days
+        MODEL_TRAINER.update_hyperparams(
+            n_estimators=req.n_estimators,
+            max_depth=req.max_depth,
+            learning_rate=req.learning_rate
         )
 
-        if df is None or len(df) < 100:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Insufficient data for {req.symbol}. Need at least 100 data points."
-            )
+        df, data_source = await MARKET_ENGINE.fetch_data(req.symbol, days=req.historical_days)
 
-        logger.info(f"📊 Fetched {len(df)} data points for {req.symbol}")
+        if df.empty or len(df) < 100:
+            raise HTTPException(status_code=400, detail=f"Insufficient data for {req.symbol}")
 
-        # 2. Prepare training data with indicators
-        X, y, feature_cols = MODEL_TRAINER.prepare_training_data(
-            df,
-            lookahead=req.lookahead_days
-        )
-
-        logger.info(f"🔧 Prepared {len(X)} samples with {len(feature_cols)} features")
-
-        # 3. Train all models
+        X, y, feature_cols = MODEL_TRAINER.prepare_training_data(df, lookahead=req.lookahead_days)
         results = MODEL_TRAINER.train_all_models(X, y, req.symbol)
 
         training_time = time.time() - start_time
@@ -1062,12 +1196,9 @@ async def train_model(req: TrainingRequest):
             historical_days=req.historical_days,
             samples_used=len(X),
             features_count=len(feature_cols),
-            model_accuracies={
-                "xgboost": round(results['xgboost']['accuracy'], 4),
-                "lightgbm": round(results['lightgbm']['accuracy'], 4),
-                "random_forest": round(results['random_forest']['accuracy'], 4)
-            },
+            model_accuracies={k: round(v['accuracy'], 4) for k, v in results.items()},
             training_time_seconds=round(training_time, 2),
+            data_source=data_source,
             timestamp=datetime.utcnow().isoformat()
         )
 
@@ -1075,37 +1206,47 @@ async def train_model(req: TrainingRequest):
         logger.error(f"❌ Training failed: {e}")
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
-
 @app.get("/api/v1/training/status")
 async def get_training_status():
-    """Get status of trained models and training history"""
-    trained_symbols = getattr(MODEL_STORE, 'trained_symbols', set())
-
+    """Get training status and history"""
     return {
-        "trained_symbols": list(trained_symbols),
+        "trained_symbols": list(MODEL_STORE.trained_symbols),
         "training_history": MODEL_TRAINER.training_history,
+        "hyperparameters": MODEL_TRAINER.hyperparams,
         "models_status": {
-            "xgboost": "trained" if trained_symbols else "not_trained",
-            "lightgbm": "trained" if trained_symbols else "not_trained",
-            "random_forest": "trained" if trained_symbols else "not_trained"
+            "xgboost": "trained" if MODEL_STORE.trained_symbols else "not_trained",
+            "lightgbm": "trained" if MODEL_STORE.trained_symbols else "not_trained",
+            "random_forest": "trained" if MODEL_STORE.trained_symbols else "not_trained"
         },
         "timestamp": datetime.utcnow().isoformat()
     }
 
+@app.get("/api/v1/data/sources")
+async def get_data_source_stats():
+    """Get data source statistics"""
+    return {
+        "dhan_client_available": MARKET_ENGINE.dhan is not None,
+        "fetch_stats": MARKET_ENGINE.data_source_stats,
+        "symbol_mapper_loaded": len(SYMBOL_MAPPER.symbol_map) > 0,
+        "symbols_count": len(SYMBOL_MAPPER.symbol_map),
+        "cache_size": len(MARKET_ENGINE.cache),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/config/market")
+async def get_market_config():
+    """Get SEBI 2025 market configuration"""
+    return MARKET_CONFIG
 
 @app.get("/api/v1/market/knowledge")
 async def get_market_knowledge():
-    """
-    Return comprehensive Indian stock market knowledge
-    Useful for understanding market mechanics and trading parameters
-    """
+    """Comprehensive market knowledge"""
     return {
         "exchange_info": {
             "nse": {
                 "name": "National Stock Exchange of India",
                 "indices": ["NIFTY 50", "NIFTY BANK", "NIFTY IT", "NIFTY MIDCAP 100"],
-                "trading_hours": "09:15 - 15:30 IST",
-                "holidays": "Approximately 14-15 per year"
+                "trading_hours": "09:15 - 15:30 IST"
             },
             "bse": {
                 "name": "Bombay Stock Exchange",
@@ -1113,55 +1254,50 @@ async def get_market_knowledge():
                 "trading_hours": "09:15 - 15:30 IST"
             }
         },
-        "trading_sessions": MARKET_DATA.MARKET_KNOWLEDGE["trading_sessions"],
-        "derivatives": {
-            "expiry_days": MARKET_DATA.MARKET_KNOWLEDGE["expiry_days"],
-            "lot_sizes": MARKET_DATA.MARKET_KNOWLEDGE["lot_sizes"],
-            "margin_requirements": MARKET_DATA.MARKET_KNOWLEDGE["margin_requirements"]
-        },
-        "risk_management": {
-            "circuit_limits": MARKET_DATA.MARKET_KNOWLEDGE["circuit_limits"],
-            "recommendations": {
-                "max_position_size": "2-5% of portfolio per trade",
-                "stop_loss": "Always use stop-loss orders",
-                "diversification": "Minimum 5-10 stocks across sectors"
-            }
-        },
-        "supported_symbols": list(MARKET_DATA.NSE_SECURITY_IDS.keys()),
-        "technical_indicators": TechnicalIndicators.get_feature_columns(),
+        "trading_sessions": MARKET_CONFIG["TRADING_SESSIONS"],
+        "lot_sizes_2025": MARKET_CONFIG["LOT_SIZES"],
+        "expiry_days": MARKET_CONFIG["EXPIRY_DAYS"],
+        "margin_rules_2025": MARKET_CONFIG["MARGIN_RULES_2025"],
+        "holidays_2025": MARKET_CONFIG["HOLIDAYS_2025"],
+        "supported_symbols": list(SYMBOL_MAPPER.symbol_map.keys())[:50],
         "ml_models": {
             "ensemble": ["XGBoost", "LightGBM", "Random Forest"],
             "nlp": ["NLTK VADER", "Transformers (DistilBERT)"],
-            "signal_types": ["BUY", "HOLD", "SELL"],
-            "confidence_range": "0.0 - 1.0"
+            "signal_types": ["BUY", "HOLD", "SELL"]
         }
     }
 
+@app.post("/api/v1/signal/batch")
+async def generate_batch_signals(symbols: List[str], fast: bool = True):
+    """Generate signals for multiple symbols"""
+    if len(symbols) > 50:
+        raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
+
+    signals = []
+    for symbol in symbols:
+        try:
+            signal = await generate_signal(SignalRequest(symbol=symbol, fast=fast))
+            signals.append(signal)
+        except Exception as e:
+            logger.error(f"Batch signal error for {symbol}: {e}")
+
+    return {
+        "signals": signals,
+        "total": len(signals),
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 @app.post("/api/v1/train/batch")
 async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK"]):
-    """
-    Train models on multiple symbols in batch
-    Useful for portfolio-level model training
-    """
+    """Train models on multiple symbols"""
     results = {}
 
     for symbol in symbols:
         try:
-            response = await train_model(TrainingRequest(
-                symbol=symbol,
-                historical_days=365,
-                lookahead_days=5
-            ))
-            results[symbol] = {
-                "status": "success",
-                "accuracy": response.model_accuracies
-            }
+            response = await train_model(TrainingRequest(symbol=symbol))
+            results[symbol] = {"status": "success", "accuracy": response.model_accuracies}
         except Exception as e:
-            results[symbol] = {
-                "status": "failed",
-                "error": str(e)
-            }
+            results[symbol] = {"status": "failed", "error": str(e)}
 
     return {
         "batch_results": results,
@@ -1169,6 +1305,27 @@ async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIAN
         "failed": sum(1 for r in results.values() if r["status"] == "failed"),
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@app.get("/api/v1/models")
+async def list_models():
+    """List all available ML models"""
+    model_info = {
+        'xgboost': {'type': 'gradient_boosting', 'framework': 'xgboost'},
+        'lightgbm': {'type': 'gradient_boosting', 'framework': 'lightgbm'},
+        'random_forest': {'type': 'ensemble', 'framework': 'scikit-learn'},
+        'transformer_sentiment': {'type': 'nlp', 'framework': 'transformers'},
+        'nltk_sentiment': {'type': 'nlp', 'framework': 'nltk'}
+    }
+
+    return [
+        {
+            "name": name,
+            "type": meta['type'],
+            "framework": meta['framework'],
+            "status": 'loaded' if MODEL_STORE.get_model(name) else 'not_available'
+        }
+        for name, meta in model_info.items()
+    ]
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
