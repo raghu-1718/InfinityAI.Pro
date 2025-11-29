@@ -147,10 +147,13 @@ ENGINE_C_URL = os.getenv("ENGINE_C_URL", "http://engine-execution:8080")
 
 # --- Health & Root ---
 @app.get("/healthz")
+@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {
         "status": "healthy",
         "service": "engine-a-orchestrator",
+        "version": "3.2-health",
         "ml_capabilities": ["risk_scoring", "position_sizing", "var_calculation"],
         "timestamp": datetime.utcnow().isoformat()
     }

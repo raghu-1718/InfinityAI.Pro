@@ -195,6 +195,8 @@ def get_dhan_client():
 
 # --- Health & Root ---
 @app.get("/healthz")
+@app.get("/health")
+@app.get("/api/health")
 async def healthz():
     return {
         "status": "healthy",

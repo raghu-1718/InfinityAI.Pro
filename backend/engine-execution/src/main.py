@@ -227,11 +227,14 @@ def get_dhan_client() -> dhanhq:
 
 # --- Health & Root ---
 @app.get("/healthz")
+@app.get("/health")
+@app.get("/api/health")
 async def healthz():
     return {
         "status": "healthy",
         "service": "engine-c-execution",
         "broker": "DhanHQ",
+        "version": "3.2-health",
         "ml_capabilities": ["slippage_prediction", "order_timing", "order_splitting"],
         "timestamp": datetime.utcnow().isoformat()
     }
