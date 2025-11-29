@@ -1,5 +1,6 @@
 # =====================================================================
-# InfinityAI.Pro - Engine B (AI/ML Signal Generation)
+# InfinityAI.Pro - Engine B (AI/ML) - Minimal Dependencies
+# For quick deployment without heavy ML frameworks
 # =====================================================================
 
 # Web Framework & API
@@ -16,31 +17,32 @@ dhanhq==2.0.2
 google-cloud-secret-manager==2.20.0
 
 # =====================================================================
-# Core ML - Gradient Boosting (Primary Signal Models)
+# Machine Learning Libraries (Lightweight)
 # =====================================================================
+scikit-learn==1.4.2
 xgboost==2.1.1
 lightgbm==4.3.0
-catboost>=1.2.0
 
 # =====================================================================
-# NLP & Sentiment Analysis
-# =====================================================================
-transformers>=4.35.0
-nltk>=3.8.1
-# Note: spaCy removed to reduce image size - use transformers instead
-
-# =====================================================================
-# Data Processing & Technical Analysis
+# Data Processing & Analysis
 # =====================================================================
 pandas==2.1.4
 numpy>=1.24.0
-scikit-learn==1.4.2
 statsmodels==0.14.1
 joblib==1.3.2
 
 # =====================================================================
-# Utilities
+# NOTE: Heavy ML frameworks can be enabled by using requirements.txt
+# instead of requirements-minimal.txt in Dockerfile
+#
+# Heavy frameworks (not included here):
+# - tensorflow>=2.15.0 (~600MB)
+# - torch>=2.1.0 (~800MB)
+# - keras>=3.0.0 (~50MB)
+# - transformers>=4.35.0 (~500MB)
+# - nltk>=3.8.1 (~20MB + data)
+# - spacy>=3.7.0 (~50MB + models)
+# - opencv-python>=4.8.0 (~100MB)
+# - mlflow>=2.9.0 (~50MB)
+# - h2o>=3.44.0 (~300MB)
 # =====================================================================
-PyYAML==6.0.1
-python-multipart>=0.0.6
-aiofiles>=23.2.1

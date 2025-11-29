@@ -1,16 +1,113 @@
 import os
 import asyncio
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+import logging
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google.cloud import secretmanager
 import httpx
 import uvicorn
 
-app = FastAPI(title="InfinityAI.Pro - Engine A (Orchestration & Dhan Auth)")
+# ML Libraries for Risk & Portfolio Management
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.covariance import LedoitWolf
+import joblib
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="InfinityAI.Pro - Engine A (Orchestration & Risk Management)",
+    description="Orchestration, OAuth, Risk Scoring & Portfolio Optimization",
+    version="3.1-ml"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Risk Management ML Models ---
+class RiskManager:
+    """ML-based risk assessment and portfolio optimization"""
+
+    def __init__(self):
+        self.scaler = StandardScaler()
+        self.covariance_estimator = LedoitWolf()
+        self.risk_thresholds = {
+            "low": 0.3,
+            "medium": 0.6,
+            "high": 1.0
+        }
+        logger.info("✅ Risk Manager initialized")
+
+    def calculate_var(self, returns: np.ndarray, confidence: float = 0.95) -> float:
+        """Calculate Value at Risk (VaR)"""
+        if len(returns) == 0:
+            return 0.0
+        return float(np.percentile(returns, (1 - confidence) * 100))
+
+    def calculate_sharpe_ratio(self, returns: np.ndarray, risk_free_rate: float = 0.05) -> float:
+        """Calculate Sharpe Ratio"""
+        if len(returns) == 0 or np.std(returns) == 0:
+            return 0.0
+        excess_returns = np.mean(returns) - risk_free_rate / 252
+        return float(excess_returns / np.std(returns) * np.sqrt(252))
+
+    def score_risk(self, position_size: float, volatility: float, max_drawdown: float) -> Dict[str, Any]:
+        """Score risk for a trade"""
+        # Normalize inputs
+        size_score = min(position_size / 100000, 1.0)  # Normalize by max position
+        vol_score = min(volatility / 0.5, 1.0)  # Normalize by max volatility
+        dd_score = min(abs(max_drawdown) / 0.2, 1.0)  # Normalize by max drawdown
+
+        # Weighted risk score
+        risk_score = 0.3 * size_score + 0.4 * vol_score + 0.3 * dd_score
+
+        # Determine risk level
+        if risk_score < self.risk_thresholds["low"]:
+            risk_level = "LOW"
+        elif risk_score < self.risk_thresholds["medium"]:
+            risk_level = "MEDIUM"
+        else:
+            risk_level = "HIGH"
+
+        return {
+            "risk_score": round(risk_score, 4),
+            "risk_level": risk_level,
+            "components": {
+                "position_size_risk": round(size_score, 4),
+                "volatility_risk": round(vol_score, 4),
+                "drawdown_risk": round(dd_score, 4)
+            },
+            "recommendation": "PROCEED" if risk_score < 0.7 else "REVIEW"
+        }
+
+    def optimize_position_size(self, capital: float, risk_per_trade: float,
+                                stop_loss_pct: float) -> Dict[str, Any]:
+        """Calculate optimal position size based on risk parameters"""
+        risk_amount = capital * risk_per_trade
+        position_size = risk_amount / stop_loss_pct if stop_loss_pct > 0 else 0
+
+        return {
+            "optimal_position_size": round(position_size, 2),
+            "risk_amount": round(risk_amount, 2),
+            "max_loss": round(risk_amount, 2),
+            "position_pct_of_capital": round((position_size / capital) * 100, 2) if capital > 0 else 0
+        }
+
+RISK_MANAGER = RiskManager()
 
 # --- Secret Manager Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
@@ -34,6 +131,16 @@ class OrchestrateRequest(BaseModel):
 class DhanTokenExchangeRequest(BaseModel):
     code: str
 
+class RiskScoreRequest(BaseModel):
+    position_size: float
+    volatility: float = 0.2
+    max_drawdown: float = 0.05
+
+class PositionSizeRequest(BaseModel):
+    capital: float
+    risk_per_trade: float = 0.02
+    stop_loss_pct: float = 0.05
+
 # --- Config ---
 ENGINE_B_URL = os.getenv("ENGINE_B_URL", "http://engine-core:8080")
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", "http://engine-execution:8080")
@@ -41,15 +148,37 @@ ENGINE_C_URL = os.getenv("ENGINE_C_URL", "http://engine-execution:8080")
 # --- Health & Root ---
 @app.get("/healthz")
 async def health_check():
-    return {"status": "healthy", "service": "engine-a-orchestrator", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "status": "healthy",
+        "service": "engine-a-orchestrator",
+        "ml_capabilities": ["risk_scoring", "position_sizing", "var_calculation"],
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 @app.get("/")
 async def root():
     return {
-        "service": "InfinityAI.Pro Engine A (Orchestration & Dhan OAuth)",
+        "service": "InfinityAI.Pro Engine A (Orchestration & Risk Management)",
         "status": "ready",
-        "version": "3.0-dhan-only"
+        "version": "3.1-ml",
+        "ml_features": ["Risk Scoring", "Position Sizing", "VaR Calculation", "Sharpe Ratio"]
     }
+
+# --- Risk Management Endpoints ---
+@app.post("/api/v1/risk/score")
+async def calculate_risk_score(req: RiskScoreRequest):
+    """Calculate risk score for a potential trade"""
+    return RISK_MANAGER.score_risk(req.position_size, req.volatility, req.max_drawdown)
+
+@app.post("/api/v1/risk/position-size")
+async def calculate_position_size(req: PositionSizeRequest):
+    """Calculate optimal position size based on risk parameters"""
+    return RISK_MANAGER.optimize_position_size(req.capital, req.risk_per_trade, req.stop_loss_pct)
+
+@app.get("/api/v1/risk/thresholds")
+async def get_risk_thresholds():
+    """Get current risk thresholds"""
+    return RISK_MANAGER.risk_thresholds
 
 # --- DhanHQ OAuth Endpoints ---
 @app.get("/api/auth/dhan/login")

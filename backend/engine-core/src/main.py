@@ -11,33 +11,28 @@ from dhanhq import dhanhq
 import uvicorn
 from google.cloud import secretmanager
 
-# ML/AI Libraries
+# ML/AI Libraries - Gradient Boosting Focus
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
-# Deep Learning (optional imports - fail gracefully)
-try:
-    import tensorflow as tf
-    HAS_TENSORFLOW = True
-except ImportError:
-    HAS_TENSORFLOW = False
-
-try:
-    import torch
-    HAS_PYTORCH = True
-except ImportError:
-    HAS_PYTORCH = False
-
+# NLP for Sentiment
 try:
     from transformers import pipeline
     HAS_TRANSFORMERS = True
 except ImportError:
     HAS_TRANSFORMERS = False
+
+try:
+    import nltk
+    from nltk.sentiment import SentimentIntensityAnalyzer
+    HAS_NLTK = True
+except ImportError:
+    HAS_NLTK = False
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -45,8 +40,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (AI/ML Signal Generation)",
-    description="Advanced ML/AI backend for trading signal generation",
-    version="3.0-enterprise"
+    description="XGBoost, LightGBM, CatBoost for Trading Signals + NLP Sentiment",
+    version="3.1-ml"
 )
 
 # Add CORS middleware
@@ -86,61 +81,78 @@ class SignalResponse(BaseModel):
 
 # --- ML Model Store ---
 class MLModelStore:
-    """Centralized ML model management"""
+    """Centralized ML model management - Gradient Boosting Focus"""
 
     def __init__(self):
         self.models = {}
         self.scalers = {}
-        self.version = "ai-ml-3.0-enterprise"
+        self.version = "ai-ml-3.1-gradient-boost"
         self.capabilities = {
-            "tensorflow": HAS_TENSORFLOW,
-            "pytorch": HAS_PYTORCH,
-            "transformers": HAS_TRANSFORMERS,
-            "sklearn": True,
             "xgboost": True,
-            "lightgbm": True
+            "lightgbm": True,
+            "random_forest": True,
+            "transformers": HAS_TRANSFORMERS,
+            "nltk_sentiment": HAS_NLTK
         }
         self._initialize_models()
 
     def _initialize_models(self):
         """Initialize ML models on startup"""
         try:
-            logger.info("🤖 Initializing ML models...")
+            logger.info("🤖 Initializing Gradient Boosting ML models...")
 
-            # Initialize traditional ML models
-            self.models['random_forest'] = RandomForestClassifier(
-                n_estimators=100,
-                max_depth=10,
-                random_state=42
-            )
-
+            # XGBoost - Primary signal model
             self.models['xgboost'] = xgb.XGBClassifier(
                 n_estimators=100,
                 max_depth=6,
                 learning_rate=0.1,
-                random_state=42
+                objective='multi:softprob',
+                random_state=42,
+                use_label_encoder=False,
+                eval_metric='mlogloss'
             )
+            logger.info("✅ XGBoost initialized")
 
+            # LightGBM - Fast inference
             self.models['lightgbm'] = lgb.LGBMClassifier(
                 n_estimators=100,
                 max_depth=6,
                 learning_rate=0.1,
-                random_state=42
+                random_state=42,
+                verbose=-1
             )
+            logger.info("✅ LightGBM initialized")
+
+            # Random Forest - Ensemble baseline
+            self.models['random_forest'] = RandomForestClassifier(
+                n_estimators=100,
+                max_depth=10,
+                random_state=42,
+                n_jobs=-1
+            )
+            logger.info("✅ RandomForest initialized")
 
             # Initialize scaler
             self.scalers['standard'] = StandardScaler()
 
-            # Initialize sentiment analyzer if transformers available
+            # Initialize NLTK sentiment (lightweight)
+            if HAS_NLTK:
+                try:
+                    self.models['nltk_sentiment'] = SentimentIntensityAnalyzer()
+                    logger.info("✅ NLTK VADER sentiment initialized")
+                except Exception as e:
+                    logger.warning(f"⚠️ NLTK sentiment init failed: {e}")
+
+            # Initialize Transformers sentiment (if available)
             if HAS_TRANSFORMERS:
                 try:
-                    self.models['sentiment'] = pipeline(
+                    self.models['transformer_sentiment'] = pipeline(
                         "sentiment-analysis",
                         model="distilbert-base-uncased-finetuned-sst-2-english"
                     )
-                    logger.info("✅ Sentiment analysis model loaded")
+                    logger.info("✅ Transformer sentiment model loaded")
                 except Exception as e:
-                    logger.warning(f"⚠️ Sentiment model initialization failed: {e}")
+                    logger.warning(f"⚠️ Transformer sentiment init failed: {e}")
 
             logger.info(f"✅ ML models initialized: {list(self.models.keys())}")
 
