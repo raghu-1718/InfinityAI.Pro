@@ -1,4 +1,6 @@
-fastapi
-uvicorn[standard]
-httpx
-dhanhq>=2.1.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+httpx>=0.24.0
+dhanhq==2.0.2
+google-cloud-secret-manager>=2.16.0
+pydantic>=2.0.0
