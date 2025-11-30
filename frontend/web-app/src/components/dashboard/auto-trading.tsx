@@ -171,30 +171,57 @@ export function AutoTradingCard() {
     setStatusMessage(isPaused ? '▶️ Trading resumed' : '⏸️ Trading paused');
   };
 
-  // Simulate trading activity (in production, this would connect to real trading logic)
+  // Real trading activity - uses actual API to execute trades based on signals
   useEffect(() => {
     if (!session.isActive || isPaused) return;
 
-    const interval = setInterval(() => {
-      // Simulate checking for signals and executing trades
+    const interval = setInterval(async () => {
+      // Check for high-confidence signals and execute real trades
       if (activeSignals.length > 0 && session.tradesExecuted < maxTradesPerDay) {
-        const randomPnL = (Math.random() - 0.45) * 500; // Slightly positive bias
-        setSession((prev) => ({
-          ...prev,
-          tradesExecuted: prev.tradesExecuted + 1,
-          totalPnL: prev.totalPnL + randomPnL,
-          winRate: randomPnL > 0
-            ? ((prev.winRate * prev.tradesExecuted + 1) / (prev.tradesExecuted + 1)) * 100
-            : ((prev.winRate * prev.tradesExecuted) / (prev.tradesExecuted + 1)) * 100,
-        }));
-        setStatusMessage(`📊 Trade executed! ${randomPnL > 0 ? 'Profit' : 'Loss'}: ${formatCurrency(Math.abs(randomPnL))}`);
+        const signal = activeSignals.find((s: any) =>
+          s.confidence >= riskConfigs[riskLevel as keyof typeof riskConfigs].minConfidence &&
+          (s.signal === 'BUY' || s.signal === 'SELL')
+        );
+
+        if (signal) {
+          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} (${(signal.confidence * 100).toFixed(0)}% confidence). Executing...`);
+
+          try {
+            // Use real startTrade mutation through Engine A orchestration
+            await placeOrderMutation.mutateAsync({
+              transaction_type: signal.signal,
+              exchange_segment: 'NSE_EQ',
+              product_type: 'INTRADAY',
+              order_type: 'MARKET',
+              validity: 'DAY',
+              security_id: signal.security_id || signal.symbol,
+              quantity: Math.floor(tradingAmount / (signal.current_price || 1000)),
+            });
+
+            // Refresh funds after trade
+            refetchFunds();
+
+            setSession((prev) => ({
+              ...prev,
+              tradesExecuted: prev.tradesExecuted + 1,
+            }));
+            setStatusMessage(`✅ Trade executed: ${signal.signal} ${signal.symbol}`);
+          } catch (error: any) {
+            setStatusMessage(`❌ Trade failed: ${error.message || 'Unknown error'}`);
+          }
+        } else {
+          setStatusMessage('🔍 Scanning market for high-confidence signals...');
+        }
+      } else if (session.tradesExecuted >= maxTradesPerDay) {
+        setStatusMessage('📈 Max daily trades reached. Auto-trading paused until next session.');
+        setIsPaused(true);
       } else {
         setStatusMessage('🔍 Scanning market for high-confidence signals...');
       }
-    }, 5000);
+    }, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [session.isActive, isPaused, activeSignals.length, maxTradesPerDay]);
+  }, [session.isActive, isPaused, activeSignals, maxTradesPerDay, riskLevel, tradingAmount, placeOrderMutation, refetchFunds]);
 
   // Calculate session duration
   const getSessionDuration = () => {

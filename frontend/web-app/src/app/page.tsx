@@ -7,20 +7,36 @@ import { SignalsCard } from '@/components/dashboard/signals-card';
 import { QuickTradeCard } from '@/components/dashboard/quick-trade';
 import { RecentOrdersCard } from '@/components/dashboard/recent-orders';
 import { AutoTradingCard } from '@/components/dashboard/auto-trading';
-import { useEngineHealth, useFunds, useRiskMetrics } from '@/hooks/useApi';
-
-// Sample returns data for demo (in production, this comes from API)
-const sampleReturns = [
-  0.012, -0.005, 0.008, -0.003, 0.015, -0.007, 0.011, 0.006, -0.004, 0.009,
-  -0.002, 0.013, 0.007, -0.008, 0.010, -0.006, 0.014, 0.003, -0.009, 0.011,
-  0.005, -0.004, 0.008, 0.002, -0.007, 0.012, -0.003, 0.009, 0.006, -0.005,
-];
+import { useEngineHealth, useFunds, useHoldings, useRiskMetrics } from '@/hooks/useApi';
+import { useMemo } from 'react';
 
 export default function DashboardPage() {
   // Initialize data fetching
   useEngineHealth();
   useFunds();
-  useRiskMetrics(sampleReturns);
+
+  // Fetch user's actual holdings to calculate real returns
+  const { data: holdingsData } = useHoldings();
+
+  // Calculate real returns from user's holdings (day-over-day price changes)
+  const userReturns = useMemo(() => {
+    const holdings = holdingsData?.data || [];
+    if (holdings.length === 0) {
+      // Return empty array - risk metrics will show loading state
+      return [];
+    }
+
+    // Calculate returns from each holding's PnL
+    return holdings.slice(0, 30).map((h: any) => {
+      const buyAvg = h.buyAvg || h.avgCostPrice || 0;
+      const currentValue = h.currentValue || h.dayClosePrice || buyAvg;
+      // Return as decimal (e.g., 0.02 for 2%)
+      return buyAvg > 0 ? (currentValue - buyAvg) / buyAvg : 0;
+    }).filter((r: number) => !isNaN(r) && isFinite(r));
+  }, [holdingsData]);
+
+  // Only fetch risk metrics if we have actual returns data
+  useRiskMetrics(userReturns.length > 0 ? userReturns : []);
 
   return (
     <div className="p-6 space-y-6">

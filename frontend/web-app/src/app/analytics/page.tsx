@@ -71,31 +71,29 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Sample returns for charts
-const sampleReturns = [
-  0.012, -0.005, 0.008, -0.003, 0.015, -0.007, 0.011, 0.006, -0.004, 0.009,
-  -0.002, 0.013, 0.007, -0.008, 0.010, -0.006, 0.014, 0.003, -0.009, 0.011,
-  0.005, -0.004, 0.008, 0.002, -0.007, 0.012, -0.003, 0.009, 0.006, -0.005,
-];
-
-// Generate chart data
-const returnChartData = sampleReturns.map((ret, i) => ({
-  day: i + 1,
-  return: ret * 100,
-  cumulative: sampleReturns.slice(0, i + 1).reduce((a, b) => a + b, 0) * 100,
-}));
-
-const drawdownData = sampleReturns.reduce(
-  (acc, ret, i) => {
-    const cumReturn = (acc[i]?.cumReturn || 0) + ret;
-    const peak = Math.max(acc[i]?.peak || 0, cumReturn);
-    const drawdown = peak > 0 ? ((cumReturn - peak) / peak) * 100 : 0;
-    return [...acc, { day: i + 1, cumReturn: cumReturn * 100, peak: peak * 100, drawdown }];
-  },
-  [] as { day: number; cumReturn: number; peak: number; drawdown: number }[]
-);
-
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'];
+
+// Helper function to generate chart data from real returns
+const generateChartData = (returns: number[]) => {
+  return returns.map((ret, i) => ({
+    day: i + 1,
+    return: ret * 100,
+    cumulative: returns.slice(0, i + 1).reduce((a, b) => a + b, 0) * 100,
+  }));
+};
+
+// Helper function to generate drawdown data from real returns
+const generateDrawdownData = (returns: number[]) => {
+  return returns.reduce(
+    (acc, ret, i) => {
+      const cumReturn = (acc[i]?.cumReturn || 0) + ret;
+      const peak = Math.max(acc[i]?.peak || 0, cumReturn);
+      const drawdown = peak > 0 ? ((cumReturn - peak) / peak) * 100 : 0;
+      return [...acc, { day: i + 1, cumReturn: cumReturn * 100, peak: peak * 100, drawdown }];
+    },
+    [] as { day: number; cumReturn: number; peak: number; drawdown: number }[]
+  );
+};
 
 export default function AnalyticsPage() {
   const [capital, setCapital] = useState('100000');
@@ -117,6 +115,17 @@ export default function AnalyticsPage() {
   // Safely get holdings array
   const holdings = Array.isArray(holdingsData?.data) ? holdingsData.data : [];
   const positions = Array.isArray(positionsData?.data) ? positionsData.data : [];
+
+  // Calculate real returns from user's holdings
+  const userReturns = holdings.slice(0, 30).map((h: any) => {
+    const buyAvg = h.buyAvg || h.avgCostPrice || 0;
+    const currentValue = h.currentValue || h.ltp || h.dayClosePrice || buyAvg;
+    return buyAvg > 0 ? (currentValue - buyAvg) / buyAvg : 0;
+  }).filter((r: number) => !isNaN(r) && isFinite(r));
+
+  // Generate chart data from user's real returns (or show empty if no data)
+  const returnChartData = userReturns.length > 0 ? generateChartData(userReturns) : [];
+  const drawdownData = userReturns.length > 0 ? generateDrawdownData(userReturns) : [];
 
   // Get AI analysis for selected holding
   const { data: geminiAnalysis, isLoading: analysisLoading, refetch: refetchAnalysis } = useGeminiAnalysis(
@@ -145,7 +154,7 @@ export default function AnalyticsPage() {
   // Get signals mapped to holdings
   const holdingSignals = portfolioSignals?.data || portfolioSignals?.signals || [];
 
-  const { data: varData, isLoading: varLoading } = useVaR(sampleReturns, 0.95, 'historical');
+  const { data: varData, isLoading: varLoading } = useVaR(userReturns.length > 0 ? userReturns : [0], 0.95, 'historical');
   const { data: kellyData, isLoading: kellyLoading } = useKellyCriterion(
     parseFloat(winRate),
     parseFloat(avgWin),
