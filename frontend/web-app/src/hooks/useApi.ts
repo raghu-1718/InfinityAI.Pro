@@ -45,13 +45,17 @@ export function useEngineHealth() {
 
 // User Profile Hook - Fetches user's Dhan credentials status
 export function useUserProfile() {
-  const { userProfile, setUserProfile, setDematData, setFunds } = useAppStore();
+  const { setUserProfile, setDematData, setFunds } = useAppStore();
 
   const getUserId = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('userId') || 'default_user';
+    if (typeof window === 'undefined') return 'default_user';
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      // Generate a unique user ID and persist it
+      userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      localStorage.setItem('userId', userId);
     }
-    return 'default_user';
+    return userId;
   };
 
   return useQuery({
@@ -80,14 +84,18 @@ export function useUserProfile() {
         setUserProfile({
           userId,
           clientId: res.client_id,
-          name: `User ${res.client_id}`, // Dhan doesn't provide name, use client ID
-          email: '', // Will be empty unless user provides
+          name: `User ${res.client_id}`,
+          email: '',
           isConnected: true,
           isVerified: true,
         });
       } else {
-        setUserProfile(null);
-        setDematData(null);
+        // Don't clear profile if it's already set (might be set by Settings page)
+        const currentProfile = useAppStore.getState().userProfile;
+        if (!currentProfile) {
+          setUserProfile(null);
+          setDematData(null);
+        }
       }
 
       return res;

@@ -38,6 +38,8 @@ import {
   EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAppStore } from "@/lib/store";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Engine C API URL
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-573866363639.us-central1.run.app";
@@ -80,6 +82,10 @@ interface DematInfo {
 }
 
 export default function SettingsPage() {
+  // Global state and query client
+  const { setUserProfile, setDematData, setFunds } = useAppStore();
+  const queryClient = useQueryClient();
+
   // Dhan Credentials State
   const [dhanCredentials, setDhanCredentials] = useState<DhanCredentials>({
     client_id: "",
@@ -107,8 +113,14 @@ export default function SettingsPage() {
 
   // Get user ID (for now using a placeholder - integrate with your auth system)
   const getUserId = () => {
-    // TODO: Replace with actual user ID from authentication
-    return localStorage.getItem("userId") || "default_user";
+    if (typeof window === 'undefined') return 'default_user';
+    let userId = localStorage.getItem("userId");
+    if (!userId) {
+      // Generate a unique user ID and persist it
+      userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      localStorage.setItem("userId", userId);
+    }
+    return userId;
   };
 
   // Load existing credentials on mount
@@ -127,8 +139,22 @@ export default function SettingsPage() {
             access_token: data.access_token ? "********" : "",
             is_verified: data.is_verified || false,
           });
-          if (data.is_verified) {
+
+          if (data.is_verified && data.configured) {
             setConnectionStatus("connected");
+
+            // Update global store with user profile
+            setUserProfile({
+              userId,
+              clientId: data.client_id,
+              name: `User ${data.client_id}`,
+              email: '',
+              isConnected: true,
+              isVerified: true,
+            });
+
+            // Load demat info to populate balance
+            loadDematInfo();
           }
         }
       } catch (error) {
@@ -138,6 +164,7 @@ export default function SettingsPage() {
       }
     };
     loadCreds();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDematInfo = async () => {
@@ -149,6 +176,19 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setDematInfo(data);
+
+        // Update global store with demat data
+        setDematData(data);
+
+        // Update funds in global store
+        if (data.funds) {
+          setFunds({
+            availableBalance: data.funds.availableBalance || 0,
+            sodLimit: 0,
+            collateralAmount: data.funds.utilisedMargin || 0,
+            dhanClientId: dhanCredentials.client_id,
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to load demat info:", error);
@@ -189,13 +229,32 @@ export default function SettingsPage() {
           toast.success("Dhan Connected Successfully", {
             description: "Your Dhan account has been linked. Loading your portfolio...",
           });
+
           // Mask the access token after successful save
           setDhanCredentials(prev => ({
             ...prev,
             access_token: "********",
             is_verified: true,
           }));
-          loadDematInfo();
+
+          // Update global user profile in Zustand store
+          setUserProfile({
+            userId,
+            clientId: dhanCredentials.client_id,
+            name: `User ${dhanCredentials.client_id}`,
+            email: '',
+            isConnected: true,
+            isVerified: true,
+          });
+
+          // Load demat info (which also updates global store)
+          await loadDematInfo();
+
+          // Invalidate all user-related queries to force refresh across app
+          queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+          queryClient.invalidateQueries({ queryKey: ['funds'] });
+          queryClient.invalidateQueries({ queryKey: ['holdings'] });
+          queryClient.invalidateQueries({ queryKey: ['positions'] });
         } else {
           toast.warning("Credentials Saved", {
             description: "Credentials saved but verification pending. Please verify your connection.",
@@ -269,6 +328,21 @@ export default function SettingsPage() {
         });
         setConnectionStatus("disconnected");
         setDematInfo(null);
+
+        // Clear global store
+        setUserProfile(null);
+        setDematData(null);
+        setFunds({
+          availableBalance: 0,
+          sodLimit: 0,
+          collateralAmount: 0,
+          dhanClientId: '',
+        });
+
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+        queryClient.invalidateQueries({ queryKey: ['funds'] });
+
         toast.info("Disconnected", {
           description: "Your Dhan account has been disconnected.",
         });
