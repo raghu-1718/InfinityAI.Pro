@@ -11,17 +11,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn } from 'lucide-react';
 import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
 import { engineC } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export function Header() {
   const { theme, toggleTheme, funds, engines, userProfile, dematData, clearUserData } = useAppStore();
+  const { user, userProfile: firebaseProfile, signIn, signOut: firebaseSignOut, loading: authLoading } = useAuth();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
   const { refetch: refetchFunds } = useFunds();
   const { refetch: refetchProfile } = useUserProfile();
@@ -33,18 +35,34 @@ export function Header() {
     refetchProfile();
   };
 
+  const handleLogin = async () => {
+    const result = await signIn();
+    if (result.success) {
+      toast.success('Signed In', {
+        description: 'Welcome to InfinityAI.Pro!',
+      });
+    } else {
+      toast.error('Sign In Failed', {
+        description: result.error || 'Please try again.',
+      });
+    }
+  };
+
   const handleLogout = async () => {
     try {
-      // Get userId before clearing
-      const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+      // If using Firebase Auth
+      if (user) {
+        await firebaseSignOut();
+      } else {
+        // Fallback to old localStorage-based logout
+        const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
-      if (userId) {
-        // Delete credentials from backend
-        await engineC.deleteUserCredentials(userId);
+        if (userId) {
+          await engineC.deleteUserCredentials(userId);
+        }
+
+        clearUserData();
       }
-
-      // Clear local store
-      clearUserData();
 
       // Invalidate all queries
       queryClient.clear();
@@ -57,7 +75,6 @@ export function Header() {
       window.location.href = '/settings';
     } catch (error) {
       console.error('Logout failed:', error);
-      // Still clear local data even if API fails
       clearUserData();
       queryClient.clear();
       window.location.href = '/settings';
@@ -72,16 +89,28 @@ export function Header() {
   // Get balance from user's connected demat or fallback to admin funds
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
 
+  // Check if user is authenticated (Firebase or Dhan connected)
+  const isAuthenticated = !!user || userProfile?.isConnected;
+
   // Get user initials for avatar
   const getUserInitials = () => {
+    if (user?.displayName) {
+      // Use Firebase display name initials
+      const names = user.displayName.split(' ');
+      return names.length >= 2
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : user.displayName.substring(0, 2).toUpperCase();
+    }
     if (userProfile?.isConnected && userProfile?.clientId) {
-      // Use first 2 chars of client ID
       return userProfile.clientId.substring(0, 2).toUpperCase();
     }
     return 'G'; // Guest
   };
 
   const getUserName = () => {
+    if (user?.displayName) {
+      return user.displayName;
+    }
     if (userProfile?.isConnected) {
       return userProfile.name || `Dhan User`;
     }
@@ -89,10 +118,17 @@ export function Header() {
   };
 
   const getUserEmail = () => {
+    if (user?.email) {
+      return user.email;
+    }
     if (userProfile?.isConnected && userProfile?.clientId) {
       return `Client ID: ${userProfile.clientId}`;
     }
-    return 'Connect Dhan to trade';
+    return 'Sign in to get started';
+  };
+
+  const getUserPhoto = () => {
+    return user?.photoURL || null;
   };
 
   return (
@@ -143,7 +179,10 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className={userProfile?.isConnected ? 'bg-green-600 text-white' : 'bg-muted'}>
+                {getUserPhoto() && (
+                  <AvatarImage src={getUserPhoto()!} alt={getUserName()} />
+                )}
+                <AvatarFallback className={isAuthenticated ? 'bg-green-600 text-white' : 'bg-muted'}>
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
@@ -161,37 +200,58 @@ export function Header() {
                     Dhan Connected
                   </Badge>
                 )}
+                {user && !userProfile?.isConnected && (
+                  <Badge variant="outline" className="w-fit mt-1 text-xs text-blue-600">
+                    Google Connected
+                  </Badge>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-            {!userProfile?.isConnected && (
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center cursor-pointer text-yellow-600">
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Connect Dhan Account
-                </Link>
+
+            {!user && !userProfile?.isConnected ? (
+              // Not logged in - show login option
+              <DropdownMenuItem
+                className="text-blue-600 cursor-pointer"
+                onClick={handleLogin}
+                disabled={authLoading}
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign in with Google
               </DropdownMenuItem>
+            ) : (
+              // Logged in - show profile and settings
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                {!userProfile?.isConnected && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center cursor-pointer text-yellow-600">
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Connect Dhan Account
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </>
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-600 cursor-pointer"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Log out
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
