@@ -17,8 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { useAppStore } from '@/lib/store';
-import { useFunds, useSignals, usePlaceOrder } from '@/hooks/useApi';
+import { useAppStore, TradingInstrument } from '@/lib/store';
+import { useFunds, useSignals, usePlaceOrder, useStartInstrumentTrade } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import {
   Play,
@@ -48,24 +48,46 @@ interface TradingSession {
 
 export function AutoTradingCard() {
   const funds = useAppStore((s) => s.funds);
+  const tradingConfig = useAppStore((s) => s.tradingConfig);
+  const storeTradingSession = useAppStore((s) => s.tradingSession);
+  const setTradingConfig = useAppStore((s) => s.setTradingConfig);
+  const startTradingSession = useAppStore((s) => s.startTradingSession);
+  const stopTradingSession = useAppStore((s) => s.stopTradingSession);
+  const updateStoreTradingSession = useAppStore((s) => s.updateTradingSession);
+
   const { refetch: refetchFunds } = useFunds();
   const { data: signalsData } = useSignals();
   const placeOrderMutation = usePlaceOrder();
+  const startInstrumentTradeMutation = useStartInstrumentTrade();
 
-  // Trading configuration state
-  const [tradingAmount, setTradingAmount] = useState<number>(10000);
-  const [riskLevel, setRiskLevel] = useState<string>('moderate');
-  const [maxTradesPerDay, setMaxTradesPerDay] = useState<number>(10);
-  const [stopLossPercent, setStopLossPercent] = useState<number>(2);
-  const [takeProfitPercent, setTakeProfitPercent] = useState<number>(4);
-  const [useAISignals, setUseAISignals] = useState<boolean>(true);
-  const [autoRebalance, setAutoRebalance] = useState<boolean>(false);
+  // Initialize local state from persisted store config
+  const [tradingAmount, setTradingAmount] = useState<number>(tradingConfig.tradingAmount);
+  const [riskLevel, setRiskLevel] = useState<string>(tradingConfig.riskLevel);
+  const [maxTradesPerDay, setMaxTradesPerDay] = useState<number>(tradingConfig.maxTradesPerDay);
+  const [stopLossPercent, setStopLossPercent] = useState<number>(tradingConfig.stopLossPercent);
+  const [takeProfitPercent, setTakeProfitPercent] = useState<number>(tradingConfig.takeProfitPercent);
+  const [useAISignals, setUseAISignals] = useState<boolean>(tradingConfig.useAISignals);
+  const [autoRebalance, setAutoRebalance] = useState<boolean>(tradingConfig.autoRebalance);
 
-  // Market/Instrument selection state
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>(['equities']);
+  // Market/Instrument selection state - sync with store
+  const [selectedMarkets, setSelectedMarkets] = useState<TradingInstrument[]>(tradingConfig.selectedInstruments);
 
-  // Available markets/instruments for trading
-  const marketOptions = [
+  // Sync config changes to store
+  useEffect(() => {
+    setTradingConfig({
+      selectedInstruments: selectedMarkets,
+      riskLevel: riskLevel as 'conservative' | 'moderate' | 'aggressive',
+      stopLossPercent,
+      takeProfitPercent,
+      maxTradesPerDay,
+      tradingAmount,
+      useAISignals,
+      autoRebalance,
+    });
+  }, [selectedMarkets, riskLevel, stopLossPercent, takeProfitPercent, maxTradesPerDay, tradingAmount, useAISignals, autoRebalance, setTradingConfig]);
+
+  // Available markets/instruments for trading (with typed IDs)
+  const marketOptions: { id: TradingInstrument; name: string; icon: string; description: string }[] = [
     { id: 'equities', name: 'Equities (NSE/BSE)', icon: '📈', description: 'Stocks from NSE & BSE' },
     { id: 'nifty-options', name: 'NIFTY Options', icon: '🎯', description: 'NIFTY 50 Index Options' },
     { id: 'banknifty-options', name: 'Bank NIFTY Options', icon: '🏦', description: 'Bank NIFTY Index Options' },
@@ -77,7 +99,7 @@ export function AutoTradingCard() {
   ];
 
   // Toggle market selection
-  const toggleMarket = (marketId: string) => {
+  const toggleMarket = (marketId: TradingInstrument) => {
     setSelectedMarkets(prev =>
       prev.includes(marketId)
         ? prev.filter(m => m !== marketId)
@@ -85,14 +107,25 @@ export function AutoTradingCard() {
     );
   };
 
-  // Trading session state
+  // Trading session state - use store for sync
   const [session, setSession] = useState<TradingSession>({
-    isActive: false,
-    startTime: null,
-    tradesExecuted: 0,
-    totalPnL: 0,
-    winRate: 0,
+    isActive: storeTradingSession?.isActive || false,
+    startTime: storeTradingSession?.startTime || null,
+    tradesExecuted: storeTradingSession?.tradesExecuted || 0,
+    totalPnL: storeTradingSession?.totalPnL || 0,
+    winRate: storeTradingSession?.winRate || 0,
   });
+
+  // Sync local session changes to store
+  useEffect(() => {
+    if (session.isActive) {
+      updateStoreTradingSession({
+        tradesExecuted: session.tradesExecuted,
+        totalPnL: session.totalPnL,
+        winRate: session.winRate,
+      });
+    }
+  }, [session.tradesExecuted, session.totalPnL, session.winRate, session.isActive, updateStoreTradingSession]);
 
   const [isPaused, setIsPaused] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('Ready to start trading');
@@ -116,7 +149,7 @@ export function AutoTradingCard() {
       .join(', ');
   };
 
-  // Start auto trading
+  // Start auto trading - calls backend with instrument configuration
   const handleStart = async () => {
     if (tradingAmount > availableBalance) {
       setStatusMessage('⚠️ Insufficient funds! Reduce trading amount.');
@@ -128,32 +161,41 @@ export function AutoTradingCard() {
       return;
     }
 
-    // Log the trading configuration (in production, send to backend)
-    const tradingConfig = {
-      amount: tradingAmount,
+    // Build trading configuration for backend
+    const tradingConfigPayload = {
+      instruments: selectedMarkets,
       riskLevel,
-      markets: selectedMarkets,
       stopLoss: stopLossPercent,
       takeProfit: takeProfitPercent,
-      maxTrades: maxTradesPerDay,
-      useAI: useAISignals,
-      autoRebalance,
+      strategy: useAISignals ? 'ai-signals' : 'momentum',
     };
-    console.log('Starting auto-trading with config:', tradingConfig);
 
-    setSession({
-      isActive: true,
-      startTime: new Date(),
-      tradesExecuted: 0,
-      totalPnL: 0,
-      winRate: 0,
-    });
-    setIsPaused(false);
+    console.log('Starting auto-trading with config:', tradingConfigPayload);
 
-    const marketNames = selectedMarkets.length <= 2
-      ? getSelectedMarketNames()
-      : `${selectedMarkets.length} markets`;
-    setStatusMessage(`🚀 Auto trading started on ${marketNames}! Scanning...`);
+    try {
+      // Call backend to start instrument-specific trading
+      await startInstrumentTradeMutation.mutateAsync(tradingConfigPayload);
+
+      // Update local state
+      setSession({
+        isActive: true,
+        startTime: new Date(),
+        tradesExecuted: 0,
+        totalPnL: 0,
+        winRate: 0,
+      });
+
+      // Update global store
+      startTradingSession(selectedMarkets);
+      setIsPaused(false);
+
+      const marketNames = selectedMarkets.length <= 2
+        ? getSelectedMarketNames()
+        : `${selectedMarkets.length} markets`;
+      setStatusMessage(`🚀 Auto trading started on ${marketNames}! Scanning for signals...`);
+    } catch (error: any) {
+      setStatusMessage(`❌ Failed to start trading: ${error.message || 'Backend error'}`);
+    }
   };
 
   // Stop auto trading
@@ -162,6 +204,8 @@ export function AutoTradingCard() {
       ...prev,
       isActive: false,
     }));
+    // Update global store
+    stopTradingSession();
     setStatusMessage('⏹️ Auto trading stopped. Session summary saved.');
   };
 
@@ -172,19 +216,82 @@ export function AutoTradingCard() {
   };
 
   // Real trading activity - uses actual API to execute trades based on signals
+  // Filters signals based on selected instruments
   useEffect(() => {
     if (!session.isActive || isPaused) return;
 
+    // Helper function to determine if a signal matches selected instruments
+    const signalMatchesInstruments = (signal: any): boolean => {
+      const symbol = signal.symbol?.toUpperCase() || '';
+
+      // Check equities (no options suffix)
+      if (selectedMarkets.includes('equities') &&
+          !symbol.includes('CE') && !symbol.includes('PE') &&
+          !symbol.includes('FUT') && !symbol.includes('OPT')) {
+        return true;
+      }
+
+      // Check NIFTY Options
+      if (selectedMarkets.includes('nifty-options') &&
+          (symbol.includes('NIFTY') && (symbol.includes('CE') || symbol.includes('PE'))) &&
+          !symbol.includes('BANKNIFTY') && !symbol.includes('FINNIFTY')) {
+        return true;
+      }
+
+      // Check Bank NIFTY Options
+      if (selectedMarkets.includes('banknifty-options') &&
+          symbol.includes('BANKNIFTY') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      // Check SENSEX Options
+      if (selectedMarkets.includes('sensex-options') &&
+          symbol.includes('SENSEX') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      // Check FIN NIFTY Options
+      if (selectedMarkets.includes('finnifty-options') &&
+          symbol.includes('FINNIFTY') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      // Check Crude Options
+      if (selectedMarkets.includes('crude-options') &&
+          symbol.includes('CRUDE') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      // Check Gold Options
+      if (selectedMarkets.includes('gold-options') &&
+          symbol.includes('GOLD') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      // Check Silver Options
+      if (selectedMarkets.includes('silver-options') &&
+          symbol.includes('SILVER') && (symbol.includes('CE') || symbol.includes('PE'))) {
+        return true;
+      }
+
+      return false;
+    };
+
     const interval = setInterval(async () => {
-      // Check for high-confidence signals and execute real trades
-      if (activeSignals.length > 0 && session.tradesExecuted < maxTradesPerDay) {
-        const signal = activeSignals.find((s: any) =>
+      // Filter signals based on selected instruments
+      const filteredSignals = activeSignals.filter(signalMatchesInstruments);
+
+      if (filteredSignals.length > 0 && session.tradesExecuted < maxTradesPerDay) {
+        const signal = filteredSignals.find((s: any) =>
           s.confidence >= riskConfigs[riskLevel as keyof typeof riskConfigs].minConfidence &&
           (s.signal === 'BUY' || s.signal === 'SELL')
         );
 
         if (signal) {
-          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} (${(signal.confidence * 100).toFixed(0)}% confidence). Executing...`);
+          const instrumentType = selectedMarkets.length === 1
+            ? marketOptions.find(m => m.id === selectedMarkets[0])?.name
+            : 'selected instruments';
+          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${(signal.confidence * 100).toFixed(0)}% confidence). Executing...`);
 
           try {
             // Use real startTrade mutation through Engine A orchestration
@@ -216,12 +323,15 @@ export function AutoTradingCard() {
         setStatusMessage('📈 Max daily trades reached. Auto-trading paused until next session.');
         setIsPaused(true);
       } else {
-        setStatusMessage('🔍 Scanning market for high-confidence signals...');
+        const instrumentNames = selectedMarkets.length <= 2
+          ? getSelectedMarketNames()
+          : `${selectedMarkets.length} instruments`;
+        setStatusMessage(`🔍 Scanning ${instrumentNames} for high-confidence signals...`);
       }
     }, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [session.isActive, isPaused, activeSignals, maxTradesPerDay, riskLevel, tradingAmount, placeOrderMutation, refetchFunds]);
+  }, [session.isActive, isPaused, activeSignals, maxTradesPerDay, riskLevel, tradingAmount, selectedMarkets, placeOrderMutation, refetchFunds]);
 
   // Calculate session duration
   const getSessionDuration = () => {

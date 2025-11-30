@@ -1443,6 +1443,130 @@ async def generate_batch_signals(symbols: List[str], fast: bool = True):
         "timestamp": datetime.utcnow().isoformat()
     }
 
+
+class InstrumentSignalsRequest(BaseModel):
+    """Request model for instrument-specific signals"""
+    instruments: List[str]  # e.g., ['equities', 'nifty-options', 'banknifty-options']
+    min_confidence: float = 0.75
+    strategy: Optional[str] = "ai-signals"
+    max_signals: int = 10
+
+
+@app.post("/api/v1/signals/instruments")
+async def generate_instrument_signals(req: InstrumentSignalsRequest):
+    """
+    Generate AI signals filtered by trading instruments.
+
+    Supported instruments:
+    - equities: NSE/BSE stocks
+    - nifty-options: NIFTY 50 Index Options
+    - banknifty-options: Bank NIFTY Index Options
+    - sensex-options: BSE SENSEX Options
+    - finnifty-options: Financial Services NIFTY Options
+    - crude-options: MCX Crude Oil Options
+    - gold-options: MCX Gold Options
+    - silver-options: MCX Silver Options
+    """
+    # Map instruments to symbols to analyze
+    instrument_symbols = {
+        "equities": ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "WIPRO", "ITC", "BHARTIARTL", "LT"],
+        "nifty-options": ["NIFTY"],
+        "banknifty-options": ["BANKNIFTY"],
+        "sensex-options": ["SENSEX"],
+        "finnifty-options": ["FINNIFTY"],
+        "crude-options": ["CRUDEOIL"],
+        "gold-options": ["GOLD", "GOLDM"],
+        "silver-options": ["SILVER", "SILVERM"]
+    }
+
+    # Collect all symbols to analyze based on selected instruments
+    symbols_to_analyze = []
+    for instrument in req.instruments:
+        if instrument in instrument_symbols:
+            symbols_to_analyze.extend(instrument_symbols[instrument])
+
+    if not symbols_to_analyze:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No valid instruments selected. Valid options: {list(instrument_symbols.keys())}"
+        )
+
+    # Remove duplicates
+    symbols_to_analyze = list(set(symbols_to_analyze))
+
+    logger.info(f"📊 Generating signals for instruments: {req.instruments}")
+    logger.info(f"📈 Analyzing symbols: {symbols_to_analyze}")
+
+    # Generate signals for each symbol
+    all_signals = []
+    for symbol in symbols_to_analyze:
+        try:
+            signal = await generate_signal(SignalRequest(symbol=symbol, fast=True))
+
+            # Determine which instrument this symbol belongs to
+            instrument_type = None
+            for instrument, syms in instrument_symbols.items():
+                if symbol in syms:
+                    instrument_type = instrument
+                    break
+
+            signal_dict = signal.dict() if hasattr(signal, 'dict') else signal
+            signal_dict["instrument_type"] = instrument_type
+            signal_dict["security_id"] = get_security_id(symbol)  # Add security ID for execution
+
+            # Only include signals meeting confidence threshold
+            if signal_dict.get("confidence", 0) >= req.min_confidence:
+                all_signals.append(signal_dict)
+
+        except Exception as e:
+            logger.warning(f"Signal generation failed for {symbol}: {e}")
+
+    # Sort by confidence and limit results
+    all_signals.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+    filtered_signals = all_signals[:req.max_signals]
+
+    # Separate actionable signals (BUY/SELL) from HOLD
+    actionable = [s for s in filtered_signals if s.get("signal") in ["BUY", "SELL"]]
+    hold_signals = [s for s in filtered_signals if s.get("signal") == "HOLD"]
+
+    return {
+        "instruments": req.instruments,
+        "strategy": req.strategy,
+        "min_confidence": req.min_confidence,
+        "signals": filtered_signals,
+        "actionable_signals": actionable,
+        "hold_signals": len(hold_signals),
+        "total_analyzed": len(symbols_to_analyze),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+def get_security_id(symbol: str) -> str:
+    """Get Dhan security ID for a symbol"""
+    # Security ID mapping (NSE Equity symbols to Dhan Security IDs)
+    security_id_map = {
+        "RELIANCE": "1333",
+        "TCS": "2968",
+        "HDFCBANK": "1394",
+        "INFY": "1594",
+        "ICICIBANK": "1270",
+        "SBIN": "3045",
+        "WIPRO": "3787",
+        "ITC": "1660",
+        "BHARTIARTL": "2885",
+        "LT": "1660",
+        "NIFTY": "13",
+        "BANKNIFTY": "25",
+        "SENSEX": "1",
+        "FINNIFTY": "26009",
+        "CRUDEOIL": "11",
+        "GOLD": "5",
+        "GOLDM": "6",
+        "SILVER": "8",
+        "SILVERM": "9"
+    }
+    return security_id_map.get(symbol.upper(), symbol)
+
 @app.post("/api/v1/train/batch")
 async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "HDFCBANK"]):
     """Train models on multiple symbols"""

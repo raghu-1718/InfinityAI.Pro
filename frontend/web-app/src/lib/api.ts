@@ -313,6 +313,70 @@ export const engineA = {
     );
     return res.json();
   },
+
+  // Start instrument-specific auto trading (filters signals by selected instruments)
+  async startInstrumentTrade(data: {
+    instruments: string[];
+    riskLevel?: string;
+    stopLoss?: number;
+    takeProfit?: number;
+    strategy?: string;
+    symbol?: string;
+    qty?: number;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/v1/trade/start-instrument`,
+      `${FALLBACK_URLS.ENGINE_A}/api/v1/trade/start-instrument`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  // Start auto trading with specific instrument configuration
+  async startAutoTrading(data: {
+    instruments: string[];
+    tradingAmount: number;
+    riskLevel: string;
+    stopLossPercent: number;
+    takeProfitPercent: number;
+    maxTradesPerDay: number;
+    useAISignals: boolean;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/start`,
+      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/start`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async stopAutoTrading() {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/stop`,
+      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/stop`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    return res.json();
+  },
+
+  async getAutoTradingStatus() {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`,
+      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/status`
+    );
+    return res.json();
+  },
 };
 
 // Engine B - AI/ML Intelligence

@@ -317,6 +317,16 @@ class OrchestrateRequest(BaseModel):
     qty: Optional[float] = 1.0
     strategy: Optional[str] = None
 
+class InstrumentTradeRequest(BaseModel):
+    """Request model for instrument-specific auto trading"""
+    instruments: List[str]  # e.g., ['equities', 'nifty-options', 'banknifty-options']
+    riskLevel: Optional[str] = "moderate"  # conservative, moderate, aggressive
+    stopLoss: Optional[float] = 2.0  # percentage
+    takeProfit: Optional[float] = 4.0  # percentage
+    strategy: Optional[str] = "ai-signals"
+    symbol: Optional[str] = None  # specific symbol if any
+    qty: Optional[float] = 1.0
+
 class DhanTokenExchangeRequest(BaseModel):
     code: str
 
@@ -635,6 +645,230 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
         "execution_payload": exec_payload,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# --- Instrument-Specific Trading Endpoint ---
+@app.post("/api/v1/trade/start-instrument")
+async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: BackgroundTasks):
+    """
+    Instrument-specific trading orchestration:
+    1. Validates Dhan authentication
+    2. Calls Engine B for AI signals filtered by instruments
+    3. Schedules execution for matching signals only
+
+    Supported instruments:
+    - equities: NSE/BSE stocks
+    - nifty-options: NIFTY 50 Index Options
+    - banknifty-options: Bank NIFTY Index Options
+    - sensex-options: BSE SENSEX Options
+    - finnifty-options: Financial Services NIFTY Options
+    - crude-options: MCX Crude Oil Options
+    - gold-options: MCX Gold Options
+    - silver-options: MCX Silver Options
+    """
+    # Validate Dhan token
+    access_token = os.getenv("DHAN_ACCESS_TOKEN") or get_secret("dhan-access-token")
+    if not access_token:
+        raise HTTPException(401, "Dhan authentication required. Please authenticate via /api/auth/dhan/login")
+
+    if not ENGINE_B_URL or not ENGINE_C_URL:
+        raise HTTPException(500, "ENGINE_B_URL or ENGINE_C_URL not configured")
+
+    if not req.instruments or len(req.instruments) == 0:
+        raise HTTPException(400, "At least one instrument must be selected")
+
+    # Map instrument types to exchange segments and symbol patterns
+    instrument_config = {
+        "equities": {
+            "exchange_segment": "NSE_EQ",
+            "product_type": "INTRADAY",
+            "pattern": None,  # No pattern filter for general equities
+        },
+        "nifty-options": {
+            "exchange_segment": "NSE_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "NIFTY",
+            "exclude_patterns": ["BANKNIFTY", "FINNIFTY"]
+        },
+        "banknifty-options": {
+            "exchange_segment": "NSE_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "BANKNIFTY"
+        },
+        "sensex-options": {
+            "exchange_segment": "BSE_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "SENSEX"
+        },
+        "finnifty-options": {
+            "exchange_segment": "NSE_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "FINNIFTY"
+        },
+        "crude-options": {
+            "exchange_segment": "MCX_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "CRUDE"
+        },
+        "gold-options": {
+            "exchange_segment": "MCX_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "GOLD"
+        },
+        "silver-options": {
+            "exchange_segment": "MCX_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "SILVER"
+        }
+    }
+
+    # Get risk configuration based on level
+    risk_configs = {
+        "conservative": {"minConfidence": 0.85, "maxRiskPct": 1.0},
+        "moderate": {"minConfidence": 0.75, "maxRiskPct": 2.0},
+        "aggressive": {"minConfidence": 0.65, "maxRiskPct": 4.0}
+    }
+    risk_config = risk_configs.get(req.riskLevel, risk_configs["moderate"])
+
+    logger.info(f"🚀 Starting instrument-specific trading: {req.instruments}")
+    logger.info(f"📊 Risk level: {req.riskLevel}, Min confidence: {risk_config['minConfidence']}")
+
+    # 1. Get AI Signals from Engine-B with instrument filter
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            # Request signals for selected instruments
+            signal_response = await client.post(
+                f"{ENGINE_B_URL}/api/v1/signals/instruments",
+                json={
+                    "instruments": req.instruments,
+                    "min_confidence": risk_config["minConfidence"],
+                    "strategy": req.strategy
+                }
+            )
+            signal_response.raise_for_status()
+            signals_data = signal_response.json()
+        except httpx.HTTPError as e:
+            logger.warning(f"Engine B instrument signals not available, falling back to standard: {str(e)}")
+            # Fallback to standard signal endpoint if instrument endpoint not available
+            try:
+                signal_response = await client.post(
+                    f"{ENGINE_B_URL}/api/v1/signal",
+                    json={"symbol": req.symbol or "NIFTY"}
+                )
+                signal_response.raise_for_status()
+                signals_data = {"signals": [signal_response.json()]}
+            except httpx.HTTPError as e2:
+                raise HTTPException(502, f"Engine B (AI/ML) error: {str(e2)}")
+
+    signals = signals_data.get("signals", [])
+
+    if not signals:
+        return {
+            "status": "no_signals",
+            "message": f"No AI signals found for instruments: {req.instruments}",
+            "instruments": req.instruments,
+            "risk_level": req.riskLevel,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    # Filter signals based on selected instruments
+    filtered_signals = []
+    for signal in signals:
+        symbol = signal.get("symbol", "").upper()
+
+        for instrument in req.instruments:
+            config = instrument_config.get(instrument)
+            if not config:
+                continue
+
+            pattern = config.get("pattern")
+            exclude_patterns = config.get("exclude_patterns", [])
+
+            # Check if signal matches instrument criteria
+            matches = False
+            if pattern is None:  # equities - match if no option suffix
+                if not any(x in symbol for x in ["CE", "PE", "FUT"]):
+                    matches = True
+            else:
+                if pattern in symbol and (symbol.endswith("CE") or symbol.endswith("PE")):
+                    # Check exclusions
+                    if not any(ex in symbol for ex in exclude_patterns):
+                        matches = True
+
+            if matches:
+                signal["instrument_type"] = instrument
+                signal["exchange_segment"] = config["exchange_segment"]
+                signal["product_type"] = config["product_type"]
+                filtered_signals.append(signal)
+                break
+
+    if not filtered_signals:
+        return {
+            "status": "no_matching_signals",
+            "message": f"AI signals found but none match selected instruments",
+            "instruments": req.instruments,
+            "total_signals": len(signals),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    # 2. Schedule execution for filtered signals
+    executed_trades = []
+
+    for signal in filtered_signals:
+        if signal.get("signal", "").upper() == "HOLD":
+            continue
+
+        confidence = signal.get("confidence", 0)
+        if confidence < risk_config["minConfidence"]:
+            continue
+
+        exec_payload = {
+            "transaction_type": signal.get("signal", "BUY").upper(),
+            "exchange_segment": signal.get("exchange_segment", "NSE_EQ"),
+            "product_type": signal.get("product_type", "INTRADAY"),
+            "order_type": "MARKET",
+            "validity": "DAY",
+            "security_id": signal.get("security_id", signal.get("symbol")),
+            "quantity": int(req.qty) if req.qty else 1,
+            "price": 0.0,
+            "stop_loss_pct": req.stopLoss,
+            "take_profit_pct": req.takeProfit
+        }
+
+        # Schedule execution in background
+        async def send_execution(payload):
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                try:
+                    exec_response = await client.post(
+                        f"{ENGINE_C_URL}/api/dhan/place-order",
+                        json=payload
+                    )
+                    exec_response.raise_for_status()
+                    logger.info(f"✅ {payload['transaction_type']} execution successful: {exec_response.json()}")
+                except Exception as e:
+                    logger.error(f"❌ Execution failed: {str(e)}")
+
+        bg.add_task(send_execution, exec_payload)
+        executed_trades.append({
+            "symbol": signal.get("symbol"),
+            "signal": signal.get("signal"),
+            "confidence": confidence,
+            "instrument": signal.get("instrument_type"),
+            "payload": exec_payload
+        })
+
+    return {
+        "status": "execution_scheduled",
+        "instruments": req.instruments,
+        "risk_level": req.riskLevel,
+        "strategy": req.strategy,
+        "total_signals": len(signals),
+        "filtered_signals": len(filtered_signals),
+        "trades_scheduled": len(executed_trades),
+        "trades": executed_trades,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

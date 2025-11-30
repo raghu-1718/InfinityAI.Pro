@@ -360,6 +360,20 @@ export function useStartTrade() {
   });
 }
 
+// Instrument-specific auto trading hook
+export function useStartInstrumentTrade() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: engineA.startInstrumentTrade,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['positions'] });
+      queryClient.invalidateQueries({ queryKey: ['signals'] });
+    },
+  });
+}
+
 export function useCalculateRiskScore() {
   return useMutation({
     mutationFn: engineA.calculateRiskScore,

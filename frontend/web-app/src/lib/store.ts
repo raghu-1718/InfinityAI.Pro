@@ -81,6 +81,37 @@ export interface RiskMetrics {
   annualized_volatility: number;
 }
 
+// Trading instrument types
+export type TradingInstrument =
+  | 'equities'
+  | 'nifty-options'
+  | 'banknifty-options'
+  | 'finnifty-options'
+  | 'sensex-options'
+  | 'crude-options'
+  | 'gold-options'
+  | 'silver-options';
+
+export interface TradingConfig {
+  selectedInstruments: TradingInstrument[];
+  riskLevel: 'conservative' | 'moderate' | 'aggressive';
+  stopLossPercent: number;
+  takeProfitPercent: number;
+  maxTradesPerDay: number;
+  tradingAmount: number;
+  useAISignals: boolean;
+  autoRebalance: boolean;
+}
+
+export interface TradingSession {
+  isActive: boolean;
+  startTime: Date | null;
+  tradesExecuted: number;
+  totalPnL: number;
+  winRate: number;
+  activeInstruments: TradingInstrument[];
+}
+
 interface AppState {
   // Theme
   theme: 'light' | 'dark';
@@ -93,6 +124,17 @@ interface AppState {
   // Demat Data (from connected user's account)
   dematData: DematData | null;
   setDematData: (data: DematData | null) => void;
+
+  // Trading Configuration (persisted)
+  tradingConfig: TradingConfig;
+  setTradingConfig: (config: Partial<TradingConfig>) => void;
+  toggleInstrument: (instrument: TradingInstrument) => void;
+
+  // Trading Session (runtime state)
+  tradingSession: TradingSession;
+  startTradingSession: (instruments: TradingInstrument[]) => void;
+  stopTradingSession: () => void;
+  updateTradingSession: (updates: Partial<TradingSession>) => void;
 
   // Clear all user data (for logout)
   clearUserData: () => void;
@@ -146,6 +188,63 @@ export const useAppStore = create<AppState>()(
         // Demat Data
         dematData: null,
         setDematData: (dematData) => set({ dematData }),
+
+        // Trading Configuration (with defaults)
+        tradingConfig: {
+          selectedInstruments: ['equities'] as TradingInstrument[],
+          riskLevel: 'moderate',
+          stopLossPercent: 2,
+          takeProfitPercent: 4,
+          maxTradesPerDay: 10,
+          tradingAmount: 10000,
+          useAISignals: true,
+          autoRebalance: false,
+        },
+        setTradingConfig: (config) =>
+          set((state) => ({
+            tradingConfig: { ...state.tradingConfig, ...config },
+          })),
+        toggleInstrument: (instrument) =>
+          set((state) => ({
+            tradingConfig: {
+              ...state.tradingConfig,
+              selectedInstruments: state.tradingConfig.selectedInstruments.includes(instrument)
+                ? state.tradingConfig.selectedInstruments.filter((i) => i !== instrument)
+                : [...state.tradingConfig.selectedInstruments, instrument],
+            },
+          })),
+
+        // Trading Session (runtime state - not persisted)
+        tradingSession: {
+          isActive: false,
+          startTime: null,
+          tradesExecuted: 0,
+          totalPnL: 0,
+          winRate: 0,
+          activeInstruments: [],
+        },
+        startTradingSession: (instruments) =>
+          set({
+            tradingSession: {
+              isActive: true,
+              startTime: new Date(),
+              tradesExecuted: 0,
+              totalPnL: 0,
+              winRate: 0,
+              activeInstruments: instruments,
+            },
+          }),
+        stopTradingSession: () =>
+          set((state) => ({
+            tradingSession: {
+              ...state.tradingSession,
+              isActive: false,
+            },
+          })),
+        updateTradingSession: (updates) =>
+          set((state) => ({
+            tradingSession: { ...state.tradingSession, ...updates },
+          })),
 
         // Clear all user data (for logout)
         clearUserData: () => {
@@ -213,6 +312,7 @@ export const useAppStore = create<AppState>()(
         partialize: (state) => ({
           theme: state.theme,
           userProfile: state.userProfile,
+          tradingConfig: state.tradingConfig,
         }),
       }
     )
