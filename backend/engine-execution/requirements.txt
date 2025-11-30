@@ -13,6 +13,10 @@ dhanhq==2.0.2
 
 # Cloud & Secrets
 google-cloud-secret-manager>=2.16.0
+google-cloud-firestore>=2.11.0
+
+# Security & Encryption
+cryptography>=41.0.0
 
 # =====================================================================
 # ML for Order Optimization & Slippage Prediction

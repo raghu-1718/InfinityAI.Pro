@@ -3,11 +3,12 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dhanhq import dhanhq
 from google.cloud import secretmanager
+from google.cloud import firestore
 import uvicorn
 
 # ML Libraries for Execution Optimization
@@ -17,6 +18,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 import joblib
+
+# User Credentials Management
+from user_credentials import get_credentials_manager, UserCredentialsManager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -294,8 +298,34 @@ class ExecutionAnalyticsRequest(BaseModel):
     orders: List[Dict[str, Any]]
 
 # --- DhanHQ Client Helper ---
-def get_dhan_client() -> dhanhq:
-    """Create authenticated DhanHQ client"""
+def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
+    """
+    Create authenticated DhanHQ client.
+
+    If user_id is provided, uses that user's credentials from Firestore.
+    Otherwise, falls back to admin credentials from Secret Manager (for market data).
+    """
+    if user_id:
+        # Get user-specific credentials from Firestore
+        try:
+            db = firestore.Client()
+            doc = db.collection("user_credentials").document(user_id).get()
+            if doc.exists:
+                data = doc.to_dict()
+                creds = data.get("credentials", {})
+                client_id = creds.get("client_id")
+                # Decrypt access token
+                from user_credentials import get_credentials_manager
+                manager = get_credentials_manager()
+                access_token = manager._decrypt(creds.get("access_token", ""))
+
+                if client_id and access_token:
+                    return dhanhq(client_id, access_token)
+        except Exception as e:
+            logger.error(f"Failed to get user credentials: {e}")
+            raise HTTPException(status_code=401, detail="User credentials not found or invalid")
+
+    # Fallback to admin credentials (for market data)
     client_id = os.getenv("DHAN_CLIENT_ID")
     access_token = os.getenv("DHAN_ACCESS_TOKEN")
 
@@ -312,6 +342,218 @@ def get_dhan_client() -> dhanhq:
         )
 
     return dhanhq(client_id, access_token)
+
+# --- User Credentials Models ---
+class UserCredentialsRequest(BaseModel):
+    user_id: str
+    client_id: str
+    access_token: str
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+
+class UserCredentialsVerifyRequest(BaseModel):
+    user_id: str
+
+# --- User Credentials Endpoints ---
+@app.post("/api/v1/user/credentials")
+async def save_user_credentials(request: UserCredentialsRequest):
+    """
+    Save user's Dhan credentials securely.
+    Credentials are encrypted and stored in Firestore.
+    """
+    try:
+        manager = get_credentials_manager()
+        result = await manager.save_user_credentials(
+            user_id=request.user_id,
+            client_id=request.client_id,
+            access_token=request.access_token,
+            api_key=request.api_key,
+            api_secret=request.api_secret
+        )
+
+        # Verify the connection immediately
+        try:
+            dhan_client = dhanhq(request.client_id, request.access_token)
+            funds = dhan_client.get_fund_limits()
+
+            if isinstance(funds, dict) and funds.get("status") == "success":
+                await manager.update_connection_status(
+                    request.user_id,
+                    "connected",
+                    funds.get("data", {})
+                )
+                result["connection_status"] = "connected"
+                result["account_verified"] = True
+            else:
+                await manager.update_connection_status(request.user_id, "failed")
+                result["connection_status"] = "failed"
+                result["account_verified"] = False
+        except Exception as verify_error:
+            await manager.update_connection_status(request.user_id, "failed")
+            result["connection_status"] = "failed"
+            result["error"] = str(verify_error)
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/user/credentials/{user_id}")
+async def get_user_credentials_status(user_id: str):
+    """Get user's credential status (not the actual credentials)"""
+    try:
+        manager = get_credentials_manager()
+        creds = await manager.get_user_credentials(user_id)
+
+        if not creds:
+            return {
+                "user_id": user_id,
+                "configured": False,
+                "connection_status": "not_configured"
+            }
+
+        return {
+            "user_id": user_id,
+            "configured": True,
+            "client_id": creds["credentials"]["client_id"],
+            "connection_status": creds["connection_status"],
+            "is_active": creds["is_active"],
+            "updated_at": creds["updated_at"].isoformat() if creds["updated_at"] else None
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/v1/user/credentials/{user_id}")
+async def delete_user_credentials(user_id: str):
+    """Delete user's Dhan credentials"""
+    try:
+        manager = get_credentials_manager()
+        success = await manager.delete_user_credentials(user_id)
+
+        return {
+            "user_id": user_id,
+            "deleted": success,
+            "message": "Credentials deleted successfully" if success else "Failed to delete"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/user/verify")
+async def verify_user_connection(request: UserCredentialsVerifyRequest):
+    """Verify user's Dhan connection and fetch account details"""
+    try:
+        dhan_client = get_dhan_client(user_id=request.user_id)
+
+        # Fetch funds
+        funds = dhan_client.get_fund_limits()
+
+        # Fetch holdings
+        holdings = dhan_client.get_holdings()
+
+        # Fetch positions
+        positions = dhan_client.get_positions()
+
+        # Update status
+        manager = get_credentials_manager()
+        await manager.update_connection_status(
+            request.user_id,
+            "connected",
+            funds.get("data", {}) if isinstance(funds, dict) else {}
+        )
+
+        return {
+            "status": "connected",
+            "user_id": request.user_id,
+            "account": {
+                "funds": funds.get("data", {}) if isinstance(funds, dict) else funds,
+                "holdings_count": len(holdings.get("data", [])) if isinstance(holdings, dict) else 0,
+                "positions_count": len(positions.get("data", [])) if isinstance(positions, dict) else 0
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
+
+@app.get("/api/v1/user/{user_id}/account")
+async def get_user_account_details(user_id: str):
+    """
+    Get complete user account details including funds, holdings, positions.
+    Requires user to have configured their Dhan credentials.
+    """
+    try:
+        dhan_client = get_dhan_client(user_id=user_id)
+
+        # Fetch all account data
+        funds = dhan_client.get_fund_limits()
+        holdings = dhan_client.get_holdings()
+        positions = dhan_client.get_positions()
+        orders = dhan_client.get_order_list()
+        trades = dhan_client.get_trade_book()
+
+        # Process funds
+        funds_data = funds.get("data", {}) if isinstance(funds, dict) else {}
+
+        # Process holdings
+        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) else []
+        total_holdings_value = sum(
+            h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
+            for h in holdings_data
+        )
+        total_holdings_pnl = sum(h.get("unrealizedProfit", 0) for h in holdings_data)
+
+        # Process positions
+        positions_data = positions.get("data", []) if isinstance(positions, dict) else []
+        total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
+
+        # Process orders
+        orders_data = orders.get("data", []) if isinstance(orders, dict) else []
+
+        # Process trades
+        trades_data = trades.get("data", []) if isinstance(trades, dict) else []
+
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "account_summary": {
+                "available_balance": funds_data.get("availabelBalance", 0),
+                "utilized_margin": funds_data.get("utilizedMargin", 0),
+                "total_holdings_value": total_holdings_value,
+                "total_holdings_pnl": total_holdings_pnl,
+                "total_positions_pnl": total_positions_pnl,
+                "net_pnl": total_holdings_pnl + total_positions_pnl
+            },
+            "funds": funds_data,
+            "holdings": {
+                "count": len(holdings_data),
+                "total_value": total_holdings_value,
+                "total_pnl": total_holdings_pnl,
+                "data": holdings_data
+            },
+            "positions": {
+                "count": len(positions_data),
+                "total_pnl": total_positions_pnl,
+                "data": positions_data
+            },
+            "orders": {
+                "count": len(orders_data),
+                "data": orders_data[:20]  # Last 20 orders
+            },
+            "trades": {
+                "count": len(trades_data),
+                "data": trades_data[:20]  # Last 20 trades
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch account: {str(e)}")
 
 # --- Health & Root ---
 @app.get("/healthz")
@@ -586,6 +828,153 @@ async def dhan_postback(request: Dict[str, Any]):
     except Exception as e:
         logger.error(f"❌ Postback processing failed: {e}")
         return {"status": "error", "message": str(e)}
+
+
+# ==============================================================================
+# SIMPLIFIED API ENDPOINTS (for frontend compatibility)
+# These endpoints use query parameters instead of path parameters
+# ==============================================================================
+
+@app.post("/api/user/credentials")
+async def save_user_credentials_simple(request: UserCredentialsRequest):
+    """Save/Update user's Dhan credentials (simplified API)"""
+    return await save_user_credentials(request)
+
+
+@app.get("/api/user/credentials")
+async def get_user_credentials_simple(user_id: str):
+    """Get user's saved Dhan credentials (simplified API)"""
+    return await get_user_credentials(user_id)
+
+
+@app.delete("/api/user/credentials")
+async def delete_user_credentials_simple(user_id: str):
+    """Delete user's Dhan credentials (simplified API)"""
+    try:
+        manager = get_credentials_manager()
+        success = await manager.delete_user_credentials(user_id)
+        return {
+            "user_id": user_id,
+            "deleted": success,
+            "message": "Credentials deleted successfully" if success else "Failed to delete"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/user/credentials/verify")
+async def verify_user_credentials_simple(user_id: str):
+    """Verify user's Dhan connection (simplified API)"""
+    try:
+        manager = get_credentials_manager()
+        creds = await manager.get_user_credentials(user_id)
+
+        if not creds:
+            return {
+                "user_id": user_id,
+                "is_verified": False,
+                "message": "No credentials found"
+            }
+
+        # Try to connect with user's credentials
+        try:
+            dhan_client = get_dhan_client(user_id=user_id)
+            funds = dhan_client.get_fund_limits()
+
+            if isinstance(funds, dict) and funds.get("status") != "failure":
+                # Update verified status
+                await manager.save_user_credentials(
+                    user_id=user_id,
+                    client_id=creds["client_id"],
+                    api_key=creds.get("api_key"),
+                    access_token=creds["access_token"],
+                    is_verified=True
+                )
+                return {
+                    "user_id": user_id,
+                    "is_verified": True,
+                    "message": "Connection verified successfully"
+                }
+        except Exception as e:
+            logger.error(f"Verification failed for {user_id}: {e}")
+
+        return {
+            "user_id": user_id,
+            "is_verified": False,
+            "message": "Could not verify connection. Please check your access token."
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/user/demat")
+async def get_user_demat_simple(user_id: str):
+    """Get user's demat account details (simplified API)"""
+    try:
+        dhan_client = get_dhan_client(user_id=user_id)
+
+        # Fetch all account data
+        funds = dhan_client.get_fund_limits()
+        holdings = dhan_client.get_holdings()
+        positions = dhan_client.get_positions()
+
+        # Process funds
+        funds_data = funds.get("data", {}) if isinstance(funds, dict) else {}
+
+        # Process holdings
+        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) else []
+        total_holdings_value = sum(
+            h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
+            for h in holdings_data
+        )
+
+        # Process positions
+        positions_data = positions.get("data", []) if isinstance(positions, dict) else []
+        total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
+
+        return {
+            "holdings": {
+                "totalValue": total_holdings_value,
+                "count": len(holdings_data),
+                "items": [
+                    {
+                        "symbol": h.get("tradingSymbol", ""),
+                        "quantity": h.get("totalQty", 0),
+                        "avgPrice": h.get("buyAvg", 0),
+                        "currentPrice": h.get("lastTradedPrice", 0),
+                        "pnl": h.get("unrealizedProfit", 0)
+                    }
+                    for h in holdings_data[:20]  # Limit to 20 items
+                ]
+            },
+            "positions": {
+                "totalPnl": total_positions_pnl,
+                "count": len(positions_data),
+                "items": [
+                    {
+                        "symbol": p.get("tradingSymbol", ""),
+                        "quantity": p.get("netQty", 0),
+                        "entryPrice": p.get("buyAvg", 0),
+                        "currentPrice": p.get("lastTradedPrice", 0),
+                        "pnl": p.get("unrealizedProfit", 0)
+                    }
+                    for p in positions_data[:20]  # Limit to 20 items
+                ]
+            },
+            "funds": {
+                "availableBalance": funds_data.get("availabelBalance", 0),
+                "utilisedMargin": funds_data.get("utilizedMargin", 0),
+                "totalBalance": funds_data.get("availabelBalance", 0) + funds_data.get("utilizedMargin", 0)
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch demat for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch account: {str(e)}")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
