@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFunds, useHoldings, usePositions, usePortfolioSignals } from '@/hooks/useApi';
 import { useAppStore } from '@/lib/store';
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format';
+import { PositionAnalysisSection } from '@/components/dashboard/position-analysis';
 import {
   PieChart,
   Pie,
@@ -25,6 +27,7 @@ import {
   Brain,
   RefreshCw,
   Sparkles,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -142,135 +145,156 @@ export default function PortfolioPage() {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Holdings List */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Holdings</CardTitle>
-                <Badge variant="secondary">{holdings.length} stocks</Badge>
-              </div>
-              <CardDescription>Your long-term investments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {holdingsLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : holdings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <PiggyBank className="h-12 w-12 text-muted-foreground/50" />
-                  <p className="mt-2 text-muted-foreground">No holdings yet</p>
-                  <p className="text-xs text-muted-foreground">
-                    Start investing to see your portfolio here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {holdings.map((holding: any, idx: number) => {
-                    const symbol = holding.tradingSymbol || holding.securityId;
-                    const signal = getSignalForHolding(symbol);
-                    return (
-                      <HoldingRow
-                        key={holding.securityId || idx}
-                        holding={holding}
-                        signal={signal}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      {/* Tabs for Holdings vs AI Analysis */}
+      <Tabs defaultValue="holdings" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="holdings" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Holdings & Positions
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="gap-2">
+            <Brain className="h-4 w-4" />
+            AI Position Analysis
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Portfolio Allocation */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Allocation</CardTitle>
-              <CardDescription>Portfolio distribution</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {holdingsLoading ? (
-                <div className="flex items-center justify-center h-[250px]">
-                  <Skeleton className="h-48 w-48 rounded-full" />
-                </div>
-              ) : pieData.length > 0 ? (
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                        }}
-                        formatter={(value: number) => formatCurrency(value)}
-                      />
-                      <Legend
-                        formatter={(value: string) => (
-                          <span className="text-xs">{value}</span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-                  No data to display
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="holdings" className="space-y-6">
+          {/* Main Content */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Holdings List */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Holdings</CardTitle>
+                    <Badge variant="secondary">{holdings.length} stocks</Badge>
+                  </div>
+                  <CardDescription>Your long-term investments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {holdingsLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  ) : holdings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <PiggyBank className="h-12 w-12 text-muted-foreground/50" />
+                      <p className="mt-2 text-muted-foreground">No holdings yet</p>
+                      <p className="text-xs text-muted-foreground">
+                        Start investing to see your portfolio here
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {holdings.map((holding: any, idx: number) => {
+                        const symbol = holding.tradingSymbol || holding.securityId;
+                        const signal = getSignalForHolding(symbol);
+                        return (
+                          <HoldingRow
+                            key={holding.securityId || idx}
+                            holding={holding}
+                            signal={signal}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Day Positions */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Day Positions</CardTitle>
-                <Badge variant="secondary">{positions.length}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {positionsLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : positions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  No open positions
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {positions.slice(0, 5).map((pos: any, idx: number) => (
-                    <PositionRow key={pos.securityId || idx} position={pos} />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            {/* Portfolio Allocation */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Allocation</CardTitle>
+                  <CardDescription>Portfolio distribution</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {holdingsLoading ? (
+                    <div className="flex items-center justify-center h-[250px]">
+                      <Skeleton className="h-48 w-48 rounded-full" />
+                    </div>
+                  ) : pieData.length > 0 ? (
+                    <div className="h-[250px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {pieData.map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                            }}
+                            formatter={(value: number) => formatCurrency(value)}
+                          />
+                          <Legend
+                            formatter={(value: string) => (
+                              <span className="text-xs">{value}</span>
+                            )}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                      No data to display
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Day Positions */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Day Positions</CardTitle>
+                    <Badge variant="secondary">{positions.length}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {positionsLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
+                    </div>
+                  ) : positions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      No open positions
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {positions.slice(0, 5).map((pos: any, idx: number) => (
+                        <PositionRow key={pos.securityId || idx} position={pos} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai-analysis">
+          {/* AI Position Analysis Section */}
+          <PositionAnalysisSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

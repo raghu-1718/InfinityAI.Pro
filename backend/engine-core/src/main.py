@@ -1557,5 +1557,362 @@ async def get_ensemble_weights():
         "default_weights": MODEL_STORE.ENSEMBLE_WEIGHTS
     }
 
+# =====================================================================
+# POSITION ANALYSIS API - AI/ML POWERED
+# =====================================================================
+class PositionAnalysisRequest(BaseModel):
+    """Request model for position analysis"""
+    symbol: str
+    trading_symbol: str
+    security_id: str
+    position_type: str  # LONG or SHORT
+    exchange_segment: str
+    product_type: str
+    buy_avg: float
+    cost_price: float
+    buy_qty: int
+    sell_qty: int = 0
+    net_qty: int
+    realized_profit: float = 0.0
+    unrealized_profit: float = 0.0
+    expiry_date: Optional[str] = None
+    option_type: Optional[str] = None  # CALL or PUT
+    strike_price: Optional[float] = None
+    current_price: Optional[float] = None
+
+class PositionAnalysisResponse(BaseModel):
+    """Response model for position analysis"""
+    symbol: str
+    analysis: Dict[str, Any]
+    risk_metrics: Dict[str, Any]
+    ai_recommendation: Dict[str, Any]
+    market_context: Dict[str, Any]
+    timestamp: str
+
+@app.post("/api/v1/position/analyze", response_model=PositionAnalysisResponse)
+async def analyze_position(request: PositionAnalysisRequest):
+    """
+    AI/ML powered position analysis for options and equity positions.
+    Provides comprehensive analysis including Greeks estimation, risk metrics,
+    and AI-driven recommendations.
+    """
+    try:
+        # Parse position details
+        is_option = request.exchange_segment == "NSE_FNO" and request.option_type
+        is_put = request.option_type == "PUT" if is_option else False
+        is_call = request.option_type == "CALL" if is_option else False
+
+        # Calculate days to expiry
+        days_to_expiry = None
+        if request.expiry_date:
+            try:
+                expiry = datetime.strptime(request.expiry_date, "%Y-%m-%d")
+                days_to_expiry = (expiry - datetime.now()).days
+            except:
+                days_to_expiry = None
+
+        # Fetch underlying data for analysis
+        underlying_symbol = request.symbol.split("-")[0] if "-" in request.symbol else request.symbol
+
+        # For index options like NIFTY, use ^NSEI
+        if underlying_symbol.upper() == "NIFTY":
+            fetch_symbol = "^NSEI"
+        elif underlying_symbol.upper() == "BANKNIFTY":
+            fetch_symbol = "^NSEBANK"
+        else:
+            fetch_symbol = f"{underlying_symbol}.NS"
+
+        try:
+            df, data_source = await MARKET_ENGINE.fetch_data(fetch_symbol, days=30)
+        except Exception as e:
+            logger.warning(f"Could not fetch market data for {fetch_symbol}: {e}")
+            df = pd.DataFrame()
+            data_source = "unavailable"
+
+        # Calculate technical indicators with safe column access
+        if not df.empty and 'Close' in df.columns:
+            current_underlying_price = df['Close'].iloc[-1]
+            volatility = df['Close'].pct_change().std() * np.sqrt(252) if len(df) > 5 else 0.25
+        else:
+            current_underlying_price = request.current_price or request.strike_price or 0
+            volatility = 0.25
+
+        # Calculate trend
+        if not df.empty and 'Close' in df.columns and len(df) >= 20:
+            sma_20 = df['Close'].rolling(20).mean().iloc[-1]
+            sma_5 = df['Close'].rolling(5).mean().iloc[-1]
+            trend = "BULLISH" if sma_5 > sma_20 else "BEARISH"
+            trend_strength = abs(sma_5 - sma_20) / sma_20 * 100 if sma_20 > 0 else 0
+        else:
+            trend = "NEUTRAL"
+            trend_strength = 0
+            sma_20 = current_underlying_price
+            sma_5 = current_underlying_price
+
+        # Calculate Greeks estimation for options
+        greeks = {}
+        if is_option and request.strike_price and days_to_expiry is not None:
+            # Simplified Greeks estimation
+            moneyness = current_underlying_price / request.strike_price if request.strike_price > 0 else 1
+            time_factor = max(days_to_expiry, 1) / 365
+
+            # Delta estimation
+            if is_call:
+                if moneyness > 1.05:  # ITM
+                    delta = 0.7 + (moneyness - 1.05) * 2
+                elif moneyness < 0.95:  # OTM
+                    delta = 0.3 - (0.95 - moneyness) * 2
+                else:  # ATM
+                    delta = 0.5
+            else:  # PUT
+                if moneyness < 0.95:  # ITM for put
+                    delta = -0.7 - (0.95 - moneyness) * 2
+                elif moneyness > 1.05:  # OTM for put
+                    delta = -0.3 + (moneyness - 1.05) * 2
+                else:  # ATM
+                    delta = -0.5
+
+            delta = max(-1, min(1, delta))
+
+            # Theta estimation (time decay)
+            theta = -request.cost_price * (1 / max(days_to_expiry, 1)) * 0.5
+
+            # Gamma estimation
+            gamma = 0.05 if 0.95 <= moneyness <= 1.05 else 0.02
+
+            # Vega estimation
+            vega = request.cost_price * 0.1 * np.sqrt(time_factor)
+
+            greeks = {
+                "delta": round(delta, 4),
+                "theta": round(theta, 2),
+                "gamma": round(gamma, 4),
+                "vega": round(vega, 2),
+                "moneyness": round(moneyness, 4),
+                "moneyness_status": "ITM" if (is_call and moneyness > 1) or (is_put and moneyness < 1) else "OTM" if (is_call and moneyness < 1) or (is_put and moneyness > 1) else "ATM"
+            }
+
+        # Risk Metrics
+        position_value = abs(request.net_qty * request.cost_price)
+        max_loss = position_value if request.position_type == "LONG" else float('inf')
+
+        # For options, max loss is premium paid (for buyers)
+        if is_option and request.position_type == "LONG":
+            max_loss = position_value
+
+        # Breakeven calculation for options
+        breakeven = None
+        if is_option and request.strike_price:
+            if is_call:
+                breakeven = request.strike_price + request.cost_price
+            else:  # PUT
+                breakeven = request.strike_price - request.cost_price
+
+        # P&L Analysis
+        pnl_pct = (request.unrealized_profit / position_value * 100) if position_value > 0 else 0
+
+        risk_metrics = {
+            "position_value": round(position_value, 2),
+            "unrealized_pnl": round(request.unrealized_profit, 2),
+            "unrealized_pnl_pct": round(pnl_pct, 2),
+            "max_loss": round(max_loss, 2) if max_loss != float('inf') else "Unlimited",
+            "breakeven": round(breakeven, 2) if breakeven else None,
+            "days_to_expiry": days_to_expiry,
+            "implied_volatility_estimate": round(volatility * 100, 2),
+            "greeks": greeks if greeks else None
+        }
+
+        # AI Recommendation
+        recommendation_score = 0
+        recommendation_factors = []
+
+        # Factor 1: P&L Status
+        if pnl_pct > 20:
+            recommendation_score += 2
+            recommendation_factors.append("Significant profit - consider booking partial gains")
+        elif pnl_pct > 5:
+            recommendation_score += 1
+            recommendation_factors.append("Position in profit - monitor for target")
+        elif pnl_pct < -30:
+            recommendation_score -= 2
+            recommendation_factors.append("Significant loss - review exit strategy")
+        elif pnl_pct < -10:
+            recommendation_score -= 1
+            recommendation_factors.append("Position underwater - evaluate stop-loss")
+
+        # Factor 2: Time Decay (for options)
+        if days_to_expiry is not None:
+            if days_to_expiry <= 2:
+                recommendation_score -= 2
+                recommendation_factors.append("CRITICAL: Expiry imminent - high theta risk")
+            elif days_to_expiry <= 5:
+                recommendation_score -= 1
+                recommendation_factors.append("Near expiry - accelerated time decay")
+            elif days_to_expiry > 20:
+                recommendation_score += 1
+                recommendation_factors.append("Good time value remaining")
+
+        # Factor 3: Moneyness
+        if greeks and 'moneyness_status' in greeks:
+            if greeks['moneyness_status'] == "OTM" and days_to_expiry and days_to_expiry <= 5:
+                recommendation_score -= 2
+                recommendation_factors.append("OTM near expiry - low probability of profit")
+            elif greeks['moneyness_status'] == "ITM":
+                recommendation_score += 1
+                recommendation_factors.append("In-the-money - has intrinsic value")
+
+        # Factor 4: Trend alignment
+        if is_call and trend == "BULLISH":
+            recommendation_score += 1
+            recommendation_factors.append("CALL aligned with bullish trend")
+        elif is_put and trend == "BEARISH":
+            recommendation_score += 1
+            recommendation_factors.append("PUT aligned with bearish trend")
+        elif is_call and trend == "BEARISH":
+            recommendation_score -= 1
+            recommendation_factors.append("CALL against bearish trend")
+        elif is_put and trend == "BULLISH":
+            recommendation_score -= 1
+            recommendation_factors.append("PUT against bullish trend")
+
+        # Generate final recommendation
+        if recommendation_score >= 2:
+            action = "HOLD"
+            confidence = "HIGH"
+            summary = "Position is performing well. Consider holding or taking partial profits."
+        elif recommendation_score >= 0:
+            action = "MONITOR"
+            confidence = "MEDIUM"
+            summary = "Position needs monitoring. Set alerts for key levels."
+        elif recommendation_score >= -2:
+            action = "REVIEW"
+            confidence = "MEDIUM"
+            summary = "Position under pressure. Review risk management."
+        else:
+            action = "EXIT_CONSIDERATION"
+            confidence = "HIGH"
+            summary = "Position at risk. Strongly consider exit or hedging."
+
+        ai_recommendation = {
+            "action": action,
+            "confidence": confidence,
+            "summary": summary,
+            "score": recommendation_score,
+            "factors": recommendation_factors,
+            "suggested_actions": []
+        }
+
+        # Add specific action suggestions
+        if is_option and days_to_expiry and days_to_expiry <= 2:
+            ai_recommendation["suggested_actions"].append({
+                "action": "EXIT_BEFORE_EXPIRY",
+                "reason": "Avoid expiry day volatility and STT charges",
+                "urgency": "HIGH"
+            })
+
+        if pnl_pct > 30:
+            ai_recommendation["suggested_actions"].append({
+                "action": "BOOK_PARTIAL_PROFIT",
+                "reason": f"Lock in {pnl_pct:.1f}% gains on part of position",
+                "urgency": "MEDIUM"
+            })
+
+        if pnl_pct < -25 and days_to_expiry and days_to_expiry <= 10:
+            ai_recommendation["suggested_actions"].append({
+                "action": "CONSIDER_STOP_LOSS",
+                "reason": "Limited time for recovery",
+                "urgency": "HIGH"
+            })
+
+        # Market Context
+        market_context = {
+            "underlying_price": round(current_underlying_price, 2),
+            "trend": trend,
+            "trend_strength": round(trend_strength, 2),
+            "volatility": round(volatility * 100, 2),
+            "sma_5": round(sma_5, 2),
+            "sma_20": round(sma_20, 2),
+            "market_status": "CLOSED" if datetime.now().weekday() >= 5 else "TRADING_HOURS",
+            "data_source": data_source
+        }
+
+        # Position analysis summary
+        analysis = {
+            "position_type": "OPTION" if is_option else "EQUITY",
+            "option_type": request.option_type if is_option else None,
+            "direction": request.position_type,
+            "quantity": request.net_qty,
+            "entry_price": request.cost_price,
+            "current_value": round(request.net_qty * (request.current_price or request.cost_price), 2),
+            "strike_price": request.strike_price if is_option else None,
+            "expiry_date": request.expiry_date,
+            "is_profitable": request.unrealized_profit > 0,
+            "risk_reward_status": "FAVORABLE" if pnl_pct > 0 else "UNFAVORABLE"
+        }
+
+        return PositionAnalysisResponse(
+            symbol=request.trading_symbol,
+            analysis=analysis,
+            risk_metrics=risk_metrics,
+            ai_recommendation=ai_recommendation,
+            market_context=market_context,
+            timestamp=datetime.utcnow().isoformat()
+        )
+
+    except Exception as e:
+        logger.error(f"Position analysis failed: {e}")
+        raise HTTPException(500, f"Analysis failed: {str(e)}")
+
+@app.post("/api/v1/portfolio/analyze")
+async def analyze_portfolio(positions: List[PositionAnalysisRequest]):
+    """
+    Analyze entire portfolio with AI/ML insights.
+    Provides portfolio-level risk assessment and recommendations.
+    """
+    try:
+        analyses = []
+        total_value = 0
+        total_pnl = 0
+        total_risk = 0
+
+        for position in positions:
+            analysis = await analyze_position(position)
+            analyses.append(analysis.dict())
+            total_value += analysis.risk_metrics.get("position_value", 0)
+            total_pnl += position.unrealized_profit
+
+        # Portfolio-level metrics
+        portfolio_pnl_pct = (total_pnl / total_value * 100) if total_value > 0 else 0
+
+        # Concentration risk
+        position_weights = []
+        for a in analyses:
+            weight = a["risk_metrics"]["position_value"] / total_value * 100 if total_value > 0 else 0
+            position_weights.append(weight)
+
+        max_concentration = max(position_weights) if position_weights else 0
+        concentration_risk = "HIGH" if max_concentration > 50 else "MEDIUM" if max_concentration > 25 else "LOW"
+
+        return {
+            "portfolio_summary": {
+                "total_positions": len(positions),
+                "total_value": round(total_value, 2),
+                "total_unrealized_pnl": round(total_pnl, 2),
+                "portfolio_pnl_pct": round(portfolio_pnl_pct, 2),
+                "concentration_risk": concentration_risk,
+                "max_position_weight": round(max_concentration, 2)
+            },
+            "positions": analyses,
+            "portfolio_recommendation": {
+                "diversification": "ADEQUATE" if len(positions) >= 3 else "LOW",
+                "risk_level": "HIGH" if portfolio_pnl_pct < -20 else "MEDIUM" if portfolio_pnl_pct < 0 else "LOW",
+                "suggested_actions": []
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Portfolio analysis failed: {e}")
+        raise HTTPException(500, f"Portfolio analysis failed: {str(e)}")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

@@ -377,3 +377,83 @@ export function useTradeIdeas(budget?: number, riskLevel?: 'conservative' | 'mod
     refetchInterval: 600000,
   });
 }
+
+// =====================================================
+// Position Analysis Hooks - AI/ML Analysis of Positions
+// =====================================================
+
+import type { PositionAnalysisRequest, PositionAnalysisResponse } from '@/lib/api';
+
+// Single Position Analysis Hook
+export function usePositionAnalysis(position: PositionAnalysisRequest | null, enabled = true) {
+  return useQuery<PositionAnalysisResponse | null>({
+    queryKey: ['position', 'analysis', position?.symbol],
+    queryFn: () => (position ? engineB.analyzePosition(position) : Promise.resolve(null)),
+    enabled: enabled && !!position,
+    staleTime: 60000, // 1 minute
+    refetchInterval: 120000, // Refresh every 2 minutes
+  });
+}
+
+// All Positions Analysis Hook - Analyzes all current positions
+export function useAllPositionsAnalysis(enabled = true) {
+  const { data: positionsData, isLoading: positionsLoading } = usePositions();
+
+  // Extract positions array from response
+  const positions = Array.isArray(positionsData?.data) ? positionsData.data : [];
+
+  // Transform Dhan positions to PositionAnalysisRequest format
+  const positionDataList: PositionAnalysisRequest[] = positions.map((p: any) => ({
+    symbol: p.tradingSymbol || p.securityId,
+    trading_symbol: p.tradingSymbol || '',
+    security_id: p.securityId || '',
+    position_type: (p.netQty || 0) > 0 ? 'LONG' : 'SHORT',
+    exchange_segment: p.exchangeSegment || 'NSE_EQ',
+    product_type: p.productType || 'CNC',
+    buy_avg: p.buyAvg || 0,
+    cost_price: p.costPrice || p.buyAvg || 0,
+    buy_qty: p.buyQty || 0,
+    sell_qty: p.sellQty || 0,
+    net_qty: p.netQty || p.buyQty - (p.sellQty || 0),
+    realized_profit: p.realizedProfit || 0,
+    unrealized_profit: p.unrealizedProfit || 0,
+    expiry_date: p.expiryDate,
+    option_type: p.optionType,
+    strike_price: p.strikePrice,
+    current_price: p.dayClosePrice || p.lastTradedPrice,
+  }));
+
+  return useQuery<PositionAnalysisResponse[]>({
+    queryKey: ['positions', 'analysis', 'all', positionDataList.map((p) => p.symbol).join(',')],
+    queryFn: () => engineB.analyzePortfolioPositions(positionDataList),
+    enabled: enabled && !positionsLoading && positionDataList.length > 0,
+    staleTime: 60000,
+    refetchInterval: 120000,
+  });
+}
+
+// Position Risk Summary Hook - Aggregates risk across all positions
+export function usePositionRiskSummary() {
+  const { data: analysisData, isLoading, error } = useAllPositionsAnalysis();
+
+  const summary = analysisData ? {
+    totalPositions: analysisData.length,
+    totalUnrealizedPnL: analysisData.reduce((sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0), 0),
+    averageRiskScore: analysisData.reduce((sum, a) => sum + (a.ai_recommendation?.score || 50), 0) / analysisData.length,
+    highRiskCount: analysisData.filter((a) => (a.ai_recommendation?.score || 50) > 70).length,
+    buyRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'HOLD').length,
+    sellRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'EXIT_CONSIDERATION').length,
+    holdRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'MONITOR').length,
+    totalMaxLoss: analysisData.reduce((sum, a) => {
+      const maxLoss = a.risk_metrics?.max_loss;
+      return sum + (typeof maxLoss === 'number' ? maxLoss : 0);
+    }, 0),
+    positionsByConfidence: {
+      high: analysisData.filter((a) => a.ai_recommendation?.confidence === 'HIGH').length,
+      medium: analysisData.filter((a) => a.ai_recommendation?.confidence === 'MEDIUM').length,
+      low: analysisData.filter((a) => a.ai_recommendation?.confidence === 'LOW').length,
+    },
+  } : null;
+
+  return { summary, analysisData, isLoading, error };
+}

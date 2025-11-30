@@ -113,6 +113,93 @@ export interface FundsResponse {
   };
 }
 
+// Position Analysis Types
+export interface PositionAnalysisRequest {
+  symbol: string;
+  trading_symbol: string;
+  security_id: string;
+  position_type: 'LONG' | 'SHORT';
+  exchange_segment: string;
+  product_type: string;
+  buy_avg: number;
+  cost_price: number;
+  buy_qty: number;
+  sell_qty?: number;
+  net_qty: number;
+  realized_profit?: number;
+  unrealized_profit?: number;
+  expiry_date?: string;
+  option_type?: 'CALL' | 'PUT';
+  strike_price?: number;
+  current_price?: number;
+}
+
+export interface PositionGreeks {
+  delta: number;
+  theta: number;
+  gamma: number;
+  vega: number;
+  moneyness: number;
+  moneyness_status: 'ITM' | 'ATM' | 'OTM';
+}
+
+export interface PositionRiskMetrics {
+  position_value: number;
+  unrealized_pnl: number;
+  unrealized_pnl_pct: number;
+  max_loss: number | string;
+  breakeven: number | null;
+  days_to_expiry: number | null;
+  implied_volatility_estimate: number;
+  greeks: PositionGreeks | null;
+}
+
+export interface AIRecommendation {
+  action: 'HOLD' | 'MONITOR' | 'REVIEW' | 'EXIT_CONSIDERATION';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  summary: string;
+  score: number;
+  factors: string[];
+  suggested_actions: Array<{
+    action: string;
+    reason: string;
+    urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+  }>;
+}
+
+export interface MarketContext {
+  underlying_price: number;
+  trend: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  trend_strength: number;
+  volatility: number;
+  sma_5: number;
+  sma_20: number;
+  market_status: string;
+  data_source: string;
+}
+
+export interface PositionAnalysis {
+  position_type: 'OPTION' | 'EQUITY';
+  option_type: 'CALL' | 'PUT' | null;
+  direction: 'LONG' | 'SHORT';
+  quantity: number;
+  entry_price: number;
+  current_value: number;
+  strike_price: number | null;
+  expiry_date: string | null;
+  is_profitable: boolean;
+  risk_reward_status: 'FAVORABLE' | 'UNFAVORABLE';
+}
+
+export interface PositionAnalysisResponse {
+  symbol: string;
+  analysis: PositionAnalysis;
+  risk_metrics: PositionRiskMetrics;
+  ai_recommendation: AIRecommendation;
+  market_context: MarketContext;
+  timestamp: string;
+}
+
 // Engine A - Orchestration & Risk Management
 export const engineA = {
   async health(): Promise<EngineHealth> {
@@ -411,6 +498,57 @@ export const engineB = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ budget, risk_level: riskLevel }),
       }
+    );
+    return res.json();
+  },
+
+  // Position Analysis - AI-powered analysis of individual positions
+  async analyzePosition(position: PositionAnalysisRequest): Promise<PositionAnalysisResponse> {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/position/analyze`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/position/analyze`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(position),
+      }
+    );
+    return res.json();
+  },
+
+  // Portfolio Analysis - Analyze entire portfolio with AI
+  async analyzePortfolioPositions(positions: PositionAnalysisRequest[]) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/portfolio/analyze`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/portfolio/analyze`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(positions),
+      }
+    );
+    return res.json();
+  },
+
+  // Sentiment Analysis - Analyze text for sentiment
+  async analyzeSentiment(symbol: string, text: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/sentiment`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/sentiment`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol, text }),
+      }
+    );
+    return res.json();
+  },
+
+  // Market Status
+  async getMarketStatus() {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/market/status`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/market/status`
     );
     return res.json();
   },
