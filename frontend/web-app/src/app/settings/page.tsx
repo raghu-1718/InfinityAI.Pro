@@ -83,7 +83,7 @@ interface DematInfo {
 
 export default function SettingsPage() {
   // Global state and query client
-  const { setUserProfile, setDematData, setFunds } = useAppStore();
+  const { userProfile, setUserProfile, dematData, setDematData, setFunds } = useAppStore();
   const queryClient = useQueryClient();
 
   // Dhan Credentials State
@@ -97,9 +97,34 @@ export default function SettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "error">("disconnected");
-  const [dematInfo, setDematInfo] = useState<DematInfo | null>(null);
+  // Initialize connection status from global userProfile state
+  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "error">(
+    userProfile?.isConnected ? "connected" : "disconnected"
+  );
+  const [dematInfo, setDematInfo] = useState<DematInfo | null>(dematData);
   const [isLoadingDemat, setIsLoadingDemat] = useState(false);
+
+  // Sync connection status with global userProfile
+  useEffect(() => {
+    if (userProfile?.isConnected) {
+      setConnectionStatus("connected");
+      if (userProfile.clientId) {
+        setDhanCredentials(prev => ({
+          ...prev,
+          client_id: userProfile.clientId,
+          is_verified: true,
+          access_token: prev.access_token || "********",
+        }));
+      }
+    }
+  }, [userProfile]);
+
+  // Sync demat info with global dematData
+  useEffect(() => {
+    if (dematData) {
+      setDematInfo(dematData);
+    }
+  }, [dematData]);
 
   // Other Settings State
   const [emailNotifications, setEmailNotifications] = useState(true);
