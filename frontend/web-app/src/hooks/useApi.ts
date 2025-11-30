@@ -148,21 +148,45 @@ export function useFunds() {
   });
 }
 
-// Positions Hook
+// Positions Hook - Fetches positions using user's credentials if connected
 export function usePositions() {
+  const { userProfile } = useAppStore();
+
   return useQuery({
-    queryKey: ['positions'],
-    queryFn: () => engineC.getPositions(),
+    queryKey: ['positions', userProfile?.userId],
+    queryFn: async () => {
+      // If user is connected, their credentials are stored on backend
+      // The backend will use the user's credentials for this request
+      const res = await engineC.getPositions();
+
+      // Ensure data is always an array
+      if (res && res.data && !Array.isArray(res.data)) {
+        return { ...res, data: [] };
+      }
+      return res;
+    },
     refetchInterval: 10000,
     staleTime: 5000,
   });
 }
 
-// Holdings Hook
+// Holdings Hook - Fetches holdings using user's credentials if connected
 export function useHoldings() {
+  const { userProfile } = useAppStore();
+
   return useQuery({
-    queryKey: ['holdings'],
-    queryFn: () => engineC.getHoldings(),
+    queryKey: ['holdings', userProfile?.userId],
+    queryFn: async () => {
+      // If user is connected, their credentials are stored on backend
+      // The backend will use the user's credentials for this request
+      const res = await engineC.getHoldings();
+
+      // Ensure data is always an array
+      if (res && res.data && !Array.isArray(res.data)) {
+        return { ...res, data: [] };
+      }
+      return res;
+    },
     refetchInterval: 60000,
     staleTime: 30000,
   });

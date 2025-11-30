@@ -15,18 +15,53 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet } from 'lucide-react';
 import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
+import { useQueryClient } from '@tanstack/react-query';
+import { engineC } from '@/lib/api';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export function Header() {
-  const { theme, toggleTheme, funds, engines, userProfile, dematData } = useAppStore();
+  const { theme, toggleTheme, funds, engines, userProfile, dematData, clearUserData } = useAppStore();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
   const { refetch: refetchFunds } = useFunds();
   const { refetch: refetchProfile } = useUserProfile();
+  const queryClient = useQueryClient();
 
   const handleRefresh = () => {
     refetchEngines();
     refetchFunds();
     refetchProfile();
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Get userId before clearing
+      const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+
+      if (userId) {
+        // Delete credentials from backend
+        await engineC.deleteUserCredentials(userId);
+      }
+
+      // Clear local store
+      clearUserData();
+
+      // Invalidate all queries
+      queryClient.clear();
+
+      toast.success('Logged Out', {
+        description: 'You have been logged out successfully.',
+      });
+
+      // Redirect to home/settings
+      window.location.href = '/settings';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still clear local data even if API fails
+      clearUserData();
+      queryClient.clear();
+      window.location.href = '/settings';
+    }
   };
 
   const allOnline =
@@ -150,7 +185,10 @@ export function Header() {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600 cursor-pointer"
+              onClick={handleLogout}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>

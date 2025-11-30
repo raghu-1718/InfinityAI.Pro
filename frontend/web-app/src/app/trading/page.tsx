@@ -68,8 +68,13 @@ export default function TradingPage() {
   const { data: positionsData } = usePositions();
   const { data: holdingsData } = useHoldings();
 
-  const positions = positionsData?.data || [];
-  const holdings = holdingsData?.data || [];
+  // Safely handle positions data - ensure it's always an array
+  const positionsRaw = positionsData?.data;
+  const positions = Array.isArray(positionsRaw) ? positionsRaw : [];
+
+  // Safely handle holdings data - ensure it's always an array
+  const holdingsRaw = holdingsData?.data;
+  const holdings = Array.isArray(holdingsRaw) ? holdingsRaw : [];
 
   const handlePlaceOrder = async () => {
     // Optional risk check

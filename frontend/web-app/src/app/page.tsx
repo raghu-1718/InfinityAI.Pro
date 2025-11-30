@@ -20,7 +20,10 @@ export default function DashboardPage() {
 
   // Calculate real returns from user's holdings (day-over-day price changes)
   const userReturns = useMemo(() => {
-    const holdings = holdingsData?.data || [];
+    // Safely extract holdings array from API response
+    const holdingsRaw = holdingsData?.data;
+    const holdings = Array.isArray(holdingsRaw) ? holdingsRaw : [];
+
     if (holdings.length === 0) {
       // Return empty array - risk metrics will show loading state
       return [];

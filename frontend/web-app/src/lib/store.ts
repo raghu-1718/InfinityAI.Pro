@@ -94,6 +94,9 @@ interface AppState {
   dematData: DematData | null;
   setDematData: (data: DematData | null) => void;
 
+  // Clear all user data (for logout)
+  clearUserData: () => void;
+
   // Engine Status
   engines: {
     engineA: EngineStatus;
@@ -143,6 +146,21 @@ export const useAppStore = create<AppState>()(
         // Demat Data
         dematData: null,
         setDematData: (dematData) => set({ dematData }),
+
+        // Clear all user data (for logout)
+        clearUserData: () => {
+          // Clear localStorage userId
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('userId');
+          }
+          set({
+            userProfile: null,
+            dematData: null,
+            funds: null,
+            positions: [],
+            signals: [],
+          });
+        },
 
         // Engine Status
         engines: {
