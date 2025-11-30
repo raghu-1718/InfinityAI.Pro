@@ -852,13 +852,86 @@ async def dhan_postback(request: Dict[str, Any]):
 @app.post("/api/user/credentials")
 async def save_user_credentials_simple(request: UserCredentialsRequest):
     """Save/Update user's Dhan credentials (simplified API)"""
-    return await save_user_credentials(request)
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+        # Save credentials
+        result = await manager.save_user_credentials(
+            user_id=request.user_id,
+            client_id=request.client_id,
+            access_token=request.access_token,
+            api_key=request.api_key,
+            api_secret=request.api_secret
+        )
+
+        # Verify the connection immediately
+        try:
+            dhan_client = dhanhq(request.client_id, request.access_token)
+            funds = dhan_client.get_fund_limits()
+
+            if isinstance(funds, dict) and funds.get("status") == "success":
+                result["is_verified"] = True
+                result["connection_status"] = "connected"
+            else:
+                result["is_verified"] = False
+                result["connection_status"] = "failed"
+        except Exception as verify_error:
+            logger.warning(f"Verification failed: {verify_error}")
+            result["is_verified"] = False
+            result["connection_status"] = "failed"
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/user/credentials")
 async def get_user_credentials_simple(user_id: str):
     """Get user's saved Dhan credentials (simplified API)"""
-    return await get_user_credentials(user_id)
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            return {
+                "user_id": user_id,
+                "configured": False,
+                "client_id": "",
+                "api_key": "",
+                "is_verified": False
+            }
+
+        creds = await manager.get_user_credentials(user_id)
+
+        if not creds:
+            return {
+                "user_id": user_id,
+                "configured": False,
+                "client_id": "",
+                "api_key": "",
+                "is_verified": False
+            }
+
+        return {
+            "user_id": user_id,
+            "configured": True,
+            "client_id": creds.get("credentials", {}).get("client_id", ""),
+            "api_key": creds.get("credentials", {}).get("api_key", ""),
+            "access_token": "********" if creds.get("credentials", {}).get("access_token") else "",
+            "is_verified": creds.get("connection_status") == "connected",
+            "connection_status": creds.get("connection_status", "unknown")
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get credentials for {user_id}: {e}")
+        return {
+            "user_id": user_id,
+            "configured": False,
+            "client_id": "",
+            "api_key": "",
+            "is_verified": False
+        }
 
 
 @app.delete("/api/user/credentials")
@@ -866,6 +939,9 @@ async def delete_user_credentials_simple(user_id: str):
     """Delete user's Dhan credentials (simplified API)"""
     try:
         manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
         success = await manager.delete_user_credentials(user_id)
         return {
             "user_id": user_id,
@@ -881,6 +957,13 @@ async def verify_user_credentials_simple(user_id: str):
     """Verify user's Dhan connection (simplified API)"""
     try:
         manager = get_credentials_manager()
+        if manager is None:
+            return {
+                "user_id": user_id,
+                "is_verified": False,
+                "message": "Credentials manager not available"
+            }
+
         creds = await manager.get_user_credentials(user_id)
 
         if not creds:
@@ -892,18 +975,20 @@ async def verify_user_credentials_simple(user_id: str):
 
         # Try to connect with user's credentials
         try:
-            dhan_client = get_dhan_client(user_id=user_id)
+            client_id = creds.get("credentials", {}).get("client_id")
+            access_token = creds.get("credentials", {}).get("access_token")
+
+            if not client_id or not access_token:
+                return {
+                    "user_id": user_id,
+                    "is_verified": False,
+                    "message": "Incomplete credentials"
+                }
+
+            dhan_client = dhanhq(client_id, access_token)
             funds = dhan_client.get_fund_limits()
 
-            if isinstance(funds, dict) and funds.get("status") != "failure":
-                # Update verified status
-                await manager.save_user_credentials(
-                    user_id=user_id,
-                    client_id=creds["client_id"],
-                    api_key=creds.get("api_key"),
-                    access_token=creds["access_token"],
-                    is_verified=True
-                )
+            if isinstance(funds, dict) and funds.get("status") == "success":
                 return {
                     "user_id": user_id,
                     "is_verified": True,
@@ -926,7 +1011,21 @@ async def verify_user_credentials_simple(user_id: str):
 async def get_user_demat_simple(user_id: str):
     """Get user's demat account details (simplified API)"""
     try:
-        dhan_client = get_dhan_client(user_id=user_id)
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+        creds = await manager.get_user_credentials(user_id)
+        if not creds:
+            raise HTTPException(status_code=404, detail="No credentials found for user")
+
+        client_id = creds.get("credentials", {}).get("client_id")
+        access_token = creds.get("credentials", {}).get("access_token")
+
+        if not client_id or not access_token:
+            raise HTTPException(status_code=400, detail="Incomplete credentials")
+
+        dhan_client = dhanhq(client_id, access_token)
 
         # Fetch all account data
         funds = dhan_client.get_fund_limits()
