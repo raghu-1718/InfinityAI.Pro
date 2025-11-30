@@ -656,6 +656,117 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Dhan OAuth/API Configuration URLs */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Dhan API Configuration URLs
+              </CardTitle>
+              <CardDescription>
+                Use these URLs when setting up your Dhan API application
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Postback URL</Label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
+                      https://infinityai.pro/api/dhan/postback
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://infinityai.pro/api/dhan/postback');
+                        toast.success('Copied!', { description: 'Postback URL copied to clipboard' });
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Configure this in your Dhan Dashboard → API Settings → Postback URL
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Redirect URL (OAuth Callback)</Label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
+                      https://infinityai.pro/api/dhan/callback
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://infinityai.pro/api/dhan/callback');
+                        toast.success('Copied!', { description: 'Redirect URL copied to clipboard' });
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Configure this in your Dhan Dashboard → API Settings → Redirect URL
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Alternative URLs (Current Domain)</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
+                        https://after-yesterday-473512-k3.web.app/api/dhan/postback
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://after-yesterday-473512-k3.web.app/api/dhan/postback');
+                          toast.success('Copied!');
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
+                        https://after-yesterday-473512-k3.web.app/api/dhan/callback
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://after-yesterday-473512-k3.web.app/api/dhan/callback');
+                          toast.success('Copied!');
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use these if infinityai.pro custom domain is not yet verified
+                  </p>
+                </div>
+
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Engine API Endpoints
+                  </h4>
+                  <div className="mt-2 space-y-1 text-xs text-blue-700 dark:text-blue-300">
+                    <p><strong>Engine C (Execution):</strong> https://engine-c.infinityai.pro</p>
+                    <p><strong>Engine B (AI/ML):</strong> https://engine-b.infinityai.pro</p>
+                    <p><strong>Engine A (Risk):</strong> https://engine-a.infinityai.pro</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* General Settings Tab */}
