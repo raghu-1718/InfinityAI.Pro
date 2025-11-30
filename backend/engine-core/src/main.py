@@ -69,6 +69,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("InfinityAI.EngineB")
 
+# Import Indian Market Knowledge Base (after logger is defined)
+try:
+    from services.market_knowledge import IndianMarketKnowledge
+    MARKET_KNOWLEDGE = IndianMarketKnowledge()
+    HAS_MARKET_KNOWLEDGE = True
+    logger.info("✅ Indian Market Knowledge Base loaded successfully")
+except ImportError as e:
+    HAS_MARKET_KNOWLEDGE = False
+    MARKET_KNOWLEDGE = None
+    logger.warning(f"⚠️ Market Knowledge module not available: {e}")
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (Production)",
     description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference",
@@ -1913,6 +1924,200 @@ async def analyze_portfolio(positions: List[PositionAnalysisRequest]):
     except Exception as e:
         logger.error(f"Portfolio analysis failed: {e}")
         raise HTTPException(500, f"Portfolio analysis failed: {str(e)}")
+
+# =====================================================================
+# INDIAN MARKET KNOWLEDGE ENDPOINTS
+# =====================================================================
+@app.get("/api/v1/knowledge/index/{symbol}")
+async def get_index_knowledge(symbol: str):
+    """
+    Get comprehensive knowledge about an Indian index.
+    Includes lot sizes, trading hours, expiry info, and SEBI rules.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    try:
+        symbol = symbol.upper()
+        info = MARKET_KNOWLEDGE.get_index_info(symbol)
+        rules = MARKET_KNOWLEDGE.get_sebi_rules(symbol)
+        sessions = MARKET_KNOWLEDGE.get_trading_sessions()
+
+        return {
+            "symbol": symbol,
+            "index_info": info,
+            "sebi_rules": rules,
+            "trading_sessions": sessions,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Index knowledge fetch failed: {e}")
+        raise HTTPException(500, str(e))
+
+@app.get("/api/v1/knowledge/stock/{symbol}")
+async def get_stock_knowledge(symbol: str):
+    """
+    Get comprehensive knowledge about an Indian stock.
+    Includes security ID, exchange info, and trading specifications.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    try:
+        symbol = symbol.upper()
+        stock_info = MARKET_KNOWLEDGE.get_stock_info(symbol)
+
+        if not stock_info:
+            raise HTTPException(404, f"Stock {symbol} not found in knowledge base")
+
+        return {
+            "symbol": symbol,
+            "stock_info": stock_info,
+            "trading_sessions": MARKET_KNOWLEDGE.get_trading_sessions(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Stock knowledge fetch failed: {e}")
+        raise HTTPException(500, str(e))
+
+@app.get("/api/v1/knowledge/indicators")
+async def get_technical_indicators():
+    """
+    Get documentation for all technical indicators used by the ML models.
+    Includes formulas, interpretations, and trading signals.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "indicators": MARKET_KNOWLEDGE.get_all_indicators(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/knowledge/greeks")
+async def get_option_greeks_knowledge():
+    """
+    Get comprehensive knowledge about Option Greeks.
+    Includes Delta, Gamma, Theta, Vega explanations and formulas.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "greeks": MARKET_KNOWLEDGE.get_option_greeks_info(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/knowledge/economic")
+async def get_economic_indicators():
+    """
+    Get knowledge about economic indicators affecting Indian markets.
+    Includes RBI rates, inflation data, and market impact analysis.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "economic_indicators": MARKET_KNOWLEDGE.get_economic_indicators(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/knowledge/patterns")
+async def get_candlestick_patterns():
+    """
+    Get documentation for all candlestick patterns recognized by ML models.
+    Includes pattern descriptions, signals, and reliability scores.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "patterns": MARKET_KNOWLEDGE.get_candlestick_patterns(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/knowledge/ml-features")
+async def get_ml_features():
+    """
+    Get the complete list of ML features used for trading predictions.
+    Includes feature descriptions, importance, and data sources.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "ml_features": MARKET_KNOWLEDGE.get_ml_features(),
+        "model_types": ["XGBoost", "LightGBM", "CatBoost", "RandomForest"],
+        "ensemble_weights": MODEL_STORE.get_ensemble_weights(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/knowledge/complete")
+async def get_complete_knowledge():
+    """
+    Get the complete Indian market knowledge base.
+    Comprehensive data for ML model training and real-time decisions.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        raise HTTPException(503, "Market Knowledge module not available")
+
+    return {
+        "version": MARKET_KNOWLEDGE.version,
+        "last_updated": MARKET_KNOWLEDGE.last_updated,
+        "indexes": MARKET_KNOWLEDGE.INDEX_INFO,
+        "top_stocks": MARKET_KNOWLEDGE.TOP_50_STOCKS,
+        "sebi_rules": MARKET_KNOWLEDGE.SEBI_2025_RULES,
+        "trading_sessions": MARKET_KNOWLEDGE.TRADING_SESSIONS,
+        "technical_indicators": MARKET_KNOWLEDGE.TECHNICAL_INDICATORS,
+        "option_greeks": MARKET_KNOWLEDGE.OPTION_GREEKS,
+        "economic_indicators": MARKET_KNOWLEDGE.ECONOMIC_INDICATORS,
+        "candlestick_patterns": MARKET_KNOWLEDGE.CANDLESTICK_PATTERNS,
+        "ml_features": MARKET_KNOWLEDGE.ML_FEATURES,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.post("/api/v1/knowledge/analyze-with-context")
+async def analyze_with_market_knowledge(request: SignalRequest):
+    """
+    Generate trading signal with full market knowledge context.
+    Enhances ML predictions with domain expertise.
+    """
+    if not HAS_MARKET_KNOWLEDGE:
+        # Fallback to regular analysis
+        return await generate_signal(request)
+
+    try:
+        # Get base ML signal
+        base_signal = await generate_signal(request)
+
+        # Enhance with market knowledge context
+        symbol = request.symbol.upper()
+
+        # Get symbol-specific knowledge
+        if symbol in ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]:
+            context = MARKET_KNOWLEDGE.get_index_info(symbol)
+            sebi_rules = MARKET_KNOWLEDGE.get_sebi_rules(symbol)
+        else:
+            context = MARKET_KNOWLEDGE.get_stock_info(symbol)
+            sebi_rules = MARKET_KNOWLEDGE.SEBI_2025_RULES.get("equity", {})
+
+        # Add knowledge context to response
+        enhanced_response = base_signal.dict()
+        enhanced_response["market_knowledge"] = {
+            "symbol_context": context,
+            "sebi_rules": sebi_rules,
+            "trading_session": MARKET_KNOWLEDGE.get_trading_sessions(),
+            "knowledge_version": MARKET_KNOWLEDGE.version
+        }
+
+        return enhanced_response
+
+    except Exception as e:
+        logger.error(f"Knowledge-enhanced analysis failed: {e}")
+        # Fallback to regular signal
+        return await generate_signal(request)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
