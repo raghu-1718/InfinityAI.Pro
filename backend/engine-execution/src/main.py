@@ -28,7 +28,12 @@ def get_credentials_manager():
     global UserCredentialsManager, _credentials_manager
     if _credentials_manager is None:
         try:
-            from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+            # Try relative import first (for src.main module context)
+            try:
+                from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+            except ImportError:
+                # Fallback to direct import (for local testing)
+                from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
             UserCredentialsManager = UCM
             _credentials_manager = gcm()
         except Exception as e:
