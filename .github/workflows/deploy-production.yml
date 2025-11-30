@@ -1,6 +1,7 @@
 # InfinityAI.Pro - Complete CI/CD Pipeline
 # Deploys all 3 backend engines to Cloud Run and frontend to Firebase Hosting
-# Triggers on push to main branch
+# Triggers on push to main branch or manual workflow dispatch
+# Last updated: 2025-12-01
 
 name: 🚀 Deploy InfinityAI Production
 
