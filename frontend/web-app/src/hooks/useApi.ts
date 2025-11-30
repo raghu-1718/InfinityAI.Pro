@@ -43,13 +43,86 @@ export function useEngineHealth() {
   return query;
 }
 
-// Funds Hook
-export function useFunds() {
-  const setFunds = useAppStore((s) => s.setFunds);
+// User Profile Hook - Fetches user's Dhan credentials status
+export function useUserProfile() {
+  const { userProfile, setUserProfile, setDematData, setFunds } = useAppStore();
+
+  const getUserId = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('userId') || 'default_user';
+    }
+    return 'default_user';
+  };
 
   return useQuery({
-    queryKey: ['funds'],
+    queryKey: ['userProfile', getUserId()],
     queryFn: async () => {
+      const userId = getUserId();
+      const res = await engineC.getUserCredentials(userId);
+
+      if (res.configured && res.is_verified) {
+        // User is connected, fetch their demat data
+        try {
+          const dematRes = await engineC.getUserDemat(userId);
+          if (dematRes && dematRes.funds) {
+            setDematData(dematRes);
+            setFunds({
+              availableBalance: dematRes.funds.availableBalance || 0,
+              sodLimit: 0,
+              collateralAmount: dematRes.funds.utilisedMargin || 0,
+              dhanClientId: res.client_id,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to fetch demat data:', e);
+        }
+
+        setUserProfile({
+          userId,
+          clientId: res.client_id,
+          name: `User ${res.client_id}`, // Dhan doesn't provide name, use client ID
+          email: '', // Will be empty unless user provides
+          isConnected: true,
+          isVerified: true,
+        });
+      } else {
+        setUserProfile(null);
+        setDematData(null);
+      }
+
+      return res;
+    },
+    refetchInterval: 60000, // 1 minute
+    staleTime: 30000,
+  });
+}
+
+// Funds Hook - Now uses user's connected account
+export function useFunds() {
+  const { userProfile, setFunds, dematData } = useAppStore();
+
+  return useQuery({
+    queryKey: ['funds', userProfile?.userId],
+    queryFn: async () => {
+      // If user has connected their account, use their demat data
+      if (userProfile?.isConnected && userProfile?.userId) {
+        try {
+          const dematRes = await engineC.getUserDemat(userProfile.userId);
+          if (dematRes && dematRes.funds) {
+            setFunds({
+              availableBalance: dematRes.funds.availableBalance || 0,
+              sodLimit: 0,
+              collateralAmount: dematRes.funds.utilisedMargin || 0,
+              dhanClientId: userProfile.clientId,
+            });
+            return { status: 'success', data: dematRes.funds };
+          }
+        } catch (e) {
+          console.error('Failed to fetch user funds:', e);
+        }
+      }
+
+      // Fallback to admin account funds
       const res = await engineC.getFunds();
       if (res.status === 'success' && res.data) {
         setFunds({
@@ -63,6 +136,7 @@ export function useFunds() {
     },
     refetchInterval: 60000, // 1 minute
     staleTime: 30000,
+    enabled: true,
   });
 }
 

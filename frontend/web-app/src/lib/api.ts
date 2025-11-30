@@ -629,6 +629,58 @@ export const engineC = {
     );
     return res.json();
   },
+
+  // User Credentials API
+  async getUserCredentials(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials?user_id=${userId}`
+    );
+    return res.json();
+  },
+
+  async saveUserCredentials(data: {
+    user_id: string;
+    client_id: string;
+    access_token: string;
+    api_key?: string;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials`,
+      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async verifyUserCredentials(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`
+    );
+    return res.json();
+  },
+
+  async getUserDemat(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/user/demat?user_id=${userId}`
+    );
+    return res.json();
+  },
+
+  async deleteUserCredentials(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials?user_id=${userId}`,
+      { method: 'DELETE' }
+    );
+    return res.json();
+  },
 };
 
 // Combined API

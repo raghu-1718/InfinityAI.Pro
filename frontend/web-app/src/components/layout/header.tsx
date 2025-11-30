@@ -12,24 +12,53 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings } from 'lucide-react';
-import { useFunds, useEngineHealth } from '@/hooks/useApi';
+import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet } from 'lucide-react';
+import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
+import Link from 'next/link';
 
 export function Header() {
-  const { theme, toggleTheme, funds, engines } = useAppStore();
+  const { theme, toggleTheme, funds, engines, userProfile, dematData } = useAppStore();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
   const { refetch: refetchFunds } = useFunds();
+  const { refetch: refetchProfile } = useUserProfile();
 
   const handleRefresh = () => {
     refetchEngines();
     refetchFunds();
+    refetchProfile();
   };
 
   const allOnline =
     engines.engineA.status === 'online' &&
     engines.engineB.status === 'online' &&
     engines.engineC.status === 'online';
+
+  // Get balance from user's connected demat or fallback to admin funds
+  const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (userProfile?.isConnected && userProfile?.clientId) {
+      // Use first 2 chars of client ID
+      return userProfile.clientId.substring(0, 2).toUpperCase();
+    }
+    return 'G'; // Guest
+  };
+
+  const getUserName = () => {
+    if (userProfile?.isConnected) {
+      return userProfile.name || `Dhan User`;
+    }
+    return 'Guest User';
+  };
+
+  const getUserEmail = () => {
+    if (userProfile?.isConnected && userProfile?.clientId) {
+      return `Client ID: ${userProfile.clientId}`;
+    }
+    return 'Connect Dhan to trade';
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,14 +71,19 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         {/* Balance Display */}
-        {funds && (
-          <div className="hidden md:flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
-            <span className="text-xs text-muted-foreground">Balance:</span>
+        <div className="hidden md:flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
+          <span className="text-xs text-muted-foreground">Balance:</span>
+          {userProfile?.isConnected ? (
             <span className="font-mono font-semibold text-green-600 dark:text-green-400">
-              {formatCurrency(funds.availableBalance)}
+              {formatCurrency(displayBalance)}
             </span>
-          </div>
-        )}
+          ) : (
+            <Link href="/settings" className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline flex items-center gap-1">
+              <Wallet className="h-3 w-3" />
+              Connect Dhan
+            </Link>
+          )}
+        </div>
 
         {/* Refresh Button */}
         <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
@@ -74,28 +108,47 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>RA</AvatarFallback>
+                <AvatarFallback className={userProfile?.isConnected ? 'bg-green-600 text-white' : 'bg-muted'}>
+                  {getUserInitials()}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Raghu</p>
+                <p className="text-sm font-medium leading-none">{getUserName()}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  raghu@infinityai.pro
+                  {getUserEmail()}
                 </p>
+                {userProfile?.isConnected && (
+                  <Badge variant="outline" className="w-fit mt-1 text-xs text-green-600">
+                    Dhan Connected
+                  </Badge>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
             </DropdownMenuItem>
+            {!userProfile?.isConnected && (
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="flex items-center cursor-pointer text-yellow-600">
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Connect Dhan Account
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
