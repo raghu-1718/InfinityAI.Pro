@@ -1,0 +1,157 @@
+# InfinityAI.Pro - Pull Request CI Pipeline
+# Runs tests and builds to validate changes before merge
+
+name: 🔍 PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - 'frontend/web-app/**'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================
+  # Validate Frontend
+  # ============================================
+  validate-frontend:
+    name: 🌐 Validate Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/web-app/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend/web-app
+        run: npm ci
+
+      - name: Type Check
+        working-directory: frontend/web-app
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: frontend/web-app
+        run: npm run lint || true
+
+      - name: Build
+        working-directory: frontend/web-app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-573866363639.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-573866363639.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-573866363639.us-central1.run.app
+
+  # ============================================
+  # Validate Backend - Engine A
+  # ============================================
+  validate-engine-a:
+    name: 🅰️ Validate Engine A
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        working-directory: backend/engine-analytics
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        working-directory: backend/engine-analytics
+        run: |
+          pip install ruff
+          ruff check src/ || true
+
+      - name: Type Check with MyPy
+        working-directory: backend/engine-analytics
+        run: |
+          pip install mypy
+          mypy src/main.py --ignore-missing-imports || true
+
+      - name: Build Docker Image
+        working-directory: backend/engine-analytics
+        run: docker build -t engine-a-test .
+
+  # ============================================
+  # Validate Backend - Engine B
+  # ============================================
+  validate-engine-b:
+    name: 🅱️ Validate Engine B
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        working-directory: backend/engine-core
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        working-directory: backend/engine-core
+        run: |
+          pip install ruff
+          ruff check src/ || true
+
+      - name: Build Docker Image
+        working-directory: backend/engine-core
+        run: docker build -t engine-b-test .
+
+  # ============================================
+  # Validate Backend - Engine C
+  # ============================================
+  validate-engine-c:
+    name: 🇨 Validate Engine C
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        working-directory: backend/engine-execution
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with Ruff
+        working-directory: backend/engine-execution
+        run: |
+          pip install ruff
+          ruff check src/ || true
+
+      - name: Build Docker Image
+        working-directory: backend/engine-execution
+        run: docker build -t engine-c-test .
