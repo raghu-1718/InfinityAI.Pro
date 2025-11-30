@@ -37,7 +37,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 // Engine C API URL
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-573866363639.us-central1.run.app";
@@ -80,8 +80,6 @@ interface DematInfo {
 }
 
 export default function SettingsPage() {
-  const { toast } = useToast();
-
   // Dhan Credentials State
   const [dhanCredentials, setDhanCredentials] = useState<DhanCredentials>({
     client_id: "",
@@ -115,35 +113,32 @@ export default function SettingsPage() {
 
   // Load existing credentials on mount
   useEffect(() => {
-    loadCredentials();
-  }, []);
+    const loadCreds = async () => {
+      setIsLoadingCredentials(true);
+      try {
+        const userId = getUserId();
+        const response = await fetch(`${ENGINE_C_URL}/api/user/credentials?user_id=${userId}`);
 
-  const loadCredentials = async () => {
-    setIsLoadingCredentials(true);
-    try {
-      const userId = getUserId();
-      const response = await fetch(`${ENGINE_C_URL}/api/user/credentials?user_id=${userId}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setDhanCredentials({
-          client_id: data.client_id || "",
-          api_key: data.api_key || "",
-          access_token: data.access_token ? "********" : "",
-          is_verified: data.is_verified || false,
-        });
-        if (data.is_verified) {
-          setConnectionStatus("connected");
-          // Load demat info if connected
-          loadDematInfo();
+        if (response.ok) {
+          const data = await response.json();
+          setDhanCredentials({
+            client_id: data.client_id || "",
+            api_key: data.api_key || "",
+            access_token: data.access_token ? "********" : "",
+            is_verified: data.is_verified || false,
+          });
+          if (data.is_verified) {
+            setConnectionStatus("connected");
+          }
         }
+      } catch (error) {
+        console.error("Failed to load credentials:", error);
+      } finally {
+        setIsLoadingCredentials(false);
       }
-    } catch (error) {
-      console.error("Failed to load credentials:", error);
-    } finally {
-      setIsLoadingCredentials(false);
-    }
-  };
+    };
+    loadCreds();
+  }, []);
 
   const loadDematInfo = async () => {
     setIsLoadingDemat(true);
@@ -164,10 +159,8 @@ export default function SettingsPage() {
 
   const handleSaveCredentials = async () => {
     if (!dhanCredentials.client_id || !dhanCredentials.access_token) {
-      toast({
-        title: "Missing Required Fields",
+      toast.error("Missing Required Fields", {
         description: "Client ID and Access Token are required to connect your Dhan account.",
-        variant: "destructive",
       });
       return;
     }
@@ -193,8 +186,7 @@ export default function SettingsPage() {
         setConnectionStatus(data.is_verified ? "connected" : "error");
 
         if (data.is_verified) {
-          toast({
-            title: "Dhan Connected Successfully",
+          toast.success("Dhan Connected Successfully", {
             description: "Your Dhan account has been linked. Loading your portfolio...",
           });
           // Mask the access token after successful save
@@ -205,27 +197,21 @@ export default function SettingsPage() {
           }));
           loadDematInfo();
         } else {
-          toast({
-            title: "Credentials Saved",
+          toast.warning("Credentials Saved", {
             description: "Credentials saved but verification pending. Please verify your connection.",
-            variant: "destructive",
           });
         }
       } else {
         const error = await response.json();
-        toast({
-          title: "Connection Failed",
+        toast.error("Connection Failed", {
           description: error.detail || "Failed to save credentials. Please check your details.",
-          variant: "destructive",
         });
         setConnectionStatus("error");
       }
     } catch (error) {
       console.error("Failed to save credentials:", error);
-      toast({
-        title: "Connection Error",
+      toast.error("Connection Error", {
         description: "Network error. Please check your internet connection and try again.",
-        variant: "destructive",
       });
       setConnectionStatus("error");
     } finally {
@@ -243,27 +229,22 @@ export default function SettingsPage() {
         const data = await response.json();
         if (data.is_verified) {
           setConnectionStatus("connected");
-          toast({
-            title: "Connection Verified",
+          toast.success("Connection Verified", {
             description: "Your Dhan account is connected and working properly.",
           });
           loadDematInfo();
         } else {
           setConnectionStatus("error");
-          toast({
-            title: "Verification Failed",
+          toast.error("Verification Failed", {
             description: data.message || "Could not verify Dhan connection. Please update your access token.",
-            variant: "destructive",
           });
         }
       }
     } catch (error) {
       console.error("Verification failed:", error);
       setConnectionStatus("error");
-      toast({
-        title: "Verification Error",
+      toast.error("Verification Error", {
         description: "Failed to verify connection. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsVerifying(false);
@@ -288,17 +269,14 @@ export default function SettingsPage() {
         });
         setConnectionStatus("disconnected");
         setDematInfo(null);
-        toast({
-          title: "Disconnected",
+        toast.info("Disconnected", {
           description: "Your Dhan account has been disconnected.",
         });
       }
     } catch (error) {
       console.error("Failed to disconnect:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to disconnect. Please try again.",
-        variant: "destructive",
       });
     }
   };
@@ -581,7 +559,7 @@ export default function SettingsPage() {
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                          Today's P&L
+                          Today&apos;s P&amp;L
                         </CardTitle>
                       </CardHeader>
                       <CardContent>

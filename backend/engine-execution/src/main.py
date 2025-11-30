@@ -19,8 +19,22 @@ from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 import joblib
 
-# User Credentials Management
-from user_credentials import get_credentials_manager, UserCredentialsManager
+# Lazy import for User Credentials Management
+UserCredentialsManager = None
+_credentials_manager = None
+
+def get_credentials_manager():
+    """Lazy load UserCredentialsManager to avoid startup failures"""
+    global UserCredentialsManager, _credentials_manager
+    if _credentials_manager is None:
+        try:
+            from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+            UserCredentialsManager = UCM
+            _credentials_manager = gcm()
+        except Exception as e:
+            logger.warning(f"Failed to initialize UserCredentialsManager: {e}")
+            return None
+    return _credentials_manager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
