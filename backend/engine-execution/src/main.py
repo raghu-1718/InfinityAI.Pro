@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
-    version="3.1-ml"
+    version="3.5-enhanced-execution"
 )
 
 # Add CORS middleware
@@ -39,13 +39,18 @@ app.add_middleware(
 
 # --- Execution Optimizer ML ---
 class ExecutionOptimizer:
-    """ML-based order execution optimization"""
+    """ML-based order execution optimization with TWAP/VWAP strategies"""
 
     def __init__(self):
         self.scaler = StandardScaler()
         self.slippage_model = LinearRegression()
         self.execution_history = []
-        logger.info("✅ Execution Optimizer initialized")
+        self.execution_stats = {
+            "orders_executed": 0,
+            "total_slippage_saved_bps": 0,
+            "splits_recommended": 0
+        }
+        logger.info("✅ Execution Optimizer initialized with TWAP/VWAP support")
 
     def predict_slippage(self, order_size: int, volatility: float,
                          spread: float, volume: float) -> Dict[str, Any]:
@@ -111,8 +116,14 @@ class ExecutionOptimizer:
         }
 
     def split_order(self, total_quantity: int, avg_volume: float,
-                    max_participation_rate: float = 0.1) -> Dict[str, Any]:
-        """Calculate TWAP/VWAP order splitting"""
+                    max_participation_rate: float = 0.1,
+                    strategy: str = "TWAP") -> Dict[str, Any]:
+        """
+        Calculate TWAP/VWAP order splitting.
+
+        TWAP: Time-Weighted Average Price - equal splits over time
+        VWAP: Volume-Weighted Average Price - splits based on volume profile
+        """
         max_order_size = int(avg_volume * max_participation_rate)
 
         if total_quantity <= max_order_size:
@@ -125,25 +136,97 @@ class ExecutionOptimizer:
 
         # Calculate number of splits
         num_splits = int(np.ceil(total_quantity / max_order_size))
-        base_quantity = total_quantity // num_splits
-        remainder = total_quantity % num_splits
 
-        splits = []
-        for i in range(num_splits):
-            qty = base_quantity + (1 if i < remainder else 0)
-            splits.append({
-                "quantity": qty,
-                "delay_seconds": i * 60,  # 1 minute between orders
-                "order_number": i + 1
-            })
+        if strategy.upper() == "VWAP":
+            # VWAP: Weight splits by typical intraday volume profile
+            # Higher volume in morning and afternoon, lower at lunch
+            volume_profile = self._get_intraday_volume_profile(num_splits)
+
+            splits = []
+            remaining = total_quantity
+            for i, weight in enumerate(volume_profile):
+                qty = min(int(total_quantity * weight), remaining)
+                if qty > 0:
+                    splits.append({
+                        "quantity": qty,
+                        "delay_seconds": i * 60,
+                        "order_number": i + 1,
+                        "volume_weight": round(weight, 4)
+                    })
+                    remaining -= qty
+
+            # Add any remainder to last split
+            if remaining > 0 and splits:
+                splits[-1]["quantity"] += remaining
+
+            return {
+                "strategy": "VWAP",
+                "splits": splits,
+                "total_quantity": total_quantity,
+                "num_splits": len(splits),
+                "max_order_size": max_order_size,
+                "estimated_execution_time_minutes": len(splits),
+                "volume_weighted": True
+            }
+        else:
+            # TWAP: Equal time-weighted splits
+            base_quantity = total_quantity // num_splits
+            remainder = total_quantity % num_splits
+
+            splits = []
+            for i in range(num_splits):
+                qty = base_quantity + (1 if i < remainder else 0)
+                splits.append({
+                    "quantity": qty,
+                    "delay_seconds": i * 60,  # 1 minute between orders
+                    "order_number": i + 1
+                })
+
+            return {
+                "strategy": "TWAP",
+                "splits": splits,
+                "total_quantity": total_quantity,
+                "num_splits": num_splits,
+                "max_order_size": max_order_size,
+                "estimated_execution_time_minutes": num_splits,
+                "volume_weighted": False
+            }
+
+    def _get_intraday_volume_profile(self, num_splits: int) -> List[float]:
+        """
+        Generate typical intraday volume profile weights.
+        U-shaped: High at open and close, low at midday.
+        """
+        if num_splits == 1:
+            return [1.0]
+
+        # Generate U-shaped profile
+        x = np.linspace(0, np.pi, num_splits)
+        profile = 1 - 0.5 * np.sin(x)  # U-shape
+
+        # Normalize to sum to 1
+        profile = profile / profile.sum()
+        return profile.tolist()
+
+    def calculate_execution_analytics(self, orders: List[Dict]) -> Dict[str, Any]:
+        """Calculate execution quality analytics"""
+        if not orders:
+            return {"message": "No orders to analyze"}
+
+        total_value = sum(o.get("quantity", 0) * o.get("price", 0) for o in orders)
+        total_quantity = sum(o.get("quantity", 0) for o in orders)
+
+        if total_quantity == 0:
+            return {"message": "No quantity in orders"}
+
+        vwap = total_value / total_quantity if total_quantity > 0 else 0
 
         return {
-            "strategy": "TWAP",
-            "splits": splits,
+            "total_orders": len(orders),
             "total_quantity": total_quantity,
-            "num_splits": num_splits,
-            "max_order_size": max_order_size,
-            "estimated_execution_time_minutes": num_splits
+            "total_value": round(total_value, 2),
+            "vwap": round(vwap, 4),
+            "execution_stats": self.execution_stats
         }
 
 EXECUTION_OPTIMIZER = ExecutionOptimizer()
@@ -156,7 +239,8 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
+        # Strip any trailing whitespace/newlines from the secret
+        return response.payload.data.decode("UTF-8").strip()
     except Exception as e:
         print(f"Error fetching secret {secret_id}: {e}")
         return ""
@@ -204,6 +288,10 @@ class OrderSplitRequest(BaseModel):
     total_quantity: int
     avg_volume: float
     max_participation_rate: float = 0.1
+    strategy: str = "TWAP"  # TWAP or VWAP
+
+class ExecutionAnalyticsRequest(BaseModel):
+    orders: List[Dict[str, Any]]
 
 # --- DhanHQ Client Helper ---
 def get_dhan_client() -> dhanhq:
@@ -234,8 +322,8 @@ async def healthz():
         "status": "healthy",
         "service": "engine-c-execution",
         "broker": "DhanHQ",
-        "version": "3.2-health",
-        "ml_capabilities": ["slippage_prediction", "order_timing", "order_splitting"],
+        "version": "3.5-enhanced-execution",
+        "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -244,8 +332,8 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine C (Trade Execution & Order Optimization)",
         "status": "ready",
-        "version": "3.1-ml",
-        "ml_features": ["Slippage Prediction", "Order Timing", "TWAP/VWAP Splitting"]
+        "version": "3.5-enhanced-execution",
+        "ml_features": ["Slippage Prediction", "Order Timing", "TWAP/VWAP Splitting", "Execution Analytics"]
     }
 
 # --- Execution Optimization Endpoints ---
@@ -265,8 +353,13 @@ async def optimize_timing(symbol: str, order_type: str = "MARKET"):
 async def split_order(req: OrderSplitRequest):
     """Calculate optimal order splitting (TWAP/VWAP)"""
     return EXECUTION_OPTIMIZER.split_order(
-        req.total_quantity, req.avg_volume, req.max_participation_rate
+        req.total_quantity, req.avg_volume, req.max_participation_rate, req.strategy
     )
+
+@app.post("/api/v1/optimize/analytics")
+async def execution_analytics(req: ExecutionAnalyticsRequest):
+    """Calculate execution quality analytics"""
+    return EXECUTION_OPTIMIZER.calculate_execution_analytics(req.orders)
 
 # --- Order Placement Endpoint ---
 @app.post("/api/dhan/place-order")
@@ -430,6 +523,69 @@ async def get_holdings():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch holdings: {str(e)}")
+
+@app.get("/api/dhan/funds")
+async def get_funds():
+    """
+    Fetch available funds and margin details from DhanHQ.
+    Returns available balance, utilized margin, and other fund details.
+    """
+    try:
+        dhan_client = get_dhan_client()
+        response = dhan_client.get_fund_limits()
+
+        if isinstance(response, dict) and response.get("status") == "success":
+            fund_data = response.get("data", {})
+            return {
+                "status": "success",
+                "data": fund_data,
+                "summary": {
+                    "available_balance": fund_data.get("availabelBalance", 0),
+                    "utilized_margin": fund_data.get("utilizedMargin", 0),
+                    "payin_amount": fund_data.get("payinAmount", 0),
+                    "withdrawal_available": fund_data.get("withdrawableBalance", 0)
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+        return {"status": "success", "data": response}
+
+    except Exception as e:
+        logger.error(f"Failed to fetch funds: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch funds: {str(e)}")
+
+# --- DhanHQ Postback Webhook ---
+@app.post("/api/dhan/postback")
+async def dhan_postback(request: Dict[str, Any]):
+    """
+    Receive order/trade updates from DhanHQ via webhook.
+    This endpoint receives real-time updates on order status, fills, etc.
+    """
+    try:
+        logger.info(f"📥 DhanHQ Postback received: {request}")
+
+        # Extract key information
+        order_id = request.get("order_id") or request.get("orderId")
+        status = request.get("status") or request.get("orderStatus")
+        transaction_type = request.get("transaction_type") or request.get("transactionType")
+        symbol = request.get("trading_symbol") or request.get("tradingSymbol")
+
+        # Log the trade event
+        logger.info(f"📊 Order Update: {order_id} - {symbol} - {transaction_type} - {status}")
+
+        # TODO: Store in Firestore for trade history
+        # TODO: Update portfolio positions
+        # TODO: Send notification to frontend
+
+        return {
+            "status": "received",
+            "message": "Postback processed successfully",
+            "order_id": order_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"❌ Postback processing failed: {e}")
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

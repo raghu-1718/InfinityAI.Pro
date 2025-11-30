@@ -40,7 +40,7 @@ app.add_middleware(
 
 # --- Risk Management ML Models ---
 class RiskManager:
-    """ML-based risk assessment and portfolio optimization"""
+    """ML-based risk assessment and portfolio optimization with advanced metrics"""
 
     def __init__(self):
         self.scaler = StandardScaler()
@@ -50,20 +50,185 @@ class RiskManager:
             "medium": 0.6,
             "high": 1.0
         }
-        logger.info("✅ Risk Manager initialized")
+        logger.info("✅ Risk Manager initialized with advanced metrics")
 
-    def calculate_var(self, returns: np.ndarray, confidence: float = 0.95) -> float:
-        """Calculate Value at Risk (VaR)"""
+    def calculate_var(self, returns: np.ndarray, confidence: float = 0.95,
+                      method: str = "historical") -> Dict[str, float]:
+        """
+        Calculate Value at Risk (VaR) using multiple methods.
+        Methods: historical, parametric, cornish-fisher
+        """
         if len(returns) == 0:
-            return 0.0
-        return float(np.percentile(returns, (1 - confidence) * 100))
+            return {"var": 0.0, "method": method}
+
+        returns = np.array(returns)
+
+        if method == "historical":
+            var = float(np.percentile(returns, (1 - confidence) * 100))
+        elif method == "parametric":
+            # Assumes normal distribution
+            from scipy.stats import norm
+            z_score = norm.ppf(1 - confidence)
+            var = float(np.mean(returns) + z_score * np.std(returns))
+        elif method == "cornish-fisher":
+            # Adjusts for skewness and kurtosis
+            from scipy.stats import norm
+            z = norm.ppf(1 - confidence)
+            s = float(pd.Series(returns).skew())
+            k = float(pd.Series(returns).kurtosis())
+            cf_z = z + (1/6) * (z**2 - 1) * s + (1/24) * (z**3 - 3*z) * k - (1/36) * (2*z**3 - 5*z) * s**2
+            var = float(np.mean(returns) + cf_z * np.std(returns))
+        else:
+            var = float(np.percentile(returns, (1 - confidence) * 100))
+
+        return {
+            "var": round(var, 6),
+            "var_pct": round(abs(var) * 100, 4),
+            "confidence": confidence,
+            "method": method,
+            "samples": len(returns)
+        }
+
+    def calculate_cvar(self, returns: np.ndarray, confidence: float = 0.95) -> Dict[str, float]:
+        """
+        Calculate Conditional Value at Risk (CVaR) / Expected Shortfall.
+        CVaR represents the expected loss given that VaR threshold is breached.
+        """
+        if len(returns) == 0:
+            return {"cvar": 0.0, "var": 0.0}
+
+        returns = np.array(returns)
+        var_threshold = np.percentile(returns, (1 - confidence) * 100)
+        cvar = float(np.mean(returns[returns <= var_threshold]))
+
+        return {
+            "cvar": round(cvar, 6),
+            "cvar_pct": round(abs(cvar) * 100, 4),
+            "var": round(var_threshold, 6),
+            "confidence": confidence,
+            "tail_observations": int(np.sum(returns <= var_threshold)),
+            "samples": len(returns)
+        }
 
     def calculate_sharpe_ratio(self, returns: np.ndarray, risk_free_rate: float = 0.05) -> float:
-        """Calculate Sharpe Ratio"""
+        """Calculate Sharpe Ratio (annualized)"""
         if len(returns) == 0 or np.std(returns) == 0:
             return 0.0
         excess_returns = np.mean(returns) - risk_free_rate / 252
-        return float(excess_returns / np.std(returns) * np.sqrt(252))
+        return float(round(excess_returns / np.std(returns) * np.sqrt(252), 4))
+
+    def calculate_sortino_ratio(self, returns: np.ndarray, risk_free_rate: float = 0.05,
+                                 target_return: float = 0.0) -> Dict[str, float]:
+        """
+        Calculate Sortino Ratio - uses downside deviation instead of total std.
+        Better for asymmetric return distributions.
+        """
+        if len(returns) == 0:
+            return {"sortino": 0.0, "downside_deviation": 0.0}
+
+        returns = np.array(returns)
+        excess_returns = np.mean(returns) - risk_free_rate / 252
+
+        # Calculate downside deviation (only negative returns)
+        downside_returns = returns[returns < target_return]
+        if len(downside_returns) == 0:
+            downside_deviation = 0.0001  # Avoid division by zero
+        else:
+            downside_deviation = float(np.std(downside_returns))
+
+        sortino = float(excess_returns / downside_deviation * np.sqrt(252)) if downside_deviation > 0 else 0.0
+
+        return {
+            "sortino_ratio": round(sortino, 4),
+            "downside_deviation": round(downside_deviation, 6),
+            "annualized_downside_deviation": round(downside_deviation * np.sqrt(252), 6),
+            "mean_return": round(float(np.mean(returns)), 6),
+            "negative_return_days": len(downside_returns)
+        }
+
+    def calculate_kelly_criterion(self, win_rate: float, avg_win: float,
+                                   avg_loss: float) -> Dict[str, float]:
+        """
+        Calculate Kelly Criterion for optimal position sizing.
+        Returns the optimal fraction of capital to bet.
+        """
+        if avg_loss == 0 or avg_win == 0:
+            return {"kelly_fraction": 0.0, "half_kelly": 0.0}
+
+        # Kelly = W - [(1-W) / R], where W = win rate, R = win/loss ratio
+        win_loss_ratio = abs(avg_win / avg_loss)
+        kelly = win_rate - ((1 - win_rate) / win_loss_ratio)
+
+        # Cap at reasonable levels
+        kelly = max(0, min(kelly, 1.0))
+
+        return {
+            "kelly_fraction": round(kelly, 4),
+            "kelly_pct": round(kelly * 100, 2),
+            "half_kelly": round(kelly / 2, 4),  # More conservative
+            "quarter_kelly": round(kelly / 4, 4),  # Very conservative
+            "win_rate": round(win_rate, 4),
+            "win_loss_ratio": round(win_loss_ratio, 4),
+            "recommendation": "half_kelly" if kelly > 0.2 else "quarter_kelly"
+        }
+
+    def calculate_portfolio_risk(self, returns_matrix: np.ndarray,
+                                  weights: np.ndarray) -> Dict[str, Any]:
+        """
+        Calculate portfolio risk using Ledoit-Wolf covariance estimation.
+        More stable than sample covariance for high-dimensional portfolios.
+        """
+        if returns_matrix.shape[0] < 2 or returns_matrix.shape[1] < 1:
+            return {"portfolio_variance": 0.0, "portfolio_std": 0.0}
+
+        try:
+            # Fit Ledoit-Wolf shrinkage estimator
+            lw = LedoitWolf()
+            lw.fit(returns_matrix)
+            cov_matrix = lw.covariance_
+            shrinkage = lw.shrinkage_
+
+            # Calculate portfolio variance
+            portfolio_variance = float(np.dot(weights.T, np.dot(cov_matrix, weights)))
+            portfolio_std = float(np.sqrt(portfolio_variance))
+
+            # Annualize
+            annualized_std = portfolio_std * np.sqrt(252)
+
+            return {
+                "portfolio_variance": round(portfolio_variance, 8),
+                "portfolio_std": round(portfolio_std, 6),
+                "annualized_volatility": round(annualized_std, 4),
+                "annualized_volatility_pct": round(annualized_std * 100, 2),
+                "shrinkage_coefficient": round(shrinkage, 4),
+                "covariance_method": "ledoit-wolf",
+                "assets_count": returns_matrix.shape[1]
+            }
+        except Exception as e:
+            logger.error(f"Portfolio risk calculation failed: {e}")
+            return {"error": str(e), "portfolio_variance": 0.0}
+
+    def calculate_max_drawdown(self, cumulative_returns: np.ndarray) -> Dict[str, float]:
+        """Calculate Maximum Drawdown from cumulative returns"""
+        if len(cumulative_returns) == 0:
+            return {"max_drawdown": 0.0, "max_drawdown_pct": 0.0}
+
+        cumulative_returns = np.array(cumulative_returns)
+        peak = np.maximum.accumulate(cumulative_returns)
+        drawdown = (cumulative_returns - peak) / peak
+        max_dd = float(np.min(drawdown))
+
+        # Find drawdown period
+        peak_idx = np.argmax(cumulative_returns[:np.argmin(drawdown) + 1])
+        trough_idx = np.argmin(drawdown)
+
+        return {
+            "max_drawdown": round(max_dd, 6),
+            "max_drawdown_pct": round(abs(max_dd) * 100, 2),
+            "peak_index": int(peak_idx),
+            "trough_index": int(trough_idx),
+            "recovery_needed_pct": round((1 / (1 + max_dd) - 1) * 100, 2) if max_dd > -1 else 0
+        }
 
     def score_risk(self, position_size: float, volatility: float, max_drawdown: float) -> Dict[str, Any]:
         """Score risk for a trade"""
@@ -107,6 +272,29 @@ class RiskManager:
             "position_pct_of_capital": round((position_size / capital) * 100, 2) if capital > 0 else 0
         }
 
+    def get_comprehensive_metrics(self, returns: np.ndarray,
+                                   risk_free_rate: float = 0.05) -> Dict[str, Any]:
+        """Get all risk metrics in a single call"""
+        returns = np.array(returns)
+        cumulative = np.cumprod(1 + returns)
+
+        var_result = self.calculate_var(returns, 0.95, "historical")
+        cvar_result = self.calculate_cvar(returns, 0.95)
+        sortino_result = self.calculate_sortino_ratio(returns, risk_free_rate)
+        drawdown_result = self.calculate_max_drawdown(cumulative)
+
+        return {
+            "sharpe_ratio": self.calculate_sharpe_ratio(returns, risk_free_rate),
+            "sortino_ratio": sortino_result["sortino_ratio"],
+            "var_95": var_result["var"],
+            "cvar_95": cvar_result["cvar"],
+            "max_drawdown_pct": drawdown_result["max_drawdown_pct"],
+            "annualized_return": round(float(np.mean(returns) * 252), 4),
+            "annualized_volatility": round(float(np.std(returns) * np.sqrt(252)), 4),
+            "total_return": round(float(cumulative[-1] - 1) if len(cumulative) > 0 else 0, 4),
+            "samples": len(returns)
+        }
+
 RISK_MANAGER = RiskManager()
 
 # --- Secret Manager Helper ---
@@ -117,7 +305,8 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
+        # Strip any trailing whitespace/newlines from the secret
+        return response.payload.data.decode("UTF-8").strip()
     except Exception as e:
         print(f"Error fetching secret {secret_id}: {e}")
         return ""
@@ -141,9 +330,37 @@ class PositionSizeRequest(BaseModel):
     risk_per_trade: float = 0.02
     stop_loss_pct: float = 0.05
 
+class VaRRequest(BaseModel):
+    returns: List[float]
+    confidence: float = 0.95
+    method: str = "historical"  # historical, parametric, cornish-fisher
+
+class CVaRRequest(BaseModel):
+    returns: List[float]
+    confidence: float = 0.95
+
+class SortinoRequest(BaseModel):
+    returns: List[float]
+    risk_free_rate: float = 0.05
+    target_return: float = 0.0
+
+class KellyRequest(BaseModel):
+    win_rate: float
+    avg_win: float
+    avg_loss: float
+
+class PortfolioRiskRequest(BaseModel):
+    returns_matrix: List[List[float]]  # rows = time periods, cols = assets
+    weights: List[float]
+
+class ComprehensiveRiskRequest(BaseModel):
+    returns: List[float]
+    risk_free_rate: float = 0.05
+
 # --- Config ---
-ENGINE_B_URL = os.getenv("ENGINE_B_URL", "http://engine-core:8080")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "http://engine-execution:8080")
+# Use custom domains for production inter-engine communication
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b.infinityai.pro")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c.infinityai.pro")
 
 # --- Health & Root ---
 @app.get("/healthz")
@@ -153,8 +370,11 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "engine-a-orchestrator",
-        "version": "3.2-health",
-        "ml_capabilities": ["risk_scoring", "position_sizing", "var_calculation"],
+        "version": "3.5-advanced-risk",
+        "ml_capabilities": [
+            "risk_scoring", "position_sizing", "var_calculation", "cvar_calculation",
+            "sortino_ratio", "kelly_criterion", "portfolio_risk", "max_drawdown"
+        ],
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -163,8 +383,12 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine A (Orchestration & Risk Management)",
         "status": "ready",
-        "version": "3.1-ml",
-        "ml_features": ["Risk Scoring", "Position Sizing", "VaR Calculation", "Sharpe Ratio"]
+        "version": "3.5-advanced-risk",
+        "ml_features": [
+            "Risk Scoring", "Position Sizing", "VaR Calculation", "CVaR/Expected Shortfall",
+            "Sharpe Ratio", "Sortino Ratio", "Kelly Criterion", "Portfolio Risk (Ledoit-Wolf)",
+            "Maximum Drawdown Analysis"
+        ]
     }
 
 # --- Risk Management Endpoints ---
@@ -183,6 +407,76 @@ async def get_risk_thresholds():
     """Get current risk thresholds"""
     return RISK_MANAGER.risk_thresholds
 
+@app.post("/api/v1/risk/var")
+async def calculate_var(req: VaRRequest):
+    """
+    Calculate Value at Risk (VaR) using specified method.
+    Methods: historical, parametric, cornish-fisher
+    """
+    returns = np.array(req.returns)
+    return RISK_MANAGER.calculate_var(returns, req.confidence, req.method)
+
+@app.post("/api/v1/risk/cvar")
+async def calculate_cvar(req: CVaRRequest):
+    """
+    Calculate Conditional Value at Risk (CVaR) / Expected Shortfall.
+    Represents expected loss when VaR threshold is breached.
+    """
+    returns = np.array(req.returns)
+    return RISK_MANAGER.calculate_cvar(returns, req.confidence)
+
+@app.post("/api/v1/risk/sortino")
+async def calculate_sortino(req: SortinoRequest):
+    """
+    Calculate Sortino Ratio - risk-adjusted return using downside deviation.
+    Better than Sharpe for asymmetric return distributions.
+    """
+    returns = np.array(req.returns)
+    return RISK_MANAGER.calculate_sortino_ratio(returns, req.risk_free_rate, req.target_return)
+
+@app.post("/api/v1/risk/kelly")
+async def calculate_kelly(req: KellyRequest):
+    """
+    Calculate Kelly Criterion for optimal position sizing.
+    Returns optimal fraction of capital to allocate.
+    """
+    return RISK_MANAGER.calculate_kelly_criterion(req.win_rate, req.avg_win, req.avg_loss)
+
+@app.post("/api/v1/risk/portfolio")
+async def calculate_portfolio_risk(req: PortfolioRiskRequest):
+    """
+    Calculate portfolio risk using Ledoit-Wolf covariance estimation.
+    More stable than sample covariance for high-dimensional portfolios.
+    """
+    returns_matrix = np.array(req.returns_matrix)
+    weights = np.array(req.weights)
+
+    if len(weights) != returns_matrix.shape[1]:
+        raise HTTPException(400, "Weights length must match number of assets in returns matrix")
+
+    if abs(sum(weights) - 1.0) > 0.01:
+        raise HTTPException(400, "Weights must sum to 1.0")
+
+    return RISK_MANAGER.calculate_portfolio_risk(returns_matrix, weights)
+
+@app.post("/api/v1/risk/comprehensive")
+async def calculate_comprehensive_risk(req: ComprehensiveRiskRequest):
+    """
+    Get all risk metrics in a single call: Sharpe, Sortino, VaR, CVaR, Max Drawdown.
+    Ideal for dashboard displays and comprehensive risk assessment.
+    """
+    returns = np.array(req.returns)
+    return RISK_MANAGER.get_comprehensive_metrics(returns, req.risk_free_rate)
+
+@app.post("/api/v1/risk/drawdown")
+async def calculate_drawdown(returns: List[float]):
+    """
+    Calculate Maximum Drawdown from a series of returns.
+    Returns drawdown percentage and recovery metrics.
+    """
+    cumulative = np.cumprod(1 + np.array(returns))
+    return RISK_MANAGER.calculate_max_drawdown(cumulative)
+
 # --- DhanHQ OAuth Endpoints ---
 @app.get("/api/auth/dhan/login")
 async def dhan_login():
@@ -191,7 +485,7 @@ async def dhan_login():
     if not client_id:
         client_id = get_secret("dhan-client-id")
 
-    redirect_uri = os.getenv("DHAN_REDIRECT_URI", "https://infinityai.pro/api/auth/dhan/callback")
+    redirect_uri = os.getenv("DHAN_REDIRECT_URI", "https://engine-a.infinityai.pro/api/auth/dhan/callback")
 
     if not client_id:
         raise HTTPException(500, "DHAN_CLIENT_ID not configured")
@@ -204,7 +498,7 @@ async def dhan_callback(request: DhanTokenExchangeRequest):
     """Exchange authorization code for access token"""
     client_id = os.getenv("DHAN_CLIENT_ID") or get_secret("dhan-client-id")
     client_secret = os.getenv("DHAN_API_SECRET") or get_secret("dhan-api-secret")
-    redirect_uri = os.getenv("DHAN_REDIRECT_URI", "https://infinityai.pro/api/auth/dhan/callback")
+    redirect_uri = os.getenv("DHAN_REDIRECT_URI", "https://engine-a.infinityai.pro/api/auth/dhan/callback")
 
     if not client_id or not client_secret:
         raise HTTPException(500, "Dhan OAuth credentials not configured")

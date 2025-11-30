@@ -22,6 +22,13 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
+# CatBoost for enhanced ensemble
+try:
+    from catboost import CatBoostClassifier
+    HAS_CATBOOST = True
+except ImportError:
+    HAS_CATBOOST = False
+
 # Data Sources
 try:
     import yfinance as yf
@@ -124,7 +131,8 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
+        # Strip any trailing whitespace/newlines from the secret
+        return response.payload.data.decode("UTF-8").strip()
     except Exception as e:
         logger.warning(f"Secret fetch failed for {secret_id}: {e}")
         return ""
@@ -278,28 +286,38 @@ class SentimentResponse(BaseModel):
 # ML MODEL STORE
 # =====================================================================
 class MLModelStore:
-    """Centralized ML model management - Gradient Boosting Focus"""
+    """Centralized ML model management - Gradient Boosting Ensemble with Weighted Voting"""
+
+    # Ensemble weights for weighted voting (based on model strengths)
+    ENSEMBLE_WEIGHTS = {
+        "xgboost": 0.40,      # Best for structured data
+        "lightgbm": 0.30,     # Fast and efficient
+        "catboost": 0.15,     # Good with categorical features
+        "random_forest": 0.15  # Robust baseline
+    }
 
     def __init__(self):
         self.models = {}
         self.scalers = {}
         self.trained_symbols: set = set()
-        self.version = "v3.4-prod-gradient-boost"
+        self.version = "v3.5-prod-weighted-ensemble"
         self.capabilities = {
             "xgboost": True,
             "lightgbm": True,
+            "catboost": HAS_CATBOOST,
             "random_forest": True,
             "transformers": HAS_TRANSFORMERS,
             "nltk_sentiment": HAS_NLTK,
             "ta_lib": HAS_TA_LIB,
-            "yfinance": HAS_YFINANCE
+            "yfinance": HAS_YFINANCE,
+            "weighted_voting": True
         }
         self._initialize_models()
 
     def _initialize_models(self):
         """Initialize ML models on startup"""
         try:
-            logger.info("🤖 Initializing Gradient Boosting ML models...")
+            logger.info("🤖 Initializing Weighted Ensemble ML models...")
 
             self.models['xgboost'] = xgb.XGBClassifier(
                 n_estimators=100,
@@ -311,7 +329,7 @@ class MLModelStore:
                 eval_metric='mlogloss',
                 n_jobs=-1
             )
-            logger.info("✅ XGBoost initialized")
+            logger.info("✅ XGBoost initialized (weight: 40%)")
 
             self.models['lightgbm'] = lgb.LGBMClassifier(
                 n_estimators=100,
@@ -321,7 +339,17 @@ class MLModelStore:
                 verbose=-1,
                 n_jobs=-1
             )
-            logger.info("✅ LightGBM initialized")
+            logger.info("✅ LightGBM initialized (weight: 30%)")
+
+            if HAS_CATBOOST:
+                self.models['catboost'] = CatBoostClassifier(
+                    iterations=100,
+                    depth=6,
+                    learning_rate=0.05,
+                    random_state=42,
+                    verbose=False
+                )
+                logger.info("✅ CatBoost initialized (weight: 15%)")
 
             self.models['random_forest'] = RandomForestClassifier(
                 n_estimators=100,
@@ -329,7 +357,7 @@ class MLModelStore:
                 random_state=42,
                 n_jobs=-1
             )
-            logger.info("✅ RandomForest initialized")
+            logger.info("✅ RandomForest initialized (weight: 15%)")
 
             self.scalers['standard'] = StandardScaler()
 
@@ -351,6 +379,7 @@ class MLModelStore:
                     logger.warning(f"⚠️ Transformer sentiment init failed: {e}")
 
             logger.info(f"✅ ML models initialized: {list(self.models.keys())}")
+            logger.info(f"📊 Ensemble weights: {self.ENSEMBLE_WEIGHTS}")
 
         except Exception as e:
             logger.error(f"❌ Model initialization error: {e}")
@@ -358,12 +387,102 @@ class MLModelStore:
     def get_model(self, model_name: str):
         return self.models.get(model_name)
 
+    def get_ensemble_weights(self) -> Dict[str, float]:
+        """Get current ensemble weights for available models"""
+        available_weights = {}
+        total = 0
+        for name, weight in self.ENSEMBLE_WEIGHTS.items():
+            if name in self.models:
+                available_weights[name] = weight
+                total += weight
+        # Normalize weights if some models are missing
+        if total > 0 and total != 1.0:
+            available_weights = {k: v/total for k, v in available_weights.items()}
+        return available_weights
+
+    def weighted_ensemble_predict(self, X_scaled: np.ndarray) -> tuple:
+        """
+        Make weighted ensemble prediction.
+        Returns (predicted_class, confidence, votes_detail)
+        """
+        weights = self.get_ensemble_weights()
+        class_votes = {0: 0.0, 1: 0.0, 2: 0.0}  # SELL, HOLD, BUY
+        votes_detail = {}
+
+        for model_name, weight in weights.items():
+            model = self.get_model(model_name)
+            if model is not None:
+                try:
+                    # Get probability predictions if available
+                    if hasattr(model, 'predict_proba'):
+                        proba = model.predict_proba(X_scaled)[0]
+                        for cls_idx, prob in enumerate(proba):
+                            if cls_idx < 3:  # Ensure we only use valid classes
+                                class_votes[cls_idx] += prob * weight
+                        votes_detail[model_name] = {
+                            'prediction': int(np.argmax(proba)),
+                            'weight': weight,
+                            'probabilities': proba.tolist()
+                        }
+                    else:
+                        pred = model.predict(X_scaled)[0]
+                        class_votes[int(pred)] += weight
+                        votes_detail[model_name] = {
+                            'prediction': int(pred),
+                            'weight': weight
+                        }
+                except Exception as e:
+                    logger.warning(f"Ensemble prediction failed for {model_name}: {e}")
+
+        # Get final prediction
+        final_class = max(class_votes.items(), key=lambda x: x[1])[0]
+        total_weight = sum(class_votes.values())
+        confidence = class_votes[final_class] / total_weight if total_weight > 0 else 0.5
+
+        return final_class, confidence, votes_detail
+
+    def reload_model(self, model_name: str) -> Dict[str, Any]:
+        """Reload a specific model with fresh initialization"""
+        if model_name not in self.ENSEMBLE_WEIGHTS and model_name not in ['nltk_sentiment', 'transformer_sentiment']:
+            return {"status": "error", "message": f"Unknown model: {model_name}"}
+
+        try:
+            if model_name == 'xgboost':
+                self.models['xgboost'] = xgb.XGBClassifier(
+                    n_estimators=100, max_depth=6, learning_rate=0.05,
+                    objective='multi:softprob', random_state=42,
+                    use_label_encoder=False, eval_metric='mlogloss', n_jobs=-1
+                )
+            elif model_name == 'lightgbm':
+                self.models['lightgbm'] = lgb.LGBMClassifier(
+                    n_estimators=100, max_depth=6, learning_rate=0.05,
+                    random_state=42, verbose=-1, n_jobs=-1
+                )
+            elif model_name == 'catboost' and HAS_CATBOOST:
+                self.models['catboost'] = CatBoostClassifier(
+                    iterations=100, depth=6, learning_rate=0.05,
+                    random_state=42, verbose=False
+                )
+            elif model_name == 'random_forest':
+                self.models['random_forest'] = RandomForestClassifier(
+                    n_estimators=100, max_depth=10, random_state=42, n_jobs=-1
+                )
+
+            return {
+                "status": "success",
+                "model": model_name,
+                "message": f"Model {model_name} reloaded successfully"
+            }
+        except Exception as e:
+            return {"status": "error", "model": model_name, "message": str(e)}
+
     def get_capabilities(self) -> Dict[str, Any]:
         return {
             "version": self.version,
             "models": list(self.models.keys()),
             "frameworks": self.capabilities,
-            "trained_symbols": list(self.trained_symbols)
+            "trained_symbols": list(self.trained_symbols),
+            "ensemble_weights": self.get_ensemble_weights()
         }
 
 MODEL_STORE = MLModelStore()
@@ -844,7 +963,7 @@ class ModelTrainer:
         return X, y, feature_cols
 
     def train_all_models(self, X: np.ndarray, y: np.ndarray, symbol: str) -> Dict[str, Any]:
-        """Train all ensemble models"""
+        """Train all ensemble models including CatBoost"""
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import accuracy_score
 
@@ -858,29 +977,57 @@ class ModelTrainer:
 
         results = {}
 
-        # Train XGBoost
-        logger.info("Training XGBoost...")
+        # Train XGBoost (40% weight)
+        logger.info("Training XGBoost (40% weight)...")
         xgb_model = self.model_store.get_model('xgboost')
         xgb_model.fit(X_train_scaled, y_train)
         xgb_pred = xgb_model.predict(X_test_scaled)
-        results['xgboost'] = {'accuracy': accuracy_score(y_test, xgb_pred)}
+        results['xgboost'] = {'accuracy': accuracy_score(y_test, xgb_pred), 'weight': 0.40}
         logger.info(f"✅ XGBoost accuracy: {results['xgboost']['accuracy']:.2%}")
 
-        # Train LightGBM
-        logger.info("Training LightGBM...")
+        # Train LightGBM (30% weight)
+        logger.info("Training LightGBM (30% weight)...")
         lgb_model = self.model_store.get_model('lightgbm')
         lgb_model.fit(X_train_scaled, y_train)
         lgb_pred = lgb_model.predict(X_test_scaled)
-        results['lightgbm'] = {'accuracy': accuracy_score(y_test, lgb_pred)}
+        results['lightgbm'] = {'accuracy': accuracy_score(y_test, lgb_pred), 'weight': 0.30}
         logger.info(f"✅ LightGBM accuracy: {results['lightgbm']['accuracy']:.2%}")
 
-        # Train Random Forest
-        logger.info("Training Random Forest...")
+        # Train CatBoost (15% weight) - if available
+        if HAS_CATBOOST:
+            logger.info("Training CatBoost (15% weight)...")
+            cat_model = self.model_store.get_model('catboost')
+            if cat_model:
+                cat_model.fit(X_train_scaled, y_train)
+                cat_pred = cat_model.predict(X_test_scaled)
+                results['catboost'] = {'accuracy': accuracy_score(y_test, cat_pred), 'weight': 0.15}
+                logger.info(f"✅ CatBoost accuracy: {results['catboost']['accuracy']:.2%}")
+
+        # Train Random Forest (15% weight)
+        logger.info("Training Random Forest (15% weight)...")
         rf_model = self.model_store.get_model('random_forest')
         rf_model.fit(X_train_scaled, y_train)
         rf_pred = rf_model.predict(X_test_scaled)
-        results['random_forest'] = {'accuracy': accuracy_score(y_test, rf_pred)}
+        results['random_forest'] = {'accuracy': accuracy_score(y_test, rf_pred), 'weight': 0.15}
         logger.info(f"✅ Random Forest accuracy: {results['random_forest']['accuracy']:.2%}")
+
+        # Calculate weighted ensemble accuracy
+        weighted_preds = []
+        weights = self.model_store.get_ensemble_weights()
+        for model_name, weight in weights.items():
+            model = self.model_store.get_model(model_name)
+            if model:
+                pred = model.predict(X_test_scaled)
+                weighted_preds.append((pred, weight))
+
+        if weighted_preds:
+            # Weighted voting
+            ensemble_pred = np.zeros(len(y_test))
+            for pred, weight in weighted_preds:
+                ensemble_pred += pred * weight
+            ensemble_pred = np.round(ensemble_pred).astype(int)
+            results['ensemble'] = {'accuracy': accuracy_score(y_test, ensemble_pred), 'weight': 1.0}
+            logger.info(f"✅ Weighted Ensemble accuracy: {results['ensemble']['accuracy']:.2%}")
 
         # Store training history
         self.training_history[symbol] = {
@@ -1084,30 +1231,28 @@ async def generate_signal(req: SignalRequest):
             score -= 2
             reasons.append(f"Negative Sentiment ({sentiment_score:.2f})")
 
-    # ML Model Enhancement (if trained)
+    # ML Model Enhancement (if trained) - Using Weighted Ensemble
     ml_used = False
+    ensemble_detail = None
     if symbol in MODEL_STORE.trained_symbols:
         try:
             feature_cols = [c for c in MARKET_ENGINE.get_feature_columns() if c in df_features.columns]
             X = df_features[feature_cols].iloc[-1:].values
             X_scaled = MODEL_STORE.scalers['standard'].transform(X)
 
-            predictions = []
-            for model_name in ['xgboost', 'lightgbm', 'random_forest']:
-                model = MODEL_STORE.get_model(model_name)
-                if model:
-                    pred = model.predict(X_scaled)[0]
-                    predictions.append(pred)
+            # Use weighted ensemble prediction
+            ml_class, ml_confidence, ensemble_detail = MODEL_STORE.weighted_ensemble_predict(X_scaled)
 
-            if predictions:
-                from collections import Counter
-                vote = Counter(predictions).most_common(1)[0][0]
-                if vote == 2:
-                    score += 2
-                elif vote == 0:
-                    score -= 2
-                ml_used = True
-                reasons.append("ML Model Confirmation")
+            if ml_class == 2:  # BUY
+                score += 3
+                reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} confidence)")
+            elif ml_class == 0:  # SELL
+                score -= 3
+                reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} confidence)")
+            else:  # HOLD
+                reasons.append(f"ML Ensemble: HOLD ({ml_confidence:.1%} confidence)")
+
+            ml_used = True
         except Exception as e:
             logger.warning(f"ML inference failed: {e}")
 
@@ -1308,24 +1453,109 @@ async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIAN
 
 @app.get("/api/v1/models")
 async def list_models():
-    """List all available ML models"""
+    """List all available ML models with ensemble weights"""
     model_info = {
-        'xgboost': {'type': 'gradient_boosting', 'framework': 'xgboost'},
-        'lightgbm': {'type': 'gradient_boosting', 'framework': 'lightgbm'},
-        'random_forest': {'type': 'ensemble', 'framework': 'scikit-learn'},
-        'transformer_sentiment': {'type': 'nlp', 'framework': 'transformers'},
-        'nltk_sentiment': {'type': 'nlp', 'framework': 'nltk'}
+        'xgboost': {'type': 'gradient_boosting', 'framework': 'xgboost', 'weight': 0.40},
+        'lightgbm': {'type': 'gradient_boosting', 'framework': 'lightgbm', 'weight': 0.30},
+        'catboost': {'type': 'gradient_boosting', 'framework': 'catboost', 'weight': 0.15},
+        'random_forest': {'type': 'ensemble', 'framework': 'scikit-learn', 'weight': 0.15},
+        'transformer_sentiment': {'type': 'nlp', 'framework': 'transformers', 'weight': None},
+        'nltk_sentiment': {'type': 'nlp', 'framework': 'nltk', 'weight': None}
     }
 
-    return [
-        {
-            "name": name,
-            "type": meta['type'],
-            "framework": meta['framework'],
-            "status": 'loaded' if MODEL_STORE.get_model(name) else 'not_available'
+    return {
+        "models": [
+            {
+                "name": name,
+                "type": meta['type'],
+                "framework": meta['framework'],
+                "ensemble_weight": meta['weight'],
+                "status": 'loaded' if MODEL_STORE.get_model(name) else 'not_available'
+            }
+            for name, meta in model_info.items()
+        ],
+        "ensemble_weights": MODEL_STORE.get_ensemble_weights(),
+        "trained_symbols": list(MODEL_STORE.trained_symbols)
+    }
+
+@app.post("/api/v1/models/reload")
+async def reload_all_models():
+    """Reload all ML models with fresh initialization"""
+    results = {}
+    for model_name in ['xgboost', 'lightgbm', 'catboost', 'random_forest']:
+        result = MODEL_STORE.reload_model(model_name)
+        results[model_name] = result
+
+    return {
+        "status": "success",
+        "results": results,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.post("/api/v1/models/{model_name}/reload")
+async def reload_specific_model(model_name: str):
+    """Reload a specific ML model"""
+    result = MODEL_STORE.reload_model(model_name)
+    return result
+
+@app.post("/api/v1/models/{model_name}/retrain")
+async def retrain_specific_model(model_name: str, symbol: str = "NIFTY", historical_days: int = 365):
+    """Retrain a specific model on given symbol data"""
+    if model_name not in ['xgboost', 'lightgbm', 'catboost', 'random_forest']:
+        raise HTTPException(400, f"Model {model_name} not trainable")
+
+    try:
+        # Fetch data
+        df, data_source = await MARKET_ENGINE.fetch_data(symbol, days=historical_days)
+        if df.empty or len(df) < 100:
+            raise HTTPException(400, f"Insufficient data for {symbol}")
+
+        # Prepare training data
+        X, y, feature_cols = MODEL_TRAINER.prepare_training_data(df, lookahead=5)
+
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import accuracy_score
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, shuffle=False
+        )
+
+        scaler = MODEL_STORE.scalers['standard']
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+
+        # Train specific model
+        model = MODEL_STORE.get_model(model_name)
+        if model is None:
+            raise HTTPException(400, f"Model {model_name} not available")
+
+        model.fit(X_train_scaled, y_train)
+        predictions = model.predict(X_test_scaled)
+        accuracy = accuracy_score(y_test, predictions)
+
+        MODEL_STORE.trained_symbols.add(symbol.upper())
+
+        return {
+            "status": "success",
+            "model": model_name,
+            "symbol": symbol,
+            "accuracy": round(accuracy, 4),
+            "samples_trained": len(X_train),
+            "samples_tested": len(X_test),
+            "timestamp": datetime.utcnow().isoformat()
         }
-        for name, meta in model_info.items()
-    ]
+    except Exception as e:
+        logger.error(f"Retrain failed for {model_name}: {e}")
+        raise HTTPException(500, f"Training failed: {str(e)}")
+
+@app.get("/api/v1/models/ensemble-weights")
+async def get_ensemble_weights():
+    """Get current ensemble voting weights"""
+    return {
+        "weights": MODEL_STORE.get_ensemble_weights(),
+        "available_models": list(MODEL_STORE.models.keys()),
+        "default_weights": MODEL_STORE.ENSEMBLE_WEIGHTS
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
