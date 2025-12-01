@@ -2350,26 +2350,47 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
             "news_context": req.news_context
         }
 
+        # Create structured trading prompt
+        from src.google_integrations import TradingPrompt
+        trading_prompt = TradingPrompt(
+            symbol=req.symbol,
+            market="NSE",
+            analysis_type="signal",
+            context=market_data,
+            news_context=req.news_context
+        )
+
         # Generate signal using official Gemini SDK
         signal_result = await GENAI_CLIENT_B.generate_trading_signal(
-            symbol=req.symbol,
-            market_data=market_data
+            prompt=trading_prompt
         )
+
+        # Convert TradingAnalysis to dict
+        signal_dict = {
+            "signal": signal_result.signal,
+            "confidence": signal_result.confidence,
+            "reasoning": signal_result.reasoning,
+            "risk_level": signal_result.risk_level,
+            "entry_price": signal_result.entry_price,
+            "stop_loss": signal_result.stop_loss,
+            "target_price": signal_result.target_price,
+            "timeframe": signal_result.timeframe
+        }
 
         # Log the signal
         if TRADING_LOGGER_B:
             TRADING_LOGGER_B.log_signal(
                 symbol=req.symbol,
-                signal_type=signal_result.get("signal", "HOLD"),
-                confidence=signal_result.get("confidence", 0.0),
-                source="gemini-2.0-flash",
+                signal=signal_dict.get("signal", "HOLD"),
+                confidence=signal_dict.get("confidence", 0.0),
+                model_name="gemini-2.0-flash",
                 metadata={"market_data": market_data}
             )
 
         return {
             "status": "success",
             "symbol": req.symbol,
-            "signal": signal_result,
+            "signal": signal_dict,
             "model": "gemini-2.0-flash",
             "sdk": "google-genai",
             "timestamp": datetime.utcnow().isoformat()

@@ -8,7 +8,7 @@
 # - ADK-inspired agent architecture for trading signals
 # =====================================================================
 
-from .genai_client import GenAIClient, TradingAnalysisAgent
+from .genai_client import GenAIClient, TradingAnalysisAgent, TradingPrompt, TradingAnalysis
 from .cloud_logging import TradingLogger, LogLevel, TradingEventType
 from .cloud_storage import ModelStorage, TradingHistoryStorage
 from .trading_agents import (
@@ -23,6 +23,8 @@ __all__ = [
     # GenAI
     "GenAIClient",
     "TradingAnalysisAgent",
+    "TradingPrompt",
+    "TradingAnalysis",
     # Logging
     "TradingLogger",
     "LogLevel",
