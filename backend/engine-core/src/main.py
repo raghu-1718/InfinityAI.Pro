@@ -311,7 +311,7 @@ class MLModelStore:
         self.models = {}
         self.scalers = {}
         self.trained_symbols: set = set()
-        self.version = "v3.5-prod-weighted-ensemble"
+        self.version = "v3.6-instrument-signals"
         self.capabilities = {
             "xgboost": True,
             "lightgbm": True,

@@ -380,7 +380,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "engine-a-orchestrator",
-        "version": "3.5-advanced-risk",
+        "version": "3.6-instrument-trading",
         "ml_capabilities": [
             "risk_scoring", "position_sizing", "var_calculation", "cvar_calculation",
             "sortino_ratio", "kelly_criterion", "portfolio_risk", "max_drawdown"
@@ -393,7 +393,7 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine A (Orchestration & Risk Management)",
         "status": "ready",
-        "version": "3.5-advanced-risk",
+        "version": "3.6-instrument-trading",
         "ml_features": [
             "Risk Scoring", "Position Sizing", "VaR Calculation", "CVaR/Expected Shortfall",
             "Sharpe Ratio", "Sortino Ratio", "Kelly Criterion", "Portfolio Risk (Ledoit-Wolf)",
