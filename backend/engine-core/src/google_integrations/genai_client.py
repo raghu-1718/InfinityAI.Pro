@@ -108,18 +108,23 @@ class GenAIClient:
             raise RuntimeError("google-genai SDK not installed")
 
         try:
-            # Configure the client
-            if self.api_key:
-                self._client = genai.Client(api_key=self.api_key)
-            else:
-                # Use Application Default Credentials
+            # Prefer Vertex AI with Application Default Credentials for Cloud Run
+            # This works better with GCP service accounts
+            if self.project_id:
                 self._client = genai.Client(
                     vertexai=True,
                     project=self.project_id,
                     location=self.location
                 )
+                logger.info(f"✅ GenAI client initialized with Vertex AI (project: {self.project_id})")
+            elif self.api_key:
+                # Fallback to API key if no project
+                self._client = genai.Client(api_key=self.api_key)
+                logger.info(f"✅ GenAI client initialized with API key")
+            else:
+                raise RuntimeError("No project_id or api_key configured for GenAI")
             self._initialized = True
-            logger.info(f"✅ GenAI client initialized with model: {self.model.value}")
+            logger.info(f"✅ Using model: {self.model.value}")
         except Exception as e:
             logger.error(f"❌ Failed to initialize GenAI client: {e}")
             raise

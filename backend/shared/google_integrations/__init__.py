@@ -16,6 +16,8 @@ from .trading_agents import (
     RiskAssessmentAgent,
     MarketAnalysisAgent,
     AgentOrchestrator,
+    AgentContext,
+    AgentResult,
     create_trading_workflow
 )
 
@@ -37,5 +39,7 @@ __all__ = [
     "RiskAssessmentAgent",
     "MarketAnalysisAgent",
     "AgentOrchestrator",
+    "AgentContext",
+    "AgentResult",
     "create_trading_workflow",
 ]

@@ -72,7 +72,8 @@ try:
         TradingHistoryStorage,
         TradingSignalAgent,
         RiskAssessmentAgent,
-        MarketAnalysisAgent
+        MarketAnalysisAgent,
+        AgentContext
     )
     HAS_GOOGLE_INTEGRATIONS = True
 except ImportError as e:
@@ -2407,35 +2408,39 @@ async def run_agent_analysis(req: AgentAnalysisRequest):
         raise HTTPException(status_code=503, detail="Google integrations not available")
 
     try:
-        context = {
-            "symbol": req.symbol,
-            "market_data": req.market_data,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        import uuid
+        # Create proper AgentContext object
+        context = AgentContext(
+            session_id=str(uuid.uuid4()),
+            symbol=req.symbol,
+            market="NSE",
+            data={
+                "market_data": req.market_data,
+                "market_context": req.market_data
+            }
+        )
 
         results = {}
 
         if req.analysis_type in ["signal", "comprehensive"] and SIGNAL_AGENT:
             signal_result = await SIGNAL_AGENT.run(context)
-            results["signal_analysis"] = signal_result.output
+            results["signal_analysis"] = signal_result.data if signal_result.success else signal_result.error
 
         if req.analysis_type in ["risk", "comprehensive"] and RISK_AGENT:
             risk_result = await RISK_AGENT.run(context)
-            results["risk_analysis"] = risk_result.output
+            results["risk_analysis"] = risk_result.data if risk_result.success else risk_result.error
 
         if req.analysis_type in ["market", "comprehensive"] and MARKET_AGENT:
             market_result = await MARKET_AGENT.run(context)
-            results["market_analysis"] = market_result.output
+            results["market_analysis"] = market_result.data if market_result.success else market_result.error
 
         # Log the analysis
         if TRADING_LOGGER_B:
-            TRADING_LOGGER_B.log_event(
-                event_type=TradingEventType.ML_PREDICTION,
-                message=f"Agent analysis completed for {req.symbol}",
-                metadata={
-                    "analysis_type": req.analysis_type,
-                    "symbol": req.symbol
-                }
+            TRADING_LOGGER_B.log_ml_prediction(
+                model_name="trading-agents",
+                symbol=req.symbol,
+                prediction=results,
+                latency_ms=0.0
             )
 
         return {

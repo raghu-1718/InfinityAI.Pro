@@ -12,10 +12,12 @@ from .genai_client import GenAIClient, TradingAnalysisAgent, TradingPrompt, Trad
 from .cloud_logging import TradingLogger, LogLevel, TradingEventType
 from .cloud_storage import ModelStorage, TradingHistoryStorage
 from .trading_agents import (
-    TradingSignalAgent, 
-    RiskAssessmentAgent, 
+    TradingSignalAgent,
+    RiskAssessmentAgent,
     MarketAnalysisAgent,
     AgentOrchestrator,
+    AgentContext,
+    AgentResult,
     create_trading_workflow
 )
 
@@ -37,5 +39,7 @@ __all__ = [
     "RiskAssessmentAgent",
     "MarketAnalysisAgent",
     "AgentOrchestrator",
+    "AgentContext",
+    "AgentResult",
     "create_trading_workflow",
 ]
