@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional, List
@@ -18,6 +19,22 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 import joblib
+
+# Google Cloud Integrations (Official SDKs)
+try:
+    from src.google_integrations import (
+        GenAIClient,
+        TradingLogger,
+        TradingEventType,
+        ModelStorage,
+        TradingHistoryStorage,
+        AgentOrchestrator,
+        create_trading_workflow
+    )
+    GOOGLE_INTEGRATIONS_AVAILABLE = True
+except ImportError as e:
+    GOOGLE_INTEGRATIONS_AVAILABLE = False
+    print(f"⚠️ Google integrations not available: {e}")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -297,6 +314,52 @@ class RiskManager:
 
 RISK_MANAGER = RiskManager()
 
+# --- Google Cloud Integrations ---
+TRADING_LOGGER = None
+MODEL_STORAGE = None
+HISTORY_STORAGE = None
+GENAI_CLIENT = None
+AGENT_ORCHESTRATOR = None
+
+if GOOGLE_INTEGRATIONS_AVAILABLE:
+    try:
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+
+        # Initialize Trading Logger for structured logging
+        TRADING_LOGGER = TradingLogger(
+            project_id=PROJECT_ID,
+            log_name="infinityai-engine-a",
+            labels={"service_name": "engine-a-orchestrator"}
+        )
+        logger.info("✅ Trading Logger initialized")
+
+        # Initialize Cloud Storage for ML models
+        MODEL_STORAGE = ModelStorage(
+            bucket_name=f"{PROJECT_ID}-ml-models",
+            project_id=PROJECT_ID
+        )
+        logger.info("✅ Model Storage initialized")
+
+        # Initialize Trading History Storage
+        HISTORY_STORAGE = TradingHistoryStorage(
+            bucket_name=f"{PROJECT_ID}-trading-history",
+            project_id=PROJECT_ID
+        )
+        logger.info("✅ Trading History Storage initialized")
+
+        # Initialize GenAI Client (Gemini SDK)
+        GENAI_CLIENT = GenAIClient(
+            project_id=PROJECT_ID
+        )
+        logger.info("✅ GenAI Client initialized")
+
+        # Initialize Agent Orchestrator for multi-agent workflows
+        AGENT_ORCHESTRATOR = create_trading_workflow(GENAI_CLIENT)
+        logger.info("✅ Agent Orchestrator initialized with trading workflow")
+
+    except Exception as e:
+        logger.warning(f"⚠️ Error initializing Google integrations: {e}")
+
 # --- Secret Manager Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
@@ -380,11 +443,17 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "engine-a-orchestrator",
-        "version": "3.6-instrument-trading",
+        "version": "3.7-google-integrations",
         "ml_capabilities": [
             "risk_scoring", "position_sizing", "var_calculation", "cvar_calculation",
             "sortino_ratio", "kelly_criterion", "portfolio_risk", "max_drawdown"
         ],
+        "google_integrations": {
+            "genai": GENAI_CLIENT is not None,
+            "cloud_logging": TRADING_LOGGER is not None,
+            "cloud_storage": MODEL_STORAGE is not None,
+            "agent_orchestrator": AGENT_ORCHESTRATOR is not None
+        },
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -393,11 +462,17 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine A (Orchestration & Risk Management)",
         "status": "ready",
-        "version": "3.6-instrument-trading",
+        "version": "3.7-google-integrations",
         "ml_features": [
             "Risk Scoring", "Position Sizing", "VaR Calculation", "CVaR/Expected Shortfall",
             "Sharpe Ratio", "Sortino Ratio", "Kelly Criterion", "Portfolio Risk (Ledoit-Wolf)",
             "Maximum Drawdown Analysis"
+        ],
+        "google_integrations": [
+            "Gemini AI (Official GenAI SDK)",
+            "Cloud Logging (Structured Trade Logs)",
+            "Cloud Storage (ML Models & History)",
+            "Agent Orchestrator (Multi-Agent Workflows)"
         ]
     }
 
@@ -866,6 +941,222 @@ async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: Backgrou
         "filtered_signals": len(filtered_signals),
         "trades_scheduled": len(executed_trades),
         "trades": executed_trades,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+# --- Google Cloud Integration Endpoints ---
+
+class AISignalRequest(BaseModel):
+    """Request model for AI-generated trading signals"""
+    symbol: str
+    current_price: float
+    historical_prices: Optional[List[float]] = None
+    volume: Optional[float] = None
+    market_context: Optional[str] = None
+
+class AgentWorkflowRequest(BaseModel):
+    """Request model for multi-agent trading workflow"""
+    symbol: str
+    market_data: Dict[str, Any]
+    risk_parameters: Optional[Dict[str, float]] = None
+
+class LogTradeRequest(BaseModel):
+    """Request model for logging trades"""
+    symbol: str
+    action: str  # BUY, SELL
+    quantity: float
+    price: float
+    trade_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@app.post("/api/v1/ai/generate-signal")
+async def generate_ai_signal(req: AISignalRequest):
+    """Generate trading signal using Gemini AI"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="GenAI client not available")
+
+    try:
+        # Build market context
+        market_data = {
+            "symbol": req.symbol,
+            "current_price": req.current_price,
+            "historical_prices": req.historical_prices or [],
+            "volume": req.volume,
+            "market_context": req.market_context
+        }
+
+        # Generate signal using Gemini
+        analysis = await GENAI_CLIENT.generate_trading_signal(
+            symbol=req.symbol,
+            market_data=market_data
+        )
+
+        # Log the signal generation
+        if TRADING_LOGGER:
+            TRADING_LOGGER.log_signal(
+                symbol=req.symbol,
+                signal_type=analysis.get("signal", "HOLD"),
+                confidence=analysis.get("confidence", 0.0),
+                source="gemini-2.0-flash",
+                metadata={"market_data": market_data}
+            )
+
+        return {
+            "status": "success",
+            "signal": analysis,
+            "model": "gemini-2.0-flash",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error generating AI signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/ai/agent-workflow")
+async def run_agent_workflow(req: AgentWorkflowRequest):
+    """Execute multi-agent trading workflow"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or AGENT_ORCHESTRATOR is None:
+        raise HTTPException(status_code=503, detail="Agent orchestrator not available")
+
+    try:
+        # Run the orchestrated workflow
+        results = await AGENT_ORCHESTRATOR.run_workflow({
+            "symbol": req.symbol,
+            "market_data": req.market_data,
+            "risk_parameters": req.risk_parameters or {}
+        })
+
+        # Log workflow execution
+        if TRADING_LOGGER:
+            TRADING_LOGGER.log_event(
+                event_type=TradingEventType.ML_PREDICTION,
+                message=f"Agent workflow completed for {req.symbol}",
+                metadata={
+                    "agents_run": len(results.get("agent_results", [])),
+                    "symbol": req.symbol
+                }
+            )
+
+        return {
+            "status": "success",
+            "workflow_results": results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error running agent workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/ai/sentiment")
+async def analyze_sentiment(symbol: str, news_text: str):
+    """Analyze market sentiment using Gemini AI"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="GenAI client not available")
+
+    try:
+        sentiment = await GENAI_CLIENT.analyze_market_sentiment(
+            symbol=symbol,
+            news_data=[{"text": news_text}]
+        )
+
+        return {
+            "status": "success",
+            "symbol": symbol,
+            "sentiment": sentiment,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error analyzing sentiment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/logging/trade")
+async def log_trade(req: LogTradeRequest):
+    """Log a trade event to Cloud Logging"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or TRADING_LOGGER is None:
+        raise HTTPException(status_code=503, detail="Trading logger not available")
+
+    try:
+        TRADING_LOGGER.log_order(
+            order_id=req.trade_id or f"trade-{datetime.utcnow().timestamp()}",
+            symbol=req.symbol,
+            action=req.action,
+            quantity=req.quantity,
+            price=req.price,
+            status="executed",
+            metadata=req.metadata
+        )
+
+        # Also save to trading history if available
+        if HISTORY_STORAGE:
+            await HISTORY_STORAGE.save_trade({
+                "symbol": req.symbol,
+                "action": req.action,
+                "quantity": req.quantity,
+                "price": req.price,
+                "trade_id": req.trade_id,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+
+        return {
+            "status": "logged",
+            "trade_id": req.trade_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error logging trade: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/storage/models")
+async def list_ml_models():
+    """List available ML models in Cloud Storage"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or MODEL_STORAGE is None:
+        raise HTTPException(status_code=503, detail="Model storage not available")
+
+    try:
+        models = await MODEL_STORAGE.list_models()
+        return {
+            "status": "success",
+            "models": models,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error listing models: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/storage/performance")
+async def get_trading_performance(days: int = 30):
+    """Get trading performance metrics from history"""
+    if not GOOGLE_INTEGRATIONS_AVAILABLE or HISTORY_STORAGE is None:
+        raise HTTPException(status_code=503, detail="History storage not available")
+
+    try:
+        metrics = await HISTORY_STORAGE.get_performance_metrics(days=days)
+        return {
+            "status": "success",
+            "period_days": days,
+            "metrics": metrics,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting performance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/integrations/status")
+async def get_integrations_status():
+    """Get status of all Google Cloud integrations"""
+    return {
+        "google_integrations_available": GOOGLE_INTEGRATIONS_AVAILABLE,
+        "trading_logger": TRADING_LOGGER is not None,
+        "model_storage": MODEL_STORAGE is not None,
+        "history_storage": HISTORY_STORAGE is not None,
+        "genai_client": GENAI_CLIENT is not None,
+        "agent_orchestrator": AGENT_ORCHESTRATOR is not None,
         "timestamp": datetime.utcnow().isoformat()
     }
 

@@ -62,6 +62,23 @@ try:
 except ImportError:
     HAS_NLTK = False
 
+# Google Cloud Integrations (Official SDKs)
+try:
+    from src.google_integrations import (
+        GenAIClient,
+        TradingLogger,
+        TradingEventType,
+        ModelStorage,
+        TradingHistoryStorage,
+        TradingSignalAgent,
+        RiskAssessmentAgent,
+        MarketAnalysisAgent
+    )
+    HAS_GOOGLE_INTEGRATIONS = True
+except ImportError as e:
+    HAS_GOOGLE_INTEGRATIONS = False
+    print(f"⚠️ Google integrations not available: {e}")
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -80,10 +97,52 @@ except ImportError as e:
     MARKET_KNOWLEDGE = None
     logger.warning(f"⚠️ Market Knowledge module not available: {e}")
 
+# --- Google Cloud Integrations ---
+TRADING_LOGGER_B = None
+MODEL_STORAGE_B = None
+GENAI_CLIENT_B = None
+SIGNAL_AGENT = None
+RISK_AGENT = None
+MARKET_AGENT = None
+
+if HAS_GOOGLE_INTEGRATIONS:
+    try:
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+
+        # Initialize Trading Logger for structured logging
+        TRADING_LOGGER_B = TradingLogger(
+            project_id=PROJECT_ID,
+            log_name="infinityai-engine-b",
+            labels={"service_name": "engine-b-signals"}
+        )
+        logger.info("✅ Trading Logger initialized")
+
+        # Initialize Cloud Storage for ML models
+        MODEL_STORAGE_B = ModelStorage(
+            bucket_name=f"{PROJECT_ID}-ml-models",
+            project_id=PROJECT_ID
+        )
+        logger.info("✅ Model Storage initialized")
+
+        # Initialize GenAI Client (Gemini SDK)
+        GENAI_CLIENT_B = GenAIClient(
+            project_id=PROJECT_ID
+        )
+        logger.info("✅ GenAI Client initialized")
+
+        # Initialize specialized agents
+        SIGNAL_AGENT = TradingSignalAgent(GENAI_CLIENT_B)
+        RISK_AGENT = RiskAssessmentAgent(GENAI_CLIENT_B)
+        MARKET_AGENT = MarketAnalysisAgent(GENAI_CLIENT_B)
+        logger.info("✅ Trading Agents initialized (Signal, Risk, Market)")
+
+    except Exception as e:
+        logger.warning(f"⚠️ Error initializing Google integrations: {e}")
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (Production)",
     description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference",
-    version="3.4-prod"
+    version="3.7-google-integrations"
 )
 
 # Add CORS middleware
@@ -1120,9 +1179,17 @@ async def healthz():
     return {
         "status": "healthy",
         "service": "engine-b-ai-ml-prod",
-        "version": MODEL_STORE.version,
+        "version": "3.7-google-integrations",
         "capabilities": MODEL_STORE.capabilities,
         "dhan_connected": MARKET_ENGINE.dhan is not None,
+        "google_integrations": {
+            "genai": GENAI_CLIENT_B is not None,
+            "cloud_logging": TRADING_LOGGER_B is not None,
+            "cloud_storage": MODEL_STORAGE_B is not None,
+            "signal_agent": SIGNAL_AGENT is not None,
+            "risk_agent": RISK_AGENT is not None,
+            "market_agent": MARKET_AGENT is not None
+        },
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -1131,10 +1198,16 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine B (AI/ML Signal Generation)",
         "status": "ready",
-        "version": MODEL_STORE.version,
+        "version": "3.7-google-integrations",
         "models": list(MODEL_STORE.models.keys()),
         "trained_symbols": list(MODEL_STORE.trained_symbols),
-        "capabilities": MODEL_STORE.capabilities
+        "capabilities": MODEL_STORE.capabilities,
+        "google_integrations": [
+            "Gemini AI (Official GenAI SDK)",
+            "Cloud Logging (Signal Logs)",
+            "Cloud Storage (ML Models)",
+            "Trading Agents (Signal, Risk, Market)"
+        ]
     }
 
 @app.get("/api/v1/capabilities")
@@ -2242,6 +2315,140 @@ async def analyze_with_market_knowledge(request: SignalRequest):
         logger.error(f"Knowledge-enhanced analysis failed: {e}")
         # Fallback to regular signal
         return await generate_signal(request)
+
+
+# --- Google Cloud AI Integration Endpoints ---
+
+class GeminiSignalRequest(BaseModel):
+    """Request model for Gemini-powered signal generation"""
+    symbol: str
+    current_price: float
+    historical_data: Optional[Dict[str, Any]] = None
+    technical_indicators: Optional[Dict[str, float]] = None
+    news_context: Optional[str] = None
+
+
+class AgentAnalysisRequest(BaseModel):
+    """Request model for agent-based analysis"""
+    symbol: str
+    market_data: Dict[str, Any]
+    analysis_type: str = "comprehensive"  # signal, risk, market, comprehensive
+
+
+@app.post("/api/v1/ai/gemini-signal")
+async def generate_gemini_signal(req: GeminiSignalRequest):
+    """Generate trading signal using Gemini AI (Official SDK)"""
+    if not HAS_GOOGLE_INTEGRATIONS or GENAI_CLIENT_B is None:
+        raise HTTPException(status_code=503, detail="GenAI client not available")
+
+    try:
+        market_data = {
+            "symbol": req.symbol,
+            "current_price": req.current_price,
+            "historical_data": req.historical_data or {},
+            "technical_indicators": req.technical_indicators or {},
+            "news_context": req.news_context
+        }
+
+        # Generate signal using official Gemini SDK
+        signal_result = await GENAI_CLIENT_B.generate_trading_signal(
+            symbol=req.symbol,
+            market_data=market_data
+        )
+
+        # Log the signal
+        if TRADING_LOGGER_B:
+            TRADING_LOGGER_B.log_signal(
+                symbol=req.symbol,
+                signal_type=signal_result.get("signal", "HOLD"),
+                confidence=signal_result.get("confidence", 0.0),
+                source="gemini-2.0-flash",
+                metadata={"market_data": market_data}
+            )
+
+        return {
+            "status": "success",
+            "symbol": req.symbol,
+            "signal": signal_result,
+            "model": "gemini-2.0-flash",
+            "sdk": "google-genai",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error generating Gemini signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/ai/agent-analysis")
+async def run_agent_analysis(req: AgentAnalysisRequest):
+    """Run specialized agent for market analysis"""
+    if not HAS_GOOGLE_INTEGRATIONS:
+        raise HTTPException(status_code=503, detail="Google integrations not available")
+
+    try:
+        context = {
+            "symbol": req.symbol,
+            "market_data": req.market_data,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        results = {}
+
+        if req.analysis_type in ["signal", "comprehensive"] and SIGNAL_AGENT:
+            signal_result = await SIGNAL_AGENT.run(context)
+            results["signal_analysis"] = signal_result.output
+
+        if req.analysis_type in ["risk", "comprehensive"] and RISK_AGENT:
+            risk_result = await RISK_AGENT.run(context)
+            results["risk_analysis"] = risk_result.output
+
+        if req.analysis_type in ["market", "comprehensive"] and MARKET_AGENT:
+            market_result = await MARKET_AGENT.run(context)
+            results["market_analysis"] = market_result.output
+
+        # Log the analysis
+        if TRADING_LOGGER_B:
+            TRADING_LOGGER_B.log_event(
+                event_type=TradingEventType.ML_PREDICTION,
+                message=f"Agent analysis completed for {req.symbol}",
+                metadata={
+                    "analysis_type": req.analysis_type,
+                    "symbol": req.symbol
+                }
+            )
+
+        return {
+            "status": "success",
+            "symbol": req.symbol,
+            "analysis_type": req.analysis_type,
+            "results": results,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error running agent analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/ai/integrations-status")
+async def get_ai_integrations_status():
+    """Get status of all AI/Google Cloud integrations"""
+    return {
+        "google_integrations_available": HAS_GOOGLE_INTEGRATIONS,
+        "genai_client": GENAI_CLIENT_B is not None,
+        "trading_logger": TRADING_LOGGER_B is not None,
+        "model_storage": MODEL_STORAGE_B is not None,
+        "agents": {
+            "signal_agent": SIGNAL_AGENT is not None,
+            "risk_agent": RISK_AGENT is not None,
+            "market_agent": MARKET_AGENT is not None
+        },
+        "ml_models": {
+            "traditional": list(MODEL_STORE.models.keys()),
+            "capabilities": MODEL_STORE.capabilities
+        },
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

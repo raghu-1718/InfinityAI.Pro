@@ -15,6 +15,18 @@ dhanhq==2.0.2
 google-cloud-secret-manager>=2.16.0
 
 # =====================================================================
+# Google Cloud Integrations (New)
+# =====================================================================
+# Official GenAI SDK - replaces raw REST calls
+google-genai>=1.0.0
+
+# Cloud Logging - structured trade signal logging
+google-cloud-logging>=3.10.0
+
+# Cloud Storage - ML model and trading history storage
+google-cloud-storage>=2.14.0
+
+# =====================================================================
 # ML for Risk & Portfolio Optimization
 # =====================================================================
 scikit-learn==1.4.2
@@ -31,3 +43,4 @@ cvxpy>=1.4.0
 # =====================================================================
 python-dotenv>=1.0.0
 aiofiles>=23.2.1
+

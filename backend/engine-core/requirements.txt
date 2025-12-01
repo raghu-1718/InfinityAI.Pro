@@ -1,5 +1,5 @@
 # =====================================================================
-# InfinityAI.Pro - Engine B (AI/ML Signal Generation) - v3.4 Production
+# InfinityAI.Pro - Engine B (AI/ML Signal Generation) - v3.6 Production
 # SEBI 2025 Compliant Algorithmic Trading Engine
 # =====================================================================
 
@@ -16,6 +16,18 @@ dhanhq==2.0.2
 
 # Cloud & Secrets
 google-cloud-secret-manager==2.20.0
+
+# =====================================================================
+# Google Cloud Integrations (New)
+# =====================================================================
+# Official GenAI SDK - replaces raw REST calls
+google-genai>=1.0.0
+
+# Cloud Logging - structured trade signal logging
+google-cloud-logging>=3.10.0
+
+# Cloud Storage - ML model and trading history storage
+google-cloud-storage>=2.14.0
 
 # =====================================================================
 # Core ML - Gradient Boosting (Primary Signal Models)
