@@ -18,6 +18,13 @@ from pydantic import BaseModel
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+# Try to import GCP Secret Manager
+try:
+    from google.cloud import secretmanager
+    HAS_SECRET_MANAGER = True
+except ImportError:
+    HAS_SECRET_MANAGER = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -28,6 +35,24 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+
+def get_secret(secret_id: str, version: str = "latest") -> str:
+    """Retrieve secret from Google Secret Manager"""
+    if not HAS_SECRET_MANAGER:
+        logger.warning(f"Secret Manager not available, checking environment for {secret_id}")
+        return os.getenv(secret_id.upper().replace('-', '_'), "")
+    
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
+        response = client.access_secret_version(request={"name": name})
+        return response.payload.data.decode("UTF-8").strip()
+    except Exception as e:
+        logger.warning(f"Could not fetch secret {secret_id}: {e}")
+        return ""
+
 
 # Pydantic models
 class DhanOAuthCallback(BaseModel):
@@ -51,16 +76,12 @@ class DhanWebhook(BaseModel):
 class ExecutionService:
     def __init__(self):
         self.dhan_client_id = os.getenv('DHAN_CLIENT_ID', '1101302170')
-        self.dhan_client_secret = os.getenv('DHAN_CLIENT_SECRET', 'PLACEHOLDER_SECRET')
+        self.dhan_client_secret = os.getenv('DHAN_CLIENT_SECRET') or get_secret('dhan-client-secret')
         self.dhan_redirect_uri = os.getenv('DHAN_REDIRECT_URI', 'https://infinityai.pro/auth/dhan/callback')
         
-        # Dhan API configuration
+        # Dhan API configuration - fetch token from Secret Manager (NO hardcoded tokens!)
         self.dhan_base_url = "https://api.dhan.co"
-        self.access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTkzIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3NjA2MDM3NTEsImlhdCI6MTc2MDUxNzM1MSwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vZW5naW5lLWMtNTczODY2MzYzNjM5LTU3Mzg2NjM2MzYzOS51cy1jZW50cmFsMS5ydW4uYXBwL2FwaS9kaGFuL3Bvc3RiYWNrIiwiZGhhbkNsaWVudElkIjoiMTEwMTMwMjE3MCJ9.cRhYjn044i_CrOwTV5ZxQOPnR_iWNnWcGHWF_q41wSdh02-wLQBFOLeD8TQPaIKdZBXqxQvwKDm6Y0DEfs0JZA"
-        self.headers = {
-            "access-token": self.access_token,
-            "Content-Type": "application/json"
-        }
+        self._access_token = None  # Lazy load from Secret Manager
         
         # Storage for OAuth state and tokens (in production, use proper database)
         self.oauth_states = {}
@@ -69,7 +90,7 @@ class ExecutionService:
         # AI Auto-Trading System
         self.ai_trading_active = False
         self.ai_trading_task = None
-        self.ai_engine_b_url = "https://engine-b-ai-ml-573866363639.us-central1.run.app"
+        self.ai_engine_b_url = os.getenv("ENGINE_B_URL", "https://engine-b-573866363639.us-central1.run.app")
         self.execution_history = []
         self.trading_config = {
             "min_confidence": 0.75,  # Minimum AI confidence to execute trades
@@ -79,11 +100,32 @@ class ExecutionService:
         }
         
         logger.info("🎯 Engine C - Trade Execution & OAuth Service Initialized (Minimal)")
+    
+    @property
+    def access_token(self) -> str:
+        """Lazy-load access token from Secret Manager (no hardcoded values!)"""
+        if not self._access_token:
+            self._access_token = get_secret('dhan-access-token')
+            if not self._access_token:
+                logger.warning("⚠️ No Dhan access token found in Secret Manager")
+        return self._access_token or ""
+    
+    @access_token.setter
+    def access_token(self, value: str):
+        """Set access token"""
+        self._access_token = value
+    
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Get API headers with current access token"""
+        return {
+            "access-token": self.access_token,
+            "Content-Type": "application/json"
+        }
 
     def set_access_token(self, token: str):
-        """Set and propagate new access token to headers"""
-        self.access_token = token
-        self.headers["access-token"] = token
+        """Set and propagate new access token"""
+        self._access_token = token
         logger.info("🔑 Updated Dhan access token in memory")
     
     async def fetch_dhan_data(self, endpoint: str):

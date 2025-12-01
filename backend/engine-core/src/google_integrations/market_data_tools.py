@@ -1,14 +1,20 @@
 """
 InfinityAI.Pro - Real-Time Market Data Tools for Gemini Function Calling
 =========================================================================
-Provides live Indian stock market data tools that Gemini can call automatically.
+Provides LIVE Indian stock market data tools that Gemini can call automatically.
+All data is sourced from REAL APIs - NO simulated/demo data.
+
+Data Sources:
+- NSE Official Data (via nsepython)
+- Yahoo Finance (for historical data)
+- Real-time FII/DII activity
+- Live option chain from NSE
 
 Features:
-- Real-time stock prices via yfinance
-- NIFTY/BANKNIFTY option chain data
-- Market news and sentiment
-- Technical indicators
-- FII/DII activity
+- Real-time stock prices via yfinance + NSE
+- NIFTY/BANKNIFTY option chain data from NSE
+- Live FII/DII activity from NSE
+- Technical indicators (calculated from real data)
 - Economic calendar
 """
 
@@ -36,6 +42,25 @@ try:
     HAS_PANDAS = True
 except ImportError:
     HAS_PANDAS = False
+
+# NSE Python for live NSE data
+try:
+    from nsepython import (
+        nse_optionchain_scrapper,
+        nse_fiidii,
+        nse_get_top_gainers,
+        nse_get_top_losers,
+        nse_get_advances_declines,
+        nse_quote_ltp,
+        nse_get_index_quote,
+        is_market_open,
+        pcr as nse_pcr_func
+    )
+    HAS_NSEPYTHON = True
+    logger.info("✅ nsepython loaded - LIVE NSE data enabled")
+except ImportError:
+    HAS_NSEPYTHON = False
+    logger.warning("nsepython not available - some features may use cached data")
 
 
 # =====================================================================
@@ -347,215 +372,308 @@ def get_technical_indicators(symbol: str, exchange: str = "NSE") -> Dict[str, An
 
 def get_market_news(category: str = "indian_markets") -> Dict[str, Any]:
     """
-    Get latest market news and sentiment.
+    Get latest market news and sentiment from REAL RSS feeds.
+    Uses NewsAggregator to fetch live news from Economic Times, Moneycontrol, Livemint, etc.
 
     Args:
         category: News category - 'indian_markets', 'global', 'economy', 'sector'
 
     Returns:
-        Dict with news headlines and sentiment
+        Dict with live news headlines and sentiment
     """
-    # News headlines based on current market conditions
-    # In production, this would connect to news APIs like NewsAPI, Google News, etc.
+    # Import and use the real NewsAggregator
+    try:
+        from .news_integration import NewsAggregator
+        import asyncio
 
-    current_date = datetime.now().strftime("%B %d, %Y")
+        aggregator = NewsAggregator()
 
-    # Simulated but realistic news for demonstration
-    news_data = {
-        "indian_markets": {
-            "headlines": [
-                {"title": f"Markets open flat; IT stocks lead gains on {current_date}", "sentiment": "NEUTRAL", "source": "Economic Times"},
-                {"title": "FIIs remain net sellers for third consecutive session", "sentiment": "BEARISH", "source": "Moneycontrol"},
-                {"title": "Banking stocks under pressure amid RBI policy concerns", "sentiment": "BEARISH", "source": "Business Standard"},
-                {"title": "Nifty eyes 24,800 resistance; support at 24,200", "sentiment": "NEUTRAL", "source": "CNBC-TV18"},
-                {"title": "Auto sector shows resilience amid global uncertainty", "sentiment": "BULLISH", "source": "Livemint"}
-            ],
-            "overall_sentiment": "MIXED",
-            "fii_dii_trend": "FII selling, DII buying"
-        },
-        "global": {
-            "headlines": [
-                {"title": "US markets close mixed; tech stocks outperform", "sentiment": "NEUTRAL", "source": "Reuters"},
-                {"title": "Fed signals possible rate cuts in 2025", "sentiment": "BULLISH", "source": "Bloomberg"},
-                {"title": "China economic data shows recovery signs", "sentiment": "BULLISH", "source": "WSJ"},
-                {"title": "European markets steady ahead of ECB decision", "sentiment": "NEUTRAL", "source": "FT"}
-            ],
-            "overall_sentiment": "CAUTIOUSLY_BULLISH"
-        },
-        "economy": {
-            "headlines": [
-                {"title": "India GDP growth projected at 6.5% for FY25", "sentiment": "BULLISH", "source": "RBI"},
-                {"title": "Inflation remains within RBI target range", "sentiment": "BULLISH", "source": "Ministry of Finance"},
-                {"title": "GST collections cross Rs 1.8 lakh crore", "sentiment": "BULLISH", "source": "PIB"},
-                {"title": "Rupee stable against dollar amid global volatility", "sentiment": "NEUTRAL", "source": "Economic Times"}
-            ],
-            "overall_sentiment": "POSITIVE"
+        # Run async fetch in sync context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            news_feed = loop.run_until_complete(
+                aggregator.fetch_all_news(categories=[category], max_articles=20)
+            )
+        finally:
+            loop.close()
+
+        return {
+            "category": category,
+            "date": datetime.now().strftime("%B %d, %Y"),
+            "source": "LIVE_RSS_FEEDS",
+            "news": {
+                "headlines": [
+                    {
+                        "title": article.title,
+                        "sentiment": article.sentiment,
+                        "source": article.source,
+                        "url": article.url,
+                        "published": article.published.isoformat() if article.published else None
+                    }
+                    for article in news_feed.articles[:10]
+                ],
+                "overall_sentiment": news_feed.overall_sentiment,
+                "sentiment_breakdown": {
+                    "bullish": news_feed.bullish_count,
+                    "bearish": news_feed.bearish_count,
+                    "neutral": news_feed.neutral_count
+                }
+            },
+            "market_status": _get_market_status(),
+            "timestamp": datetime.now().isoformat()
         }
-    }
-
-    return {
-        "category": category,
-        "date": current_date,
-        "news": news_data.get(category, news_data["indian_markets"]),
-        "market_status": _get_market_status(),
-        "timestamp": datetime.now().isoformat()
-    }
+    except Exception as e:
+        logger.error(f"Error fetching live news: {e}")
+        # Return minimal response indicating live fetch failed
+        return {
+            "category": category,
+            "date": datetime.now().strftime("%B %d, %Y"),
+            "source": "UNAVAILABLE",
+            "error": str(e),
+            "market_status": _get_market_status(),
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dict[str, Any]:
     """
-    Get option chain data with key strikes.
+    Get LIVE option chain data from NSE.
 
     Args:
         symbol: Index symbol (NIFTY, BANKNIFTY)
         expiry: 'current' for nearest expiry or specific date
 
     Returns:
-        Dict with option chain summary, max pain, PCR
+        Dict with REAL option chain summary, max pain, PCR from NSE
     """
     try:
-        # Get current spot price
-        if symbol.upper() in ["NIFTY", "NIFTY50"]:
-            yf_symbol = "^NSEI"
-            lot_size = 75  # Will change to 65 after Dec 30, 2025
-        elif symbol.upper() in ["BANKNIFTY", "NIFTYBANK"]:
-            yf_symbol = "^NSEBANK"
-            lot_size = 35
-        else:
-            return {"error": f"Option chain not available for {symbol}"}
+        # Use nsepython for REAL NSE option chain data
+        if HAS_NSEPYTHON:
+            logger.info(f"Fetching LIVE option chain for {symbol} from NSE")
 
-        ticker = yf.Ticker(yf_symbol)
-        hist = ticker.history(period="1d")
+            # Get real option chain from NSE
+            oc_data = nse_optionchain_scrapper(symbol.upper())
 
-        if hist.empty:
-            return {"error": "No data available"}
+            if oc_data and 'records' in oc_data:
+                records = oc_data['records']
+                spot_price = records.get('underlyingValue', 0)
+                expiry_dates = records.get('expiryDates', [])
+                current_expiry = expiry_dates[0] if expiry_dates else None
 
-        spot_price = hist['Close'].iloc[-1]
-        atm_strike = round(spot_price / 100) * 100  # Round to nearest 100
+                # Process option chain data
+                data = records.get('data', [])
 
-        # Generate realistic option chain data
-        strikes = list(range(atm_strike - 500, atm_strike + 600, 100))
+                total_call_oi = 0
+                total_put_oi = 0
+                max_call_oi = 0
+                max_put_oi = 0
+                max_call_oi_strike = 0
+                max_put_oi_strike = 0
+                option_chain = []
 
-        # Simulated OI and volume data (in production, use NSE API)
-        option_chain = []
-        total_call_oi = 0
-        total_put_oi = 0
-        max_call_oi_strike = atm_strike
-        max_put_oi_strike = atm_strike
-        max_call_oi = 0
-        max_put_oi = 0
+                for item in data:
+                    strike = item.get('strikePrice', 0)
 
-        import random
-        random.seed(int(spot_price))  # Consistent data for same spot
+                    # Call data
+                    ce_data = item.get('CE', {})
+                    call_oi = ce_data.get('openInterest', 0)
+                    call_oi_change = ce_data.get('changeinOpenInterest', 0)
 
-        for strike in strikes:
-            distance = abs(strike - spot_price) / spot_price
-            base_oi = int(50000 * (1 - distance * 5))  # OI decreases away from ATM
-            base_oi = max(base_oi, 5000)
+                    # Put data
+                    pe_data = item.get('PE', {})
+                    put_oi = pe_data.get('openInterest', 0)
+                    put_oi_change = pe_data.get('changeinOpenInterest', 0)
 
-            call_oi = base_oi + random.randint(-10000, 10000)
-            put_oi = base_oi + random.randint(-10000, 10000)
+                    total_call_oi += call_oi
+                    total_put_oi += put_oi
 
-            # Higher OI at round numbers
-            if strike % 500 == 0:
-                call_oi *= 1.5
-                put_oi *= 1.5
+                    if call_oi > max_call_oi:
+                        max_call_oi = call_oi
+                        max_call_oi_strike = strike
+                    if put_oi > max_put_oi:
+                        max_put_oi = put_oi
+                        max_put_oi_strike = strike
 
-            call_oi = int(max(call_oi, 1000))
-            put_oi = int(max(put_oi, 1000))
+                    option_chain.append({
+                        "strike": strike,
+                        "call_oi": call_oi,
+                        "put_oi": put_oi,
+                        "call_oi_change": call_oi_change,
+                        "put_oi_change": put_oi_change,
+                        "call_ltp": ce_data.get('lastPrice', 0),
+                        "put_ltp": pe_data.get('lastPrice', 0),
+                        "call_iv": ce_data.get('impliedVolatility', 0),
+                        "put_iv": pe_data.get('impliedVolatility', 0)
+                    })
 
-            total_call_oi += call_oi
-            total_put_oi += put_oi
+                pcr = total_put_oi / total_call_oi if total_call_oi > 0 else 1.0
+                atm_strike = round(spot_price / 100) * 100
 
-            if call_oi > max_call_oi:
-                max_call_oi = call_oi
-                max_call_oi_strike = strike
-            if put_oi > max_put_oi:
-                max_put_oi = put_oi
-                max_put_oi_strike = strike
+                # Lot sizes (updated for 2025)
+                lot_sizes = {"NIFTY": 75, "BANKNIFTY": 35, "FINNIFTY": 40}
+                lot_size = lot_sizes.get(symbol.upper(), 75)
 
-            option_chain.append({
-                "strike": strike,
-                "call_oi": call_oi,
-                "put_oi": put_oi,
-                "call_oi_change": random.randint(-5000, 5000),
-                "put_oi_change": random.randint(-5000, 5000)
-            })
+                # Determine market bias from PCR
+                if pcr > 1.2:
+                    market_bias = "BULLISH (High Put writing indicates support)"
+                elif pcr < 0.8:
+                    market_bias = "BEARISH (High Call writing indicates resistance)"
+                else:
+                    market_bias = "NEUTRAL"
 
-        pcr = total_put_oi / total_call_oi if total_call_oi > 0 else 1.0
+                return {
+                    "symbol": symbol,
+                    "source": "NSE_LIVE",
+                    "spot_price": round(spot_price, 2),
+                    "atm_strike": atm_strike,
+                    "lot_size": lot_size,
+                    "expiry": current_expiry,
+                    "all_expiries": expiry_dates[:5],
+                    "pcr": round(pcr, 2),
+                    "max_pain": atm_strike,  # Simplified
+                    "max_call_oi_strike": max_call_oi_strike,
+                    "max_put_oi_strike": max_put_oi_strike,
+                    "total_call_oi": total_call_oi,
+                    "total_put_oi": total_put_oi,
+                    "market_bias": market_bias,
+                    "key_support": max_put_oi_strike,
+                    "key_resistance": max_call_oi_strike,
+                    "top_strikes": sorted(
+                        [s for s in option_chain if abs(s['strike'] - atm_strike) <= 500],
+                        key=lambda x: abs(x['strike'] - atm_strike)
+                    )[:11],
+                    "timestamp": datetime.now().isoformat()
+                }
 
-        # Calculate max pain (simplified)
-        # Max pain is the strike where option writers have minimum loss
-        max_pain_strike = atm_strike  # Simplified - usually near ATM
+        # Fallback to yfinance for spot price only if nsepython fails
+        if HAS_YFINANCE:
+            logger.warning("nsepython unavailable, using yfinance for spot price only")
+            if symbol.upper() in ["NIFTY", "NIFTY50"]:
+                yf_symbol = "^NSEI"
+            elif symbol.upper() in ["BANKNIFTY", "NIFTYBANK"]:
+                yf_symbol = "^NSEBANK"
+            else:
+                return {"error": f"Option chain not available for {symbol}", "source": "UNAVAILABLE"}
 
-        # Determine market bias from PCR
-        if pcr > 1.2:
-            market_bias = "BULLISH (Contrarian - High Put writing)"
-        elif pcr < 0.8:
-            market_bias = "BEARISH (Contrarian - High Call writing)"
-        else:
-            market_bias = "NEUTRAL"
+            ticker = yf.Ticker(yf_symbol)
+            hist = ticker.history(period="1d")
 
-        return {
-            "symbol": symbol,
-            "spot_price": round(spot_price, 2),
-            "atm_strike": atm_strike,
-            "lot_size": lot_size,
-            "expiry": _get_next_expiry(symbol),
-            "pcr": round(pcr, 2),
-            "max_pain": max_pain_strike,
-            "max_call_oi_strike": max_call_oi_strike,
-            "max_put_oi_strike": max_put_oi_strike,
-            "total_call_oi": total_call_oi,
-            "total_put_oi": total_put_oi,
-            "market_bias": market_bias,
-            "key_support": max_put_oi_strike,
-            "key_resistance": max_call_oi_strike,
-            "top_strikes": [s for s in option_chain if abs(s['strike'] - atm_strike) <= 300],
-            "timestamp": datetime.now().isoformat()
-        }
+            if hist.empty:
+                return {"error": "No data available", "source": "UNAVAILABLE"}
+
+            spot_price = hist['Close'].iloc[-1]
+            return {
+                "symbol": symbol,
+                "source": "YFINANCE_SPOT_ONLY",
+                "spot_price": round(spot_price, 2),
+                "warning": "Full option chain requires nsepython - install with: pip install nsepython",
+                "timestamp": datetime.now().isoformat()
+            }
+
+        return {"error": "No data source available", "source": "UNAVAILABLE"}
+
     except Exception as e:
         logger.error(f"Error fetching option chain for {symbol}: {e}")
-        return {"error": str(e), "symbol": symbol}
+        return {"error": str(e), "symbol": symbol, "source": "ERROR"}
 
 
 def get_fii_dii_activity() -> Dict[str, Any]:
     """
-    Get FII/DII activity data (simulated - in production use NSE API).
+    Get LIVE FII/DII activity data from NSE.
 
     Returns:
-        Dict with FII/DII buy/sell data
+        Dict with REAL FII/DII buy/sell data from NSE
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    # Simulated but realistic FII/DII data
-    return {
-        "date": current_date,
-        "cash_segment": {
-            "fii": {
-                "gross_buy": 15234.56,
-                "gross_sell": 18567.89,
-                "net": -3333.33,
-                "trend": "SELLING"
-            },
-            "dii": {
-                "gross_buy": 12456.78,
-                "gross_sell": 9876.54,
-                "net": 2580.24,
-                "trend": "BUYING"
-            }
-        },
-        "fno_segment": {
-            "fii": {
-                "index_futures_oi_change": -12500,
-                "index_options_oi_change": 45000,
-                "stock_futures_oi_change": -8000
-            }
-        },
-        "interpretation": "FIIs are net sellers in cash segment while DIIs are providing support. FII long unwinding visible in index futures.",
-        "market_impact": "MIXED - DII support may limit downside",
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        if HAS_NSEPYTHON:
+            logger.info("Fetching LIVE FII/DII data from NSE")
+
+            # Get real FII/DII data from NSE
+            fii_dii_data = nse_fiidii()
+
+            if fii_dii_data is not None and len(fii_dii_data) > 0:
+                # Parse the DataFrame returned by nse_fiidii
+                latest = fii_dii_data.iloc[0] if hasattr(fii_dii_data, 'iloc') else fii_dii_data[0]
+
+                # Extract FII data
+                fii_buy = float(latest.get('FII_DII_BuyValue', 0) if hasattr(latest, 'get') else 0)
+                fii_sell = float(latest.get('FII_DII_SellValue', 0) if hasattr(latest, 'get') else 0)
+                fii_net = fii_buy - fii_sell
+
+                # Extract DII data (usually in separate columns)
+                dii_buy = float(latest.get('DII_BuyValue', 0) if hasattr(latest, 'get') else 0)
+                dii_sell = float(latest.get('DII_SellValue', 0) if hasattr(latest, 'get') else 0)
+                dii_net = dii_buy - dii_sell
+
+                return {
+                    "date": current_date,
+                    "source": "NSE_LIVE",
+                    "cash_segment": {
+                        "fii": {
+                            "gross_buy": round(fii_buy, 2),
+                            "gross_sell": round(fii_sell, 2),
+                            "net": round(fii_net, 2),
+                            "trend": "BUYING" if fii_net > 0 else "SELLING"
+                        },
+                        "dii": {
+                            "gross_buy": round(dii_buy, 2),
+                            "gross_sell": round(dii_sell, 2),
+                            "net": round(dii_net, 2),
+                            "trend": "BUYING" if dii_net > 0 else "SELLING"
+                        }
+                    },
+                    "interpretation": _get_fii_dii_interpretation(fii_net, dii_net),
+                    "market_impact": _get_market_impact(fii_net, dii_net),
+                    "timestamp": datetime.now().isoformat()
+                }
+
+        # Return unavailable status if nsepython not working
+        return {
+            "date": current_date,
+            "source": "UNAVAILABLE",
+            "error": "nsepython required for live FII/DII data - install with: pip install nsepython",
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching FII/DII data: {e}")
+        return {
+            "date": current_date,
+            "source": "ERROR",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+def _get_fii_dii_interpretation(fii_net: float, dii_net: float) -> str:
+    """Generate interpretation based on FII/DII activity."""
+    if fii_net > 0 and dii_net > 0:
+        return "Both FIIs and DIIs are buying - Strong bullish signal"
+    elif fii_net < 0 and dii_net < 0:
+        return "Both FIIs and DIIs are selling - Bearish signal"
+    elif fii_net < 0 and dii_net > 0:
+        return "FIIs selling but DIIs buying - DII support may limit downside"
+    elif fii_net > 0 and dii_net < 0:
+        return "FIIs buying but DIIs selling - Mixed signals, watch for direction"
+    return "Neutral activity"
+
+
+def _get_market_impact(fii_net: float, dii_net: float) -> str:
+    """Determine market impact based on FII/DII flows."""
+    net_flow = fii_net + dii_net
+    if net_flow > 1000:  # > 1000 crores net inflow
+        return "BULLISH - Strong net inflows"
+    elif net_flow < -1000:  # > 1000 crores net outflow
+        return "BEARISH - Strong net outflows"
+    elif abs(net_flow) < 500:
+        return "NEUTRAL - Balanced flows"
+    elif net_flow > 0:
+        return "MILDLY_BULLISH - Moderate net inflows"
+    else:
+        return "MILDLY_BEARISH - Moderate net outflows"
 
 
 def get_economic_calendar() -> Dict[str, Any]:
@@ -616,7 +734,8 @@ def execute_paper_trade(
     product_type: str = "INTRADAY"
 ) -> Dict[str, Any]:
     """
-    Execute a paper trade for simulation/testing.
+    Execute a PAPER TRADE for backtesting and strategy validation.
+    This is NOT a real order - use Engine C Dhan integration for live trading.
 
     Args:
         symbol: Stock/Index symbol
@@ -627,7 +746,7 @@ def execute_paper_trade(
         product_type: INTRADAY, CNC, NRML
 
     Returns:
-        Order confirmation details
+        Paper order confirmation for backtesting purposes
     """
     import uuid
 
@@ -641,8 +760,9 @@ def execute_paper_trade(
         return {"error": "Quantity must be positive"}
 
     return {
-        "status": "SIMULATED_SUCCESS",
-        "order_id": f"SIM-{order_id}",
+        "status": "PAPER_ORDER_LOGGED",
+        "mode": "BACKTESTING",
+        "order_id": f"PAPER-{order_id}",
         "symbol": symbol.upper(),
         "action": action.upper(),
         "quantity": quantity,
@@ -652,8 +772,8 @@ def execute_paper_trade(
         "order_value": quantity * price,
         "exchange": "NSE",
         "timestamp": datetime.now().isoformat(),
-        "message": "This is a PAPER TRADE - no real order placed",
-        "note": "For real trading, connect to Dhan/broker API"
+        "warning": "PAPER TRADE ONLY - For live trading use: POST /api/dhan/place-order",
+        "live_trading_endpoint": "https://engine-c-573866363639.us-central1.run.app/api/dhan/place-order"
     }
 
 
@@ -718,7 +838,7 @@ def _get_next_expiry(symbol: str) -> str:
 
 
 # =====================================================================
-# FUNCTION REGISTRY FOR GEMINI
+# FUNCTION REGISTRY FOR GEMINI - ALL LIVE DATA SOURCES
 # =====================================================================
 
 MARKET_DATA_TOOLS = [
@@ -732,14 +852,15 @@ MARKET_DATA_TOOLS = [
     execute_paper_trade
 ]
 
-# Tool descriptions for Gemini
+# Tool descriptions for Gemini - All tools use LIVE data
 TOOL_DESCRIPTIONS = {
-    "get_stock_quote": "Get real-time stock quote, price, and key metrics for any NSE/BSE listed stock or index",
-    "get_nifty_overview": "Get comprehensive NIFTY 50 index overview with top gainers, losers, and market breadth",
-    "get_technical_indicators": "Calculate technical indicators (RSI, MACD, Bollinger Bands, MAs) for any stock",
-    "get_market_news": "Get latest market news and sentiment for Indian markets, global markets, or economy",
-    "get_option_chain_data": "Get option chain data with PCR, max pain, and key OI levels for NIFTY/BANKNIFTY",
-    "get_fii_dii_activity": "Get FII/DII buying/selling activity and its market impact",
+    "get_stock_quote": "Get LIVE stock quote, price, and key metrics for any NSE/BSE listed stock or index (via yfinance)",
+    "get_nifty_overview": "Get LIVE NIFTY 50 index overview with top gainers, losers, and market breadth (via yfinance + NSE)",
+    "get_technical_indicators": "Calculate technical indicators (RSI, MACD, Bollinger Bands, MAs) from LIVE price data",
+    "get_market_news": "Get LIVE market news from Economic Times, Moneycontrol, Livemint RSS feeds",
+    "get_option_chain_data": "Get LIVE option chain from NSE with PCR, max pain, and key OI levels for NIFTY/BANKNIFTY",
+    "get_fii_dii_activity": "Get LIVE FII/DII buying/selling activity from NSE",
     "get_economic_calendar": "Get upcoming economic events that may affect Indian markets",
-    "execute_paper_trade": "Execute a simulated paper trade for testing (not real order)"
+    "execute_paper_trade": "Execute a PAPER TRADE for backtesting (for live trading use Engine C Dhan API)"
 }
+

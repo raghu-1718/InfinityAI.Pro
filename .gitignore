@@ -12,6 +12,8 @@ __pycache__/
 *.env
 **/*.env
 dhan_credentials_secure.json
+dhan_token.txt
+*_token.txt
 engines/**/jwt-secret-key.txt
 engines/**/temp_api_key.txt
 .firebase/
