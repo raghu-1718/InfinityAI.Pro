@@ -80,6 +80,26 @@ except ImportError as e:
     HAS_GOOGLE_INTEGRATIONS = False
     print(f"⚠️ Google integrations not available: {e}")
 
+# Enhanced GenAI with Function Calling (v3.7.7)
+try:
+    from src.google_integrations import (
+        EnhancedGenAIClient,
+        TradingRecommendation,
+        MARKET_DATA_TOOLS,
+        get_stock_quote,
+        get_nifty_overview,
+        get_technical_indicators,
+        get_market_news,
+        get_option_chain_data,
+        get_fii_dii_activity,
+        NewsAggregator,
+        INFINITYAI_SYSTEM_PROMPT
+    )
+    HAS_ENHANCED_GENAI = True
+except ImportError as e:
+    HAS_ENHANCED_GENAI = False
+    print(f"⚠️ Enhanced GenAI not available: {e}")
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -140,10 +160,30 @@ if HAS_GOOGLE_INTEGRATIONS:
     except Exception as e:
         logger.warning(f"⚠️ Error initializing Google integrations: {e}")
 
+# --- Enhanced GenAI Client with Function Calling (v3.7.7) ---
+ENHANCED_GENAI_CLIENT = None
+NEWS_AGGREGATOR = None
+
+if HAS_ENHANCED_GENAI:
+    try:
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+
+        ENHANCED_GENAI_CLIENT = EnhancedGenAIClient(
+            project_id=PROJECT_ID,
+            model_id="gemini-2.0-flash"
+        )
+        logger.info("✅ Enhanced GenAI Client initialized with function calling")
+
+        NEWS_AGGREGATOR = NewsAggregator()
+        logger.info("✅ News Aggregator initialized")
+
+    except Exception as e:
+        logger.warning(f"⚠️ Error initializing Enhanced GenAI: {e}")
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (Production)",
-    description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference",
-    version="3.7-google-integrations"
+    description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference and Vertex AI",
+    version="3.7.7-vertexai"
 )
 
 # Add CORS middleware
@@ -2460,9 +2500,12 @@ async def get_ai_integrations_status():
     """Get status of all AI/Google Cloud integrations"""
     return {
         "google_integrations_available": HAS_GOOGLE_INTEGRATIONS,
+        "enhanced_genai_available": HAS_ENHANCED_GENAI,
         "genai_client": GENAI_CLIENT_B is not None,
+        "enhanced_genai_client": ENHANCED_GENAI_CLIENT is not None,
         "trading_logger": TRADING_LOGGER_B is not None,
         "model_storage": MODEL_STORAGE_B is not None,
+        "news_aggregator": NEWS_AGGREGATOR is not None,
         "agents": {
             "signal_agent": SIGNAL_AGENT is not None,
             "risk_agent": RISK_AGENT is not None,
@@ -2472,6 +2515,273 @@ async def get_ai_integrations_status():
             "traditional": list(MODEL_STORE.models.keys()),
             "capabilities": MODEL_STORE.capabilities
         },
+        "version": "3.7.7-vertexai",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+# =====================================================================
+# ENHANCED GEMINI API - v3.7.7 Vertex AI with Function Calling
+# =====================================================================
+
+class EnhancedSignalRequest(BaseModel):
+    """Request for enhanced trading signal with function calling"""
+    symbol: str
+    analysis_type: str = "comprehensive"  # intraday, swing, options, comprehensive
+    auto_execute: bool = False
+    fetch_live_data: bool = True
+
+
+class MarketDataRequest(BaseModel):
+    """Request for market data"""
+    symbol: str
+    exchange: str = "NSE"
+    data_type: str = "quote"  # quote, technicals, options, all
+
+
+@app.post("/api/v1/gemini/enhanced-signal")
+async def generate_enhanced_signal(req: EnhancedSignalRequest):
+    """
+    Generate enhanced trading signal with Vertex AI function calling.
+    Automatically fetches real-time market data.
+    """
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="Enhanced GenAI client not available")
+
+    try:
+        recommendation = await ENHANCED_GENAI_CLIENT.generate_trading_signal(
+            symbol=req.symbol,
+            analysis_type=req.analysis_type,
+            fetch_live_data=req.fetch_live_data,
+            auto_execute=req.auto_execute
+        )
+
+        # Log the signal
+        if TRADING_LOGGER_B:
+            TRADING_LOGGER_B.log_signal(
+                symbol=req.symbol,
+                signal=recommendation.signal.value,
+                confidence=recommendation.confidence,
+                model_name="gemini-2.0-flash-vertexai",
+                metadata={
+                    "entry_price": recommendation.entry_price,
+                    "stop_loss": recommendation.stop_loss,
+                    "targets": recommendation.target_prices,
+                    "risk_level": recommendation.risk_level.value
+                }
+            )
+
+        return {
+            "status": "success",
+            "symbol": req.symbol,
+            "recommendation": recommendation.to_dict(),
+            "model": "gemini-2.0-flash",
+            "vertex_ai": True,
+            "function_calling": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error generating enhanced signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/gemini/market-summary")
+async def get_gemini_market_summary():
+    """
+    Get comprehensive market summary using Gemini with function calling.
+    Includes NIFTY, BANKNIFTY, FII/DII, news sentiment.
+    """
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="Enhanced GenAI client not available")
+
+    try:
+        summary = await ENHANCED_GENAI_CLIENT.get_market_summary()
+
+        return {
+            "status": "success",
+            "summary": summary.get("response"),
+            "function_calls_made": summary.get("function_calls", []),
+            "token_usage": summary.get("token_usage", {}),
+            "model": "gemini-2.0-flash",
+            "vertex_ai": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting market summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/gemini/quick-signal/{symbol}")
+async def get_quick_signal(symbol: str):
+    """
+    Get quick BUY/SELL/HOLD signal for a symbol.
+    """
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="Enhanced GenAI client not available")
+
+    try:
+        signal = await ENHANCED_GENAI_CLIENT.quick_signal(symbol.upper())
+
+        return {
+            "status": "success",
+            "symbol": symbol.upper(),
+            "analysis": signal.get("response"),
+            "function_calls": signal.get("function_calls", []),
+            "vertex_ai": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting quick signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/gemini/options-analysis")
+async def analyze_options(symbol: str = "NIFTY", strategy: str = "auto"):
+    """
+    Analyze options for a symbol and get strategy recommendation.
+    """
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="Enhanced GenAI client not available")
+
+    try:
+        analysis = await ENHANCED_GENAI_CLIENT.options_analysis(symbol, strategy)
+
+        return {
+            "status": "success",
+            "symbol": symbol,
+            "analysis": analysis.get("response"),
+            "function_calls": analysis.get("function_calls", []),
+            "vertex_ai": True,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error analyzing options: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market-data/{symbol}")
+async def get_live_market_data(symbol: str, exchange: str = "NSE", data_type: str = "all"):
+    """
+    Get live market data using market data tools.
+    data_type: quote, technicals, options, news, all
+    """
+    if not HAS_ENHANCED_GENAI:
+        raise HTTPException(status_code=503, detail="Market data tools not available")
+
+    try:
+        result = {}
+
+        if data_type in ["quote", "all"]:
+            result["quote"] = get_stock_quote(symbol, exchange)
+
+        if data_type in ["technicals", "all"]:
+            result["technicals"] = get_technical_indicators(symbol, exchange)
+
+        if data_type in ["options", "all"] and symbol.upper() in ["NIFTY", "BANKNIFTY", "FINNIFTY"]:
+            result["option_chain"] = get_option_chain_data(symbol)
+
+        if data_type in ["news", "all"]:
+            result["market_news"] = get_market_news("indian_markets")
+
+        if data_type in ["fii_dii", "all"]:
+            result["fii_dii"] = get_fii_dii_activity()
+
+        return {
+            "status": "success",
+            "symbol": symbol,
+            "exchange": exchange,
+            "data": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting market data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/nifty-overview")
+async def get_nifty_market_overview():
+    """
+    Get comprehensive NIFTY 50 market overview.
+    """
+    if not HAS_ENHANCED_GENAI:
+        raise HTTPException(status_code=503, detail="Market data tools not available")
+
+    try:
+        overview = get_nifty_overview()
+
+        return {
+            "status": "success",
+            "data": overview,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting NIFTY overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/news/market")
+async def get_market_news_feed(category: str = "markets", max_articles: int = 20):
+    """
+    Get live market news with sentiment analysis.
+    category: markets, stocks, economy, global
+    """
+    if not NEWS_AGGREGATOR:
+        raise HTTPException(status_code=503, detail="News aggregator not available")
+
+    try:
+        feed = await NEWS_AGGREGATOR.fetch_all_news([category], max_articles)
+
+        return {
+            "status": "success",
+            "category": category,
+            "overall_sentiment": feed.overall_sentiment,
+            "sentiment_breakdown": {
+                "bullish": feed.bullish_count,
+                "bearish": feed.bearish_count,
+                "neutral": feed.neutral_count
+            },
+            "articles": [a.to_dict() for a in feed.articles],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting news: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/news/symbol/{symbol}")
+async def get_symbol_news(symbol: str, max_articles: int = 10):
+    """
+    Get news specific to a stock symbol.
+    """
+    if not NEWS_AGGREGATOR:
+        raise HTTPException(status_code=503, detail="News aggregator not available")
+
+    try:
+        feed = await NEWS_AGGREGATOR.fetch_symbol_news(symbol.upper(), max_articles)
+
+        return {
+            "status": "success",
+            "symbol": symbol.upper(),
+            "sentiment": feed.overall_sentiment,
+            "articles": [a.to_dict() for a in feed.articles],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting symbol news: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/gemini/usage-stats")
+async def get_gemini_usage_stats():
+    """
+    Get Gemini API usage statistics.
+    """
+    if not ENHANCED_GENAI_CLIENT:
+        return {"message": "Enhanced GenAI client not initialized"}
+
+    return {
+        "status": "success",
+        "usage": ENHANCED_GENAI_CLIENT.get_usage_stats(),
         "timestamp": datetime.utcnow().isoformat()
     }
 
