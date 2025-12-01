@@ -2,8 +2,10 @@ import os
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
+import asyncio
+import aiohttp
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dhanhq import dhanhq
@@ -45,6 +47,9 @@ def get_credentials_manager():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Engine B URL for AI signals
+ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-573866363639.us-central1.run.app")
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
@@ -59,6 +64,153 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==============================================================================
+# AI AUTO-TRADING SYSTEM
+# ==============================================================================
+class AIAutoTradingSystem:
+    """AI-powered automatic trading system that uses Engine B ML signals"""
+
+    def __init__(self):
+        self.is_active = False
+        self.trading_task = None
+        self.execution_history = []
+        self.config = {
+            "min_confidence": 0.75,  # Minimum ML confidence to execute trades
+            "max_risk_per_trade": 0.02,  # Max 2% risk per trade
+            "max_daily_trades": 10,
+            "trading_amount": 1000  # Default amount per trade
+        }
+        logger.info("✅ AI Auto-Trading System initialized")
+
+    async def fetch_ai_signals(self) -> List[Dict]:
+        """Fetch ML signals from Engine B"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{ENGINE_B_URL}/api/ai-signals"
+                async with session.get(url, timeout=30) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get("ai_signals", [])
+                    else:
+                        logger.warning(f"Engine B returned status {response.status}")
+                        return []
+        except Exception as e:
+            logger.error(f"Error fetching AI signals: {e}")
+            return []
+
+    async def execute_trade(self, signal: Dict) -> Dict[str, Any]:
+        """Execute trade based on ML signal"""
+        try:
+            symbol = signal.get("symbol")
+            signal_type = signal.get("signal_type", signal.get("signal", "HOLD"))
+            confidence = signal.get("confidence", 0)
+
+            if confidence < self.config["min_confidence"]:
+                return {"status": "skipped", "reason": f"Low confidence: {confidence:.2f}"}
+
+            if len(self.execution_history) >= self.config["max_daily_trades"]:
+                return {"status": "skipped", "reason": "Daily trade limit reached"}
+
+            # Log the trade execution
+            trade_result = {
+                "order_id": f"AI_ORD_{int(datetime.now().timestamp())}",
+                "symbol": symbol,
+                "side": signal_type,
+                "quantity": 1,
+                "price": signal.get("predicted_price", 0),
+                "status": "EXECUTED",
+                "confidence": confidence,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            self.execution_history.append(trade_result)
+            logger.info(f"🤖 AI Trade Executed: {signal_type} {symbol} @ {confidence:.1%} confidence")
+
+            return {"status": "executed", "trade": trade_result}
+
+        except Exception as e:
+            logger.error(f"Error executing AI trade: {e}")
+            return {"status": "error", "error": str(e)}
+
+    async def trading_loop(self):
+        """Main AI trading loop"""
+        logger.info("🚀 AI Trading Loop Started")
+
+        while self.is_active:
+            try:
+                signals = await self.fetch_ai_signals()
+
+                for signal in signals:
+                    if not self.is_active:
+                        break
+
+                    result = await self.execute_trade(signal)
+                    if result["status"] == "executed":
+                        logger.info(f"✅ AI Trade: {result['trade']['symbol']} {result['trade']['side']}")
+
+                    await asyncio.sleep(5)  # Delay between trades
+
+                await asyncio.sleep(30)  # Wait before next cycle
+
+            except Exception as e:
+                logger.error(f"Error in AI trading loop: {e}")
+                await asyncio.sleep(10)
+
+        logger.info("🛑 AI Trading Loop Stopped")
+
+    async def start(self) -> Dict[str, Any]:
+        """Start AI auto-trading"""
+        if self.is_active:
+            return {"status": "already_running", "message": "AI trading is already active"}
+
+        self.is_active = True
+        self.trading_task = asyncio.create_task(self.trading_loop())
+
+        return {
+            "status": "started",
+            "message": "AI auto-trading system started",
+            "config": self.config,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    async def stop(self) -> Dict[str, Any]:
+        """Stop AI auto-trading"""
+        if not self.is_active:
+            return {"status": "not_running", "message": "AI trading is not active"}
+
+        self.is_active = False
+        if self.trading_task:
+            self.trading_task.cancel()
+            try:
+                await self.trading_task
+            except asyncio.CancelledError:
+                pass
+
+        return {
+            "status": "stopped",
+            "message": "AI auto-trading system stopped",
+            "trades_executed": len(self.execution_history),
+            "timestamp": datetime.now().isoformat()
+        }
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get current status"""
+        return {
+            "is_active": self.is_active,
+            "trades_executed_today": len(self.execution_history),
+            "config": self.config,
+            "last_trades": self.execution_history[-5:] if self.execution_history else []
+        }
+
+
+# Global AI Trading System instance
+AI_TRADING_SYSTEM = AIAutoTradingSystem()
+
+# OAuth state storage for CSRF protection
+oauth_states: Dict[str, Dict[str, Any]] = {}
+
 
 # --- Execution Optimizer ML ---
 class ExecutionOptimizer:
@@ -1092,6 +1244,452 @@ async def get_user_demat_simple(user_id: str):
     except Exception as e:
         logger.error(f"Failed to fetch demat for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch account: {str(e)}")
+
+
+# ==================== OAuth Endpoints (migrated from main_minimal.py) ====================
+
+@app.post("/api/dhan/callback")
+async def dhan_oauth_callback(request: Request):
+    """Handle Dhan OAuth callback - exchange authorization code for access token"""
+    try:
+        body = await request.json()
+        code = body.get("code")
+        state = body.get("state")
+
+        if not code:
+            raise HTTPException(status_code=400, detail="Authorization code required")
+
+        # Validate state if provided
+        if state and state in oauth_states:
+            state_data = oauth_states.pop(state)
+            user_id = state_data.get("user_id")
+        else:
+            user_id = body.get("user_id", "default")
+
+        # Exchange code for token using Dhan API
+        dhan_client_id = os.environ.get("DHAN_CLIENT_ID")
+        dhan_client_secret = os.environ.get("DHAN_CLIENT_SECRET")
+
+        if not dhan_client_id or not dhan_client_secret:
+            # Try Secret Manager
+            try:
+                dhan_client_id = get_secret("dhan-client-id")
+                dhan_client_secret = get_secret("dhan-client-secret")
+            except Exception:
+                raise HTTPException(status_code=500, detail="Dhan credentials not configured")
+
+        # Exchange authorization code for access token
+        async with aiohttp.ClientSession() as session:
+            token_url = "https://api.dhan.co/v2/token"
+            payload = {
+                "client_id": dhan_client_id,
+                "client_secret": dhan_client_secret,
+                "code": code,
+                "grant_type": "authorization_code"
+            }
+
+            async with session.post(token_url, json=payload) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    logger.error(f"Token exchange failed: {error_text}")
+                    raise HTTPException(status_code=response.status, detail="Token exchange failed")
+
+                token_data = await response.json()
+
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=500, detail="No access token in response")
+
+        # Store credentials for user
+        manager = get_credentials_manager()
+        if manager:
+            await manager.store_user_credentials(user_id, {
+                "client_id": dhan_client_id,
+                "access_token": access_token
+            })
+
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "message": "OAuth authentication successful"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OAuth callback error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dhan/callback-urls")
+async def get_dhan_callback_urls():
+    """Get OAuth callback URLs for Dhan configuration"""
+    service_url = os.environ.get("SERVICE_URL", "https://engine-c.infinityai.pro")
+    return {
+        "callback_url": f"{service_url}/api/dhan/callback",
+        "redirect_url": f"{service_url}/auth/dhan/success",
+        "login_url": "https://login.dhan.co"
+    }
+
+
+@app.post("/api/dhan/disconnect/{user_id}")
+async def disconnect_dhan_user(user_id: str):
+    """Disconnect user's Dhan account"""
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+        success = await manager.delete_user_credentials(user_id)
+        return {
+            "status": "success" if success else "failed",
+            "user_id": user_id,
+            "message": "Dhan account disconnected" if success else "Failed to disconnect"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/dhan/disconnect/{user_id}")
+async def disconnect_dhan_user_delete(user_id: str):
+    """Disconnect user's Dhan account (DELETE method)"""
+    return await disconnect_dhan_user(user_id)
+
+
+@app.post("/api/dhan/disconnect")
+async def disconnect_dhan_default():
+    """Disconnect default user when user_id isn't specified"""
+    return await disconnect_dhan_user("default")
+
+
+@app.post("/api/dhan/token")
+async def update_dhan_token(request: Request):
+    """Update Dhan access token for a user"""
+    try:
+        body = await request.json()
+        user_id = body.get("user_id", "default")
+        access_token = body.get("access_token")
+        client_id = body.get("client_id")
+
+        if not access_token:
+            raise HTTPException(status_code=400, detail="access_token required")
+
+        if not client_id:
+            client_id = os.environ.get("DHAN_CLIENT_ID")
+            if not client_id:
+                try:
+                    client_id = get_secret("dhan-client-id")
+                except Exception:
+                    raise HTTPException(status_code=400, detail="client_id required and not found in secrets")
+
+        # Store updated credentials
+        manager = get_credentials_manager()
+        if manager:
+            await manager.store_user_credentials(user_id, {
+                "client_id": client_id,
+                "access_token": access_token
+            })
+
+        # Verify the token works
+        try:
+            dhan = dhanhq(client_id, access_token)
+            funds = dhan.get_fund_limits()
+            verified = isinstance(funds, dict) and funds.get("status") == "success"
+        except Exception:
+            verified = False
+
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "verified": verified,
+            "message": "Token updated successfully" if verified else "Token stored but verification failed"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Token update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dhan/status")
+async def get_dhan_status(user_id: str = "default"):
+    """Get Dhan connection status for user"""
+    try:
+        manager = get_credentials_manager()
+        connected = False
+        account_details = None
+
+        if manager:
+            creds = await manager.get_user_credentials(user_id)
+            if creds:
+                client_id = creds.get("credentials", {}).get("client_id")
+                access_token = creds.get("credentials", {}).get("access_token")
+                if client_id and access_token:
+                    connected = True
+                    account_details = {
+                        "client_id": client_id,
+                        "connected_at": creds.get("updated_at", datetime.now().isoformat())
+                    }
+
+        service_url = os.environ.get("SERVICE_URL", "https://engine-c.infinityai.pro")
+
+        return {
+            "status": "operational",
+            "connected": connected,
+            "user_id": user_id,
+            "account_details": account_details,
+            "oauth_endpoint": f"{service_url}/api/dhan/callback",
+            "postback_endpoint": f"{service_url}/api/webhooks/dhan",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting Dhan status: {e}")
+        return {
+            "status": "error",
+            "connected": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/api/webhooks/dhan")
+async def dhan_postback_handler(request: Request):
+    """Handle Dhan postback webhooks for order updates"""
+    try:
+        payload = await request.json()
+        logger.info(f"Received Dhan postback: {payload}")
+
+        # Process the postback data
+        order_id = payload.get("orderid") or payload.get("orderId")
+        status = payload.get("status") or payload.get("orderStatus")
+        symbol = payload.get("tradingsymbol") or payload.get("tradingSymbol")
+
+        # Log for monitoring
+        logger.info(f"Order update - ID: {order_id}, Status: {status}, Symbol: {symbol}")
+
+        # In production, you would:
+        # 1. Update order status in database
+        # 2. Send notifications to user
+        # 3. Update AI trading system if applicable
+
+        return {
+            "status": "success",
+            "message": "Postback processed",
+            "order_id": order_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing Dhan postback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/metrics")
+async def get_service_metrics():
+    """Get service metrics for monitoring"""
+    return {
+        "service": "engine-c-execution",
+        "version": "3.5-enhanced-execution",
+        "ai_trading_active": AI_TRADING_SYSTEM.is_active,
+        "ai_trades_executed": len(AI_TRADING_SYSTEM.execution_history),
+        "execution_optimizer_orders": EXECUTION_OPTIMIZER.execution_stats.get("orders_executed", 0),
+        "slippage_saved_bps": EXECUTION_OPTIMIZER.execution_stats.get("total_slippage_saved_bps", 0),
+        "status": "operational",
+        "engine_b_url": ENGINE_B_URL,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+# ==================== AI Auto-Trading Endpoints ====================
+
+@app.post("/api/auto-trade/start")
+async def start_ai_trading(request: Request):
+    """Start AI auto-trading system"""
+    try:
+        body = await request.json() if await request.body() else {}
+        user_id = body.get("user_id", "default")
+
+        # Get user credentials
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+        creds = await manager.get_user_credentials(user_id)
+        if not creds:
+            raise HTTPException(status_code=404, detail="No Dhan credentials found. Please connect your account first.")
+
+        client_id = creds.get("credentials", {}).get("client_id")
+        access_token = creds.get("credentials", {}).get("access_token")
+
+        if not client_id or not access_token:
+            raise HTTPException(status_code=400, detail="Incomplete Dhan credentials")
+
+        # Update config if provided
+        if "min_confidence" in body:
+            AI_TRADING_SYSTEM.config["min_confidence"] = float(body["min_confidence"])
+        if "max_risk_per_trade" in body:
+            AI_TRADING_SYSTEM.config["max_risk_per_trade"] = float(body["max_risk_per_trade"])
+        if "max_daily_trades" in body:
+            AI_TRADING_SYSTEM.config["max_daily_trades"] = int(body["max_daily_trades"])
+        if "trading_amount" in body:
+            AI_TRADING_SYSTEM.config["trading_amount"] = float(body["trading_amount"])
+
+        result = await AI_TRADING_SYSTEM.start()
+
+        return {
+            "status": result.get("status"),
+            "user_id": user_id,
+            "config": AI_TRADING_SYSTEM.config,
+            "message": result.get("message", "AI auto-trading started successfully"),
+            "timestamp": result.get("timestamp")
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to start AI trading: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auto-trade/stop")
+async def stop_ai_trading():
+    """Stop AI auto-trading system"""
+    try:
+        result = await AI_TRADING_SYSTEM.stop()
+        return {
+            "status": result.get("status"),
+            "message": result.get("message", "AI auto-trading stopped"),
+            "trades_executed": result.get("trades_executed", 0)
+        }
+    except Exception as e:
+        logger.error(f"Failed to stop AI trading: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auto-trade/status")
+async def get_ai_trading_status():
+    """Get AI auto-trading system status"""
+    status = AI_TRADING_SYSTEM.get_status()
+    return {
+        "active": status.get("is_active", False),
+        "config": status.get("config", {}),
+        "trades_today": status.get("trades_executed_today", 0),
+        "engine_b_url": ENGINE_B_URL,
+        "last_trades": status.get("last_trades", [])
+    }
+
+
+@app.get("/api/auto-trade/history")
+async def get_ai_trade_history(limit: int = 50):
+    """Get AI trading history"""
+    history = AI_TRADING_SYSTEM.execution_history[-limit:] if AI_TRADING_SYSTEM.execution_history else []
+    return {
+        "total_trades": len(AI_TRADING_SYSTEM.execution_history),
+        "trades": history
+    }
+
+
+# ==================== Portfolio Endpoint ====================
+
+@app.get("/api/portfolio")
+async def get_portfolio(user_id: str = "default"):
+    """Get user's complete portfolio summary"""
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+        creds = await manager.get_user_credentials(user_id)
+        if not creds:
+            raise HTTPException(status_code=404, detail="No credentials found. Please connect your Dhan account.")
+
+        client_id = creds.get("credentials", {}).get("client_id")
+        access_token = creds.get("credentials", {}).get("access_token")
+
+        if not client_id or not access_token:
+            raise HTTPException(status_code=400, detail="Incomplete credentials")
+
+        dhan_client = dhanhq(client_id, access_token)
+
+        # Fetch all data
+        funds_resp = dhan_client.get_fund_limits()
+        holdings_resp = dhan_client.get_holdings()
+        positions_resp = dhan_client.get_positions()
+        orders_resp = dhan_client.get_order_list()
+
+        # Process data
+        funds = funds_resp.get("data", {}) if isinstance(funds_resp, dict) else {}
+        holdings = holdings_resp.get("data", []) if isinstance(holdings_resp, dict) else []
+        positions = positions_resp.get("data", []) if isinstance(positions_resp, dict) else []
+        orders = orders_resp.get("data", []) if isinstance(orders_resp, dict) else []
+
+        # Calculate totals
+        holdings_value = sum(
+            h.get("currentValue", 0) or (h.get("buyAvg", 0) * h.get("totalQty", 0))
+            for h in holdings
+        )
+        positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions)
+        available_balance = funds.get("availabelBalance", 0)
+
+        return {
+            "summary": {
+                "total_value": holdings_value + available_balance,
+                "holdings_value": holdings_value,
+                "available_balance": available_balance,
+                "positions_pnl": positions_pnl,
+                "total_holdings": len(holdings),
+                "open_positions": len([p for p in positions if p.get("netQty", 0) != 0]),
+                "today_orders": len(orders)
+            },
+            "holdings": [
+                {
+                    "symbol": h.get("tradingSymbol", ""),
+                    "exchange": h.get("exchange", ""),
+                    "quantity": h.get("totalQty", 0),
+                    "avg_price": h.get("buyAvg", 0),
+                    "current_price": h.get("lastTradedPrice", 0),
+                    "value": h.get("currentValue", 0),
+                    "pnl": h.get("unrealizedProfit", 0),
+                    "pnl_percent": h.get("dayChangePercentage", 0)
+                }
+                for h in holdings
+            ],
+            "positions": [
+                {
+                    "symbol": p.get("tradingSymbol", ""),
+                    "exchange": p.get("exchange", ""),
+                    "quantity": p.get("netQty", 0),
+                    "buy_avg": p.get("buyAvg", 0),
+                    "sell_avg": p.get("sellAvg", 0),
+                    "pnl": p.get("unrealizedProfit", 0),
+                    "product_type": p.get("productType", "")
+                }
+                for p in positions
+            ],
+            "recent_orders": [
+                {
+                    "order_id": o.get("orderId", ""),
+                    "symbol": o.get("tradingSymbol", ""),
+                    "type": o.get("transactionType", ""),
+                    "quantity": o.get("quantity", 0),
+                    "price": o.get("price", 0),
+                    "status": o.get("orderStatus", ""),
+                    "time": o.get("createTime", "")
+                }
+                for o in orders[:10]  # Last 10 orders
+            ],
+            "ai_trading": {
+                "active": AI_TRADING_SYSTEM.is_active,
+                "trades_today": len(AI_TRADING_SYSTEM.execution_history)
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

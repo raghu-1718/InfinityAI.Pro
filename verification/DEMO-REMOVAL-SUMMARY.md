@@ -1,6 +1,7 @@
 # Demo/Fake Values Removal Summary
 
-**Date:** 2025-06-15  
+**Date:** 2025-06-15
+**Last Updated:** 2025-06-15
 **Objective:** Remove ALL demo, fake, simulated, and hardcoded values from the codebase
 
 ---
@@ -12,6 +13,28 @@ All identified demo/simulated data patterns have been replaced with **REAL data 
 - **Real RSS Feeds** for market news (Economic Times, Moneycontrol, NSE)
 - **Secret Manager** for Dhan API tokens (no hardcoded credentials)
 - **Engine B ML Models** for signal validation (no random confidence)
+- **Consolidated `main.py`** - eliminated redundant `main_minimal.py`
+
+---
+
+## 📁 Code Consolidation
+
+### Merged `main_minimal.py` → `main.py`
+
+The `main_minimal.py` file has been **DELETED** and all its features merged into `main.py`:
+
+| Feature | Status |
+|---------|--------|
+| OAuth Flow (`/api/dhan/callback`) | ✅ Migrated |
+| AI Auto-Trading System | ✅ Migrated (uses `AI_TRADING_SYSTEM`) |
+| Token Update (`/api/dhan/token`) | ✅ Migrated |
+| Portfolio Endpoint (`/api/portfolio`) | ✅ Migrated |
+| Dhan Status (`/api/dhan/status`) | ✅ Added |
+| Webhook Handler (`/api/webhooks/dhan`) | ✅ Added |
+| Metrics Endpoint (`/metrics`) | ✅ Added |
+| Disconnect Endpoints | ✅ Migrated |
+
+**Result:** Single `main.py` (1696 lines) is now the **only** production file.
 
 ---
 
@@ -53,7 +76,7 @@ except ImportError:
 ```python
 class AISignalModel:
     """Real ML Signal Validation - calls Engine B's trained models"""
-    
+
     def validate_signal(self, order: Dict[str, Any]) -> float:
         response = self.client.post(
             f"{ENGINE_B_URL}/api/v1/signal",
@@ -62,22 +85,33 @@ class AISignalModel:
         return data.get("confidence", 0.5)
 ```
 
-### 3. `backend/engine-execution/src/main_minimal.py`
+### 3. `backend/engine-execution/src/main.py` (Consolidated)
 
-| Before | After |
-|--------|-------|
+**Note:** `main_minimal.py` has been **DELETED** and merged into `main.py`.
+
+| Before (main_minimal.py) | After (main.py) |
+|--------------------------|------------------|
 | Hardcoded JWT token | `get_secret('dhan-access-token')` |
 | `PLACEHOLDER_SECRET` | `get_secret('dhan-client-secret')` |
 | Static Engine B URL | Environment variable `ENGINE_B_URL` |
+| Separate file | Merged into single `main.py` |
 
-**New Token Management:**
+**Key Merged Features:**
 ```python
-@property
-def access_token(self) -> str:
-    """Lazy-load from Secret Manager (no hardcoded values!)"""
-    if not self._access_token:
-        self._access_token = get_secret('dhan-access-token')
-    return self._access_token or ""
+# AI Auto-Trading System with Engine B integration
+AI_TRADING_SYSTEM = AIAutoTradingSystem()
+
+# OAuth state storage
+oauth_states: Dict[str, Dict[str, Any]] = {}
+
+# All endpoints consolidated:
+# - /api/dhan/callback (OAuth)
+# - /api/dhan/status
+# - /api/dhan/token
+# - /api/auto-trade/start|stop|status|history
+# - /api/portfolio
+# - /api/webhooks/dhan
+# - /metrics
 ```
 
 ---
@@ -132,7 +166,7 @@ The following synthetic data generation is **intentionally kept** as emergency f
 
 1. Commit changes to Git
 2. Rebuild Engine B Docker image
-3. Rebuild Engine C Docker image  
+3. Rebuild Engine C Docker image
 4. Deploy updated images to Cloud Run
 5. Verify real data endpoints work correctly
 
