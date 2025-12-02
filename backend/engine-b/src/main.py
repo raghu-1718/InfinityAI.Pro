@@ -2817,7 +2817,7 @@ async def get_gemini_usage_stats():
 # =====================================================================
 
 try:
-    from google_integrations.enhanced_data_sources import (
+    from src.google_integrations.enhanced_data_sources import (
         get_market_intelligence,
         get_yahoo_provider,
         get_news_aggregator
