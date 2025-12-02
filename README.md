@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-3.7.7--vertexai-blue)
+![Version](https://img.shields.io/badge/version-3.8.0--enhanced--data-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-green)
 ![Gemini](https://img.shields.io/badge/Gemini-2.0--flash-4285F4)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
@@ -14,7 +14,7 @@
 
 **An enterprise-grade AI/ML trading platform for Indian markets (NSE/BSE) with real-time Gemini AI, ensemble ML models, risk management, and automated execution**
 
-[Live Platform](https://infinityai.pro) · [Engine-A API](https://engine-a.infinityai.pro/docs) · [Engine-B API](https://engine-b.infinityai.pro/docs) · [Engine-C API](https://engine-c.infinityai.pro/docs)
+[Live Platform](https://infinityai.pro) · [Engine-A API](https://engine-a-573866363639.us-central1.run.app/docs) · [Engine-B API](https://engine-b-573866363639.us-central1.run.app/docs) · [Engine-C API](https://engine-c-573866363639.us-central1.run.app/docs)
 
 </div>
 
@@ -24,16 +24,17 @@
 
 InfinityAI.Pro is a **production-ready algorithmic trading platform** combining **Gemini 2.0 Flash AI** with **5+ ensemble ML models** and **DhanHQ brokerage integration** for real-time trading signals and automated order execution. Built on Google Cloud Platform with a microservices architecture.
 
-### ✅ Live Status (December 2, 2025)
+### ✅ Live Status (December 2, 2025) - Verified
 
 | Component | Status | Version | Latency |
 |-----------|--------|---------|---------|
 | **Engine A** | 🟢 Healthy | 3.7-google-integrations | ~100ms |
-| **Engine B** | 🟢 Healthy | 3.7.7-vertexai | ~150ms |
+| **Engine B** | 🟢 Healthy | 3.7-google-integrations | ~150ms |
 | **Engine C** | 🟢 Healthy | 3.5-enhanced-execution | ~80ms |
 | **Firestore** | 🟢 Connected | Native Mode | Real-time |
 | **Gemini AI** | 🟢 Active | 2.0-flash | ~2-5s |
-| **Dhan Broker** | 🟡 Token Refresh | v2.0.2 | ~200ms |
+| **Firebase Auth** | 🟢 Active | Domains Configured | - |
+| **Dhan Broker** | 🟢 Connected | v2.0.2 | ~200ms |
 
 ### 🌟 Key Features
 
@@ -41,14 +42,16 @@ InfinityAI.Pro is a **production-ready algorithmic trading platform** combining 
 |---------|-------------|--------|
 | 🤖 **Gemini 2.0 Flash AI** | Real-time function calling for market data | ✅ Active |
 | 📊 **Ensemble ML Models** | XGBoost, LightGBM, CatBoost, Random Forest | ✅ Active |
-| 💹 **Real-Time Market Data** | NIFTY at ₹26,175.75, live technical indicators | ✅ Active |
+| 💹 **Real-Time Market Data** | NIFTY, SENSEX, BANKNIFTY live tracking | ✅ Active |
+| 🌍 **Global Markets** | US, Europe, Asia correlation tracking | ✅ NEW |
+| 📈 **Sector Analysis** | Banking, IT, Pharma, Auto, FMCG trends | ✅ NEW |
+| 🗞️ **News Aggregation** | ET, Moneycontrol, Livemint, Reuters RSS | ✅ Active |
 | 📈 **Technical Analysis** | RSI, MACD, Bollinger, MAs, ATR, ADX | ✅ Active |
 | 🧠 **Sentiment Analysis** | NLTK VADER + Transformers (77% confidence) | ✅ Active |
-| 📰 **News Integration** | RSS from ET, Moneycontrol, Livemint | ✅ Active |
 | 🔐 **Firebase Auth** | Google Sign-In + Multi-User | ✅ Active |
 | 💾 **Firestore** | Real-time data sync | ✅ Active |
 | 📱 **Modern Dashboard** | Next.js 15 + Tailwind + shadcn/ui | ✅ Active |
-| 🏦 **Dhan Integration** | Funds, Holdings, Order Execution | ⚠️ Token Refresh |
+| 🏦 **Dhan Integration** | Funds, Holdings, Positions, Orders | ✅ Active |
 
 ---
 
@@ -99,9 +102,9 @@ InfinityAI.Pro is a **production-ready algorithmic trading platform** combining 
 ## ⚙️ Engine Details
 
 ### Engine A - Orchestration & Risk Management
-**URL:** https://engine-a-bprmddefsa-uc.a.run.app
+**URL:** https://engine-a-573866363639.us-central1.run.app
 **Version:** 3.7-google-integrations
-**Status:** 🟢 Healthy
+**Status:** 🟢 Healthy (Verified: December 2, 2025)
 
 Central orchestrator managing authentication, risk calculations, and inter-engine coordination.
 
@@ -121,12 +124,23 @@ Central orchestrator managing authentication, risk calculations, and inter-engin
 | Cloud Storage | ✅ |
 | Agent Orchestrator | ✅ |
 
+#### Verified Risk Metrics Output
+```json
+{
+  "sharpe_ratio": 3.90,
+  "sortino_ratio": 8.64,
+  "var_95": -2.28%,
+  "cvar_95": -2.50%,
+  "max_drawdown_pct": 2.50%
+}
+```
+
 ---
 
 ### Engine B - AI/ML Signal Generation
-**URL:** https://engine-b-bprmddefsa-uc.a.run.app
-**Version:** 3.7.7-vertexai
-**Status:** 🟢 Healthy
+**URL:** https://engine-b-573866363639.us-central1.run.app
+**Version:** 3.7-google-integrations
+**Status:** 🟢 Healthy (Verified: December 2, 2025)
 
 AI-powered signal generation with Gemini 2.0 Flash and ensemble ML models.
 
@@ -152,21 +166,35 @@ AI-powered signal generation with Gemini 2.0 Flash and ensemble ML models.
 | Risk Agent | ✅ Active |
 | News Aggregation | ✅ Active |
 
-#### Live API Endpoints
+#### Live API Endpoints (All Verified ✅)
 ```
-POST /api/v1/ai/gemini-signal      - Gemini AI trading signal
-POST /api/v1/signal                - ML ensemble signal
-POST /api/v1/sentiment             - Sentiment analysis
-GET  /api/v1/ai/integrations-status - AI status
-POST /api/v1/ai/agent-analysis     - Multi-agent analysis
+# AI/ML Signals
+POST /api/v1/ai/gemini-signal           - Gemini AI trading signal
+POST /api/v1/signal                     - ML ensemble signal
+POST /api/v1/sentiment                  - Sentiment analysis
+GET  /api/v1/ai/integrations-status     - AI status
+
+# Real-Time Market Data (NEW v3.8)
+GET  /api/v1/market/pulse               - Comprehensive market pulse
+GET  /api/v1/market/global              - Global markets (US, EU, Asia)
+GET  /api/v1/market/sectors             - Sector performance analysis
+GET  /api/v1/market/nifty-overview      - NIFTY 50 overview
+GET  /api/v1/market/nifty50-heatmap     - NIFTY 50 heatmap
+GET  /api/v1/market/news/aggregated     - Aggregated news from 5 sources
+GET  /api/v1/stock/{symbol}/intelligence - Stock intelligence report
+
+# Technical Analysis
+GET  /api/v1/market-data/{symbol}       - Full market data + technicals
+GET  /api/v1/gemini/quick-signal/{symbol} - Quick Gemini signal
+POST /api/v1/gemini/enhanced-signal     - Enhanced AI signal
 ```
 
 ---
 
 ### Engine C - Trade Execution
-**URL:** https://engine-c-bprmddefsa-uc.a.run.app
+**URL:** https://engine-c-573866363639.us-central1.run.app
 **Version:** 3.5-enhanced-execution
-**Status:** 🟢 Healthy
+**Status:** 🟢 Healthy (Verified: December 2, 2025)
 
 Direct DhanHQ broker integration for order execution.
 
@@ -179,58 +207,140 @@ Direct DhanHQ broker integration for order execution.
 | VWAP Splitting | ✅ |
 | Execution Analytics | ✅ |
 
-#### Dhan API Endpoints
+#### Dhan API Endpoints (All Verified ✅)
 ```
-GET  /api/dhan/funds        - Account funds
+GET  /api/dhan/funds        - Account funds (₹4.68 available)
 GET  /api/dhan/holdings     - Current holdings
-GET  /api/dhan/positions    - Open positions
+GET  /api/dhan/positions    - Open positions (NIFTY DEC 25850 PE)
 GET  /api/dhan/orders       - Order history
 POST /api/dhan/place-order  - Place new order
 POST /api/dhan/cancel-order - Cancel order
+GET  /api/user/credentials  - User credential status (Firestore)
 ```
 
 ---
 
-## 📊 Live Data Verification
+## 📊 Live Data Verification (December 2, 2025)
 
-### Current Market Data (December 2, 2025)
+### Current Market Data (Real-Time)
 ```json
 {
   "NIFTY": {
-    "price": 26175.75,
-    "change": "-0.1%",
-    "52_week_high": 26325.8,
-    "52_week_low": 21743.65
+    "price": 26032.20,
+    "change": -143.55,
+    "change_percent": -0.55,
+    "day_high": 26154.60,
+    "day_low": 25997.85,
+    "trend": "BEARISH"
   },
-  "RELIANCE": {
-    "price": 1566.1,
-    "rsi": 80.73,
-    "status": "OVERBOUGHT",
-    "macd": "BULLISH",
-    "trend": "UPTREND"
+  "SENSEX": {
+    "price": 85138.27,
+    "change": -503.62,
+    "change_percent": -0.59
+  },
+  "BANKNIFTY": {
+    "price": 59273.80,
+    "change": -407.55,
+    "change_percent": -0.68
   }
 }
 ```
 
-### Gemini AI Signal Example
+### Global Markets Snapshot
 ```json
 {
-  "symbol": "RELIANCE",
-  "signal": "HOLD",
-  "confidence": 60,
-  "stop_loss": 1520,
-  "target": 1620,
-  "timeframe": "SWING",
-  "reasoning": "RSI overbought at 80.73, waiting for pullback..."
+  "us_markets": { "S&P500": -0.53, "NASDAQ": -0.38, "DOW": -0.90 },
+  "european_markets": { "FTSE": 0.23, "DAX": 0.51 },
+  "asian_markets": { "NIKKEI": 0.0, "HANGSENG": 0.24 },
+  "correlation_signal": "GLOBAL_MIXED"
 }
 ```
 
-### Sentiment Analysis Example
+### Sector Performance
+```json
+{
+  "best_sector": "REALTY (+0.11%)",
+  "worst_sector": "BANKING (-0.94%)",
+  "sectors": {
+    "BANKING": { "trend": "BEARISH", "change": -0.94 },
+    "IT": { "trend": "NEUTRAL", "change": -0.03 },
+    "PHARMA": { "trend": "NEUTRAL", "change": -0.07 },
+    "FMCG": { "trend": "NEUTRAL", "change": 0.10 },
+    "ENERGY": { "trend": "NEUTRAL", "change": -0.16 }
+  }
+}
+```
+
+### NIFTY 50 Heatmap
+```json
+{
+  "top_gainers": ["ASIANPAINT +3.03%", "BPCL +1.34%", "DRREDDY +1.20%"],
+  "top_losers": ["AXISBANK -1.39%", "HDFCBANK -1.23%", "ICICIBANK -1.23%"],
+  "advances": 9,
+  "declines": 10,
+  "market_breadth": "NEUTRAL"
+}
+```
+```
+
+### Gemini AI Signal Example (Live Response)
+```json
+{
+  "status": "success",
+  "symbol": "NIFTY",
+  "signal": {
+    "signal": "HOLD",
+    "confidence": 60,
+    "reasoning": "RSI neutral, MACD bearish crossover, waiting for pullback...",
+    "risk_level": "MEDIUM",
+    "stop_loss": 25900,
+    "target": 26400,
+    "timeframe": "INTRADAY/SWING"
+  },
+  "model": "gemini-2.0-flash",
+  "sdk": "google-genai"
+}
+```
+
+### Stock Intelligence Report (NEW)
+```json
+{
+  "symbol": "RELIANCE",
+  "quote": {
+    "current_price": 1546.30,
+    "change": -19.80,
+    "change_percent": -1.26,
+    "volume": 11387292
+  },
+  "sector": "ENERGY",
+  "in_nifty50": true,
+  "global_context": {
+    "correlation_signal": "GLOBAL_MIXED"
+  },
+  "trading_recommendation": {
+    "signal": "HOLD",
+    "confidence": 55,
+    "reasoning": ["MOMENTUM: BEARISH"]
+  }
+}
+```
+
+### Sentiment Analysis (Verified)
 ```json
 {
   "text": "Indian stock market rallies as FIIs turn buyers...",
   "sentiment": "POSITIVE",
   "confidence": 0.7739
+}
+```
+
+### News Aggregation (20 Articles from 5 Sources)
+```json
+{
+  "sources_fetched": ["economic_times", "moneycontrol", "livemint", "reuters_india", "cnbc"],
+  "total": 20,
+  "sentiment_breakdown": { "bullish": 12, "bearish": 1, "neutral": 7 },
+  "overall_sentiment": "BULLISH"
 }
 ```
 
@@ -255,16 +365,18 @@ POST /api/dhan/cancel-order - Cancel order
 ### Strengths 💪
 - ✅ **Real-time AI Analysis** - Gemini 2.0 with live market data
 - ✅ **Ensemble ML Models** - 5+ models for robust signals
+- ✅ **Global Market Tracking** - US, Europe, Asia correlation
+- ✅ **Sector Analysis** - 9 sectors with top gainers/losers
+- ✅ **News Aggregation** - 5 RSS sources, sentiment scoring
 - ✅ **SEBI Compliant** - Indian market regulations built-in
 - ✅ **Auto-scaling** - Cloud Run handles traffic spikes
 - ✅ **Secure** - Secret Manager, encrypted credentials
 - ✅ **Real-time Sync** - Firebase Firestore updates
 - ✅ **Multi-user** - Individual trading accounts
-- ✅ **Comprehensive Indicators** - 15+ technical indicators
+- ✅ **Stock Intelligence** - Per-symbol comprehensive reports
 
 ### Areas for Improvement 🔧
 - ⚠️ **Dhan Token** - Requires daily refresh (OAuth flow)
-- ⚠️ **News API** - RSS only, no premium news sources
 - ⚠️ **Options Data** - Simulated OI (needs NSE API)
 - ⚠️ **Backtesting** - Not yet implemented
 - ⚠️ **Paper Trading** - Simulated only
@@ -345,29 +457,47 @@ POST /api/dhan/cancel-order - Cancel order
 ```
 InfinityAI.Pro/
 ├── backend/
-│   ├── engine-core/           # Engine B - AI/ML
-│   │   ├── src/
-│   │   │   ├── main.py        # FastAPI app (v3.7.7)
-│   │   │   ├── google_integrations/
-│   │   │   │   ├── enhanced_genai_client.py  # Vertex AI
-│   │   │   │   ├── market_data_tools.py      # Function calling
-│   │   │   │   ├── news_integration.py       # RSS feeds
-│   │   │   │   └── trading_agents.py         # AI agents
-│   │   │   └── services/
-│   │   │       └── market_knowledge.py       # SEBI rules
+│   ├── engine-analytics/          # Engine A - Risk & Orchestration
+│   │   ├── src/main.py            # FastAPI (v3.7-google-integrations)
 │   │   ├── Dockerfile
 │   │   └── requirements.txt
-│   ├── engine-analytics/      # Engine A - Risk
-│   ├── engine-execution/      # Engine C - Dhan
-│   └── shared/                # Shared modules
+│   ├── engine-b/                  # Engine B - AI/ML (Renamed from engine-core)
+│   │   ├── src/
+│   │   │   ├── main.py            # FastAPI (v3.7-google-integrations)
+│   │   │   ├── google_integrations/
+│   │   │   │   ├── enhanced_genai_client.py    # Vertex AI
+│   │   │   │   ├── enhanced_data_sources.py    # BSE, Global, Sectors (NEW)
+│   │   │   │   ├── market_data_tools.py        # Function calling
+│   │   │   │   ├── news_integration.py         # RSS feeds
+│   │   │   │   └── trading_agents.py           # AI agents
+│   │   │   └── services/
+│   │   │       └── market_knowledge.py         # SEBI rules
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── engine-execution/          # Engine C - Dhan Integration
+│   │   ├── src/main.py            # FastAPI (v3.5-enhanced-execution)
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── shared/                    # Shared modules
 ├── frontend/
-│   └── web/                   # Next.js dashboard
-├── scripts/
-│   ├── deploy-engine-b-vertexai.ps1
-│   └── test_vertex_ai_integration.py
+│   └── web-app/                   # Next.js 15 dashboard
+│       ├── src/
+│       │   ├── app/               # App router pages
+│       │   ├── components/        # UI components
+│       │   ├── hooks/             # Custom hooks (useHydration, useApi)
+│       │   ├── lib/               # Utilities (store, api, firebase)
+│       │   └── contexts/          # Auth context
+│       └── package.json
 ├── docs/
-│   ├── VERTEX_AI_INTEGRATION.md
-│   └── ARCHITECTURE.md
+│   ├── FIREBASE_AUTH_DOMAINS.md   # Firebase auth setup (NEW)
+│   ├── ARCHITECTURE.md
+│   └── DHAN_OAUTH_SETTINGS.md
+├── scripts/
+│   ├── deploy-3-engine-architecture.ps1
+│   └── comprehensive-audit.ps1
+├── .github/
+│   └── workflows/
+│       └── deploy.yml             # CI/CD pipeline
 └── README.md
 ```
 
@@ -417,25 +547,57 @@ gcloud run deploy engine-b \
 
 ## 📞 API Examples
 
+### Get Market Pulse (Comprehensive)
+```bash
+curl https://engine-b-573866363639.us-central1.run.app/api/v1/market/pulse
+```
+
+### Get Global Markets
+```bash
+curl https://engine-b-573866363639.us-central1.run.app/api/v1/market/global
+```
+
+### Get Sector Analysis
+```bash
+curl https://engine-b-573866363639.us-central1.run.app/api/v1/market/sectors
+```
+
+### Get Stock Intelligence
+```bash
+curl https://engine-b-573866363639.us-central1.run.app/api/v1/stock/RELIANCE/intelligence
+```
+
 ### Get Trading Signal
 ```bash
-curl -X POST https://engine-b-bprmddefsa-uc.a.run.app/api/v1/signal \
+curl -X POST https://engine-b-573866363639.us-central1.run.app/api/v1/signal \
   -H "Content-Type: application/json" \
-  -d '{"symbol": "RELIANCE", "price": 1566.1, "rsi": 80.73}'
+  -d '{"symbol": "RELIANCE", "price": 1546.3, "rsi": 64.5}'
 ```
 
 ### Get Gemini AI Analysis
 ```bash
-curl -X POST https://engine-b-bprmddefsa-uc.a.run.app/api/v1/ai/gemini-signal \
+curl -X POST https://engine-b-573866363639.us-central1.run.app/api/v1/ai/gemini-signal \
   -H "Content-Type: application/json" \
-  -d '{"symbol": "NIFTY", "current_price": 26175.75}'
+  -d '{"symbol": "NIFTY", "current_price": 26032.20}'
 ```
 
 ### Analyze Sentiment
 ```bash
-curl -X POST https://engine-b-bprmddefsa-uc.a.run.app/api/v1/sentiment \
+curl -X POST https://engine-b-573866363639.us-central1.run.app/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"text": "Indian markets rally on strong FII buying"}'
+```
+
+### Get Risk Metrics
+```bash
+curl -X POST https://engine-a-573866363639.us-central1.run.app/api/v1/risk/comprehensive \
+  -H "Content-Type: application/json" \
+  -d '{"portfolio_value": 100000, "returns": [-0.02, 0.01, 0.03, -0.01, 0.02]}'
+```
+
+### Get Dhan Funds
+```bash
+curl https://engine-c-573866363639.us-central1.run.app/api/dhan/funds
 ```
 
 ---
@@ -480,6 +642,10 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **InfinityAI.Pro** - *Intelligent Trading for Indian Markets*
 
-🚀 **Version 3.7.7-vertexai** | 📅 December 2, 2025
+🚀 **Version 3.8.0-enhanced-data** | 📅 December 2, 2025 | ✅ **All Systems Verified**
+
+[![Engine A](https://img.shields.io/badge/Engine%20A-Online-green)](https://engine-a-573866363639.us-central1.run.app/health)
+[![Engine B](https://img.shields.io/badge/Engine%20B-Online-green)](https://engine-b-573866363639.us-central1.run.app/health)
+[![Engine C](https://img.shields.io/badge/Engine%20C-Online-green)](https://engine-c-573866363639.us-central1.run.app/health)
 
 </div>
