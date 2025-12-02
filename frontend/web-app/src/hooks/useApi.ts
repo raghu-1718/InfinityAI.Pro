@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, engineA, engineB, engineC } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 // Engine Health Hooks
 export function useEngineHealth() {
@@ -43,65 +43,88 @@ export function useEngineHealth() {
   return query;
 }
 
+// Helper to get user ID consistently
+const getUserId = () => {
+  if (typeof window === 'undefined') return 'default_user';
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    // Generate a unique user ID and persist it
+    userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    localStorage.setItem('userId', userId);
+  }
+  return userId;
+};
+
 // User Profile Hook - Fetches user's Dhan credentials status
 export function useUserProfile() {
-  const { setUserProfile, setDematData, setFunds } = useAppStore();
-
-  const getUserId = () => {
-    if (typeof window === 'undefined') return 'default_user';
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      // Generate a unique user ID and persist it
-      userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      localStorage.setItem('userId', userId);
-    }
-    return userId;
-  };
+  const { setUserProfile, setDematData, setFunds, userProfile: currentProfile } = useAppStore();
 
   return useQuery({
     queryKey: ['userProfile', getUserId()],
     queryFn: async () => {
       const userId = getUserId();
-      const res = await engineC.getUserCredentials(userId);
 
-      if (res.configured && res.is_verified) {
-        // User is connected, fetch their demat data
-        try {
-          const dematRes = await engineC.getUserDemat(userId);
-          if (dematRes && dematRes.funds) {
-            setDematData(dematRes);
-            setFunds({
-              availableBalance: dematRes.funds.availableBalance || 0,
-              sodLimit: 0,
-              collateralAmount: dematRes.funds.utilisedMargin || 0,
-              dhanClientId: res.client_id,
-            });
+      try {
+        const res = await engineC.getUserCredentials(userId);
+
+        if (res.configured && res.is_verified) {
+          // User is connected, fetch their demat data
+          try {
+            const dematRes = await engineC.getUserDemat(userId);
+            if (dematRes && dematRes.funds) {
+              setDematData(dematRes);
+              setFunds({
+                availableBalance: dematRes.funds.availableBalance || 0,
+                sodLimit: 0,
+                collateralAmount: dematRes.funds.utilisedMargin || 0,
+                dhanClientId: res.client_id,
+              });
+            }
+          } catch (e) {
+            console.error('Failed to fetch demat data:', e);
           }
-        } catch (e) {
-          console.error('Failed to fetch demat data:', e);
-        }
 
-        setUserProfile({
-          userId,
-          clientId: res.client_id,
-          name: `User ${res.client_id}`,
-          email: '',
-          isConnected: true,
-          isVerified: true,
-        });
-      } else {
-        // Don't clear profile if it's already set (might be set by Settings page)
-        const currentProfile = useAppStore.getState().userProfile;
-        if (!currentProfile) {
-          setUserProfile(null);
-          setDematData(null);
+          // Set the user profile as connected
+          const newProfile = {
+            userId,
+            clientId: res.client_id,
+            name: `User ${res.client_id}`,
+            email: '',
+            isConnected: true,
+            isVerified: true,
+          };
+
+          setUserProfile(newProfile);
+          return { ...res, userProfile: newProfile };
+        } else {
+          // If there's already a profile from Settings page, don't overwrite it
+          // This prevents race conditions where Settings page set the profile
+          // but this hook runs before the query cache is invalidated
+          if (currentProfile?.isConnected) {
+            console.log('Keeping existing connected profile from Settings');
+            return { ...res, userProfile: currentProfile };
+          }
+
+          return res;
         }
+      } catch (error) {
+        console.error('Failed to fetch user credentials:', error);
+        // On error, keep existing profile if it exists
+        if (currentProfile?.isConnected) {
+          return { configured: true, is_verified: true, userProfile: currentProfile };
+        }
+        throw error;
       }
-
-      return res;
     },
     refetchInterval: 60000, // 1 minute
     staleTime: 30000,
+    // Don't retry on 404 (user not found)
+    retry: (failureCount, error: unknown) => {
+      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 }
 

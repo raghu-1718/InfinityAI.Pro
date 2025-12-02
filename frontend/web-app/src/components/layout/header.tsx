@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn } from 'lucide-react';
+import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn, Loader2 } from 'lucide-react';
 import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,14 +20,16 @@ import { engineC } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useHydration } from '@/hooks/useHydration';
 
 export function Header() {
   const { theme, toggleTheme, funds, engines, userProfile, dematData, clearUserData } = useAppStore();
   const { user, userProfile: firebaseProfile, signIn, signOut: firebaseSignOut, loading: authLoading } = useAuth();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
   const { refetch: refetchFunds } = useFunds();
-  const { refetch: refetchProfile } = useUserProfile();
+  const { refetch: refetchProfile, isLoading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
+  const hydrated = useHydration();
 
   const handleRefresh = () => {
     refetchEngines();
@@ -90,10 +92,12 @@ export function Header() {
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
 
   // Check if user is authenticated (Firebase or Dhan connected)
-  const isAuthenticated = !!user || userProfile?.isConnected;
+  // Only use persisted state after hydration to prevent mismatch
+  const isAuthenticated = hydrated && (!!user || userProfile?.isConnected);
 
   // Get user initials for avatar
   const getUserInitials = () => {
+    if (!hydrated) return '?'; // Show placeholder during hydration
     if (user?.displayName) {
       // Use Firebase display name initials
       const names = user.displayName.split(' ');
@@ -108,6 +112,7 @@ export function Header() {
   };
 
   const getUserName = () => {
+    if (!hydrated) return 'Loading...';
     if (user?.displayName) {
       return user.displayName;
     }
@@ -118,6 +123,7 @@ export function Header() {
   };
 
   const getUserEmail = () => {
+    if (!hydrated) return 'Loading...';
     if (user?.email) {
       return user.email;
     }
@@ -144,7 +150,9 @@ export function Header() {
         {/* Balance Display */}
         <div className="hidden md:flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
           <span className="text-xs text-muted-foreground">Balance:</span>
-          {userProfile?.isConnected ? (
+          {!hydrated || isProfileLoading || authLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          ) : userProfile?.isConnected ? (
             <span className="font-mono font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(displayBalance)}
             </span>
@@ -195,12 +203,12 @@ export function Header() {
                 <p className="text-xs leading-none text-muted-foreground">
                   {getUserEmail()}
                 </p>
-                {userProfile?.isConnected && (
+                {hydrated && userProfile?.isConnected && (
                   <Badge variant="outline" className="w-fit mt-1 text-xs text-green-600">
                     Dhan Connected
                   </Badge>
                 )}
-                {user && !userProfile?.isConnected && (
+                {hydrated && user && !userProfile?.isConnected && (
                   <Badge variant="outline" className="w-fit mt-1 text-xs text-blue-600">
                     Google Connected
                   </Badge>
@@ -209,7 +217,13 @@ export function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            {!user && !userProfile?.isConnected ? (
+            {!hydrated || authLoading ? (
+              // Loading state
+              <DropdownMenuItem disabled>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </DropdownMenuItem>
+            ) : !user && !userProfile?.isConnected ? (
               // Not logged in - show login option
               <DropdownMenuItem
                 className="text-blue-600 cursor-pointer"
@@ -234,7 +248,7 @@ export function Header() {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                {!userProfile?.isConnected && (
+                {hydrated && !userProfile?.isConnected && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center cursor-pointer text-yellow-600">
                       <Wallet className="mr-2 h-4 w-4" />
