@@ -2824,9 +2824,12 @@ try:
     )
     HAS_ENHANCED_DATA = True
     logger.info("✅ Enhanced data sources loaded for API endpoints")
-except ImportError:
+except ImportError as e:
     HAS_ENHANCED_DATA = False
-    logger.warning("Enhanced data sources not available")
+    logger.warning(f"Enhanced data sources not available: {e}")
+except Exception as e:
+    HAS_ENHANCED_DATA = False
+    logger.error(f"Error loading enhanced data sources: {type(e).__name__}: {e}")
 
 
 @app.get("/api/v1/market/pulse")
