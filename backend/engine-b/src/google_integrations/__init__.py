@@ -143,5 +143,11 @@ try:
         ENHANCED_DATA_TOOLS
     )
     HAS_ENHANCED_DATA = True
-except ImportError:
+except ImportError as e:
     HAS_ENHANCED_DATA = False
+    import logging
+    logging.getLogger("InfinityAI.GoogleIntegrations").warning(f"Enhanced data sources import failed: {e}")
+except Exception as e:
+    HAS_ENHANCED_DATA = False
+    import logging
+    logging.getLogger("InfinityAI.GoogleIntegrations").error(f"Enhanced data sources error: {type(e).__name__}: {e}")
