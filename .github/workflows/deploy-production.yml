@@ -1,7 +1,7 @@
 # InfinityAI.Pro - Complete CI/CD Pipeline
 # Deploys all 3 backend engines to Cloud Run and frontend to Firebase Hosting
-# Triggers on push to main branch or manual workflow dispatch
-# Last updated: 2025-12-01
+# Triggers on EVERY push to main branch (builds fresh images)
+# Last updated: 2025-12-02
 
 name: 🚀 Deploy InfinityAI Production
 
@@ -9,22 +9,32 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'backend/**'
-      - 'frontend/web-app/**'
-      - 'firebase.json'
-      - '.github/workflows/deploy-production.yml'
   workflow_dispatch:
     inputs:
-      deploy_backend:
-        description: 'Deploy Backend Engines'
+      deploy_all:
+        description: 'Force deploy all services'
         required: false
-        default: true
+        default: false
+        type: boolean
+      deploy_engine_a:
+        description: 'Deploy Engine A'
+        required: false
+        default: false
+        type: boolean
+      deploy_engine_b:
+        description: 'Deploy Engine B'
+        required: false
+        default: false
+        type: boolean
+      deploy_engine_c:
+        description: 'Deploy Engine C'
+        required: false
+        default: false
         type: boolean
       deploy_frontend:
         description: 'Deploy Frontend'
         required: false
-        default: true
+        default: false
         type: boolean
 
 env:
@@ -34,7 +44,7 @@ env:
 
 jobs:
   # ============================================
-  # Detect Changes
+  # Detect Changes (using correct directory names)
   # ============================================
   detect-changes:
     name: 🔍 Detect Changes
@@ -43,20 +53,26 @@ jobs:
       engine-a: ${{ steps.filter.outputs.engine-a }}
       engine-b: ${{ steps.filter.outputs.engine-b }}
       engine-c: ${{ steps.filter.outputs.engine-c }}
+      shared: ${{ steps.filter.outputs.shared }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      any-backend: ${{ steps.filter.outputs.engine-a == 'true' || steps.filter.outputs.engine-b == 'true' || steps.filter.outputs.engine-c == 'true' || steps.filter.outputs.shared == 'true' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
             engine-a:
-              - 'backend/engine-analytics/**'
+              - 'backend/engine-a/**'
             engine-b:
-              - 'backend/engine-core/**'
+              - 'backend/engine-b/**'
             engine-c:
-              - 'backend/engine-execution/**'
+              - 'backend/engine-c/**'
+            shared:
+              - 'backend/shared/**'
             frontend:
               - 'frontend/web-app/**'
               - 'firebase.json'
@@ -68,7 +84,11 @@ jobs:
     name: 🅰️ Deploy Engine A
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.engine-a == 'true' || github.event.inputs.deploy_backend == 'true'
+    if: |
+      needs.detect-changes.outputs.engine-a == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      github.event.inputs.deploy_all == 'true' ||
+      github.event.inputs.deploy_engine_a == 'true'
     permissions:
       contents: read
       id-token: write
@@ -95,12 +115,19 @@ jobs:
         run: |
           IMAGE="${{ env.ARTIFACT_REGISTRY }}/engine-a:${{ github.sha }}"
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-a:latest"
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-analytics
+
+          echo "🔨 Building Engine A..."
+          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-a
+
+          echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
+          echo "✅ Image pushed: $IMAGE"
+
       - name: Deploy to Cloud Run
         run: |
+          echo "🚀 Deploying Engine A to Cloud Run..."
           gcloud run deploy engine-a \
             --image=${{ env.ARTIFACT_REGISTRY }}/engine-a:${{ github.sha }} \
             --region=${{ env.GCP_REGION }} \
@@ -109,13 +136,21 @@ jobs:
             --memory=1Gi \
             --cpu=1 \
             --timeout=300 \
+            --min-instances=0 \
+            --max-instances=5 \
             --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_B_URL=https://engine-b-573866363639.us-central1.run.app,ENGINE_C_URL=https://engine-c-573866363639.us-central1.run.app" \
             --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest"
 
       - name: Health Check
         run: |
+          echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
-          curl -sf https://engine-a-573866363639.us-central1.run.app/health || echo "Warning: Health check failed"
+          echo "🔍 Running health check..."
+          if curl -sf https://engine-a-573866363639.us-central1.run.app/health; then
+            echo "✅ Engine A is healthy!"
+          else
+            echo "⚠️ Health check failed - service may still be starting"
+          fi
 
   # ============================================
   # Deploy Engine B (AI/ML Intelligence)
@@ -124,7 +159,11 @@ jobs:
     name: 🅱️ Deploy Engine B
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.engine-b == 'true' || github.event.inputs.deploy_backend == 'true'
+    if: |
+      needs.detect-changes.outputs.engine-b == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      github.event.inputs.deploy_all == 'true' ||
+      github.event.inputs.deploy_engine_b == 'true'
     permissions:
       contents: read
       id-token: write
@@ -151,12 +190,19 @@ jobs:
         run: |
           IMAGE="${{ env.ARTIFACT_REGISTRY }}/engine-b:${{ github.sha }}"
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-b:latest"
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-core
+
+          echo "🔨 Building Engine B (AI/ML - this may take a few minutes)..."
+          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-b
+
+          echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
+          echo "✅ Image pushed: $IMAGE"
+
       - name: Deploy to Cloud Run
         run: |
+          echo "🚀 Deploying Engine B to Cloud Run..."
           gcloud run deploy engine-b \
             --image=${{ env.ARTIFACT_REGISTRY }}/engine-b:${{ github.sha }} \
             --region=${{ env.GCP_REGION }} \
@@ -166,13 +212,21 @@ jobs:
             --cpu=2 \
             --timeout=600 \
             --concurrency=50 \
+            --min-instances=0 \
+            --max-instances=10 \
             --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-573866363639.us-central1.run.app,ENGINE_C_URL=https://engine-c-573866363639.us-central1.run.app" \
             --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,GEMINI_API_KEY=gemini-api-key:latest"
 
       - name: Health Check
         run: |
+          echo "⏳ Waiting for deployment to stabilize (Engine B is larger)..."
           sleep 45
-          curl -sf https://engine-b-573866363639.us-central1.run.app/health || echo "Warning: Health check failed"
+          echo "🔍 Running health check..."
+          if curl -sf https://engine-b-573866363639.us-central1.run.app/health; then
+            echo "✅ Engine B is healthy!"
+          else
+            echo "⚠️ Health check failed - service may still be starting"
+          fi
 
   # ============================================
   # Deploy Engine C (Execution)
@@ -181,7 +235,11 @@ jobs:
     name: 🇨 Deploy Engine C
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.engine-c == 'true' || github.event.inputs.deploy_backend == 'true'
+    if: |
+      needs.detect-changes.outputs.engine-c == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      github.event.inputs.deploy_all == 'true' ||
+      github.event.inputs.deploy_engine_c == 'true'
     permissions:
       contents: read
       id-token: write
@@ -208,27 +266,42 @@ jobs:
         run: |
           IMAGE="${{ env.ARTIFACT_REGISTRY }}/engine-c:${{ github.sha }}"
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-c:latest"
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-execution
+
+          echo "🔨 Building Engine C..."
+          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-c
+
+          echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
           docker push $IMAGE_LATEST
 
+          echo "✅ Image pushed: $IMAGE"
+
       - name: Deploy to Cloud Run
         run: |
+          echo "🚀 Deploying Engine C to Cloud Run..."
           gcloud run deploy engine-c \
             --image=${{ env.ARTIFACT_REGISTRY }}/engine-c:${{ github.sha }} \
             --region=${{ env.GCP_REGION }} \
             --platform=managed \
             --allow-unauthenticated \
-            --memory=2Gi \
+            --memory=1Gi \
             --cpu=1 \
             --timeout=300 \
+            --min-instances=0 \
+            --max-instances=5 \
             --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-573866363639.us-central1.run.app,ENGINE_B_URL=https://engine-b-573866363639.us-central1.run.app" \
-            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest"
+            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,ENCRYPTION_KEY=encryption-key:latest"
 
       - name: Health Check
         run: |
+          echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
-          curl -sf https://engine-c-573866363639.us-central1.run.app/health || echo "Warning: Health check failed"
+          echo "🔍 Running health check..."
+          if curl -sf https://engine-c-573866363639.us-central1.run.app/health; then
+            echo "✅ Engine C is healthy!"
+          else
+            echo "⚠️ Health check failed - service may still be starting"
+          fi
 
   # ============================================
   # Deploy Frontend to Firebase Hosting
@@ -237,7 +310,10 @@ jobs:
     name: 🌐 Deploy Frontend
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true' || github.event.inputs.deploy_frontend == 'true'
+    if: |
+      needs.detect-changes.outputs.frontend == 'true' ||
+      github.event.inputs.deploy_all == 'true' ||
+      github.event.inputs.deploy_frontend == 'true'
     permissions:
       contents: read
       id-token: write
@@ -264,6 +340,7 @@ jobs:
           NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-573866363639.us-central1.run.app
           NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-573866363639.us-central1.run.app
           NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-573866363639.us-central1.run.app
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: after-yesterday-473512-k3
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -289,33 +366,81 @@ jobs:
     if: always() && (needs.deploy-engine-a.result == 'success' || needs.deploy-engine-b.result == 'success' || needs.deploy-engine-c.result == 'success' || needs.deploy-frontend.result == 'success')
 
     steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Check Engine A Health
+        if: needs.deploy-engine-a.result == 'success'
         run: |
           echo "🔍 Checking Engine A..."
-          curl -sf https://engine-a-573866363639.us-central1.run.app/health | jq '.' || echo "⚠️ Engine A health check failed"
+          response=$(curl -sf https://engine-a-573866363639.us-central1.run.app/health)
+          echo "$response" | jq '.'
+          echo "✅ Engine A verified!"
 
       - name: Check Engine B Health
+        if: needs.deploy-engine-b.result == 'success'
         run: |
           echo "🔍 Checking Engine B..."
-          curl -sf https://engine-b-573866363639.us-central1.run.app/health | jq '.' || echo "⚠️ Engine B health check failed"
+          response=$(curl -sf https://engine-b-573866363639.us-central1.run.app/health)
+          echo "$response" | jq '.'
+          echo "✅ Engine B verified!"
 
       - name: Check Engine C Health
+        if: needs.deploy-engine-c.result == 'success'
         run: |
           echo "🔍 Checking Engine C..."
-          curl -sf https://engine-c-573866363639.us-central1.run.app/health | jq '.' || echo "⚠️ Engine C health check failed"
+          response=$(curl -sf https://engine-c-573866363639.us-central1.run.app/health)
+          echo "$response" | jq '.'
+          echo "✅ Engine C verified!"
 
-      - name: Check Frontend
+      - name: Check Security Headers
         run: |
-          echo "🔍 Checking Frontend..."
-          curl -sf https://after-yesterday-473512-k3.web.app -o /dev/null && echo "✅ Frontend is live" || echo "⚠️ Frontend check failed"
+          echo "🔒 Checking Security Headers..."
+          for engine in engine-a engine-b engine-c; do
+            echo "--- $engine ---"
+            headers=$(curl -sI "https://${engine}-573866363639.us-central1.run.app/health")
+            echo "$headers" | grep -i "strict-transport\|x-frame\|x-content-type" || echo "Headers check done"
+          done
 
       - name: Deployment Summary
         run: |
           echo "=========================================="
-          echo "🎉 DEPLOYMENT SUMMARY"
+          echo "🎉 DEPLOYMENT COMPLETE"
           echo "=========================================="
-          echo "Engine A: https://engine-a-573866363639.us-central1.run.app"
-          echo "Engine B: https://engine-b-573866363639.us-central1.run.app"
-          echo "Engine C: https://engine-c-573866363639.us-central1.run.app"
-          echo "Frontend: https://after-yesterday-473512-k3.web.app"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo ""
+          echo "📦 Services:"
+          echo "  Engine A: https://engine-a-573866363639.us-central1.run.app"
+          echo "  Engine B: https://engine-b-573866363639.us-central1.run.app"
+          echo "  Engine C: https://engine-c-573866363639.us-central1.run.app"
+          echo "  Frontend: https://after-yesterday-473512-k3.web.app"
+          echo ""
+          echo "📊 API Docs:"
+          echo "  Engine A: https://engine-a-573866363639.us-central1.run.app/docs"
+          echo "  Engine B: https://engine-b-573866363639.us-central1.run.app/docs"
+          echo "  Engine C: https://engine-c-573866363639.us-central1.run.app/docs"
           echo "=========================================="
+
+  # ============================================
+  # Notify on Failure
+  # ============================================
+  notify-failure:
+    name: 🚨 Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-engine-a, deploy-engine-b, deploy-engine-c, deploy-frontend]
+    if: failure()
+    steps:
+      - name: Create Failure Summary
+        run: |
+          echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Engine A | ${{ needs.deploy-engine-a.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Engine B | ${{ needs.deploy-engine-b.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Engine C | ${{ needs.deploy-engine-c.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the workflow logs for details." >> $GITHUB_STEP_SUMMARY

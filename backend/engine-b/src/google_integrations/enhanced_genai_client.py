@@ -457,8 +457,10 @@ Then provide your recommendation in this JSON format:
                 self.token_usage["output"] += response.usage_metadata.candidates_token_count
                 self.token_usage["total"] += response.usage_metadata.total_token_count
 
-            # Get function call results if any
+            # Get function call results and text from all response parts
             function_calls = []
+            response_texts = []
+            
             if hasattr(response, 'candidates'):
                 for candidate in response.candidates:
                     if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
@@ -468,9 +470,24 @@ Then provide your recommendation in this JSON format:
                                     "name": part.function_call.name,
                                     "args": dict(part.function_call.args)
                                 })
+                            # Also extract any text parts
+                            if hasattr(part, 'text') and part.text:
+                                response_texts.append(part.text)
+
+            # Combine all text parts, or use response.text as fallback
+            combined_text = "\n".join(response_texts) if response_texts else None
+            if not combined_text:
+                try:
+                    combined_text = response.text if hasattr(response, 'text') else None
+                except Exception:
+                    combined_text = None
+            
+            # If still no text but we have function calls, provide a summary
+            if not combined_text and function_calls:
+                combined_text = f"Function calls executed: {', '.join(fc['name'] for fc in function_calls)}"
 
             return {
-                "response": response.text if hasattr(response, 'text') else str(response),
+                "response": combined_text or str(response),
                 "function_calls": function_calls,
                 "model": self.model_id,
                 "token_usage": self.token_usage.copy(),
