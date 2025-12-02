@@ -106,6 +106,14 @@ __all__ = [
     "get_market_news_live",
     "get_symbol_news_live",
     "HAS_NEWS",
+    # Enhanced Data Sources (v3.8)
+    "get_market_intelligence",
+    "get_yahoo_provider",
+    "get_news_aggregator",
+    "MarketIntelligence",
+    "YahooFinanceProvider",
+    "EnhancedNewsAggregator",
+    "HAS_ENHANCED_DATA",
     # Logging
     "TradingLogger",
     "LogLevel",
@@ -122,3 +130,18 @@ __all__ = [
     "AgentResult",
     "create_trading_workflow",
 ]
+
+# Enhanced Data Sources (v3.8 - BSE, Global Markets, Sectors)
+try:
+    from .enhanced_data_sources import (
+        get_market_intelligence,
+        get_yahoo_provider,
+        get_news_aggregator,
+        MarketIntelligence,
+        YahooFinanceProvider,
+        EnhancedNewsAggregator,
+        ENHANCED_DATA_TOOLS
+    )
+    HAS_ENHANCED_DATA = True
+except ImportError:
+    HAS_ENHANCED_DATA = False

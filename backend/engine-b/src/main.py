@@ -2812,5 +2812,178 @@ async def get_gemini_usage_stats():
     }
 
 
+# =====================================================================
+# ENHANCED REAL-TIME DATA ENDPOINTS (v3.8)
+# =====================================================================
+
+try:
+    from google_integrations.enhanced_data_sources import (
+        get_market_intelligence,
+        get_yahoo_provider,
+        get_news_aggregator
+    )
+    HAS_ENHANCED_DATA = True
+    logger.info("✅ Enhanced data sources loaded for API endpoints")
+except ImportError:
+    HAS_ENHANCED_DATA = False
+    logger.warning("Enhanced data sources not available")
+
+
+@app.get("/api/v1/market/pulse")
+async def get_market_pulse_endpoint():
+    """
+    Get comprehensive market pulse combining all data sources.
+
+    Returns real-time data from:
+    - Yahoo Finance (indices, stocks)
+    - NSE (option chains, FII/DII)
+    - Global markets (US, Europe, Asia)
+    - Sector performance
+    - Market breadth analysis
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        intelligence = get_market_intelligence()
+        pulse = intelligence.get_market_pulse()
+        return pulse
+    except Exception as e:
+        logger.error(f"Market pulse error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/global")
+async def get_global_markets_endpoint():
+    """
+    Get global market data for correlation analysis.
+
+    Includes:
+    - US Markets: S&P 500, NASDAQ, DOW
+    - European Markets: FTSE, DAX
+    - Asian Markets: Nikkei, Hang Seng
+    - Correlation signal for Indian markets
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        provider = get_yahoo_provider()
+        return {
+            "status": "success",
+            "data": provider.get_global_markets().to_dict(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Global markets error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/sectors")
+async def get_sector_performance_endpoint():
+    """
+    Get sector-wise performance for Indian markets.
+
+    Analyzes:
+    - Banking, IT, Pharma, Auto, FMCG
+    - Metal, Energy, Realty, Finance
+    - Top gainer/loser in each sector
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        provider = get_yahoo_provider()
+        return {
+            "status": "success",
+            "data": provider.get_sector_performance(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Sector performance error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/nifty50-heatmap")
+async def get_nifty50_heatmap_endpoint():
+    """
+    Get NIFTY 50 stocks heatmap with gainers and losers.
+
+    Returns:
+    - All NIFTY 50 stocks with current price and change
+    - Top 5 gainers and losers
+    - Market breadth analysis
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        provider = get_yahoo_provider()
+        return {
+            "status": "success",
+            "data": provider.get_nifty50_heatmap(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"NIFTY 50 heatmap error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/market/news/aggregated")
+async def get_aggregated_news_endpoint(sources: str = None, max_articles: int = 20):
+    """
+    Get aggregated news from multiple sources with sentiment analysis.
+
+    Sources:
+    - Economic Times
+    - Moneycontrol
+    - Livemint
+    - Reuters India
+    - CNBC
+
+    Args:
+        sources: Comma-separated list of sources (optional)
+        max_articles: Maximum articles to return (default 20)
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        aggregator = get_news_aggregator()
+        source_list = sources.split(",") if sources else None
+        news = await aggregator.fetch_news(sources=source_list, max_articles=max_articles)
+        return {
+            "status": "success",
+            "data": news,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"News aggregation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/stock/{symbol}/intelligence")
+async def get_stock_intelligence_endpoint(symbol: str):
+    """
+    Get comprehensive intelligence for a specific stock.
+
+    Includes:
+    - Real-time quote from Yahoo Finance
+    - Sector classification
+    - Global market context
+    - Quick trading recommendation
+    """
+    if not HAS_ENHANCED_DATA:
+        raise HTTPException(status_code=503, detail="Enhanced data sources not available")
+
+    try:
+        intelligence = get_market_intelligence()
+        data = await intelligence.get_stock_intelligence(symbol.upper())
+        return data
+    except Exception as e:
+        logger.error(f"Stock intelligence error for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

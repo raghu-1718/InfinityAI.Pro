@@ -6,16 +6,24 @@ All data is sourced from REAL APIs - NO simulated/demo data.
 
 Data Sources:
 - NSE Official Data (via nsepython)
-- Yahoo Finance (for historical data)
-- Real-time FII/DII activity
+- BSE India (bseindia.com) - Live SENSEX, stock quotes
+- Yahoo Finance (finance.yahoo.com) - Global data, historical, fundamentals
+- CNBC/Reuters RSS - Breaking news and market updates
+- Real-time FII/DII activity from NSE
 - Live option chain from NSE
 
 Features:
-- Real-time stock prices via yfinance + NSE
+- Real-time stock prices via yfinance + NSE + BSE
+- Global market correlation (US, Europe, Asia)
+- Sector-wise performance analysis
+- NIFTY 50 heatmap with top gainers/losers
 - NIFTY/BANKNIFTY option chain data from NSE
 - Live FII/DII activity from NSE
 - Technical indicators (calculated from real data)
 - Economic calendar
+- Multi-source news aggregation with sentiment
+
+Version: 3.8 (Enhanced Real-Time Data - Dec 2025)
 """
 
 import asyncio
@@ -838,10 +846,32 @@ def _get_next_expiry(symbol: str) -> str:
 
 
 # =====================================================================
+# IMPORT ENHANCED DATA SOURCES
+# =====================================================================
+
+try:
+    from .enhanced_data_sources import (
+        get_realtime_quote,
+        get_global_market_context,
+        get_sector_analysis,
+        get_nifty50_overview,
+        get_market_pulse,
+        ENHANCED_DATA_TOOLS
+    )
+    HAS_ENHANCED_DATA = True
+    logger.info("✅ Enhanced data sources loaded - BSE, Global Markets, Sector Analysis enabled")
+except ImportError as e:
+    HAS_ENHANCED_DATA = False
+    ENHANCED_DATA_TOOLS = []
+    logger.warning(f"Enhanced data sources not available: {e}")
+
+
+# =====================================================================
 # FUNCTION REGISTRY FOR GEMINI - ALL LIVE DATA SOURCES
 # =====================================================================
 
-MARKET_DATA_TOOLS = [
+# Core market data tools
+CORE_MARKET_TOOLS = [
     get_stock_quote,
     get_nifty_overview,
     get_technical_indicators,
@@ -852,8 +882,12 @@ MARKET_DATA_TOOLS = [
     execute_paper_trade
 ]
 
+# Combine core tools with enhanced data tools
+MARKET_DATA_TOOLS = CORE_MARKET_TOOLS + (ENHANCED_DATA_TOOLS if HAS_ENHANCED_DATA else [])
+
 # Tool descriptions for Gemini - All tools use LIVE data
 TOOL_DESCRIPTIONS = {
+    # Core tools
     "get_stock_quote": "Get LIVE stock quote, price, and key metrics for any NSE/BSE listed stock or index (via yfinance)",
     "get_nifty_overview": "Get LIVE NIFTY 50 index overview with top gainers, losers, and market breadth (via yfinance + NSE)",
     "get_technical_indicators": "Calculate technical indicators (RSI, MACD, Bollinger Bands, MAs) from LIVE price data",
