@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-12-02T06:44:00Z",
+  "mode": "APPROVE",
+  "correlation_id": "cleanup-20251202-0644",
+  "operator": "verification-agent",
+  "deletions_executed": {
+    "engine-core_legacy": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-core",
+      "images_deleted": 7,
+      "digests": [
+        "sha256:30dfcb043af14ef870ab2c12cc370d92bfe4ede04241ccd210ff053cd1cb44e7",
+        "sha256:c81c75d1f35d3117bdeaf94ecf1423fc917a4c0fa89f1a5d44e50206a16ba5be",
+        "sha256:da8b955465653a498c3046985abb5b1ab8284e3903ec721bd4d2915fdf16cb2c",
+        "sha256:f0b641b7a5ab6febb9eb2fc5d9a6f3a74b4e7e53156c0a7f644e2df8e7c71f2d",
+        "sha256:475e99a76bece5c1514474442ea058ddc14c5683b96060b7841e8936a72c9b01",
+        "sha256:e84a302358aabc9323fb7494e91c94ece5652756021b28c244b9b68575146581",
+        "sha256:65740e801eb6ee9258f0737935dfcc63eda22ed17e416ee2199ad00420db6ae5"
+      ],
+      "reason": "DEPRECATED - directory renamed from engine-core to engine-b",
+      "backup_manifest": "artifacts/registry_manifests/engine-core-backup-20251202.json"
+    },
+    "engine-a": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-a",
+      "images_deleted": 17,
+      "images_retained": 3,
+      "retained_digests": [
+        "sha256:0d36e4f4ce77 (latest, deployed)",
+        "sha256:71940c686e95",
+        "sha256:9ea84d1684b3"
+      ],
+      "backup_manifest": "artifacts/registry_manifests/engine-a-backup-20251202.json"
+    },
+    "engine-b": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-b",
+      "images_deleted": 19,
+      "images_retained": 3,
+      "retained_digests": [
+        "sha256:38dd117743d7 (latest, deployed)",
+        "sha256:a0f768326790",
+        "sha256:40880257d739"
+      ],
+      "backup_manifest": "artifacts/registry_manifests/engine-b-backup-20251202.json"
+    },
+    "engine-c": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-c",
+      "images_deleted": 10,
+      "images_retained": 3,
+      "retained_digests": [
+        "sha256:65558aaf1c71 (latest, deployed)",
+        "sha256:e82c7b878429",
+        "sha256:3982eeebd589"
+      ],
+      "backup_manifest": "artifacts/registry_manifests/engine-c-backup-20251202.json"
+    }
+  },
+  "summary": {
+    "total_images_deleted": 53,
+    "total_images_retained": 9,
+    "estimated_storage_freed_mb": 15000,
+    "services_verified_healthy": ["engine-a", "engine-b", "engine-c"],
+    "all_health_checks_passed": true
+  },
+  "rollback_info": {
+    "note": "Registry manifests backed up before deletion",
+    "manifest_location": "artifacts/registry_manifests/",
+    "cloud_run_revisions": "Previous revisions still available for traffic routing"
+  }
+}

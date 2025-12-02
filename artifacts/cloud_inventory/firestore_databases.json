@@ -1,0 +1,20 @@
+[
+  {
+    "appEngineIntegrationMode": "DISABLED",
+    "concurrencyMode": "PESSIMISTIC",
+    "createTime": "2025-11-06T11:23:22.144425Z",
+    "databaseEdition": "STANDARD",
+    "deleteProtectionState": "DELETE_PROTECTION_DISABLED",
+    "earliestVersionTime": "2025-12-01T23:48:38.144971Z",
+    "etag": "IICJuKbXnZEDMJq1l5a83ZAD",
+    "freeTier": true,
+    "locationId": "us-central1",
+    "name": "projects/after-yesterday-473512-k3/databases/(default)",
+    "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+    "realtimeUpdatesMode": "REALTIME_UPDATES_MODE_ENABLED",
+    "type": "FIRESTORE_NATIVE",
+    "uid": "a91e23ab-561c-4b69-ac14-e2f24356844e",
+    "updateTime": "2025-11-06T11:23:22.144425Z",
+    "versionRetentionPeriod": "3600s"
+  }
+]

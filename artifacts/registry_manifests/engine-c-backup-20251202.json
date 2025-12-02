@@ -1,0 +1,215 @@
+[
+  {
+    "digest": "sha256:65558aaf1c7181fafd36f968269554f0ae93ce39d2753ec32ed413335bdff9bb",
+    "tags": [
+      "latest"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-02 06:02:31+05:30",
+      "day": 2,
+      "fold": 0,
+      "hour": 6,
+      "microsecond": 0,
+      "minute": 2,
+      "month": 12,
+      "second": 31,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:e82c7b878429d081f2c62ae573211336f45dcfefec5c6bfa760c452f1326e587",
+    "tags": [],
+    "timestamp": {
+      "datetime": "2025-12-02 05:23:10+05:30",
+      "day": 2,
+      "fold": 0,
+      "hour": 5,
+      "microsecond": 0,
+      "minute": 23,
+      "month": 12,
+      "second": 10,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:3982eeebd5898efab222d4496d680fc1a05b7bbe28d55a3f4d84e2f8144cc460",
+    "tags": [
+      "402ca864d127b0393f96584559531ff17ad727f9"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 01:05:40+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 1,
+      "microsecond": 0,
+      "minute": 5,
+      "month": 12,
+      "second": 40,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:1b5d38d046f22ab180d7030c2f7b76f74f9279a21732055b8b12dc1a672e88d2",
+    "tags": [
+      "70e1ff4b8de23d696819dc3cd9f5abbce04de24a"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 00:59:20+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 0,
+      "microsecond": 0,
+      "minute": 59,
+      "month": 12,
+      "second": 20,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:1c1bbf5288c1ed7056b767dbeb0916748245b5b29f89a7075b8ad55432f3f650",
+    "tags": [
+      "b9c460fd462a2af11094145ba4dfde06523ffa24"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 00:50:18+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 0,
+      "microsecond": 0,
+      "minute": 50,
+      "month": 12,
+      "second": 18,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:1977fc778b4aa11d25e70213a4a56e17f39b4f2109a707bbb5d83144cd42f80a",
+    "tags": [
+      "8856c0fcd654582cfa6082768f143e530ecbd9b0"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 00:42:12+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 0,
+      "microsecond": 0,
+      "minute": 42,
+      "month": 12,
+      "second": 12,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:25a0b74a942564a523faba1f28e82c1c51cf86bdd6c2a688985d31ab2a18f8fe",
+    "tags": [
+      "4941087ff5551504b3d7d924869e3a342292ac48"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 00:19:37+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 0,
+      "microsecond": 0,
+      "minute": 19,
+      "month": 12,
+      "second": 37,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:408b80d83d3004c218fceda745a0ba2568970fc889bbac0e186e97c5b6627755",
+    "tags": [
+      "4a1f4bc63b4b2b500cb10a8908aba21749a9efb1"
+    ],
+    "timestamp": {
+      "datetime": "2025-12-01 00:03:21+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 0,
+      "microsecond": 0,
+      "minute": 3,
+      "month": 12,
+      "second": 21,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:5dba5ad45a6ce2e1b77e98d08d092e58c6fb414a97f1ae5f701b84e02882575e",
+    "tags": [
+      "efb65a7358ea967f568cae0797e86291125bf0b8"
+    ],
+    "timestamp": {
+      "datetime": "2025-11-30 18:45:56+05:30",
+      "day": 30,
+      "fold": 0,
+      "hour": 18,
+      "microsecond": 0,
+      "minute": 45,
+      "month": 11,
+      "second": 56,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:80ab64d1900f88b30bc79a244b8cfb8fd7366e8b55ec8bff4b8075dcf18b7135",
+    "tags": [
+      "v3.5-vwap-analytics"
+    ],
+    "timestamp": {
+      "datetime": "2025-11-30 06:37:46+05:30",
+      "day": 30,
+      "fold": 0,
+      "hour": 6,
+      "microsecond": 0,
+      "minute": 37,
+      "month": 11,
+      "second": 46,
+      "year": 2025
+    }
+  },
+  {
+    "digest": "sha256:526e47a172039d2baa0590a6e11d0655db790241c3e19bec48969b65a19ae60f",
+    "tags": [],
+    "timestamp": {
+      "datetime": "1970-01-01 05:30:00+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 5,
+      "microsecond": 0,
+      "minute": 30,
+      "month": 1,
+      "second": 0,
+      "year": 1970
+    }
+  },
+  {
+    "digest": "sha256:8e9e948ccf473ce68f187f3a31647d9bf1214f3ef348805145e8d5acd7fcf9a9",
+    "tags": [],
+    "timestamp": {
+      "datetime": "1970-01-01 05:30:00+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 5,
+      "microsecond": 0,
+      "minute": 30,
+      "month": 1,
+      "second": 0,
+      "year": 1970
+    }
+  },
+  {
+    "digest": "sha256:e95a5323f6bf925ffbdb3d15c5dca2db288a06293b06472622a06f0e8fa5a609",
+    "tags": [],
+    "timestamp": {
+      "datetime": "1970-01-01 05:30:00+05:30",
+      "day": 1,
+      "fold": 0,
+      "hour": 5,
+      "microsecond": 0,
+      "minute": 30,
+      "month": 1,
+      "second": 0,
+      "year": 1970
+    }
+  }
+]

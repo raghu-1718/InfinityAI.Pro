@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-02T01:15:00Z",
+    "mode": "DRY-RUN",
+    "correlation_id": "verification-20251202-0115",
+    "project_id": "after-yesterday-473512-k3",
+    "region": "us-central1",
+    "git_commit": "62d3792948df37794042853fb772c5f1030efbfb",
+    "git_branch": "main",
+    "retention_policy": {
+      "keep_days": 30,
+      "keep_count": 3
+    }
+  },
+  "test_summary": {
+    "total": 25,
+    "passed": 21,
+    "warnings": 4,
+    "failed": 0
+  },
+  "components": [
+    {
+      "name": "Engine A (Orchestration & Risk)",
+      "url": "https://engine-a-573866363639.us-central1.run.app",
+      "status": "PASS",
+      "health_status": 200,
+      "latency_ms": 16611,
+      "version": "3.7-google-integrations",
+      "active_revision": "engine-a-00021-dgd",
+      "image_digest": "sha256:0d36e4f4ce7750992a2d8b5cf08e1cb4149273ee76555e15ff4a662d24edb660",
+      "deployed_at": "2025-12-02T00:33:44Z",
+      "evidence": "artifacts/cloud_inventory/run_services.json"
+    },
+    {
+      "name": "Engine B (AI/ML Signal Generation)",
+      "url": "https://engine-b-573866363639.us-central1.run.app",
+      "status": "PASS",
+      "health_status": 200,
+      "latency_ms": 26832,
+      "version": "3.7-google-integrations",
+      "active_revision": "engine-b-00033-lrd",
+      "image_digest": "sha256:38dd117743d7cfc7c5d5d43443779a554ccb772b1d9714a6ba437015a966787b",
+      "deployed_at": "2025-12-02T00:34:24Z",
+      "ml_models": ["xgboost", "lightgbm", "catboost", "random_forest", "nltk_sentiment"],
+      "signal_test": {
+        "symbol": "NIFTY",
+        "signal": "HOLD",
+        "confidence": 66.0,
+        "data_source": "yahoo",
+        "status": "REAL_DATA"
+      },
+      "evidence": "artifacts/cloud_inventory/run_services.json"
+    },
+    {
+      "name": "Engine C (Trade Execution)",
+      "url": "https://engine-c-573866363639.us-central1.run.app",
+      "status": "PASS",
+      "health_status": 200,
+      "latency_ms": 7141,
+      "version": "3.5-enhanced-execution",
+      "active_revision": "engine-c-00009-zvx",
+      "image_digest": "sha256:526e47a172039d2baa0590a6e11d0655db790241c3e19bec48969b65a19ae60f",
+      "deployed_at": "2025-12-02T00:36:30Z",
+      "dhan_integration": true,
+      "evidence": "artifacts/cloud_inventory/run_services.json"
+    },
+    {
+      "name": "Firebase Project",
+      "project_id": "after-yesterday-473512-k3",
+      "status": "PASS",
+      "firestore_database": "(default)",
+      "firestore_type": "FIRESTORE_NATIVE",
+      "hosting_url": "https://after-yesterday-473512-k3.web.app",
+      "evidence": "artifacts/cloud_inventory/firebase_projects.json"
+    },
+    {
+      "name": "Secret Manager",
+      "status": "PASS",
+      "secrets_count": 13,
+      "secrets": [
+        "DHAN_ACCESS_TOKEN",
+        "dhan-access-token",
+        "dhan-api-key",
+        "dhan-api-secret",
+        "dhan-client-id",
+        "encryption-key",
+        "firebase-service-account",
+        "gemini-api-key",
+        "huggingface-api-token",
+        "jwt-secret-key",
+        "valid-api-key",
+        "Infinity-ghe-private-key-a8f2c4",
+        "Infinity-ghe-webhook-secret-f1a42f"
+      ],
+      "evidence": "artifacts/cloud_inventory/secrets.json"
+    },
+    {
+      "name": "Artifact Registry",
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai",
+      "status": "PASS",
+      "images": {
+        "engine-a": 20,
+        "engine-b": 23,
+        "engine-c": 14,
+        "engine-core": 7
+      },
+      "evidence": "artifacts/cloud_inventory/artifact_registry_images.json"
+    },
+    {
+      "name": "Git Repository",
+      "status": "PASS",
+      "branch": "main",
+      "commit": "62d3792948df37794042853fb772c5f1030efbfb",
+      "uncommitted_changes": ["artifacts/ (untracked - expected)"],
+      "recent_commits": [
+        "62d37929 - refactor: Align directory names with engine naming convention",
+        "5a1317a2 - refactor: Consolidate main.py and main_minimal.py",
+        "e01de135 - feat: Remove demo/fake values - use REAL data sources",
+        "1bddf599 - feat: Complete Vertex AI/GenAI integration v3.7.7",
+        "acee2fc0 - Fix Gemini AI with Vertex AI mode"
+      ],
+      "evidence": "artifacts/git_state_recent_commits.txt"
+    },
+    {
+      "name": "Security Headers",
+      "status": "WARN",
+      "missing_headers": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options"
+      ],
+      "recommendation": "Add security middleware to FastAPI apps"
+    },
+    {
+      "name": "Secret Exposure Scan",
+      "status": "PASS",
+      "hardcoded_secrets": 0,
+      "jwt_tokens_in_code": 0,
+      "api_keys_in_code": 0
+    },
+    {
+      "name": "Demo Data Check",
+      "status": "WARN",
+      "findings": [
+        {
+          "file": "backend/engine-a/src/signal_api.py",
+          "line": 334,
+          "issue": "Demo mode fallback in /api/live-signal endpoint",
+          "severity": "LOW",
+          "note": "Placeholder endpoint, not primary signal generation"
+        }
+      ],
+      "market_data_tools": "REAL_DATA_SOURCES"
+    },
+    {
+      "name": "Storage Buckets",
+      "status": "WARN",
+      "buckets": [
+        {
+          "name": "after-yesterday-473512-k3-ml-models",
+          "objects": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "after-yesterday-473512-k3-trading-history",
+          "objects": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "after-yesterday-473512-k3_cloudbuild",
+          "objects": 1,
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    {
+      "name": "Vertex AI",
+      "status": "INFO",
+      "models_deployed": 0,
+      "endpoints_deployed": 0,
+      "note": "ML models run embedded in Engine B, not as separate Vertex AI endpoints"
+    }
+  ],
+  "cleanup_plan": {
+    "mode": "DRY-RUN",
+    "registry_cleanup": {
+      "engine-a": {
+        "total_images": 20,
+        "keep_latest": 3,
+        "candidates_for_deletion": 17,
+        "images_to_delete": [
+          "sha256:406320ef73e2694204325336bf5366420b1d5e321191155461ee08eb0f1c44d2 (Nov 30)",
+          "sha256:b0f9f56010cd27a848a9ee11cf1895dd0fa0f31269c9f654bc1dd2935cfa728c (Nov 30)",
+          "sha256:813b6e6203118213b19182b6bcd838f8de26e1995d7461d0e76f58afdd5f0e75 (Nov 30)",
+          "sha256:8d9a161092d6a34dc296e177bb831f50116ac661da1b7f453c066cbb295461f8 (Nov 30)",
+          "sha256:f9432423475264eab75cf1dab70de97ea17c0622ab9b18a3b11f2e389e2657ae (Nov 30)"
+        ],
+        "protected": [
+          "sha256:0d36e4f4ce7750992a2d8b5cf08e1cb4149273ee76555e15ff4a662d24edb660 (latest, deployed)",
+          "sha256:ec8bfa3365780737fdb6c8a4367f8974ac48cd0eb655f0f6481ecb177cfe3fa5 (Dec 2)",
+          "sha256:4b831a49eb8f8814ea40c6e954d6d6e835289bb6393f40c1fc0d798a77c754cf (Dec 2)"
+        ]
+      },
+      "engine-b": {
+        "total_images": 23,
+        "keep_latest": 3,
+        "candidates_for_deletion": 20,
+        "protected": [
+          "sha256:38dd117743d7cfc7c5d5d43443779a554ccb772b1d9714a6ba437015a966787b (latest, deployed)",
+          "sha256:10598b242eca1973739b8725c8b19cabe9610cca7be4b723be31e45fcea57ecc (Dec 2)",
+          "sha256:65e9005c79e8e8727918a6953d7afa00dcb0804eaf35c93a921bda70de2952d4 (Dec 2)"
+        ]
+      },
+      "engine-c": {
+        "total_images": 14,
+        "keep_latest": 3,
+        "candidates_for_deletion": 11,
+        "protected": [
+          "sha256:526e47a172039d2baa0590a6e11d0655db790241c3e19bec48969b65a19ae60f (latest, deployed)",
+          "sha256:65558aaf1c7181fafd36f968269554f0ae93ce39d2753ec32ed413335bdff9bb (Dec 2)",
+          "sha256:8e9e948ccf473ce68f187f3a31647d9bf1214f3ef348805145e8d5acd7fcf9a9 (Dec 2)"
+        ]
+      },
+      "engine-core (legacy)": {
+        "total_images": 7,
+        "note": "Legacy images from old directory naming - all candidates for deletion",
+        "candidates_for_deletion": 7,
+        "newest_image": "sha256:30dfcb043af14ef870ab2c12cc370d92bfe4ede04241ccd210ff053cd1cb44e7 (Nov 30)"
+      }
+    },
+    "cloud_run_revisions": {
+      "engine-a": {
+        "total_revisions": 21,
+        "active_revision": "engine-a-00021-dgd",
+        "old_revisions_to_cleanup": 18
+      },
+      "engine-b": {
+        "total_revisions": 33,
+        "active_revision": "engine-b-00033-lrd",
+        "old_revisions_to_cleanup": 30
+      },
+      "engine-c": {
+        "total_revisions": 15,
+        "active_revision": "engine-c-00009-zvx",
+        "old_revisions_to_cleanup": 12
+      }
+    },
+    "local_docker_images": {
+      "total_images": 30,
+      "old_naming_pattern": [
+        "gcr.io/after-yesterday-473512-k3/engine-analytics",
+        "gcr.io/after-yesterday-473512-k3/engine-execution",
+        "gcr.io/after-yesterday-473512-k3/engine-core"
+      ],
+      "recommendation": "Remove local images using old gcr.io prefix"
+    },
+    "empty_buckets": [
+      {
+        "name": "after-yesterday-473512-k3-ml-models",
+        "action": "REVIEW - may be needed for future model storage"
+      },
+      {
+        "name": "after-yesterday-473512-k3-trading-history",
+        "action": "REVIEW - may be needed for trade logging"
+      }
+    ]
+  },
+  "iam_audit": {
+    "owners": ["user:raghu42620@gmail.com", "user:raghuyuvi10@gmail.com"],
+    "service_accounts": [
+      {
+        "email": "github-deployer@after-yesterday-473512-k3.iam.gserviceaccount.com",
+        "roles": ["artifactregistry.admin", "cloudfunctions.admin", "run.admin", "secretmanager.admin"],
+        "status": "APPROPRIATE"
+      },
+      {
+        "email": "firebase-adminsdk-fbsvc@after-yesterday-473512-k3.iam.gserviceaccount.com",
+        "roles": ["cloudfunctions.admin", "firebase.admin", "secretmanager.secretAccessor"],
+        "status": "APPROPRIATE"
+      }
+    ],
+    "over_privileged_warnings": []
+  },
+  "intended_deletions": {
+    "note": "NO DELETIONS IN DRY-RUN MODE",
+    "registry_images_to_delete": 55,
+    "cloud_run_revisions_to_cleanup": 60,
+    "local_docker_images_to_prune": "TBD - based on age filter",
+    "legacy_engine_core_images": 7
+  }
+}

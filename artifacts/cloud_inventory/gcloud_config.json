@@ -1,0 +1,17 @@
+{
+  "accessibility": {
+    "screen_reader": "true"
+  },
+  "compute": {
+    "region": "us-central1",
+    "zone": "us-central1-a"
+  },
+  "core": {
+    "account": "raghu42620@gmail.com",
+    "disable_usage_reporting": "False",
+    "project": "after-yesterday-473512-k3"
+  },
+  "run": {
+    "region": "us-central1"
+  }
+}

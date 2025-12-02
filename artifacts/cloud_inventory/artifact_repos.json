@@ -1,0 +1,55 @@
+[
+  {
+    "createTime": "2025-11-03T13:30:46.852072Z",
+    "format": "DOCKER",
+    "mode": "STANDARD_REPOSITORY",
+    "name": "projects/after-yesterday-473512-k3/locations/us/repositories/gcr.io",
+    "sizeBytes": "48810881671",
+    "updateTime": "2025-12-01T22:12:43.889515Z",
+    "vulnerabilityScanningConfig": {
+      "enablementState": "SCANNING_ACTIVE"
+    }
+  },
+  {
+    "createTime": "2025-11-10T17:47:38.259120Z",
+    "description": "Cloud Run Source Deployments",
+    "format": "DOCKER",
+    "mode": "STANDARD_REPOSITORY",
+    "name": "projects/after-yesterday-473512-k3/locations/us-central1/repositories/cloud-run-source-deploy",
+    "satisfiesPzi": true,
+    "updateTime": "2025-11-10T17:47:38.259120Z",
+    "vulnerabilityScanningConfig": {
+      "enablementState": "SCANNING_ACTIVE",
+      "lastEnableTime": "2025-11-10T17:47:37.700054055Z"
+    }
+  },
+  {
+    "createTime": "2025-11-03T11:29:10.550625Z",
+    "description": "This repository is created and used by Cloud Functions for storing function docker images.",
+    "format": "DOCKER",
+    "labels": {
+      "goog-managed-by": "cloudfunctions"
+    },
+    "mode": "STANDARD_REPOSITORY",
+    "name": "projects/after-yesterday-473512-k3/locations/us-central1/repositories/gcf-artifacts",
+    "satisfiesPzi": true,
+    "updateTime": "2025-11-25T12:55:03.664667Z",
+    "vulnerabilityScanningConfig": {
+      "enablementState": "SCANNING_ACTIVE",
+      "lastEnableTime": "2025-11-03T11:29:09.993235194Z"
+    }
+  },
+  {
+    "createTime": "2025-11-25T14:12:54.076916Z",
+    "format": "DOCKER",
+    "mode": "STANDARD_REPOSITORY",
+    "name": "projects/after-yesterday-473512-k3/locations/us-central1/repositories/infinityai",
+    "satisfiesPzi": true,
+    "sizeBytes": "26976405630",
+    "updateTime": "2025-12-02T00:33:20.514659Z",
+    "vulnerabilityScanningConfig": {
+      "enablementState": "SCANNING_ACTIVE",
+      "lastEnableTime": "2025-11-25T14:12:53.367246111Z"
+    }
+  }
+]

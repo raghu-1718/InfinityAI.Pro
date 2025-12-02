@@ -1,0 +1,151 @@
+{
+  "mode": "DRY-RUN",
+  "generated_at": "2025-12-02T01:20:00Z",
+  "note": "This file lists intended deletions. NO ACTUAL DELETIONS PERFORMED.",
+  "retention_policy": {
+    "keep_days": 30,
+    "keep_count": 3,
+    "protect_deployed": true
+  },
+  "registry_deletions": {
+    "engine-a": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-a",
+      "protected_digests": [
+        {
+          "digest": "sha256:0d36e4f4ce7750992a2d8b5cf08e1cb4149273ee76555e15ff4a662d24edb660",
+          "tags": ["latest"],
+          "reason": "Currently deployed to engine-a-00021-dgd",
+          "created": "2025-12-02T05:56:00Z"
+        },
+        {
+          "digest": "sha256:ec8bfa3365780737fdb6c8a4367f8974ac48cd0eb655f0f6481ecb177cfe3fa5",
+          "tags": [],
+          "reason": "Within keep_count (2nd most recent)",
+          "created": "2025-12-02T05:56:05Z"
+        },
+        {
+          "digest": "sha256:4b831a49eb8f8814ea40c6e954d6d6e835289bb6393f40c1fc0d798a77c754cf",
+          "tags": [],
+          "reason": "Within keep_count (3rd most recent)",
+          "created": "2025-12-02T05:18:00Z"
+        }
+      ],
+      "candidates_for_deletion": [
+        {
+          "digest": "sha256:406320ef73e2694204325336bf5366420b1d5e321191155461ee08eb0f1c44d2",
+          "created": "2025-11-30T06:30:22Z",
+          "age_days": 2,
+          "deletion_command": "gcloud container images delete us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-a@sha256:406320ef73e2694204325336bf5366420b1d5e321191155461ee08eb0f1c44d2 --quiet"
+        },
+        {
+          "digest": "sha256:b0f9f56010cd27a848a9ee11cf1895dd0fa0f31269c9f654bc1dd2935cfa728c",
+          "created": "2025-11-30T06:30:27Z",
+          "age_days": 2
+        },
+        {
+          "digest": "sha256:813b6e6203118213b19182b6bcd838f8de26e1995d7461d0e76f58afdd5f0e75",
+          "created": "2025-11-30T09:29:01Z",
+          "age_days": 2
+        },
+        {
+          "digest": "sha256:8d9a161092d6a34dc296e177bb831f50116ac661da1b7f453c066cbb295461f8",
+          "created": "2025-11-30T09:27:21Z",
+          "age_days": 2
+        },
+        {
+          "digest": "sha256:f9432423475264eab75cf1dab70de97ea17c0622ab9b18a3b11f2e389e2657ae",
+          "created": "2025-11-30T09:27:15Z",
+          "age_days": 2
+        },
+        {
+          "digest": "sha256:937cf62a75963c61e21825f4b74d4aa9b5d81c919ce0027d0021970fb30da80e",
+          "created": "2025-11-30T18:46:16Z",
+          "age_days": 1
+        }
+      ],
+      "total_to_delete": 17
+    },
+    "engine-b": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-b",
+      "protected_digests": [
+        {
+          "digest": "sha256:38dd117743d7cfc7c5d5d43443779a554ccb772b1d9714a6ba437015a966787b",
+          "tags": ["latest"],
+          "reason": "Currently deployed to engine-b-00033-lrd",
+          "created": "2025-12-02T06:00:37Z"
+        },
+        {
+          "digest": "sha256:10598b242eca1973739b8725c8b19cabe9610cca7be4b723be31e45fcea57ecc",
+          "tags": [],
+          "reason": "Within keep_count",
+          "created": "2025-12-02T06:00:43Z"
+        },
+        {
+          "digest": "sha256:65e9005c79e8e8727918a6953d7afa00dcb0804eaf35c93a921bda70de2952d4",
+          "tags": [],
+          "reason": "Within keep_count",
+          "created": "2025-12-02T05:20:22Z"
+        }
+      ],
+      "total_to_delete": 20
+    },
+    "engine-c": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-c",
+      "protected_digests": [
+        {
+          "digest": "sha256:526e47a172039d2baa0590a6e11d0655db790241c3e19bec48969b65a19ae60f",
+          "tags": ["latest"],
+          "reason": "Currently deployed to engine-c-00009-zvx",
+          "created": "2025-12-02T06:03:20Z"
+        }
+      ],
+      "total_to_delete": 11
+    },
+    "engine-core_legacy": {
+      "repository": "us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai/engine-core",
+      "note": "DEPRECATED - directory renamed to engine-b",
+      "all_images_deletion_candidates": true,
+      "candidates_for_deletion": [
+        {"digest": "sha256:30dfcb043af14ef870ab2c12cc370d92bfe4ede04241ccd210ff053cd1cb44e7", "tags": ["latest"]},
+        {"digest": "sha256:c81c75d1f35d3117bdeaf94ecf1423fc917a4c0fa89f1a5d44e50206a16ba5be"},
+        {"digest": "sha256:da8b955465653a498c3046985abb5b1ab8284e3903ec721bd4d2915fdf16cb2c"},
+        {"digest": "sha256:f0b641b7a5ab6febb9eb2fc5d9a6f3a74b4e7e53156c0a7f644e2df8e7c71f2d"},
+        {"digest": "sha256:475e99a76bece5c1514474442ea058ddc14c5683b96060b7841e8936a72c9b01"},
+        {"digest": "sha256:e84a302358aabc9323fb7494e91c94ece5652756021b28c244b9b68575146581"},
+        {"digest": "sha256:65740e801eb6ee9258f0737935dfcc63eda22ed17e416ee2199ad00420db6ae5"}
+      ],
+      "total_to_delete": 7
+    }
+  },
+  "cloud_run_revisions": {
+    "note": "Cloud Run auto-manages old revisions. Manual cleanup optional.",
+    "engine-a": {
+      "active": "engine-a-00021-dgd",
+      "old_revisions": 20
+    },
+    "engine-b": {
+      "active": "engine-b-00033-lrd",
+      "old_revisions": 32
+    },
+    "engine-c": {
+      "active": "engine-c-00009-zvx",
+      "old_revisions": 14
+    }
+  },
+  "local_docker_cleanup": {
+    "old_naming_images": [
+      "gcr.io/after-yesterday-473512-k3/engine-analytics:latest",
+      "gcr.io/after-yesterday-473512-k3/engine-analytics:v3.3-dhan-fix",
+      "gcr.io/after-yesterday-473512-k3/engine-execution:latest",
+      "gcr.io/after-yesterday-473512-k3/engine-execution:v3.6-postback",
+      "gcr.io/after-yesterday-473512-k3/engine-core:v3.4-prod-gradient-boost"
+    ],
+    "cleanup_command": "docker image prune -a --filter \"until=168h\""
+  },
+  "summary": {
+    "total_registry_images_to_delete": 55,
+    "total_cloud_run_revisions_old": 66,
+    "estimated_storage_savings_mb": 15000,
+    "action_required": "Run with --approve to execute deletions"
+  }
+}

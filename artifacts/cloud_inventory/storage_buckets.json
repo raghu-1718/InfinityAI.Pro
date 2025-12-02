@@ -1,0 +1,338 @@
+[
+  {
+    "acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "creation_time": "2025-12-01T17:38:41+0000",
+    "default_acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "default_storage_class": "STANDARD",
+    "generation": 1764610721509788094,
+    "location": "US-CENTRAL1",
+    "location_type": "region",
+    "metageneration": 1,
+    "name": "after-yesterday-473512-k3-ml-models",
+    "public_access_prevention": "inherited",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-12-01T17:38:41.698000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://after-yesterday-473512-k3-ml-models/",
+    "uniform_bucket_level_access": false,
+    "update_time": "2025-12-01T17:38:41+0000"
+  },
+  {
+    "acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "creation_time": "2025-12-01T17:38:42+0000",
+    "default_acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "default_storage_class": "STANDARD",
+    "generation": 1764610722259745406,
+    "location": "US-CENTRAL1",
+    "location_type": "region",
+    "metageneration": 1,
+    "name": "after-yesterday-473512-k3-trading-history",
+    "public_access_prevention": "inherited",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-12-01T17:38:42.395000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://after-yesterday-473512-k3-trading-history/",
+    "uniform_bucket_level_access": false,
+    "update_time": "2025-12-01T17:38:42+0000"
+  },
+  {
+    "acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "creation_time": "2025-11-03T13:30:01+0000",
+    "default_acl": [
+      {
+        "entity": "project-owners-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "owners"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-editors-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "editors"
+        },
+        "role": "OWNER"
+      },
+      {
+        "entity": "project-viewers-573866363639",
+        "projectTeam": {
+          "projectNumber": "573866363639",
+          "team": "viewers"
+        },
+        "role": "READER"
+      }
+    ],
+    "default_storage_class": "STANDARD",
+    "generation": 1762176600857642006,
+    "location": "US",
+    "location_type": "multi-region",
+    "metageneration": 1,
+    "name": "after-yesterday-473512-k3_cloudbuild",
+    "public_access_prevention": "inherited",
+    "rpo": "DEFAULT",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-11-03T13:30:01.162000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://after-yesterday-473512-k3_cloudbuild/",
+    "uniform_bucket_level_access": false,
+    "update_time": "2025-11-03T13:30:01+0000"
+  },
+  {
+    "cors_config": [
+      {
+        "method": [
+          "GET"
+        ],
+        "origin": [
+          "https://*.cloud.google.com",
+          "https://*.corp.google.com",
+          "https://*.corp.google.com:*",
+          "https://*.cloud.google",
+          "https://*.byoid.goog"
+        ]
+      }
+    ],
+    "creation_time": "2025-11-03T11:29:09+0000",
+    "default_storage_class": "STANDARD",
+    "generation": 1762169349239854419,
+    "labels": {
+      "goog-managed-by": "cloudfunctions"
+    },
+    "lifecycle_config": {
+      "rule": [
+        {
+          "action": {
+            "type": "Delete"
+          },
+          "condition": {
+            "isLive": false,
+            "numNewerVersions": 3
+          }
+        }
+      ]
+    },
+    "location": "US-CENTRAL1",
+    "location_type": "region",
+    "metageneration": 1,
+    "name": "gcf-v2-sources-573866363639-us-central1",
+    "public_access_prevention": "inherited",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-11-03T11:29:09.379000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://gcf-v2-sources-573866363639-us-central1/",
+    "uniform_bucket_level_access": true,
+    "update_time": "2025-11-03T11:29:09+0000",
+    "versioning_enabled": true
+  },
+  {
+    "cors_config": [
+      {
+        "method": [
+          "PUT"
+        ],
+        "origin": [
+          "https://*.cloud.google.com",
+          "https://*.corp.google.com",
+          "https://*.corp.google.com:*",
+          "https://*.cloud.google",
+          "https://*.byoid.goog"
+        ],
+        "responseHeader": [
+          "content-type"
+        ]
+      }
+    ],
+    "creation_time": "2025-11-03T11:20:54+0000",
+    "default_storage_class": "STANDARD",
+    "generation": 1762168854247328738,
+    "labels": {
+      "goog-managed-by": "cloudfunctions"
+    },
+    "lifecycle_config": {
+      "rule": [
+        {
+          "action": {
+            "type": "Delete"
+          },
+          "condition": {
+            "age": 1
+          }
+        }
+      ]
+    },
+    "location": "US-CENTRAL1",
+    "location_type": "region",
+    "metageneration": 1,
+    "name": "gcf-v2-uploads-573866363639.us-central1.cloudfunctions.appspot.com",
+    "public_access_prevention": "inherited",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-11-03T11:20:54.324000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://gcf-v2-uploads-573866363639.us-central1.cloudfunctions.appspot.com/",
+    "uniform_bucket_level_access": true,
+    "update_time": "2025-11-03T11:20:54+0000"
+  },
+  {
+    "cors_config": [
+      {
+        "method": [
+          "GET"
+        ],
+        "origin": [
+          "https://*.cloud.google.com",
+          "https://*.corp.google.com",
+          "https://*.corp.google.com:*",
+          "https://*.cloud.google",
+          "https://*.byoid.goog"
+        ]
+      }
+    ],
+    "creation_time": "2025-11-10T17:47:39+0000",
+    "default_storage_class": "STANDARD",
+    "generation": 1762796859797487801,
+    "location": "US-CENTRAL1",
+    "location_type": "region",
+    "metageneration": 1,
+    "name": "run-sources-after-yesterday-473512-k3-us-central1",
+    "public_access_prevention": "inherited",
+    "soft_delete_policy": {
+      "effectiveTime": "2025-11-10T17:47:39.931000+00:00",
+      "retentionDurationSeconds": "604800"
+    },
+    "storage_url": "gs://run-sources-after-yesterday-473512-k3-us-central1/",
+    "uniform_bucket_level_access": true,
+    "update_time": "2025-11-10T17:47:39+0000"
+  }
+]
