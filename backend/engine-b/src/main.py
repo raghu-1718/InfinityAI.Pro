@@ -201,9 +201,21 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Add CORS middleware
+# CORS allowed origins for production
+ALLOWED_ORIGINS = [
+    "https://infinityai.pro",
+    "https://www.infinityai.pro",
+    "https://engine-a.infinityai.pro",
+    "https://engine-b.infinityai.pro",
+    "https://engine-c.infinityai.pro",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -2235,7 +2247,7 @@ async def get_stock_knowledge(symbol: str):
         raise HTTPException(500, str(e))
 
 @app.get("/api/v1/knowledge/indicators")
-async def get_technical_indicators():
+async def get_indicators_knowledge():
     """
     Get documentation for all technical indicators used by the ML models.
     Includes formulas, interpretations, and trading signals.

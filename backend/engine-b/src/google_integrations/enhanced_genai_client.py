@@ -386,17 +386,17 @@ Then provide your recommendation in this JSON format:
             return TradingRecommendation(
                 symbol=data.get("symbol", symbol),
                 signal=TradingSignal(data.get("signal", "HOLD")),
-                confidence=float(data.get("confidence", 0)),
-                entry_price=float(data.get("entry_price", 0)),
-                stop_loss=float(data.get("stop_loss", 0)),
-                target_prices=data.get("target_prices", []),
-                risk_reward=float(data.get("risk_reward", 0)),
-                risk_level=RiskLevel(data.get("risk_level", "MEDIUM")),
-                timeframe=Timeframe(data.get("timeframe", "INTRADAY")),
-                reasoning=data.get("reasoning", ""),
-                technicals=data.get("technicals", {}),
-                news_sentiment=data.get("news_sentiment", "NEUTRAL"),
-                fii_dii_view=data.get("fii_dii_view", ""),
+                confidence=float(data.get("confidence", 0) or 0),
+                entry_price=float(data.get("entry_price", 0) or 0),
+                stop_loss=float(data.get("stop_loss", 0) or 0),
+                target_prices=data.get("target_prices", []) or [],
+                risk_reward=float(data.get("risk_reward", 0) or 0),
+                risk_level=RiskLevel(data.get("risk_level", "MEDIUM") or "MEDIUM"),
+                timeframe=Timeframe(data.get("timeframe", "INTRADAY") or "INTRADAY"),
+                reasoning=data.get("reasoning", "") or "",
+                technicals=data.get("technicals", {}) or {},
+                news_sentiment=data.get("news_sentiment", "NEUTRAL") or "NEUTRAL",
+                fii_dii_view=data.get("fii_dii_view", "") or "",
                 auto_execute=auto_execute
             )
         except json.JSONDecodeError:

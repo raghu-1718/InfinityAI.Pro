@@ -60,10 +60,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+# CORS allowed origins for production
+ALLOWED_ORIGINS = [
+    "https://infinityai.pro",
+    "https://www.infinityai.pro",
+    "https://engine-a.infinityai.pro",
+    "https://engine-b.infinityai.pro",
+    "https://engine-c.infinityai.pro",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+]
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
