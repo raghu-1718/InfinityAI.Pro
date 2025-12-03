@@ -3,6 +3,7 @@
 import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -53,14 +54,16 @@ export default function DashboardLayout({
 
   // Authenticated - show dashboard layout
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex flex-1 flex-col pl-64 transition-all duration-300 data-[sidebar-collapsed=true]:pl-16">
-        <Header />
-        <main className="flex-1 bg-muted/30">
-          {children}
-        </main>
+    <ErrorBoundary>
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <div className="flex flex-1 flex-col pl-64 transition-all duration-300 data-[sidebar-collapsed=true]:pl-16">
+          <Header />
+          <main className="flex-1 bg-muted/30">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
