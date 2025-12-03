@@ -48,9 +48,15 @@ class IndianMarketKnowledge:
     """
     Comprehensive Indian stock market knowledge base for AI trading.
     Contains all essential information for accurate trading decisions.
+
+    IMPORTANT: Lot sizes and expiry rules updated as per NSE/BSE circulars.
+    - Current lot sizes valid until December 30, 2025
+    - New lot sizes effective from January 2026
+    - SEBI has mandated single weekly expiry for indices (only NIFTY and SENSEX)
+    - Monthly expiry moved to last Tuesday (NSE) / last Thursday (BSE)
     """
 
-    # Market Timings (IST)
+    # Market Timings (IST) - T+1 Settlement Cycle
     MARKET_TIMINGS = {
         "pre_open": {"start": time(9, 0), "end": time(9, 8)},
         "pre_open_order_matching": {"start": time(9, 8), "end": time(9, 15)},
@@ -62,29 +68,119 @@ class IndianMarketKnowledge:
         "morning_momentum": {"start": time(9, 15), "end": time(10, 30)},
         "afternoon_calm": {"start": time(12, 0), "end": time(14, 0)},
         "closing_momentum": {"start": time(14, 30), "end": time(15, 30)},
+
+        # Settlement
+        "settlement_cycle": "T+1",  # Shares credited next day
     }
 
-    # Index Lot Sizes & Tick Info (2025 Updated)
+    # =========================================================================
+    # INDEX LOT SIZES - ACCURATE AS OF DECEMBER 2025
+    # Source: NSE/BSE Circulars, SEBI Guidelines
+    # =========================================================================
     INDEX_LOT_SIZES = {
-        "NIFTY": {"lot_size": 25, "tick_size": 0.05, "margin_pct": 12},
-        "BANKNIFTY": {"lot_size": 15, "tick_size": 0.05, "margin_pct": 14},
-        "FINNIFTY": {"lot_size": 25, "tick_size": 0.05, "margin_pct": 12},
-        "MIDCPNIFTY": {"lot_size": 50, "tick_size": 0.05, "margin_pct": 15},
-        "SENSEX": {"lot_size": 10, "tick_size": 0.05, "margin_pct": 12},
-        "BANKEX": {"lot_size": 15, "tick_size": 0.05, "margin_pct": 14},
+        # NSE Indices
+        "NIFTY": {
+            "lot_size_current": 75,      # Valid until Dec 30, 2025
+            "lot_size_jan2026": 65,      # From January 2026
+            "tick_size": 0.05,
+            "margin_pct": 12,
+            "strike_interval": 50,       # Strike price gap
+            "exchange": "NSE"
+        },
+        "BANKNIFTY": {
+            "lot_size_current": 35,      # Valid until Dec 30, 2025
+            "lot_size_jan2026": 30,      # From January 2026
+            "tick_size": 0.05,
+            "margin_pct": 14,
+            "strike_interval": 100,
+            "exchange": "NSE"
+        },
+        "FINNIFTY": {
+            "lot_size_current": 65,      # Valid until Dec 30, 2025
+            "lot_size_jan2026": 60,      # From January 2026
+            "tick_size": 0.05,
+            "margin_pct": 12,
+            "strike_interval": 50,
+            "exchange": "NSE"
+        },
+        "MIDCPNIFTY": {
+            "lot_size_current": 140,     # Valid until Dec 30, 2025
+            "lot_size_jan2026": 120,     # From January 2026
+            "tick_size": 0.05,
+            "margin_pct": 15,
+            "strike_interval": 25,
+            "exchange": "NSE"
+        },
+        # BSE Indices
+        "SENSEX": {
+            "lot_size_current": 20,      # Current lot size
+            "lot_size_jan2026": 20,      # No change announced
+            "tick_size": 0.05,
+            "margin_pct": 12,
+            "strike_interval": 100,
+            "exchange": "BSE"
+        },
+        "BANKEX": {
+            "lot_size_current": 20,
+            "lot_size_jan2026": 20,
+            "tick_size": 0.05,
+            "margin_pct": 14,
+            "strike_interval": 100,
+            "exchange": "BSE"
+        },
     }
 
-    # Weekly Expiry Schedule (2025)
+    # =========================================================================
+    # EXPIRY SCHEDULE - UPDATED AS PER SEBI 2024 CIRCULAR
+    # SEBI mandated single weekly expiry effective November 2024
+    # Only NIFTY (NSE) and SENSEX (BSE) have weekly expiry
+    # =========================================================================
     EXPIRY_SCHEDULE = {
-        "NIFTY": "Thursday",
-        "BANKNIFTY": "Wednesday",
-        "FINNIFTY": "Tuesday",
-        "MIDCPNIFTY": "Monday",
-        "SENSEX": "Friday",
-        "BANKEX": "Monday",
+        # Weekly Expiry (Only these two indices have weekly expiry)
+        "NIFTY": {
+            "weekly_expiry": "Tuesday",           # Weekly on Tuesday
+            "monthly_expiry": "Last Tuesday",     # Monthly on last Tuesday
+            "has_weekly": True
+        },
+        "SENSEX": {
+            "weekly_expiry": "Thursday",          # Weekly on Thursday (BSE)
+            "monthly_expiry": "Last Thursday",    # Monthly on last Thursday
+            "has_weekly": True
+        },
+
+        # Monthly Only Expiry (No weekly expiry as per SEBI rules)
+        "BANKNIFTY": {
+            "weekly_expiry": None,                # NO weekly expiry
+            "monthly_expiry": "Last Tuesday",     # Monthly on last Tuesday
+            "has_weekly": False
+        },
+        "FINNIFTY": {
+            "weekly_expiry": None,                # NO weekly expiry
+            "monthly_expiry": "Last Tuesday",
+            "has_weekly": False
+        },
+        "MIDCPNIFTY": {
+            "weekly_expiry": None,                # NO weekly expiry
+            "monthly_expiry": "Last Tuesday",
+            "has_weekly": False
+        },
+        "BANKEX": {
+            "weekly_expiry": None,                # NO weekly expiry (BSE)
+            "monthly_expiry": "Last Thursday",
+            "has_weekly": False
+        },
     }
 
-    # NSE Holidays 2025
+    # Important expiry trading rules
+    EXPIRY_TRADING_RULES = {
+        "theta_decay_accelerates_days": 3,  # Last 3 days see rapid decay
+        "avoid_buying_options_dte": 2,      # Avoid buying with <2 DTE
+        "exit_before_time": time(14, 0),    # Exit options before 2 PM on expiry
+        "gamma_risk_zone_hours": 4,         # Last 4 hours have extreme gamma
+        "premium_decay_expiry_day": 0.50,   # 50% premium can decay on expiry day
+    }
+
+    # NSE Holidays 2025 (Verified)
     NSE_HOLIDAYS_2025 = [
         "2025-01-26",  # Republic Day
         "2025-02-26",  # Mahashivratri
@@ -104,7 +200,9 @@ class IndianMarketKnowledge:
         "2025-12-25",  # Christmas
     ]
 
-    # SEBI Algorithmic Trading Rules (2025)
+    # =========================================================================
+    # SEBI ALGORITHMIC TRADING RULES (2024-2025)
+    # =========================================================================
     SEBI_ALGO_RULES = {
         "max_order_value": 10_00_00_000,  # ₹10 Cr per order
         "max_order_per_second": 10,
@@ -115,9 +213,14 @@ class IndianMarketKnowledge:
         "daily_turnover_limit": 500_00_00_000,  # ₹500 Cr
         "intraday_square_off_time": time(15, 15),  # Must square off by 3:15 PM
         "margin_shortfall_penalty_pct": 0.5,  # 0.5% per day
+
+        # New SEBI rules for retail algo trading
+        "retail_algo_registration_required": True,
+        "api_based_trading_audit_trail": True,
+        "two_factor_auth_mandatory": True,
     }
 
-    # Circuit Breaker Levels
+    # Circuit Breaker Levels (Index-wide)
     CIRCUIT_BREAKERS = {
         "level_1": {"trigger_pct": 10, "halt_minutes": 45},
         "level_2": {"trigger_pct": 15, "halt_minutes": 105},
@@ -126,37 +229,189 @@ class IndianMarketKnowledge:
         "stock_lower_circuit": [2, 5, 10, 20],
     }
 
-    # FII/DII Impact Patterns
+    # =========================================================================
+    # FII/DII IMPACT PATTERNS - Critical for Market Direction
+    # December 2025: FII heavy selling, DII providing support
+    # =========================================================================
     FII_DII_PATTERNS = {
         "strong_bullish": {
             "fii_cash": ">1000",  # FII buying >1000 Cr
             "dii_cash": "any",
             "market_impact": "strong_uptrend",
-            "confidence_boost": 15
+            "confidence_boost": 15,
+            "description": "Strong FII buying drives market higher"
         },
         "moderate_bullish": {
             "fii_cash": "500-1000",
             "dii_cash": ">500",
             "market_impact": "uptrend",
-            "confidence_boost": 10
+            "confidence_boost": 10,
+            "description": "Healthy institutional buying"
         },
         "neutral": {
             "fii_cash": "-500 to 500",
             "dii_cash": "any",
             "market_impact": "sideways",
-            "confidence_boost": 0
+            "confidence_boost": 0,
+            "description": "Mixed signals from institutions"
         },
         "bearish": {
             "fii_cash": "<-500",
             "dii_cash": "any",
             "market_impact": "downtrend",
-            "confidence_boost": -10
+            "confidence_boost": -10,
+            "description": "FII selling pressure, monitor DII support"
         },
         "panic_selling": {
             "fii_cash": "<-2000",
             "dii_cash": "any",
             "market_impact": "sharp_fall",
-            "confidence_boost": -20
+            "confidence_boost": -20,
+            "description": "Heavy FII outflow, high risk environment"
+        },
+        # December 2025 specific pattern
+        "current_market_dec2025": {
+            "pattern": "FII heavy selling, DII supporting",
+            "fii_trend": "Net sellers in cash and derivatives",
+            "dii_trend": "Net buyers providing support",
+            "rupee_impact": "Weak rupee (>84) pressuring FII",
+            "recommendation": "Cautious, prefer exporters (IT, Pharma)"
+        }
+    }
+
+    # =========================================================================
+    # INDIAN ECONOMY vs STOCK MARKET - CRITICAL UNDERSTANDING
+    # The stock market is NOT the economy - they can diverge significantly
+    # =========================================================================
+    ECONOMY_MARKET_RELATIONSHIP = {
+        "key_insight": "Economy and stock market often move independently",
+        "examples": {
+            "covid_2020": {
+                "economy": "GDP contracted -7.3%",
+                "market": "NIFTY rallied 80% from March lows",
+                "reason": "Liquidity, low rates, future expectations"
+            },
+            "2017_demonetization": {
+                "economy": "GDP growth slowed",
+                "market": "NIFTY continued upward",
+                "reason": "Digital push, formalization expectations"
+            },
+        },
+        "factors_market_reacts_to": [
+            "Future earnings expectations (6-12 months ahead)",
+            "Global liquidity and FII flows",
+            "Interest rate outlook (RBI policy)",
+            "Currency movements (INR/USD)",
+            "Corporate earnings trajectory",
+            "Global risk sentiment"
+        ],
+        "factors_market_ignores": [
+            "Current quarter GDP (already priced in)",
+            "Unemployment data (lagging indicator)",
+            "Past inflation (backward looking)",
+            "Political rhetoric without policy action"
+        ],
+        "trading_implication": (
+            "Don't trade based on economic news alone. "
+            "Focus on how market prices react to news, not the news itself."
+        )
+    }
+
+    # Key Macroeconomic Events Impact
+    MACRO_EVENTS_IMPACT = {
+        "RBI_POLICY": {
+            "timing": "Bi-monthly (Feb, Apr, Jun, Aug, Oct, Dec)",
+            "market_impact": "HIGH",
+            "volatility_zone": "2 hours before and after announcement",
+            "typical_movement": "0.5-2% in NIFTY",
+            "trading_advice": "Avoid new positions 1 hour before, wait for dust to settle"
+        },
+        "US_FED_MEETING": {
+            "timing": "FOMC meetings (8 per year)",
+            "market_impact": "MEDIUM-HIGH",
+            "volatility_zone": "Night before and next morning",
+            "typical_movement": "Gap up/down 0.3-1%",
+            "trading_advice": "Position light before Fed, trade the reaction next day"
+        },
+        "QUARTERLY_GDP": {
+            "timing": "End of each quarter",
+            "market_impact": "LOW (already anticipated)",
+            "trading_advice": "Markets usually ignore unless massive surprise"
+        },
+        "MONTHLY_CPI_INFLATION": {
+            "timing": "12th of every month (approximately)",
+            "market_impact": "MEDIUM",
+            "trading_advice": "Impacts rate-sensitive sectors (banks, NBFCs)"
+        },
+        "MONTHLY_IIP": {
+            "timing": "12th of every month",
+            "market_impact": "LOW",
+            "trading_advice": "Rarely moves markets significantly"
+        },
+        "BUDGET": {
+            "timing": "February 1 (Union Budget)",
+            "market_impact": "VERY HIGH",
+            "typical_movement": "2-5% intraday swings",
+            "trading_advice": "Avoid options buying day before, high IV crush after"
+        },
+        "QUARTERLY_RESULTS": {
+            "timing": "Apr-May, Jul-Aug, Oct-Nov, Jan-Feb",
+            "market_impact": "HIGH for individual stocks",
+            "trading_advice": "Don't hold overnight positions in result stocks"
+        },
+    }
+
+    # Currency Impact on Sectors
+    CURRENCY_SECTOR_IMPACT = {
+        "INR_WEAKENING": {
+            "beneficiaries": ["IT", "Pharma", "Textiles", "Exporters"],
+            "losers": ["Aviation", "Oil Marketing", "Importers"],
+            "explanation": "Weak rupee boosts export earnings in INR terms"
+        },
+        "INR_STRENGTHENING": {
+            "beneficiaries": ["Aviation", "Oil Marketing", "Importers"],
+            "losers": ["IT", "Pharma", "Exporters"],
+            "explanation": "Strong rupee reduces import costs but hurts exporters"
+        },
+        "current_status_dec2025": {
+            "INR_USD": ">84",
+            "trend": "Weakening",
+            "FII_impact": "Negative (dollar returns diminished)",
+            "preferred_sectors": ["IT", "Pharma"]
+        }
+    }
+
+    # Interest Rate Impact
+    INTEREST_RATE_IMPACT = {
+        "rate_cut": {
+            "beneficiaries": ["Banks", "NBFCs", "Real Estate", "Auto"],
+            "losers": ["Fixed income investors"],
+            "market_sentiment": "Bullish",
+            "explanation": "Lower rates boost borrowing, consumption, asset prices"
+        },
+        "rate_hike": {
+            "beneficiaries": ["Banks (NIM expansion)", "Insurance"],
+            "losers": ["NBFCs", "Real Estate", "High-debt companies"],
+            "market_sentiment": "Initially bearish, then sector rotation"
+        },
+        "rate_pause": {
+            "market_sentiment": "Neutral, focus shifts to guidance",
+            "trading_advice": "Trade based on forward guidance, not the pause itself"
+        }
+    }
+
+    # Sector Rotation Strategies
+    SECTOR_ROTATION = {
+        "bull_market_early": ["Banks", "Auto", "Real Estate"],
+        "bull_market_mid": ["Capital Goods", "IT", "Metals"],
+        "bull_market_late": ["FMCG", "Pharma", "Utilities"],
+        "bear_market": ["FMCG", "Pharma", "Gold", "IT (if INR weak)"],
+        "recovery_phase": ["Banks", "NBFCs", "Infrastructure"],
+        "current_dec2025": {
+            "market_phase": "Correction/Consolidation",
+            "preferred_sectors": ["IT", "Pharma", "FMCG"],
+            "avoid_sectors": ["Real Estate", "PSU Banks", "Metals"],
+            "reason": "FII outflows, rupee weakness, global uncertainty"
         }
     }
 
@@ -347,14 +602,24 @@ ENHANCED_SYSTEM_PROMPT = """You are InfinityAI's Elite Trading Intelligence - a 
 - Closing Session: 3:40-4:00 PM
 - AVOID: First 5 minutes (9:15-9:20) and last 15 minutes (3:15-3:30) for new entries
 
-### 2. INDEX SPECIFICATIONS (2025)
-| Index | Lot Size | Expiry | Weekly Strike Gap |
-|-------|----------|--------|-------------------|
-| NIFTY | 25 | Thursday | 50 |
-| BANKNIFTY | 15 | Wednesday | 100 |
-| FINNIFTY | 25 | Tuesday | 50 |
-| MIDCPNIFTY | 50 | Monday | 25 |
-| SENSEX | 10 | Friday | 100 |
+### 2. INDEX SPECIFICATIONS (DECEMBER 2025 - UPDATED)
+| Index | Current Lot | Jan 2026 Lot | Weekly Expiry | Monthly Expiry | Strike Gap |
+|-------|-------------|--------------|---------------|----------------|------------|
+| NIFTY | 75 | 65 | Tuesday | Last Tuesday | 50 |
+| BANKNIFTY | 35 | 30 | None* | Last Tuesday | 100 |
+| FINNIFTY | 65 | 60 | None* | Last Tuesday | 50 |
+| MIDCPNIFTY | 140 | 120 | None* | Last Tuesday | 25 |
+| SENSEX | 20 | 20 | Thursday | Last Thursday | 100 |
+
+*SEBI 2024 circular: Only NIFTY and SENSEX have weekly expiry. Other indices have monthly only.
+
+### 3. CRITICAL EXPIRY RULES (SEBI 2024 UPDATE)
+- ONLY NIFTY (Tuesday) and SENSEX (Thursday) have weekly options expiry
+- BANKNIFTY, FINNIFTY, MIDCPNIFTY have MONTHLY expiry only (last Tuesday)
+- Lot size change effective January 2026 (NIFTY: 75→65, BANKNIFTY: 35→30, etc.)
+- Monthly expiry moved to last Tuesday (NSE) or last Thursday (BSE)
+- Exit options before 2 PM on expiry day (gamma risk zone)
+- Avoid buying options with <3 DTE
 
 ### 3. FII/DII IMPACT RULES
 - FII buying >₹1000 Cr = Strong bullish sentiment (+15% confidence)
@@ -528,6 +793,213 @@ class EnhancedTradingAI:
         self.genai_client = genai_client
         self.knowledge = IndianMarketKnowledge()
         self.logger = logging.getLogger("InfinityAI.EnhancedTradingAI")
+
+        # Lot size transition date
+        self.LOT_SIZE_TRANSITION_DATE = datetime(2025, 12, 30)
+
+    def get_current_lot_size(self, index: str) -> int:
+        """
+        Get current lot size for an index, accounting for the January 2026 change.
+
+        SEBI/NSE circular: Lot sizes will change effective January 2026:
+        - NIFTY: 75 → 65
+        - BANKNIFTY: 35 → 30
+        - FINNIFTY: 65 → 60
+        - MIDCPNIFTY: 140 → 120
+        - SENSEX: 20 (no change)
+        """
+        from datetime import timezone
+
+        ist_offset = timedelta(hours=5, minutes=30)
+        current_date = datetime.utcnow() + ist_offset
+
+        index_upper = index.upper()
+        if index_upper not in self.knowledge.INDEX_LOT_SIZES:
+            self.logger.warning(f"Unknown index: {index}, returning default lot size 1")
+            return 1
+
+        lot_info = self.knowledge.INDEX_LOT_SIZES[index_upper]
+
+        # Check if we're past the transition date
+        if current_date >= self.LOT_SIZE_TRANSITION_DATE:
+            return lot_info["lot_size_jan2026"]
+        else:
+            return lot_info["lot_size_current"]
+
+    def get_expiry_info(self, index: str) -> Dict[str, Any]:
+        """
+        Get expiry information for an index.
+
+        SEBI 2024 Update:
+        - Only NIFTY and SENSEX have weekly expiry
+        - All other indices have monthly expiry only
+        - NSE monthly expiry: Last Tuesday of the month
+        - BSE monthly expiry: Last Thursday of the month
+        """
+        index_upper = index.upper()
+
+        if index_upper not in self.knowledge.EXPIRY_SCHEDULE:
+            return {
+                "has_weekly": False,
+                "weekly_expiry": None,
+                "monthly_expiry": "Last Tuesday",
+                "warning": f"Unknown index: {index}"
+            }
+
+        expiry_info = self.knowledge.EXPIRY_SCHEDULE[index_upper]
+
+        return {
+            "has_weekly": expiry_info["has_weekly"],
+            "weekly_expiry": expiry_info["weekly_expiry"],
+            "monthly_expiry": expiry_info["monthly_expiry"],
+            "trading_advice": self._get_expiry_trading_advice(index_upper, expiry_info)
+        }
+
+    def _get_expiry_trading_advice(self, index: str, expiry_info: dict) -> str:
+        """Generate trading advice based on expiry rules."""
+        if expiry_info["has_weekly"]:
+            return (
+                f"{index} has weekly expiry on {expiry_info['weekly_expiry']}. "
+                f"Exit options before 2 PM on expiry. "
+                f"Avoid buying options with <2 DTE due to theta decay."
+            )
+        else:
+            return (
+                f"{index} has MONTHLY expiry only on {expiry_info['monthly_expiry']}. "
+                f"No weekly options available since SEBI 2024 circular. "
+                f"Plan trades around monthly expiry cycle."
+            )
+
+    def get_next_expiry_date(self, index: str) -> Optional[datetime]:
+        """Calculate the next expiry date for an index."""
+        from datetime import timezone
+
+        ist_offset = timedelta(hours=5, minutes=30)
+        current_date = (datetime.utcnow() + ist_offset).date()
+
+        expiry_info = self.get_expiry_info(index)
+
+        # Map day names to weekday numbers (Monday=0, Tuesday=1, etc.)
+        day_map = {
+            "Monday": 0, "Tuesday": 1, "Wednesday": 2,
+            "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
+        }
+
+        # For weekly expiry indices (NIFTY, SENSEX)
+        if expiry_info["has_weekly"] and expiry_info["weekly_expiry"]:
+            target_day = day_map.get(expiry_info["weekly_expiry"], 1)
+            days_ahead = target_day - current_date.weekday()
+            if days_ahead <= 0:  # Target day already passed this week
+                days_ahead += 7
+            next_expiry = current_date + timedelta(days=days_ahead)
+
+            # Check if it's a holiday, skip to next week
+            while next_expiry.isoformat() in self.knowledge.NSE_HOLIDAYS_2025:
+                next_expiry = next_expiry - timedelta(days=1)  # Move to previous day
+
+            return datetime.combine(next_expiry, time(15, 30))
+
+        # For monthly only indices
+        # Find last Tuesday (NSE) or Thursday (BSE) of current month
+        from calendar import monthrange
+
+        monthly_expiry = expiry_info.get("monthly_expiry", "Last Tuesday")
+        if "Tuesday" in monthly_expiry:
+            target_day = 1  # Tuesday
+        elif "Thursday" in monthly_expiry:
+            target_day = 3  # Thursday
+        else:
+            target_day = 1  # Default to Tuesday
+
+        # Find last occurrence of target day in month
+        year, month = current_date.year, current_date.month
+        last_day = monthrange(year, month)[1]
+
+        # Start from last day and work backwards
+        for day in range(last_day, 0, -1):
+            check_date = datetime(year, month, day).date()
+            if check_date.weekday() == target_day:
+                if check_date > current_date:
+                    return datetime.combine(check_date, time(15, 30))
+                else:
+                    # Move to next month
+                    if month == 12:
+                        year += 1
+                        month = 1
+                    else:
+                        month += 1
+                    last_day = monthrange(year, month)[1]
+                    for day in range(last_day, 0, -1):
+                        check_date = datetime(year, month, day).date()
+                        if check_date.weekday() == target_day:
+                            return datetime.combine(check_date, time(15, 30))
+
+        return None
+
+    def is_valid_trading_day(self, date: datetime = None) -> Tuple[bool, str]:
+        """Check if a given date is a valid trading day."""
+        if date is None:
+            ist_offset = timedelta(hours=5, minutes=30)
+            date = datetime.utcnow() + ist_offset
+
+        date_str = date.date().isoformat() if hasattr(date, 'date') else date.isoformat()
+
+        # Check weekend
+        weekday = date.weekday() if hasattr(date, 'weekday') else datetime.fromisoformat(date_str).weekday()
+        if weekday >= 5:
+            return False, "Weekend - Market closed"
+
+        # Check holiday
+        if date_str in self.knowledge.NSE_HOLIDAYS_2025:
+            return False, f"NSE Holiday"
+
+        return True, "Valid trading day"
+
+    def get_market_knowledge_summary(self) -> Dict[str, Any]:
+        """Return a comprehensive summary of market knowledge for API/UI."""
+        from datetime import timezone
+
+        ist_offset = timedelta(hours=5, minutes=30)
+        current_date = datetime.utcnow() + ist_offset
+
+        lot_size_info = {}
+        for index, info in self.knowledge.INDEX_LOT_SIZES.items():
+            lot_size_info[index] = {
+                "current_lot_size": self.get_current_lot_size(index),
+                "lot_size_until_dec2025": info["lot_size_current"],
+                "lot_size_from_jan2026": info["lot_size_jan2026"],
+                "exchange": info.get("exchange", "NSE"),
+                "strike_interval": info.get("strike_interval", 50),
+                "margin_pct": info.get("margin_pct", 12),
+            }
+
+        expiry_info = {}
+        for index in self.knowledge.EXPIRY_SCHEDULE.keys():
+            expiry_data = self.get_expiry_info(index)
+            next_expiry = self.get_next_expiry_date(index)
+            expiry_info[index] = {
+                **expiry_data,
+                "next_expiry": next_expiry.isoformat() if next_expiry else None,
+            }
+
+        return {
+            "generated_at": current_date.isoformat(),
+            "data_valid_until": "2025-12-30 (lot sizes change in January 2026)",
+            "lot_sizes": lot_size_info,
+            "expiry_schedule": expiry_info,
+            "upcoming_holidays": [
+                h for h in self.knowledge.NSE_HOLIDAYS_2025
+                if h >= current_date.date().isoformat()
+            ][:5],  # Next 5 holidays
+            "sebi_rules": {
+                "weekly_expiry_allowed": ["NIFTY", "SENSEX"],
+                "monthly_only_expiry": ["BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "BANKEX"],
+                "retail_algo_registration_required": True,
+                "max_position_limit_index_options": 15000,
+            },
+            "current_market_session": self.get_market_session().value,
+            "is_trading_day": self.is_valid_trading_day()[0],
+        }
 
     def get_market_session(self) -> MarketSession:
         """Determine current market session based on IST time."""
