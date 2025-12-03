@@ -31,7 +31,14 @@ const engineInfo = {
 export function EngineStatusCards() {
   const engines = useAppStore((s) => s.engines);
 
-  const onlineCount = Object.values(engines).filter((e) => e.status === 'online').length;
+  // Defensive fallback for engines
+  const safeEngines = engines || {
+    engineA: { status: 'loading', version: null, lastChecked: null, capabilities: [] },
+    engineB: { status: 'loading', version: null, lastChecked: null, capabilities: [] },
+    engineC: { status: 'loading', version: null, lastChecked: null, capabilities: [] },
+  };
+
+  const onlineCount = Object.values(safeEngines).filter((e) => e?.status === 'online').length;
   const healthPercent = (onlineCount / 3) * 100;
 
   return (
@@ -51,9 +58,10 @@ export function EngineStatusCards() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {(Object.keys(engines) as Array<keyof typeof engines>).map((key) => {
-          const engine = engines[key];
+        {(Object.keys(safeEngines) as Array<keyof typeof safeEngines>).map((key) => {
+          const engine = safeEngines[key] || { status: 'loading', version: null, capabilities: [] };
           const info = engineInfo[key];
+          if (!info) return null;
           const Icon = info.icon;
 
           return (
@@ -77,7 +85,7 @@ export function EngineStatusCards() {
                   <span className="text-muted-foreground">Version</span>
                   <span className="font-mono">{engine.version || 'N/A'}</span>
                 </div>
-                {engine.capabilities && engine.capabilities.length > 0 && (
+                {engine.capabilities && Array.isArray(engine.capabilities) && engine.capabilities.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {engine.capabilities.slice(0, 3).map((cap) => (
                       <Badge key={cap} variant="secondary" className="text-[10px]">

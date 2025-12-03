@@ -81,19 +81,29 @@ export function Header() {
   // Get user initials for avatar
   const getUserInitials = () => {
     if (!hydrated) return '?';
-    if (user?.userId) {
-      return user.userId.substring(7, 9).toUpperCase();
+    if (user?.name && typeof user.name === 'string' && user.name.length > 0) {
+      return user.name.substring(0, 2).toUpperCase();
     }
-    return 'G'; // Guest
+    if (user?.email && typeof user.email === 'string' && user.email.length > 0) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    if (user?.userId && typeof user.userId === 'string' && user.userId.length >= 2) {
+      return user.userId.substring(0, 2).toUpperCase();
+    }
+    return 'U'; // User
   };
 
   const getUserName = () => {
     if (!hydrated) return 'Loading...';
-    if (user?.name) {
+    if (user?.name && typeof user.name === 'string') {
       return user.name;
     }
+    if (user?.email && typeof user.email === 'string') {
+      return user.email.split('@')[0];
+    }
     if (session?.userId && typeof session.userId === 'string') {
-      return `User ${session.userId.slice(7, 15)}`;
+      const len = session.userId.length;
+      return `User ${session.userId.slice(0, Math.min(8, len))}`;
     }
     return 'Guest User';
   };
