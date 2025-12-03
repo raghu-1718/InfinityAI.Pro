@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
 import { Toaster } from '@/components/ui/sonner';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { CouponAuthProvider } from '@/contexts/CouponAuthContext';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -22,9 +22,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <CouponAuthProvider>
         {children}
-      </AuthProvider>
+      </CouponAuthProvider>
       <Toaster position="top-right" richColors />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

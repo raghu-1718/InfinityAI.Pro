@@ -11,20 +11,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn, Loader2 } from 'lucide-react';
 import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
-import { engineC } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCouponAuth } from '@/contexts/CouponAuthContext';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useHydration } from '@/hooks/useHydration';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
+  const router = useRouter();
   const { theme, toggleTheme, funds, engines, userProfile, dematData, clearUserData } = useAppStore();
-  const { user, userProfile: firebaseProfile, signIn, signOut: firebaseSignOut, loading: authLoading } = useAuth();
+  const { session, user, logout, isAuthenticated, loading: authLoading } = useCouponAuth();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
   const { refetch: refetchFunds } = useFunds();
   const { refetch: refetchProfile, isLoading: isProfileLoading } = useUserProfile();
@@ -37,49 +38,25 @@ export function Header() {
     refetchProfile();
   };
 
-  const handleLogin = async () => {
-    const result = await signIn();
-    if (result.success) {
-      toast.success('Signed In', {
-        description: 'Welcome to InfinityAI.Pro!',
-      });
-    } else {
-      toast.error('Sign In Failed', {
-        description: result.error || 'Please try again.',
-      });
-    }
+  const handleLogin = () => {
+    router.push('/login');
   };
 
   const handleLogout = async () => {
     try {
-      // If using Firebase Auth
-      if (user) {
-        await firebaseSignOut();
-      } else {
-        // Fallback to old localStorage-based logout
-        const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-
-        if (userId) {
-          await engineC.deleteUserCredentials(userId);
-        }
-
-        clearUserData();
-      }
-
-      // Invalidate all queries
+      await logout();
       queryClient.clear();
 
       toast.success('Logged Out', {
         description: 'You have been logged out successfully.',
       });
 
-      // Redirect to home/settings
-      window.location.href = '/settings';
+      router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       clearUserData();
       queryClient.clear();
-      window.location.href = '/settings';
+      router.push('/login');
     }
   };
 
@@ -91,50 +68,35 @@ export function Header() {
   // Get balance from user's connected demat or fallback to admin funds
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
 
-  // Check if user is authenticated (Firebase or Dhan connected)
-  // Only use persisted state after hydration to prevent mismatch
-  const isAuthenticated = hydrated && (!!user || userProfile?.isConnected);
+  // Check if user is authenticated and Dhan is connected
+  const isDhanConnected = hydrated && (session?.dhanConfigured || userProfile?.isConnected);
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!hydrated) return '?'; // Show placeholder during hydration
-    if (user?.displayName) {
-      // Use Firebase display name initials
-      const names = user.displayName.split(' ');
-      return names.length >= 2
-        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
-        : user.displayName.substring(0, 2).toUpperCase();
-    }
-    if (userProfile?.isConnected && userProfile?.clientId) {
-      return userProfile.clientId.substring(0, 2).toUpperCase();
+    if (!hydrated) return '?';
+    if (user?.userId) {
+      return user.userId.substring(7, 9).toUpperCase();
     }
     return 'G'; // Guest
   };
 
   const getUserName = () => {
     if (!hydrated) return 'Loading...';
-    if (user?.displayName) {
-      return user.displayName;
+    if (user?.name) {
+      return user.name;
     }
-    if (userProfile?.isConnected) {
-      return userProfile.name || `Dhan User`;
+    if (session?.userId) {
+      return `User ${session.userId.slice(7, 15)}`;
     }
     return 'Guest User';
   };
 
   const getUserEmail = () => {
     if (!hydrated) return 'Loading...';
-    if (user?.email) {
-      return user.email;
-    }
-    if (userProfile?.isConnected && userProfile?.clientId) {
-      return `Client ID: ${userProfile.clientId}`;
+    if (session?.userId) {
+      return isDhanConnected ? 'Dhan Connected' : 'Coupon Verified';
     }
     return 'Sign in to get started';
-  };
-
-  const getUserPhoto = () => {
-    return user?.photoURL || null;
   };
 
   return (
@@ -152,7 +114,7 @@ export function Header() {
           <span className="text-xs text-muted-foreground">Balance:</span>
           {!hydrated || isProfileLoading || authLoading ? (
             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          ) : userProfile?.isConnected ? (
+          ) : isDhanConnected ? (
             <span className="font-mono font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(displayBalance)}
             </span>
@@ -187,9 +149,6 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                {getUserPhoto() && (
-                  <AvatarImage src={getUserPhoto()!} alt={getUserName()} />
-                )}
                 <AvatarFallback className={isAuthenticated ? 'bg-green-600 text-white' : 'bg-muted'}>
                   {getUserInitials()}
                 </AvatarFallback>
@@ -203,14 +162,14 @@ export function Header() {
                 <p className="text-xs leading-none text-muted-foreground">
                   {getUserEmail()}
                 </p>
-                {hydrated && userProfile?.isConnected && (
+                {hydrated && isDhanConnected && (
                   <Badge variant="outline" className="w-fit mt-1 text-xs text-green-600">
                     Dhan Connected
                   </Badge>
                 )}
-                {hydrated && user && !userProfile?.isConnected && (
+                {hydrated && isAuthenticated && !isDhanConnected && (
                   <Badge variant="outline" className="w-fit mt-1 text-xs text-blue-600">
-                    Google Connected
+                    Coupon Verified
                   </Badge>
                 )}
               </div>
@@ -223,15 +182,14 @@ export function Header() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading...
               </DropdownMenuItem>
-            ) : !user && !userProfile?.isConnected ? (
+            ) : !isAuthenticated ? (
               // Not logged in - show login option
               <DropdownMenuItem
                 className="text-blue-600 cursor-pointer"
                 onClick={handleLogin}
-                disabled={authLoading}
               >
                 <LogIn className="mr-2 h-4 w-4" />
-                Sign in with Google
+                Enter Coupon Code
               </DropdownMenuItem>
             ) : (
               // Logged in - show profile and settings
@@ -248,7 +206,7 @@ export function Header() {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                {hydrated && !userProfile?.isConnected && (
+                {hydrated && !isDhanConnected && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center cursor-pointer text-yellow-600">
                       <Wallet className="mr-2 h-4 w-4" />

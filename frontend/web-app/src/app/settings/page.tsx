@@ -40,6 +40,7 @@ import {
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCouponAuth } from "@/contexts/CouponAuthContext";
 
 // Engine C API URL
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-573866363639.us-central1.run.app";
@@ -85,6 +86,7 @@ export default function SettingsPage() {
   // Global state and query client
   const { userProfile, setUserProfile, dematData, setDematData, setFunds } = useAppStore();
   const queryClient = useQueryClient();
+  const { session, isAuthenticated, connectDhan, disconnectDhan } = useCouponAuth();
 
   // Dhan Credentials State
   const [dhanCredentials, setDhanCredentials] = useState<DhanCredentials>({
@@ -136,8 +138,13 @@ export default function SettingsPage() {
   const [stopLossPercent, setStopLossPercent] = useState("2");
   const [autoTrading, setAutoTrading] = useState(false);
 
-  // Get user ID (for now using a placeholder - integrate with your auth system)
+  // Get user ID from coupon session
   const getUserId = () => {
+    // Prefer session user ID from coupon auth
+    if (session?.userId) {
+      return session.userId;
+    }
+    // Fallback to localStorage for backwards compatibility
     if (typeof window === 'undefined') return 'default_user';
     let userId = localStorage.getItem("userId");
     if (!userId) {
