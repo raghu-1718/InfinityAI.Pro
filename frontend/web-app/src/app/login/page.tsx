@@ -17,45 +17,52 @@ export default function LoginPage() {
   const [couponCode, setCouponCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
 
-  // Redirect if already authenticated
+  // Mark as mounted
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  // Redirect if already authenticated (only after mounted)
+  useEffect(() => {
+    if (mounted && !loading && isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, loading, router, mounted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!couponCode.trim()) {
+      setError('Please enter a coupon code');
+      return;
+    }
     setError('');
     setIsVerifying(true);
 
-    const result = await verifyCoupon(couponCode.trim().toUpperCase());
+    try {
+      const result = await verifyCoupon(couponCode.trim().toUpperCase());
 
-    if (result.success) {
-      toast.success('Welcome to InfinityAI.Pro!', {
-        description: 'Coupon verified successfully. Redirecting to dashboard...',
-      });
-      router.push('/');
-    } else {
-      setError(result.error || 'Invalid coupon code');
-      toast.error('Verification Failed', {
-        description: result.error || 'Please check your coupon code and try again.',
-      });
+      if (result.success) {
+        toast.success('Welcome to InfinityAI.Pro!', {
+          description: 'Coupon verified successfully. Redirecting to dashboard...',
+        });
+        router.push('/');
+      } else {
+        setError(result.error || 'Invalid coupon code');
+        toast.error('Verification Failed', {
+          description: result.error || 'Please check your coupon code and try again.',
+        });
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+      toast.error('Error', { description: 'Network error. Please try again.' });
     }
 
     setIsVerifying(false);
   };
 
-  // Show loading while checking auth state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
+  // ALWAYS show the login form - never show loading spinner
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="w-full max-w-md space-y-8">

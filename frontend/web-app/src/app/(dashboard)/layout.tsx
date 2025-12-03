@@ -3,50 +3,31 @@
 import { useCouponAuth } from '@/contexts/CouponAuthContext';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-interface AuthLayoutWrapperProps {
+export default function DashboardLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-// Pages that don't require authentication
-const PUBLIC_PATHS = ['/login', '/login/'];
-
-export function AuthLayoutWrapper({ children }: AuthLayoutWrapperProps) {
+}) {
   const { isAuthenticated, loading } = useCouponAuth();
-  const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
-  // Check if current path is public (handle trailing slash and SSR)
-  const isPublicPath = pathname ? PUBLIC_PATHS.some(p =>
-    pathname === p || pathname.startsWith(p.replace(/\/$/, '') + '/')
-  ) : false;
-
-  // Mark as mounted after first render
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // CRITICAL: For public pages (login), ALWAYS render children immediately
-  // This must come BEFORE any loading checks
-  if (isPublicPath) {
-    return <>{children}</>;
-  }
-
-  // Handle auth redirects (only after mounted and not loading)
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!mounted || loading || isPublicPath) return;
-
-    // If not authenticated and trying to access protected route, redirect to login
-    if (!isAuthenticated) {
+    if (mounted && !loading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, loading, isPublicPath, router, mounted]);
+  }, [isAuthenticated, loading, mounted, router]);
 
-  // For protected pages, show loading only after mount
+  // Show loading while checking auth
   if (!mounted || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
@@ -58,9 +39,8 @@ export function AuthLayoutWrapper({ children }: AuthLayoutWrapperProps) {
     );
   }
 
-  // For protected pages, require authentication
+  // Not authenticated - will redirect
   if (!isAuthenticated) {
-    // Will be redirected by useEffect above
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
@@ -71,7 +51,7 @@ export function AuthLayoutWrapper({ children }: AuthLayoutWrapperProps) {
     );
   }
 
-  // Render with full dashboard layout
+  // Authenticated - show dashboard layout
   return (
     <div className="flex min-h-screen">
       <Sidebar />
