@@ -814,7 +814,7 @@ export default function AnalyticsPage() {
                         <p className="text-xl font-bold text-green-600">{portfolioOptimization.optimized_score || 85}/100</p>
                       </div>
                     </div>
-                    {portfolioOptimization.suggestions && (
+                    {portfolioOptimization.suggestions && Array.isArray(portfolioOptimization.suggestions) && (
                       <div className="space-y-2">
                         <h4 className="text-sm font-medium">Suggestions:</h4>
                         <ul className="space-y-1 text-sm">
@@ -827,7 +827,7 @@ export default function AnalyticsPage() {
                         </ul>
                       </div>
                     )}
-                    {portfolioOptimization.rebalance_actions && (
+                    {portfolioOptimization.rebalance_actions && Array.isArray(portfolioOptimization.rebalance_actions) && (
                       <div className="space-y-2">
                         <h4 className="text-sm font-medium">Rebalance Actions:</h4>
                         <div className="space-y-1">
