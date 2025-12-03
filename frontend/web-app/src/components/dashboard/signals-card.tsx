@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 const watchlistSymbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE', 'TCS', 'HDFCBANK', 'INFY'];
 
 export function SignalsCard() {
-  const signals = useAppStore((s) => s.signals);
+  const signalsRaw = useAppStore((s) => s.signals);
+  const signals = Array.isArray(signalsRaw) ? signalsRaw : [];
 
   return (
     <Card>
