@@ -9,11 +9,16 @@ import os
 import hashlib
 import logging
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from google.cloud import firestore
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+def utcnow():
+    """Return timezone-aware UTC datetime"""
+    return datetime.now(timezone.utc)
 
 
 class CouponCode(BaseModel):
@@ -62,7 +67,7 @@ class CouponAuthManager:
 
     def _generate_session_id(self, coupon_code: str) -> str:
         """Generate unique session ID"""
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = utcnow().isoformat()
         return hashlib.sha256(f"{coupon_code}:{timestamp}".encode()).hexdigest()[:32]
 
     def _generate_user_id(self, coupon_code: str, session_id: str) -> str:
@@ -90,9 +95,9 @@ class CouponAuthManager:
             "description": description,
             "max_uses": max_uses,
             "current_uses": 0,
-            "expires_at": datetime.utcnow() + timedelta(days=valid_days),
+            "expires_at": utcnow() + timedelta(days=valid_days),
             "is_active": True,
-            "created_at": datetime.utcnow(),
+            "created_at": utcnow(),
             "features": features or ["dashboard", "trading", "signals", "ai_analysis"]
         }
 
@@ -161,7 +166,7 @@ class CouponAuthManager:
         expires_at = coupon.get("expires_at")
         if expires_at:
             if isinstance(expires_at, datetime):
-                if expires_at < datetime.utcnow():
+                if expires_at < utcnow():
                     return {
                         "success": False,
                         "message": "This coupon has expired"
@@ -169,7 +174,7 @@ class CouponAuthManager:
             else:
                 # Handle Firestore timestamp
                 try:
-                    if expires_at.timestamp() < datetime.utcnow().timestamp():
+                    if expires_at.timestamp() < utcnow().timestamp():
                         return {
                             "success": False,
                             "message": "This coupon has expired"
@@ -194,11 +199,11 @@ class CouponAuthManager:
             "session_id": session_id,
             "user_id": user_id,
             "coupon_code_hash": self._hash_code(code),
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(days=30),  # Session valid for 30 days
+            "created_at": utcnow(),
+            "expires_at": utcnow() + timedelta(days=30),  # Session valid for 30 days
             "is_active": True,
             "dhan_configured": False,
-            "last_activity": datetime.utcnow()
+            "last_activity": utcnow()
         }
 
         # Update coupon usage
@@ -249,17 +254,17 @@ class CouponAuthManager:
         if expires_at:
             try:
                 if isinstance(expires_at, datetime):
-                    if expires_at < datetime.utcnow():
+                    if expires_at < utcnow():
                         return {"valid": False, "message": "Session has expired"}
                 else:
-                    if expires_at.timestamp() < datetime.utcnow().timestamp():
+                    if expires_at.timestamp() < utcnow().timestamp():
                         return {"valid": False, "message": "Session has expired"}
             except:
                 pass
 
         # Update last activity
         if self.db:
-            doc_ref.update({"last_activity": datetime.utcnow()})
+            doc_ref.update({"last_activity": utcnow()})
 
         return {
             "valid": True,
@@ -276,7 +281,7 @@ class CouponAuthManager:
             doc_ref = self.db.collection(self.sessions_collection).document(session_id)
             doc_ref.update({
                 "dhan_configured": dhan_configured,
-                "dhan_configured_at": datetime.utcnow() if dhan_configured else None
+                "dhan_configured_at": utcnow() if dhan_configured else None
             })
         else:
             if session_id in self._memory_sessions:
@@ -287,7 +292,7 @@ class CouponAuthManager:
         """Invalidate a session (logout)"""
         if self.db:
             doc_ref = self.db.collection(self.sessions_collection).document(session_id)
-            doc_ref.update({"is_active": False, "logged_out_at": datetime.utcnow()})
+            doc_ref.update({"is_active": False, "logged_out_at": utcnow()})
         else:
             if session_id in self._memory_sessions:
                 self._memory_sessions[session_id]["is_active"] = False
@@ -318,17 +323,17 @@ class CouponAuthManager:
         if expires_at:
             try:
                 if isinstance(expires_at, datetime):
-                    if expires_at < datetime.utcnow():
+                    if expires_at < utcnow():
                         return None
                 else:
-                    if expires_at.timestamp() < datetime.utcnow().timestamp():
+                    if expires_at.timestamp() < utcnow().timestamp():
                         return None
             except:
                 pass
 
         # Update last activity
         if self.db:
-            doc_ref.update({"last_activity": datetime.utcnow()})
+            doc_ref.update({"last_activity": utcnow()})
 
         # Get features from the coupon
         coupon_hash = session.get("coupon_code_hash")
@@ -352,7 +357,7 @@ class CouponAuthManager:
         if self.db:
             try:
                 doc_ref = self.db.collection(self.sessions_collection).document(session_id)
-                doc_ref.update({"is_active": False, "logged_out_at": datetime.utcnow()})
+                doc_ref.update({"is_active": False, "logged_out_at": utcnow()})
                 return True
             except Exception:
                 return False
