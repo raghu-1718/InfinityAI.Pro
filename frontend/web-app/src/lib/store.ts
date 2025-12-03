@@ -309,6 +309,7 @@ export const useAppStore = create<AppState>()(
       }),
       {
         name: 'infinityai-storage',
+        skipHydration: true, // Prevent SSR hydration issues
         partialize: (state) => ({
           theme: state.theme,
           userProfile: state.userProfile,

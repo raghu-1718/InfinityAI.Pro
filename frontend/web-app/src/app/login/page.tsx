@@ -94,7 +94,7 @@ export default function LoginPage() {
                   <Input
                     id="coupon"
                     type="text"
-                    placeholder="INFINITY2025"
+                    placeholder="Enter your access code"
                     value={couponCode}
                     onChange={(e) => {
                       setCouponCode(e.target.value.toUpperCase());
