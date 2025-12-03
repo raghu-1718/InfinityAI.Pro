@@ -1,27 +1,31 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { useAppStore } from '@/lib/store';
-import { engineC } from '@/lib/api';
+import { User, onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
+import { auth, createOrUpdateUserProfile, getUserProfile, UserProfile } from '@/lib/firebase';
 
-// Session stored in localStorage
-const SESSION_KEY = 'infinityai_session';
-const USER_KEY = 'infinityai_user';
+// Storage keys
+const COUPON_SESSION_KEY = 'infinityai_coupon_session';
+const AUTH_TYPE_KEY = 'infinityai_auth_type';
 const STORAGE_VERSION_KEY = 'infinityai_version';
-const CURRENT_VERSION = '3.7';
+const CURRENT_VERSION = '3.8';
 
 // Clear old storage on version mismatch
 function clearOldStorage() {
   if (typeof window === 'undefined') return;
   const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
   if (storedVersion !== CURRENT_VERSION) {
-    console.log('Clearing old storage data for version upgrade');
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem('infinityai-storage'); // Zustand store
+    console.log('Clearing old storage data for version upgrade to', CURRENT_VERSION);
+    localStorage.removeItem(COUPON_SESSION_KEY);
+    localStorage.removeItem(AUTH_TYPE_KEY);
+    localStorage.removeItem('infinityai_session');
+    localStorage.removeItem('infinityai_user');
+    localStorage.removeItem('infinityai-storage');
     localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
   }
 }
+
+export type AuthType = 'firebase' | 'coupon' | null;
 
 export interface CouponSession {
   sessionId: string;
@@ -37,79 +41,57 @@ export interface CouponUser {
   email?: string;
   dhanConnected: boolean;
   dhanClientId?: string;
+  photoURL?: string | null;
 }
 
 interface CouponAuthContextType {
+  // State
   session: CouponSession | null;
   user: CouponUser | null;
   loading: boolean;
   isAuthenticated: boolean;
+  authType: AuthType;
+  firebaseUser: User | null;
+  userProfile: UserProfile | null;
 
-  // Auth methods
+  // Firebase Auth methods
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  
+  // Coupon Auth methods
   verifyCoupon: (couponCode: string) => Promise<{ success: boolean; error?: string }>;
+  
+  // Common methods
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 
-  // Dhan connection methods
+  // Dhan connection methods (for coupon auth)
   connectDhan: (clientId: string, accessToken: string) => Promise<{ success: boolean; error?: string }>;
   disconnectDhan: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const CouponAuthContext = createContext<CouponAuthContextType | undefined>(undefined);
 
-// API helper for coupon auth
+// Engine C URL for coupon verification
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-573866363639.us-central1.run.app';
-
-async function couponApi(endpoint: string, options: RequestInit = {}) {
-  const sessionId = typeof window !== 'undefined' ? localStorage.getItem(SESSION_KEY) : null;
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
-
-  if (sessionId) {
-    (headers as Record<string, string>)['X-Session-ID'] = sessionId;
-  }
-
-  // Add timeout to prevent hanging
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-  try {
-    const response = await fetch(`${ENGINE_C_URL}${endpoint}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timeout');
-    }
-    throw error;
-  }
-}
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<CouponSession | null>(null);
   const [user, setUser] = useState<CouponUser | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const { setUserProfile, clearUserData } = useAppStore();
+  const [authType, setAuthType] = useState<AuthType>(null);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Clear old storage on mount (version upgrade)
   useEffect(() => {
     clearOldStorage();
   }, []);
 
-  // Load session from localStorage on mount
+  // Initialize auth state - check both Firebase and coupon
   useEffect(() => {
     let isMounted = true;
 
-    // Safety timeout - ensure loading ALWAYS becomes false after 5 seconds max
+    // Safety timeout
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.warn('Auth loading safety timeout triggered');
@@ -117,261 +99,303 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       }
     }, 5000);
 
-    const loadSession = async () => {
-      // Only run on client side
-      if (typeof window === 'undefined') {
-        if (isMounted) setLoading(false);
-        return;
-      }
+    // Check for existing coupon session
+    const storedAuthType = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TYPE_KEY) : null;
+    const storedCouponSession = typeof window !== 'undefined' ? localStorage.getItem(COUPON_SESSION_KEY) : null;
 
-      try {
-        const storedSessionId = localStorage.getItem(SESSION_KEY);
-        const storedUser = localStorage.getItem(USER_KEY);
+    // Listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (!isMounted) return;
 
-        if (!storedSessionId) {
-          // No session stored, nothing to validate
-          if (isMounted) setLoading(false);
-          return;
-        }
-
+      if (fbUser) {
+        // User is signed in with Firebase
+        clearTimeout(safetyTimeout);
         try {
-          // Verify session with backend
-          const response = await couponApi('/api/auth/session');
+          const profile = await getUserProfile(fbUser.uid);
+          
+          if (isMounted) {
+            setFirebaseUser(fbUser);
+            setUserProfile(profile);
+            setAuthType('firebase');
+            
+            // Create session from Firebase user
+            setSession({
+              sessionId: fbUser.uid,
+              userId: fbUser.uid,
+              features: ['premium', 'ai_signals', 'auto_trading'],
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              dhanConfigured: profile?.dhanConnected || false,
+            });
+            
+            setUser({
+              userId: fbUser.uid,
+              name: fbUser.displayName || profile?.displayName || 'User',
+              email: fbUser.email || undefined,
+              dhanConnected: profile?.dhanConnected || false,
+              dhanClientId: profile?.dhanClientId,
+              photoURL: fbUser.photoURL,
+            });
 
-          if (!isMounted) return;
-
-          if (response.success && response.is_valid) {
-            const sessionData: CouponSession = {
-              sessionId: response.session_id,
-              userId: response.user_id,
-              features: response.features || [],
-              expiresAt: response.expires_at,
-              dhanConfigured: response.dhan_configured || false,
-            };
-
-            setSession(sessionData);
-
-            // Load user data if Dhan is connected
-            if (response.dhan_configured) {
-              try {
-                const dematData = await engineC.getUserDemat(response.user_id);
-                if (!isMounted) return;
-                const userData: CouponUser = {
-                  userId: response.user_id,
-                  dhanConnected: true,
-                  name: `User ${(response.user_id || '').slice(0, 8)}`,
-                };
-                setUser(userData);
-
-                // Sync with Zustand store
-                setUserProfile({
-                  userId: response.user_id,
-                  clientId: '',
-                  name: userData.name || 'User',
-                  email: '',
-                  isConnected: true,
-                  isVerified: true,
-                });
-              } catch (e) {
-                console.error('Failed to load Dhan data:', e);
-              }
-            } else if (storedUser) {
-              try {
-                const userData = JSON.parse(storedUser);
-                if (isMounted) setUser(userData);
-              } catch (e) {
-                console.error('Failed to parse stored user:', e);
-              }
-            }
-          } else {
-            // Invalid session, clear storage
-            localStorage.removeItem(SESSION_KEY);
-            localStorage.removeItem(USER_KEY);
+            localStorage.setItem(AUTH_TYPE_KEY, 'firebase');
+            localStorage.removeItem(COUPON_SESSION_KEY);
+            setLoading(false);
           }
         } catch (error) {
-          console.error('Failed to verify session:', error);
-          localStorage.removeItem(SESSION_KEY);
-          localStorage.removeItem(USER_KEY);
+          console.error('Error loading Firebase user profile:', error);
+          if (isMounted) {
+            setFirebaseUser(fbUser);
+            setAuthType('firebase');
+            setSession({
+              sessionId: fbUser.uid,
+              userId: fbUser.uid,
+              features: ['basic'],
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              dhanConfigured: false,
+            });
+            setUser({
+              userId: fbUser.uid,
+              name: fbUser.displayName || 'User',
+              email: fbUser.email || undefined,
+              dhanConnected: false,
+              photoURL: fbUser.photoURL,
+            });
+            setLoading(false);
+          }
         }
-      } finally {
-        // ALWAYS set loading to false
-        clearTimeout(safetyTimeout);
-        if (isMounted) setLoading(false);
-      }
-    };
+      } else {
+        // No Firebase user - check for coupon session
+        setFirebaseUser(null);
+        setUserProfile(null);
 
-    loadSession();
+        if (storedAuthType === 'coupon' && storedCouponSession) {
+          try {
+            const couponData = JSON.parse(storedCouponSession);
+            if (isMounted) {
+              setAuthType('coupon');
+              setSession({
+                sessionId: couponData.sessionId || couponData.userId,
+                userId: couponData.userId,
+                features: couponData.features || [],
+                expiresAt: couponData.expiresAt || '',
+                dhanConfigured: false,
+              });
+              setUser({
+                userId: couponData.userId,
+                name: couponData.displayName || `User ${(couponData.userId || '').slice(0, 8)}`,
+                dhanConnected: false,
+              });
+              clearTimeout(safetyTimeout);
+              setLoading(false);
+            }
+          } catch (e) {
+            console.error('Failed to parse coupon session:', e);
+            localStorage.removeItem(COUPON_SESSION_KEY);
+            localStorage.removeItem(AUTH_TYPE_KEY);
+            if (isMounted) {
+              setSession(null);
+              setUser(null);
+              setAuthType(null);
+              clearTimeout(safetyTimeout);
+              setLoading(false);
+            }
+          }
+        } else {
+          // No auth at all
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setAuthType(null);
+            clearTimeout(safetyTimeout);
+            setLoading(false);
+          }
+        }
+      }
+    });
 
     return () => {
       isMounted = false;
       clearTimeout(safetyTimeout);
+      unsubscribe();
     };
-  }, []); // Remove setUserProfile from dependencies to prevent re-runs
+  }, []);
 
-  const verifyCoupon = useCallback(async (couponCode: string) => {
+  // Sign in with Google
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true);
-
     try {
-      const response = await couponApi('/api/auth/coupon/verify', {
-        method: 'POST',
-        body: JSON.stringify({ coupon_code: couponCode }),
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const result = await signInWithPopup(auth, provider);
+      const fbUser = result.user;
+
+      // Create or update user profile in Firestore
+      const profile = await createOrUpdateUserProfile(fbUser);
+
+      setFirebaseUser(fbUser);
+      setUserProfile(profile);
+      setAuthType('firebase');
+      
+      setSession({
+        sessionId: fbUser.uid,
+        userId: fbUser.uid,
+        features: ['premium', 'ai_signals', 'auto_trading'],
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        dhanConfigured: profile?.dhanConnected || false,
+      });
+      
+      setUser({
+        userId: fbUser.uid,
+        name: fbUser.displayName || 'User',
+        email: fbUser.email || undefined,
+        dhanConnected: profile?.dhanConnected || false,
+        dhanClientId: profile?.dhanClientId,
+        photoURL: fbUser.photoURL,
       });
 
-      if (response.success) {
-        const sessionData: CouponSession = {
-          sessionId: response.session_id,
-          userId: response.user_id,
-          features: response.features || [],
-          expiresAt: response.expires_at,
-          dhanConfigured: false,
-        };
+      localStorage.setItem(AUTH_TYPE_KEY, 'firebase');
+      localStorage.removeItem(COUPON_SESSION_KEY);
 
-        // Store session
-        localStorage.setItem(SESSION_KEY, response.session_id);
-        setSession(sessionData);
-
-        const userData: CouponUser = {
-          userId: response.user_id,
-          dhanConnected: false,
-          name: `User ${(response.user_id || '').slice(0, 8)}`,
-        };
-        localStorage.setItem(USER_KEY, JSON.stringify(userData));
-        setUser(userData);
-
-        setLoading(false);
-        return { success: true };
-      } else {
-        setLoading(false);
-        return { success: false, error: response.detail || response.message || 'Invalid coupon code' };
-      }
-    } catch (error) {
       setLoading(false);
-      return { success: false, error: 'Failed to verify coupon. Please try again.' };
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      // Notify backend
-      await couponApi('/api/auth/logout', { method: 'POST' });
-    } catch (e) {
-      console.error('Logout error:', e);
-    }
-
-    // Clear local storage
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(USER_KEY);
-
-    // Clear state
-    setSession(null);
-    setUser(null);
-    clearUserData();
-
-    setLoading(false);
-  }, [clearUserData]);
-
-  const refreshSession = useCallback(async () => {
-    const storedSessionId = localStorage.getItem(SESSION_KEY);
-    if (!storedSessionId) return;
-
-    try {
-      const response = await couponApi('/api/auth/session');
-
-      if (response.success && response.is_valid) {
-        setSession({
-          sessionId: response.session_id,
-          userId: response.user_id,
-          features: response.features || [],
-          expiresAt: response.expires_at,
-          dhanConfigured: response.dhan_configured || false,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to refresh session:', error);
-    }
-  }, []);
-
-  const connectDhan = useCallback(async (clientId: string, accessToken: string) => {
-    if (!session?.userId) {
-      return { success: false, error: 'No active session' };
-    }
-
-    try {
-      const response = await engineC.saveUserCredentials({
-        user_id: session.userId,
-        client_id: clientId,
-        access_token: accessToken,
-      });
-
-      if (response.is_verified) {
-        // Update session
-        setSession(prev => prev ? { ...prev, dhanConfigured: true } : null);
-
-        // Update user
-        const updatedUser: CouponUser = {
-          ...user!,
-          dhanConnected: true,
-          dhanClientId: clientId,
-        };
-        setUser(updatedUser);
-        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-
-        // Sync with Zustand store
-        setUserProfile({
-          userId: session.userId,
-          clientId: clientId,
-          name: user?.name || 'User',
-          email: user?.email || '',
-          isConnected: true,
-          isVerified: true,
-        });
-
-        return { success: true };
-      } else {
-        return { success: false, error: 'Failed to verify Dhan credentials. Please check your access token.' };
-      }
-    } catch (error) {
-      console.error('Connect Dhan error:', error);
-      return { success: false, error: 'Failed to connect Dhan account. Please try again.' };
-    }
-  }, [session, user, setUserProfile]);
-
-  const disconnectDhan = useCallback(async () => {
-    if (!session?.userId) {
-      return { success: false, error: 'No active session' };
-    }
-
-    try {
-      await engineC.deleteUserCredentials(session.userId);
-
-      // Update session
-      setSession(prev => prev ? { ...prev, dhanConfigured: false } : null);
-
-      // Update user
-      const updatedUser: CouponUser = {
-        ...user!,
-        dhanConnected: false,
-        dhanClientId: undefined,
-      };
-      setUser(updatedUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-
-      clearUserData();
-
       return { success: true };
     } catch (error) {
-      console.error('Disconnect Dhan error:', error);
-      return { success: false, error: 'Failed to disconnect Dhan account.' };
+      console.error('Google sign-in error:', error);
+      setLoading(false);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to sign in with Google' 
+      };
     }
-  }, [session, user, clearUserData]);
+  }, []);
+
+  // Verify coupon code
+  const verifyCoupon = useCallback(async (couponCode: string) => {
+    setLoading(true);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`${ENGINE_C_URL}/api/auth/coupon/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coupon_code: couponCode }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (data.success) {
+        const couponSession = {
+          sessionId: data.session_id,
+          userId: data.user_id,
+          displayName: `User ${(data.user_id || '').slice(0, 8)}`,
+          features: data.features || [],
+          expiresAt: data.expires_at,
+        };
+
+        localStorage.setItem(COUPON_SESSION_KEY, JSON.stringify(couponSession));
+        localStorage.setItem(AUTH_TYPE_KEY, 'coupon');
+
+        setAuthType('coupon');
+        setSession({
+          sessionId: data.session_id,
+          userId: data.user_id,
+          features: data.features || [],
+          expiresAt: data.expires_at,
+          dhanConfigured: false,
+        });
+        setUser({
+          userId: data.user_id,
+          name: couponSession.displayName,
+          dhanConnected: false,
+        });
+
+        setLoading(false);
+        return { success: true };
+      } else {
+        setLoading(false);
+        return { 
+          success: false, 
+          error: data.detail || data.message || 'Invalid coupon code' 
+        };
+      }
+    } catch (error) {
+      console.error('Coupon verification error:', error);
+      setLoading(false);
+      return { 
+        success: false, 
+        error: error instanceof Error && error.name === 'AbortError' 
+          ? 'Request timeout. Please try again.' 
+          : 'Failed to verify coupon. Please try again.' 
+      };
+    }
+  }, []);
+
+  // Logout
+  const logout = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Sign out from Firebase if signed in
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
+      // Try to notify backend for coupon logout
+      try {
+        await fetch(`${ENGINE_C_URL}/api/auth/logout`, { method: 'POST' });
+      } catch (e) {
+        // Ignore errors
+      }
+
+      // Clear all auth storage
+      localStorage.removeItem(COUPON_SESSION_KEY);
+      localStorage.removeItem(AUTH_TYPE_KEY);
+      localStorage.removeItem('infinityai_session');
+      localStorage.removeItem('infinityai_user');
+
+      setSession(null);
+      setUser(null);
+      setAuthType(null);
+      setFirebaseUser(null);
+      setUserProfile(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    setLoading(false);
+  }, []);
+
+  // Refresh session
+  const refreshSession = useCallback(async () => {
+    if (firebaseUser) {
+      try {
+        const profile = await getUserProfile(firebaseUser.uid);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Failed to refresh session:', error);
+      }
+    }
+  }, [firebaseUser]);
+
+  // Connect Dhan (placeholder - needs backend integration)
+  const connectDhan = useCallback(async (clientId: string, accessToken: string) => {
+    return { success: false, error: 'Dhan connection requires settings page' };
+  }, []);
+
+  // Disconnect Dhan (placeholder)
+  const disconnectDhan = useCallback(async () => {
+    return { success: false, error: 'Dhan disconnection requires settings page' };
+  }, []);
 
   const value: CouponAuthContextType = {
     session,
     user,
     loading,
     isAuthenticated: !!session,
+    authType,
+    firebaseUser,
+    userProfile,
+    signInWithGoogle,
     verifyCoupon,
     logout,
     refreshSession,
@@ -400,7 +424,6 @@ export function useRequireCouponAuth() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      // Could redirect to login page
       console.log('User not authenticated');
     }
   }, [isAuthenticated, loading]);
