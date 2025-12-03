@@ -44,6 +44,28 @@ def get_credentials_manager():
             return None
     return _credentials_manager
 
+
+# Lazy import for Coupon Auth Management
+CouponAuthManager = None
+_coupon_auth_manager = None
+
+def get_coupon_auth_manager():
+    """Lazy load CouponAuthManager to avoid startup failures"""
+    global CouponAuthManager, _coupon_auth_manager
+    if _coupon_auth_manager is None:
+        try:
+            try:
+                from src.coupon_auth import CouponAuthManager as CAM
+            except ImportError:
+                from coupon_auth import CouponAuthManager as CAM
+            CouponAuthManager = CAM
+            _coupon_auth_manager = CAM()
+            logger.info("✅ CouponAuthManager initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize CouponAuthManager: {e}")
+            return None
+    return _coupon_auth_manager
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -54,8 +76,23 @@ ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-573866363639.us-
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
-    version="3.5-enhanced-execution"
+    version="3.6-coupon-auth"
 )
+
+
+# ==============================================================================
+# STARTUP EVENT - Initialize Default Coupons
+# ==============================================================================
+@app.on_event("startup")
+async def startup_event():
+    """Initialize default coupons on startup"""
+    try:
+        manager = get_coupon_auth_manager()
+        if manager:
+            await manager.initialize_default_coupons()
+            logger.info("✅ Default coupons initialized")
+    except Exception as e:
+        logger.warning(f"Failed to initialize default coupons: {e}")
 
 # Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -1716,6 +1753,219 @@ async def get_portfolio(user_id: str = "default"):
     except Exception as e:
         logger.error(f"Failed to fetch portfolio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==============================================================================
+# COUPON-BASED AUTHENTICATION SYSTEM
+# ==============================================================================
+
+class CouponVerifyRequest(BaseModel):
+    """Request model for coupon verification"""
+    coupon_code: str
+    device_info: Optional[str] = None
+
+
+class CouponCreateRequest(BaseModel):
+    """Request model for creating coupons (admin)"""
+    code: str
+    description: str = "InfinityAI Pro Access"
+    max_uses: int = 1
+    valid_days: int = 365
+    features: Optional[List[str]] = None
+
+
+@app.post("/api/auth/coupon/verify")
+async def verify_coupon(request: CouponVerifyRequest):
+    """
+    Verify a coupon code and create a user session.
+
+    This is the main authentication endpoint for the coupon system.
+    Returns a session token that should be stored client-side.
+    """
+    try:
+        manager = get_coupon_auth_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Authentication service not available")
+
+        result = await manager.validate_coupon(request.coupon_code)
+
+        if not result.get("success"):
+            raise HTTPException(status_code=401, detail=result.get("message", "Invalid coupon"))
+
+        return {
+            "success": True,
+            "session_id": result.get("session_id"),
+            "user_id": result.get("user_id"),
+            "features": result.get("features", []),
+            "expires_at": result.get("expires_at"),
+            "message": "Authentication successful"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Coupon verification error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auth/session")
+async def get_session(session_id: str = Header(None, alias="X-Session-ID")):
+    """
+    Get current session information.
+
+    Requires X-Session-ID header with the session token.
+    """
+    try:
+        if not session_id:
+            raise HTTPException(status_code=401, detail="No session provided")
+
+        manager = get_coupon_auth_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Authentication service not available")
+
+        session = await manager.get_session(session_id)
+
+        if not session:
+            raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+        # Check if Dhan is configured for this user
+        user_id = session.get("user_id")
+        dhan_configured = False
+
+        creds_manager = get_credentials_manager()
+        if creds_manager:
+            try:
+                creds = await creds_manager.get_user_credentials(user_id)
+                dhan_configured = creds is not None and creds.get("connection_status") == "connected"
+            except Exception:
+                pass
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "user_id": user_id,
+            "features": session.get("features", []),
+            "created_at": session.get("created_at"),
+            "expires_at": session.get("expires_at"),
+            "dhan_configured": dhan_configured,
+            "is_valid": True
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Session check error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auth/logout")
+async def logout(session_id: str = Header(None, alias="X-Session-ID")):
+    """
+    End user session / logout.
+    """
+    try:
+        if not session_id:
+            return {"success": True, "message": "No session to end"}
+
+        manager = get_coupon_auth_manager()
+        if manager is None:
+            return {"success": True, "message": "Session ended"}
+
+        result = await manager.invalidate_session(session_id)
+        return {
+            "success": True,
+            "message": "Logged out successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return {"success": True, "message": "Session ended"}
+
+
+@app.post("/api/admin/coupon/create")
+async def create_coupon(request: CouponCreateRequest, admin_key: str = Header(None, alias="X-Admin-Key")):
+    """
+    Create a new coupon code (Admin only).
+
+    Requires X-Admin-Key header for authentication.
+    """
+    try:
+        # Validate admin key
+        expected_key = os.environ.get("ADMIN_API_KEY", "infinityai-admin-2024")
+        if admin_key != expected_key:
+            raise HTTPException(status_code=403, detail="Invalid admin key")
+
+        manager = get_coupon_auth_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Authentication service not available")
+
+        result = await manager.create_coupon(
+            code=request.code,
+            description=request.description,
+            max_uses=request.max_uses,
+            valid_days=request.valid_days,
+            features=request.features
+        )
+
+        return {
+            "success": True,
+            "coupon": {
+                "code": request.code.upper(),
+                "description": request.description,
+                "max_uses": request.max_uses,
+                "valid_days": request.valid_days,
+                "features": request.features or ["dashboard", "trading", "signals", "ai_analysis"]
+            },
+            "message": "Coupon created successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Coupon creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/coupons")
+async def list_coupons(admin_key: str = Header(None, alias="X-Admin-Key")):
+    """
+    List all coupons (Admin only).
+    """
+    try:
+        expected_key = os.environ.get("ADMIN_API_KEY", "infinityai-admin-2024")
+        if admin_key != expected_key:
+            raise HTTPException(status_code=403, detail="Invalid admin key")
+
+        manager = get_coupon_auth_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Authentication service not available")
+
+        coupons = await manager.list_coupons()
+        return {
+            "success": True,
+            "coupons": coupons,
+            "total": len(coupons)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"List coupons error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auth/status")
+async def auth_status():
+    """
+    Check authentication service status.
+    """
+    manager = get_coupon_auth_manager()
+    return {
+        "service": "coupon_auth",
+        "status": "available" if manager else "unavailable",
+        "version": "1.0.0",
+        "auth_type": "coupon_code"
+    }
 
 
 if __name__ == "__main__":
