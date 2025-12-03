@@ -389,33 +389,32 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useCouponAuth() {
+// Safe default state for when context is not available
+const defaultAuthState: DualAuthContextType = {
+  session: null,
+  user: null,
+  loading: true,
+  isGoogleSignedIn: false,
+  isCouponVerified: false,
+  isAuthenticated: false,
+  firebaseUser: null,
+  userProfile: null,
+  signInWithGoogle: async () => ({ success: false, error: 'Not initialized' }),
+  verifyCoupon: async () => ({ success: false, error: 'Not initialized' }),
+  logout: async () => {},
+  refreshSession: async () => {},
+  connectDhan: async () => ({ success: false, error: 'Not initialized' }),
+  disconnectDhan: async () => ({ success: false, error: 'Not initialized' }),
+};
+
+export function useCouponAuth(): DualAuthContextType {
   const context = useContext(DualAuthContext);
-  
-  // During SSR or if context is not available, return a loading state
-  // This prevents the error from being thrown during hydration
+
+  // If context is not available, return a safe default instead of throwing
+  // This can happen during SSR, hydration, or if the provider isn't mounted yet
   if (context === undefined) {
-    // Check if we're on the server
-    if (typeof window === 'undefined') {
-      // Return a safe default for SSR
-      return {
-        session: null,
-        user: null,
-        loading: true,
-        isGoogleSignedIn: false,
-        isCouponVerified: false,
-        isAuthenticated: false,
-        firebaseUser: null,
-        userProfile: null,
-        signInWithGoogle: async () => ({ success: false, error: 'Not initialized' }),
-        verifyCoupon: async () => ({ success: false, error: 'Not initialized' }),
-        logout: async () => {},
-        refreshSession: async () => {},
-        connectDhan: async () => ({ success: false, error: 'Not initialized' }),
-        disconnectDhan: async () => ({ success: false, error: 'Not initialized' }),
-      } as DualAuthContextType;
-    }
-    throw new Error('useCouponAuth must be used within a CouponAuthProvider');
+    console.warn('useCouponAuth: Context not available, returning default state');
+    return defaultAuthState;
   }
   return context;
 }
