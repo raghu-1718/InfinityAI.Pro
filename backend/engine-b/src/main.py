@@ -161,6 +161,22 @@ if HAS_GOOGLE_INTEGRATIONS:
     except Exception as e:
         logger.warning(f"⚠️ Error initializing Google integrations: {e}")
 
+# --- Enhanced Trading AI (v4.0) ---
+ENHANCED_TRADING_AI = None
+try:
+    from src.google_integrations.enhanced_trading_ai import (
+        EnhancedTradingAI,
+        EnhancedTradingSignal,
+        IndianMarketKnowledge,
+        ENHANCED_SYSTEM_PROMPT,
+        create_enhanced_trading_ai
+    )
+    HAS_ENHANCED_TRADING_AI = True
+    logger.info("✅ Enhanced Trading AI module loaded")
+except ImportError as e:
+    HAS_ENHANCED_TRADING_AI = False
+    logger.warning(f"⚠️ Enhanced Trading AI not available: {e}")
+
 # --- Enhanced GenAI Client with Function Calling (v3.7.7) ---
 ENHANCED_GENAI_CLIENT = None
 NEWS_AGGREGATOR = None
@@ -180,6 +196,14 @@ if HAS_ENHANCED_GENAI:
 
     except Exception as e:
         logger.warning(f"⚠️ Error initializing Enhanced GenAI: {e}")
+
+# Initialize Enhanced Trading AI with GenAI client
+if HAS_ENHANCED_TRADING_AI and GENAI_CLIENT_B:
+    try:
+        ENHANCED_TRADING_AI = create_enhanced_trading_ai(GENAI_CLIENT_B)
+        logger.info("✅ Enhanced Trading AI v4.0 initialized with Gemini")
+    except Exception as e:
+        logger.warning(f"⚠️ Error initializing Enhanced Trading AI: {e}")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (Production)",
@@ -1246,7 +1270,7 @@ async def healthz():
     return {
         "status": "healthy",
         "service": "engine-b-ai-ml-prod",
-        "version": "3.7-google-integrations",
+        "version": "4.0-enhanced-trading-ai",
         "capabilities": MODEL_STORE.capabilities,
         "dhan_connected": MARKET_ENGINE.dhan is not None,
         "google_integrations": {
@@ -1255,7 +1279,15 @@ async def healthz():
             "cloud_storage": MODEL_STORAGE_B is not None,
             "signal_agent": SIGNAL_AGENT is not None,
             "risk_agent": RISK_AGENT is not None,
-            "market_agent": MARKET_AGENT is not None
+            "market_agent": MARKET_AGENT is not None,
+            "enhanced_trading_ai": ENHANCED_TRADING_AI is not None
+        },
+        "enhanced_features": {
+            "indian_market_knowledge": HAS_ENHANCED_TRADING_AI,
+            "sebi_2025_compliance": HAS_ENHANCED_TRADING_AI,
+            "smart_entry_exit": HAS_ENHANCED_TRADING_AI,
+            "position_sizing": HAS_ENHANCED_TRADING_AI,
+            "risk_management": HAS_ENHANCED_TRADING_AI
         },
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -1265,7 +1297,7 @@ async def root():
     return {
         "service": "InfinityAI.Pro Engine B (AI/ML Signal Generation)",
         "status": "ready",
-        "version": "3.7-google-integrations",
+        "version": "4.0-enhanced-trading-ai",
         "models": list(MODEL_STORE.models.keys()),
         "trained_symbols": list(MODEL_STORE.trained_symbols),
         "capabilities": MODEL_STORE.capabilities,
@@ -1273,7 +1305,13 @@ async def root():
             "Gemini AI (Official GenAI SDK)",
             "Cloud Logging (Signal Logs)",
             "Cloud Storage (ML Models)",
-            "Trading Agents (Signal, Risk, Market)"
+            "Trading Agents (Signal, Risk, Market)",
+            "Enhanced Trading AI v4.0 (Indian Markets Expert)"
+        ],
+        "new_endpoints": [
+            "POST /api/v1/ai/enhanced-signal - Enhanced trading signal with comprehensive analysis",
+            "GET /api/v1/ai/market-knowledge - Indian market knowledge base",
+            "GET /api/v1/ai/trading-session-status - Current session and entry guidance"
         ]
     }
 
@@ -2464,6 +2502,254 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
         }
     except Exception as e:
         logger.error(f"Error generating Gemini signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================================
+# ENHANCED TRADING AI v4.0 ENDPOINTS
+# =====================================================================
+
+class EnhancedSignalRequest(BaseModel):
+    """Request for enhanced AI trading signal with comprehensive context."""
+    symbol: str
+    current_price: float
+    technical_data: Optional[Dict[str, Any]] = None
+    market_context: Optional[Dict[str, Any]] = None
+    news_sentiment: Optional[str] = None
+    portfolio_context: Optional[Dict[str, Any]] = None
+
+
+@app.post("/api/v1/ai/enhanced-signal")
+async def generate_enhanced_signal(req: EnhancedSignalRequest):
+    """
+    Generate enhanced trading signal using InfinityAI Trading Intelligence v4.0.
+
+    Features:
+    - Comprehensive Indian market knowledge
+    - SEBI 2025 compliant risk management
+    - Precise entry/exit timing
+    - FII/DII sentiment integration
+    - Multi-timeframe analysis
+    - Position sizing recommendations
+
+    Returns complete trading plan with:
+    - Signal (BUY/SELL/HOLD)
+    - Confidence (0-100%)
+    - Entry price, stop loss, targets
+    - Risk:Reward ratio
+    - Position size recommendation
+    - Detailed reasoning
+    """
+    if not HAS_ENHANCED_TRADING_AI or ENHANCED_TRADING_AI is None:
+        # Fallback to regular Gemini signal
+        logger.warning("Enhanced Trading AI not available, using fallback")
+        if HAS_GOOGLE_INTEGRATIONS and GENAI_CLIENT_B:
+            from src.google_integrations import TradingPrompt
+            trading_prompt = TradingPrompt(
+                symbol=req.symbol,
+                market="NSE",
+                analysis_type="signal",
+                context=req.technical_data or {}
+            )
+            signal_result = await GENAI_CLIENT_B.generate_trading_signal(prompt=trading_prompt)
+            return {
+                "status": "success",
+                "symbol": req.symbol,
+                "signal": {
+                    "signal": signal_result.signal,
+                    "confidence": signal_result.confidence,
+                    "reasoning": signal_result.reasoning,
+                },
+                "version": "fallback",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        raise HTTPException(status_code=503, detail="Enhanced Trading AI not available")
+
+    try:
+        # Fetch additional market data if not provided
+        if req.technical_data is None and HAS_YFINANCE:
+            try:
+                ticker = yf.Ticker(f"{req.symbol}.NS")
+                hist = ticker.history(period="5d", interval="15m")
+                if not hist.empty and HAS_TA_LIB:
+                    import ta as ta_lib
+                    close = hist['Close']
+
+                    req.technical_data = {
+                        "rsi": ta_lib.momentum.RSIIndicator(close, window=14).rsi().iloc[-1] if len(close) > 14 else 50,
+                        "macd": ta_lib.trend.MACD(close).macd().iloc[-1] if len(close) > 26 else 0,
+                        "macd_signal": ta_lib.trend.MACD(close).macd_signal().iloc[-1] if len(close) > 26 else 0,
+                        "sma_20": close.rolling(20).mean().iloc[-1] if len(close) > 20 else close.iloc[-1],
+                        "sma_50": close.rolling(50).mean().iloc[-1] if len(close) > 50 else close.iloc[-1],
+                        "volume": int(hist['Volume'].iloc[-1]),
+                        "volume_avg": int(hist['Volume'].rolling(20).mean().iloc[-1]) if len(hist) > 20 else int(hist['Volume'].iloc[-1]),
+                        "volume_ratio": hist['Volume'].iloc[-1] / hist['Volume'].rolling(20).mean().iloc[-1] if len(hist) > 20 else 1.0,
+                        "atr": ta_lib.volatility.AverageTrueRange(hist['High'], hist['Low'], close).average_true_range().iloc[-1] if len(hist) > 14 else 0,
+                        "bb_upper": ta_lib.volatility.BollingerBands(close).bollinger_hband().iloc[-1] if len(close) > 20 else close.iloc[-1],
+                        "bb_lower": ta_lib.volatility.BollingerBands(close).bollinger_lband().iloc[-1] if len(close) > 20 else close.iloc[-1],
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to fetch technical data for {req.symbol}: {e}")
+
+        # Generate enhanced signal
+        signal = await ENHANCED_TRADING_AI.generate_signal(
+            symbol=req.symbol,
+            current_price=req.current_price,
+            technical_data=req.technical_data,
+            market_context=req.market_context,
+            news_sentiment=req.news_sentiment,
+            portfolio_context=req.portfolio_context
+        )
+
+        # Log the signal
+        if TRADING_LOGGER_B:
+            TRADING_LOGGER_B.log_signal(
+                symbol=req.symbol,
+                signal=signal.signal,
+                confidence=signal.confidence,
+                model_name="infinityai-enhanced-v4.0",
+                metadata={
+                    "entry_price": signal.entry_price,
+                    "stop_loss": signal.stop_loss,
+                    "target_1": signal.target_1,
+                    "target_2": signal.target_2,
+                    "timeframe": signal.timeframe,
+                    "risk_reward": signal.risk_reward_ratio,
+                    "position_size_pct": signal.position_size_pct
+                }
+            )
+
+        return {
+            "status": "success",
+            "symbol": req.symbol,
+            "signal": {
+                "signal": signal.signal,
+                "confidence": signal.confidence,
+                "risk_level": signal.risk_level,
+                "entry_price": signal.entry_price,
+                "stop_loss": signal.stop_loss,
+                "target_1": signal.target_1,
+                "target_2": signal.target_2,
+                "timeframe": signal.timeframe,
+                "position_size_pct": signal.position_size_pct,
+                "risk_reward_ratio": signal.risk_reward_ratio,
+                "expected_return_pct": signal.expected_return_pct,
+                "max_loss_pct": signal.max_loss_pct,
+                "order_type": signal.order_type,
+                "time_in_force": signal.time_in_force
+            },
+            "market_context": {
+                "session": signal.market_session,
+                "fii_dii_sentiment": signal.fii_dii_sentiment,
+                "sector_strength": signal.sector_strength,
+                "global_cues": signal.global_cues,
+                "trend": signal.trend,
+                "volume_confirmation": signal.volume_confirmation
+            },
+            "key_levels": signal.key_levels,
+            "reasoning": signal.reasoning,
+            "version": "infinityai-enhanced-v4.0",
+            "model": "gemini-2.0-flash",
+            "timestamp": signal.timestamp
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating enhanced signal: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/ai/market-knowledge")
+async def get_market_knowledge_summary():
+    """
+    Get comprehensive Indian market knowledge summary.
+
+    Returns:
+    - Market timings
+    - Index lot sizes
+    - Expiry schedule
+    - SEBI regulations
+    - Risk management rules
+    - Technical indicator settings
+    """
+    if not HAS_ENHANCED_TRADING_AI:
+        raise HTTPException(status_code=503, detail="Enhanced Trading AI not available")
+
+    try:
+        from src.google_integrations.enhanced_trading_ai import IndianMarketKnowledge
+        knowledge = IndianMarketKnowledge()
+
+        return {
+            "status": "success",
+            "market_timings": knowledge.MARKET_TIMINGS,
+            "index_lot_sizes": knowledge.INDEX_LOT_SIZES,
+            "expiry_schedule": knowledge.EXPIRY_SCHEDULE,
+            "holidays_2025": knowledge.NSE_HOLIDAYS_2025,
+            "sebi_rules": knowledge.SEBI_ALGO_RULES,
+            "circuit_breakers": knowledge.CIRCUIT_BREAKERS,
+            "risk_management": knowledge.RISK_MANAGEMENT,
+            "indicator_settings": knowledge.INDICATOR_SETTINGS,
+            "timing_rules": knowledge.TIMING_RULES,
+            "version": "v4.0",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error fetching market knowledge: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/ai/trading-session-status")
+async def get_trading_session_status():
+    """
+    Get current trading session status with actionable insights.
+
+    Returns:
+    - Current session type
+    - Whether to avoid entry
+    - Best trading windows
+    - Time to market close
+    """
+    if not HAS_ENHANCED_TRADING_AI:
+        raise HTTPException(status_code=503, detail="Enhanced Trading AI not available")
+
+    try:
+        session = ENHANCED_TRADING_AI.get_market_session()
+        avoid_entry, avoid_reason = ENHANCED_TRADING_AI.should_avoid_entry()
+
+        from datetime import timezone
+        ist_offset = timedelta(hours=5, minutes=30)
+        ist_now = datetime.utcnow() + ist_offset
+        current_time = ist_now.time()
+
+        # Calculate time to market close
+        from datetime import time as dt_time
+        market_close = datetime.combine(ist_now.date(), dt_time(15, 30))
+        if ist_now < market_close:
+            time_to_close = market_close - ist_now
+            minutes_to_close = int(time_to_close.total_seconds() / 60)
+        else:
+            minutes_to_close = 0
+
+        return {
+            "status": "success",
+            "session": {
+                "type": session.value,
+                "ist_time": ist_now.strftime("%Y-%m-%d %H:%M:%S IST"),
+                "is_trading_hours": session.value == "normal",
+                "minutes_to_close": minutes_to_close
+            },
+            "entry_guidance": {
+                "avoid_entry": avoid_entry,
+                "reason": avoid_reason if avoid_entry else "Good time for entry",
+                "best_windows": [
+                    {"name": "Morning Breakout", "time": "09:30-10:30"},
+                    {"name": "Post Consolidation", "time": "11:00-12:00"},
+                    {"name": "Afternoon Momentum", "time": "14:00-15:00"}
+                ]
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting session status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
