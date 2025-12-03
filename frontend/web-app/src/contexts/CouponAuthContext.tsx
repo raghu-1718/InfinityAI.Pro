@@ -87,19 +87,30 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
   // Load session from localStorage on mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadSession = async () => {
+      // Only run on client side
       if (typeof window === 'undefined') {
-        setLoading(false);
+        if (isMounted) setLoading(false);
         return;
       }
 
-      const storedSessionId = localStorage.getItem(SESSION_KEY);
-      const storedUser = localStorage.getItem(USER_KEY);
+      try {
+        const storedSessionId = localStorage.getItem(SESSION_KEY);
+        const storedUser = localStorage.getItem(USER_KEY);
 
-      if (storedSessionId) {
+        if (!storedSessionId) {
+          // No session stored, nothing to validate
+          if (isMounted) setLoading(false);
+          return;
+        }
+
         try {
           // Verify session with backend
           const response = await couponApi('/api/auth/session');
+
+          if (!isMounted) return;
 
           if (response.success && response.is_valid) {
             const sessionData: CouponSession = {
@@ -116,6 +127,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
             if (response.dhan_configured) {
               try {
                 const dematData = await engineC.getUserDemat(response.user_id);
+                if (!isMounted) return;
                 const userData: CouponUser = {
                   userId: response.user_id,
                   dhanConnected: true,
@@ -136,8 +148,12 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
                 console.error('Failed to load Dhan data:', e);
               }
             } else if (storedUser) {
-              const userData = JSON.parse(storedUser);
-              setUser(userData);
+              try {
+                const userData = JSON.parse(storedUser);
+                if (isMounted) setUser(userData);
+              } catch (e) {
+                console.error('Failed to parse stored user:', e);
+              }
             }
           } else {
             // Invalid session, clear storage
@@ -149,13 +165,18 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(SESSION_KEY);
           localStorage.removeItem(USER_KEY);
         }
+      } finally {
+        // ALWAYS set loading to false
+        if (isMounted) setLoading(false);
       }
-
-      setLoading(false);
     };
 
     loadSession();
-  }, [setUserProfile]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Remove setUserProfile from dependencies to prevent re-runs
 
   const verifyCoupon = useCallback(async (couponCode: string) => {
     setLoading(true);
