@@ -289,7 +289,7 @@ export const useAppStore = create<AppState>()(
         signals: [],
         addSignal: (signal) =>
           set((state) => ({
-            signals: [signal, ...state.signals].slice(0, 50), // Keep last 50
+            signals: [signal, ...(Array.isArray(state.signals) ? state.signals : [])].slice(0, 50), // Keep last 50
           })),
         setSignals: (signals) => set({ signals }),
 

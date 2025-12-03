@@ -7,6 +7,21 @@ import { engineC } from '@/lib/api';
 // Session stored in localStorage
 const SESSION_KEY = 'infinityai_session';
 const USER_KEY = 'infinityai_user';
+const STORAGE_VERSION_KEY = 'infinityai_version';
+const CURRENT_VERSION = '3.7';
+
+// Clear old storage on version mismatch
+function clearOldStorage() {
+  if (typeof window === 'undefined') return;
+  const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+  if (storedVersion !== CURRENT_VERSION) {
+    console.log('Clearing old storage data for version upgrade');
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('infinityai-storage'); // Zustand store
+    localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+  }
+}
 
 export interface CouponSession {
   sessionId: string;
@@ -85,6 +100,11 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
   const { setUserProfile, clearUserData } = useAppStore();
 
+  // Clear old storage on mount (version upgrade)
+  useEffect(() => {
+    clearOldStorage();
+  }, []);
+
   // Load session from localStorage on mount
   useEffect(() => {
     let isMounted = true;
@@ -139,7 +159,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
                 const userData: CouponUser = {
                   userId: response.user_id,
                   dhanConnected: true,
-                  name: `User ${response.user_id.slice(0, 8)}`,
+                  name: `User ${(response.user_id || '').slice(0, 8)}`,
                 };
                 setUser(userData);
 
@@ -213,7 +233,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         const userData: CouponUser = {
           userId: response.user_id,
           dhanConnected: false,
-          name: `User ${response.user_id.slice(0, 8)}`,
+          name: `User ${(response.user_id || '').slice(0, 8)}`,
         };
         localStorage.setItem(USER_KEY, JSON.stringify(userData));
         setUser(userData);

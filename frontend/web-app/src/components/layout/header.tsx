@@ -85,7 +85,7 @@ export function Header() {
     if (user?.name) {
       return user.name;
     }
-    if (session?.userId) {
+    if (session?.userId && typeof session.userId === 'string') {
       return `User ${session.userId.slice(7, 15)}`;
     }
     return 'Guest User';
