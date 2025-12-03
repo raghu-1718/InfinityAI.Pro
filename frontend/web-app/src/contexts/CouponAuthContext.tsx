@@ -57,12 +57,25 @@ async function couponApi(endpoint: string, options: RequestInit = {}) {
     (headers as Record<string, string>)['X-Session-ID'] = sessionId;
   }
 
-  const response = await fetch(`${ENGINE_C_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  // Add timeout to prevent hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-  return response.json();
+  try {
+    const response = await fetch(`${ENGINE_C_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
+  }
 }
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {

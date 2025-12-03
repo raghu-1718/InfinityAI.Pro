@@ -115,6 +115,8 @@ ALLOWED_ORIGINS = [
     "https://engine-a.infinityai.pro",
     "https://engine-b.infinityai.pro",
     "https://engine-c.infinityai.pro",
+    "https://after-yesterday-473512-k3.web.app",
+    "https://after-yesterday-473512-k3.firebaseapp.com",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
