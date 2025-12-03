@@ -391,7 +391,30 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
 export function useCouponAuth() {
   const context = useContext(DualAuthContext);
+  
+  // During SSR or if context is not available, return a loading state
+  // This prevents the error from being thrown during hydration
   if (context === undefined) {
+    // Check if we're on the server
+    if (typeof window === 'undefined') {
+      // Return a safe default for SSR
+      return {
+        session: null,
+        user: null,
+        loading: true,
+        isGoogleSignedIn: false,
+        isCouponVerified: false,
+        isAuthenticated: false,
+        firebaseUser: null,
+        userProfile: null,
+        signInWithGoogle: async () => ({ success: false, error: 'Not initialized' }),
+        verifyCoupon: async () => ({ success: false, error: 'Not initialized' }),
+        logout: async () => {},
+        refreshSession: async () => {},
+        connectDhan: async () => ({ success: false, error: 'Not initialized' }),
+        disconnectDhan: async () => ({ success: false, error: 'Not initialized' }),
+      } as DualAuthContextType;
+    }
     throw new Error('useCouponAuth must be used within a CouponAuthProvider');
   }
   return context;
