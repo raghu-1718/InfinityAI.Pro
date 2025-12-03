@@ -15,12 +15,12 @@ const FALLBACK_URLS = {
 
 async function fetchWithFallback(primaryUrl: string, fallbackUrl: string, options?: RequestInit) {
   try {
-    const response = await fetch(primaryUrl, { ...options, signal: AbortSignal.timeout(5000) });
+    const response = await fetch(primaryUrl, { ...options, signal: AbortSignal.timeout(8000) });
     if (response.ok) return response;
     throw new Error(`HTTP ${response.status}`);
   } catch {
-    // Try fallback URL
-    return fetch(fallbackUrl, options);
+    // Try fallback URL with timeout
+    return fetch(fallbackUrl, { ...options, signal: AbortSignal.timeout(15000) });
   }
 }
 

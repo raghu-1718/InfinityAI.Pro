@@ -14,6 +14,8 @@ export function useEngineHealth() {
     queryFn: () => api.checkAllEngines(),
     refetchInterval: 30000, // 30 seconds
     staleTime: 10000,
+    retry: 1, // Only retry once
+    retryDelay: 2000,
   });
 
   useEffect(() => {
@@ -23,19 +25,22 @@ export function useEngineHealth() {
       updateEngineStatus('engineA', {
         status: engineA ? 'online' : 'offline',
         version: engineA?.version || null,
-        capabilities: engineA?.ml_capabilities,
+        capabilities: Array.isArray(engineA?.ml_capabilities) ? engineA.ml_capabilities : [],
+        lastChecked: new Date(),
       });
 
       updateEngineStatus('engineB', {
         status: engineB ? 'online' : 'offline',
         version: engineB?.version || null,
-        capabilities: Object.keys(engineB?.capabilities || {}),
+        capabilities: engineB?.capabilities ? Object.keys(engineB.capabilities) : (Array.isArray(engineB?.ml_capabilities) ? engineB.ml_capabilities : []),
+        lastChecked: new Date(),
       });
 
       updateEngineStatus('engineC', {
         status: engineC ? 'online' : 'offline',
         version: engineC?.version || null,
-        capabilities: engineC?.ml_capabilities,
+        capabilities: Array.isArray(engineC?.ml_capabilities) ? engineC.ml_capabilities : [],
+        lastChecked: new Date(),
       });
     }
   }, [query.data, updateEngineStatus]);
