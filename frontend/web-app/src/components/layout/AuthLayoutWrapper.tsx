@@ -4,7 +4,7 @@ import { useCouponAuth } from '@/contexts/CouponAuthContext';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface AuthLayoutWrapperProps {
@@ -18,12 +18,18 @@ export function AuthLayoutWrapper({ children }: AuthLayoutWrapperProps) {
   const { isAuthenticated, loading } = useCouponAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  // Mark as mounted after first render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isPublicPath = PUBLIC_PATHS.includes(pathname);
 
   // Handle auth redirects
   useEffect(() => {
-    if (loading) return;
+    if (!mounted || loading) return;
 
     // If not authenticated and trying to access protected route, redirect to login
     if (!isAuthenticated && !isPublicPath) {
@@ -34,9 +40,15 @@ export function AuthLayoutWrapper({ children }: AuthLayoutWrapperProps) {
     if (isAuthenticated && isPublicPath) {
       router.push('/');
     }
-  }, [isAuthenticated, loading, isPublicPath, router]);
+  }, [isAuthenticated, loading, isPublicPath, router, mounted]);
 
-  // Show loading spinner while checking auth
+  // Don't render anything during SSR to avoid hydration mismatch
+  // Show loading only after mount if still loading
+  if (!mounted) {
+    return null;
+  }
+
+  // Show loading spinner while checking auth (client-side only)
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">

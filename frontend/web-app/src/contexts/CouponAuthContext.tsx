@@ -89,6 +89,14 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety timeout - ensure loading ALWAYS becomes false after 5 seconds max
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('Auth loading safety timeout triggered');
+        setLoading(false);
+      }
+    }, 5000);
+
     const loadSession = async () => {
       // Only run on client side
       if (typeof window === 'undefined') {
@@ -167,6 +175,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         }
       } finally {
         // ALWAYS set loading to false
+        clearTimeout(safetyTimeout);
         if (isMounted) setLoading(false);
       }
     };
@@ -175,6 +184,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
     };
   }, []); // Remove setUserProfile from dependencies to prevent re-runs
 
