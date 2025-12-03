@@ -17,7 +17,7 @@ export function RecentOrdersCard() {
     return <RecentOrdersSkeleton />;
   }
 
-  const orders = data?.data || [];
+  const orders = Array.isArray(data?.data) ? data.data : [];
 
   return (
     <Card>

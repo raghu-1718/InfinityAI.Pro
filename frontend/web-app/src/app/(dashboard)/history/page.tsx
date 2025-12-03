@@ -58,7 +58,7 @@ export default function HistoryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const orders = ordersData?.data || [];
+  const orders = Array.isArray(ordersData?.data) ? ordersData.data : [];
 
   // Filter orders
   const filteredOrders = orders.filter((order: any) => {
@@ -292,7 +292,7 @@ function OrderRow({ order }: { order: any }) {
           </div>
           <div>
             <p className="font-medium">{order.tradingSymbol || order.securityId}</p>
-            <p className="text-xs text-muted-foreground font-mono">{order.orderId?.slice(0, 8)}...</p>
+            <p className="text-xs text-muted-foreground font-mono">{order.orderId ? String(order.orderId).slice(0, 8) : 'N/A'}...</p>
           </div>
         </div>
       </TableCell>
