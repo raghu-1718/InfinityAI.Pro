@@ -56,10 +56,10 @@ interface CouponAuthContextType {
 
   // Firebase Auth methods
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  
+
   // Coupon Auth methods
   verifyCoupon: (couponCode: string) => Promise<{ success: boolean; error?: string }>;
-  
+
   // Common methods
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -112,12 +112,12 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(safetyTimeout);
         try {
           const profile = await getUserProfile(fbUser.uid);
-          
+
           if (isMounted) {
             setFirebaseUser(fbUser);
             setUserProfile(profile);
             setAuthType('firebase');
-            
+
             // Create session from Firebase user
             setSession({
               sessionId: fbUser.uid,
@@ -126,7 +126,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
               expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
               dhanConfigured: profile?.dhanConnected || false,
             });
-            
+
             setUser({
               userId: fbUser.uid,
               name: fbUser.displayName || profile?.displayName || 'User',
@@ -225,7 +225,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      
+
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
 
@@ -235,7 +235,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(fbUser);
       setUserProfile(profile);
       setAuthType('firebase');
-      
+
       setSession({
         sessionId: fbUser.uid,
         userId: fbUser.uid,
@@ -243,7 +243,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         dhanConfigured: profile?.dhanConnected || false,
       });
-      
+
       setUser({
         userId: fbUser.uid,
         name: fbUser.displayName || 'User',
@@ -261,9 +261,9 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Google sign-in error:', error);
       setLoading(false);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign in with Google' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to sign in with Google'
       };
     }
   }, []);
@@ -315,19 +315,19 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         return { success: true };
       } else {
         setLoading(false);
-        return { 
-          success: false, 
-          error: data.detail || data.message || 'Invalid coupon code' 
+        return {
+          success: false,
+          error: data.detail || data.message || 'Invalid coupon code'
         };
       }
     } catch (error) {
       console.error('Coupon verification error:', error);
       setLoading(false);
-      return { 
-        success: false, 
-        error: error instanceof Error && error.name === 'AbortError' 
-          ? 'Request timeout. Please try again.' 
-          : 'Failed to verify coupon. Please try again.' 
+      return {
+        success: false,
+        error: error instanceof Error && error.name === 'AbortError'
+          ? 'Request timeout. Please try again.'
+          : 'Failed to verify coupon. Please try again.'
       };
     }
   }, []);

@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCouponAuth } from '@/contexts/CouponAuthContext';
+import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, Key, Sparkles, TrendingUp, Shield, Brain } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Key, Sparkles, TrendingUp, Shield, Brain, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Google icon component
@@ -25,7 +25,16 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { verifyCoupon, signInWithGoogle, isAuthenticated, loading } = useCouponAuth();
+  const {
+    verifyCoupon,
+    signInWithGoogle,
+    isAuthenticated,
+    isGoogleSignedIn,
+    isCouponVerified,
+    firebaseUser,
+    loading
+  } = useCouponAuth();
+
   const [couponCode, setCouponCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -37,7 +46,7 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
-  // Redirect if already authenticated (only after mounted)
+  // Redirect if fully authenticated (both Google + Coupon)
   useEffect(() => {
     if (mounted && !loading && isAuthenticated) {
       router.push('/');
@@ -52,10 +61,9 @@ export default function LoginPage() {
       const result = await signInWithGoogle();
 
       if (result.success) {
-        toast.success('Welcome to InfinityAI.Pro!', {
-          description: 'Signed in with Google. Redirecting to dashboard...',
+        toast.success('Google Sign-In Successful!', {
+          description: 'Now enter your access code to continue.',
         });
-        router.push('/');
       } else {
         setError(result.error || 'Failed to sign in with Google');
         toast.error('Sign In Failed', {
@@ -72,10 +80,18 @@ export default function LoginPage() {
 
   const handleCouponSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isGoogleSignedIn) {
+      setError('Please sign in with Google first');
+      toast.error('Step Required', { description: 'Please sign in with Google first.' });
+      return;
+    }
+
     if (!couponCode.trim()) {
       setError('Please enter a coupon code');
       return;
     }
+
     setError('');
     setIsVerifying(true);
 
@@ -84,7 +100,7 @@ export default function LoginPage() {
 
       if (result.success) {
         toast.success('Welcome to InfinityAI.Pro!', {
-          description: 'Coupon verified successfully. Redirecting to dashboard...',
+          description: 'Both verifications complete. Redirecting to dashboard...',
         });
         router.push('/');
       } else {
@@ -101,7 +117,6 @@ export default function LoginPage() {
     setIsVerifying(false);
   };
 
-  // ALWAYS show the login form - never show loading spinner
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="w-full max-w-md space-y-8">
@@ -119,47 +134,99 @@ export default function LoginPage() {
         {/* Login Card */}
         <Card className="border-slate-700 bg-slate-900/50 backdrop-blur">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center text-white">Sign In</CardTitle>
+            <CardTitle className="text-2xl text-center text-white">Two-Step Verification</CardTitle>
             <CardDescription className="text-center text-slate-400">
-              Sign in with Google or enter your access code
+              Sign in with Google and enter your access code
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Google Sign In Button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full bg-white hover:bg-gray-100 text-gray-900 border-gray-300"
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isVerifying}
-            >
-              {isGoogleLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <GoogleIcon className="mr-2 h-5 w-5" />
-                  Continue with Google
-                </>
-              )}
-            </Button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full bg-slate-700" />
+          <CardContent className="space-y-6">
+            {/* Progress Steps */}
+            <div className="flex items-center justify-center gap-4 py-2">
+              <div className="flex items-center gap-2">
+                {isGoogleSignedIn ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : (
+                  <Circle className="h-5 w-5 text-slate-500" />
+                )}
+                <span className={`text-sm ${isGoogleSignedIn ? 'text-green-500' : 'text-slate-400'}`}>
+                  Google
+                </span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-900 px-2 text-slate-500">Or use access code</span>
+              <div className="h-px w-8 bg-slate-600" />
+              <div className="flex items-center gap-2">
+                {isCouponVerified ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : (
+                  <Circle className="h-5 w-5 text-slate-500" />
+                )}
+                <span className={`text-sm ${isCouponVerified ? 'text-green-500' : 'text-slate-400'}`}>
+                  Access Code
+                </span>
               </div>
             </div>
 
-            {/* Coupon Code Form */}
-            <form onSubmit={handleCouponSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="coupon" className="text-slate-200">Access Code</Label>
+            {/* Step 1: Google Sign In */}
+            <div className={`space-y-3 p-4 rounded-lg border ${isGoogleSignedIn ? 'border-green-500/50 bg-green-500/10' : 'border-slate-600 bg-slate-800/50'}`}>
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-200 font-medium">Step 1: Google Sign-In</Label>
+                {isGoogleSignedIn && (
+                  <Badge variant="outline" className="text-green-500 border-green-500">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Complete
+                  </Badge>
+                )}
+              </div>
+
+              {isGoogleSignedIn ? (
+                <div className="flex items-center gap-3 p-2 rounded bg-slate-800">
+                  {firebaseUser?.photoURL && (
+                    <img
+                      src={firebaseUser.photoURL}
+                      alt="Profile"
+                      className="h-8 w-8 rounded-full"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{firebaseUser?.displayName}</p>
+                    <p className="text-xs text-slate-400 truncate">{firebaseUser?.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full bg-white hover:bg-gray-100 text-gray-900 border-gray-300"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading || isVerifying}
+                >
+                  {isGoogleLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <GoogleIcon className="mr-2 h-5 w-5" />
+                      Sign in with Google
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {/* Step 2: Coupon Code */}
+            <div className={`space-y-3 p-4 rounded-lg border ${!isGoogleSignedIn ? 'border-slate-700 bg-slate-800/30 opacity-60' : 'border-slate-600 bg-slate-800/50'}`}>
+              <div className="flex items-center justify-between">
+                <Label className="text-slate-200 font-medium">Step 2: Access Code</Label>
+                {isCouponVerified && (
+                  <Badge variant="outline" className="text-green-500 border-green-500">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Verified
+                  </Badge>
+                )}
+              </div>
+
+              <form onSubmit={handleCouponSubmit} className="space-y-3">
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <Input
@@ -173,27 +240,35 @@ export default function LoginPage() {
                     }}
                     className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 uppercase font-mono tracking-wider"
                     autoComplete="off"
+                    disabled={!isGoogleSignedIn || isCouponVerified}
                   />
                 </div>
+
                 {error && (
                   <p className="text-sm text-red-400">{error}</p>
                 )}
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={isVerifying || isGoogleLoading || !couponCode.trim()}
-              >
-                {isVerifying ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  'Access Dashboard'
-                )}
-              </Button>
-            </form>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={!isGoogleSignedIn || isVerifying || isGoogleLoading || !couponCode.trim() || isCouponVerified}
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : isCouponVerified ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Verified
+                    </>
+                  ) : (
+                    'Verify Access Code'
+                  )}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
 
@@ -215,7 +290,7 @@ export default function LoginPage() {
 
         {/* Help Text */}
         <p className="text-center text-sm text-slate-500">
-          Don&apos;t have an account? Contact{' '}
+          Need help? Contact{' '}
           <a href="mailto:support@infinityai.pro" className="text-primary hover:underline">
             support@infinityai.pro
           </a>

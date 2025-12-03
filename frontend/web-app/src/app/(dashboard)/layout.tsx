@@ -1,6 +1,6 @@
 'use client';
 
-import { useCouponAuth } from '@/contexts/CouponAuthContext';
+import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { useRouter } from 'next/navigation';

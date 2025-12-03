@@ -16,7 +16,7 @@ import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn, Load
 import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCouponAuth } from '@/contexts/CouponAuthContext';
+import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useHydration } from '@/hooks/useHydration';

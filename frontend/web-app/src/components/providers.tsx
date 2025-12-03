@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect, type ReactNode } from 'react';
 import { Toaster } from '@/components/ui/sonner';
-import { CouponAuthProvider } from '@/contexts/CouponAuthContext';
+import { CouponAuthProvider } from '@/contexts/DualAuthContext';
 import { useAppStore } from '@/lib/store';
 
 // Hydrate Zustand store on client side
