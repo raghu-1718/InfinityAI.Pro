@@ -32,6 +32,13 @@ export function Header() {
   const queryClient = useQueryClient();
   const hydrated = useHydration();
 
+  // Defensive fallback for engines state
+  const enginesState = engines || {
+    engineA: { status: 'loading', version: null, lastChecked: null },
+    engineB: { status: 'loading', version: null, lastChecked: null },
+    engineC: { status: 'loading', version: null, lastChecked: null },
+  };
+
   const handleRefresh = () => {
     refetchEngines();
     refetchFunds();
@@ -61,9 +68,9 @@ export function Header() {
   };
 
   const allOnline =
-    engines.engineA.status === 'online' &&
-    engines.engineB.status === 'online' &&
-    engines.engineC.status === 'online';
+    enginesState.engineA.status === 'online' &&
+    enginesState.engineB.status === 'online' &&
+    enginesState.engineC.status === 'online';
 
   // Get balance from user's connected demat or fallback to admin funds
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;

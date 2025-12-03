@@ -37,10 +37,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, engines, wsConnected } = useAppStore();
 
+  // Safe access to engine status with defaults
+  const engineA = engines?.engineA || { status: 'loading', version: null, lastChecked: null };
+  const engineB = engines?.engineB || { status: 'loading', version: null, lastChecked: null };
+  const engineC = engines?.engineC || { status: 'loading', version: null, lastChecked: null };
+
   const allOnline =
-    engines.engineA.status === 'online' &&
-    engines.engineB.status === 'online' &&
-    engines.engineC.status === 'online';
+    engineA.status === 'online' &&
+    engineB.status === 'online' &&
+    engineC.status === 'online';
 
   return (
     <aside
@@ -82,9 +87,9 @@ export function Sidebar() {
               </Badge>
             </div>
             <div className="mt-2 flex gap-2">
-              <EngineIndicator name="A" status={engines.engineA.status} />
-              <EngineIndicator name="B" status={engines.engineB.status} />
-              <EngineIndicator name="C" status={engines.engineC.status} />
+              <EngineIndicator name="A" status={engineA.status} />
+              <EngineIndicator name="B" status={engineB.status} />
+              <EngineIndicator name="C" status={engineC.status} />
               <div className="ml-auto flex items-center gap-1">
                 <div
                   className={cn(
