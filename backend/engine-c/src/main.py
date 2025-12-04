@@ -731,11 +731,21 @@ async def get_user_account_details(user_id: str):
         orders = dhan_client.get_order_list()
         trades = dhan_client.get_trade_book()
 
-        # Process funds
-        funds_data = funds.get("data", {}) if isinstance(funds, dict) else {}
+        logger.info(f"Raw funds for user {user_id}: {funds}")
+
+        # Process funds - handle both SDK formats (with or without "data" wrapper)
+        if isinstance(funds, dict):
+            if "data" in funds:
+                funds_data = funds.get("data", {})
+            elif "availabelBalance" in funds or "sodLimit" in funds:
+                funds_data = funds
+            else:
+                funds_data = {}
+        else:
+            funds_data = {}
 
         # Process holdings
-        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) else []
+        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) and "data" in holdings else []
         total_holdings_value = sum(
             h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
             for h in holdings_data
@@ -743,21 +753,25 @@ async def get_user_account_details(user_id: str):
         total_holdings_pnl = sum(h.get("unrealizedProfit", 0) for h in holdings_data)
 
         # Process positions
-        positions_data = positions.get("data", []) if isinstance(positions, dict) else []
+        positions_data = positions.get("data", []) if isinstance(positions, dict) and "data" in positions else []
         total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
 
         # Process orders
-        orders_data = orders.get("data", []) if isinstance(orders, dict) else []
+        orders_data = orders.get("data", []) if isinstance(orders, dict) and "data" in orders else []
 
         # Process trades
-        trades_data = trades.get("data", []) if isinstance(trades, dict) else []
+        trades_data = trades.get("data", []) if isinstance(trades, dict) and "data" in trades else []
+
+        # Extract balance values (handle both typo and correct spelling)
+        available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
+        utilized_margin = funds_data.get("utilizedAmount", 0) or funds_data.get("utilizedMargin", 0) or 0
 
         return {
             "status": "success",
             "user_id": user_id,
             "account_summary": {
-                "available_balance": funds_data.get("availabelBalance", 0),
-                "utilized_margin": funds_data.get("utilizedMargin", 0),
+                "available_balance": available_balance,
+                "utilized_margin": utilized_margin,
                 "total_holdings_value": total_holdings_value,
                 "total_holdings_pnl": total_holdings_pnl,
                 "total_positions_pnl": total_positions_pnl,
@@ -1254,19 +1268,45 @@ async def get_user_demat_simple(user_id: str):
         holdings = dhan_client.get_holdings()
         positions = dhan_client.get_positions()
 
-        # Process funds
-        funds_data = funds.get("data", {}) if isinstance(funds, dict) else {}
+        logger.info(f"Raw funds response for {user_id}: {funds}")
 
-        # Process holdings
-        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) else []
+        # Process funds - handle both SDK formats (with or without "data" wrapper)
+        if isinstance(funds, dict):
+            # Check if data is wrapped in "data" key or returned directly
+            if "data" in funds:
+                funds_data = funds.get("data", {})
+            elif "availabelBalance" in funds or "sodLimit" in funds:
+                # Direct response format (no wrapper)
+                funds_data = funds
+            else:
+                funds_data = {}
+        else:
+            funds_data = {}
+
+        logger.info(f"Processed funds_data for {user_id}: {funds_data}")
+
+        # Process holdings - handle both SDK formats
+        if isinstance(holdings, dict):
+            holdings_data = holdings.get("data", []) if "data" in holdings else []
+        else:
+            holdings_data = []
         total_holdings_value = sum(
             h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
             for h in holdings_data
         )
 
-        # Process positions
-        positions_data = positions.get("data", []) if isinstance(positions, dict) else []
+        # Process positions - handle both SDK formats
+        if isinstance(positions, dict):
+            positions_data = positions.get("data", []) if "data" in positions else []
+        else:
+            positions_data = []
         total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
+
+        # Extract balance values (Dhan API has typo: "availabelBalance")
+        available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
+        utilized_margin = funds_data.get("utilizedAmount", 0) or funds_data.get("utilizedMargin", 0) or 0
+        sod_limit = funds_data.get("sodLimit", 0) or 0
+        withdrawable = funds_data.get("withdrawableBalance", 0) or 0
 
         return {
             "holdings": {
@@ -1298,9 +1338,12 @@ async def get_user_demat_simple(user_id: str):
                 ]
             },
             "funds": {
-                "availableBalance": funds_data.get("availabelBalance", 0),
-                "utilisedMargin": funds_data.get("utilizedMargin", 0),
-                "totalBalance": funds_data.get("availabelBalance", 0) + funds_data.get("utilizedMargin", 0)
+                "availableBalance": available_balance,
+                "utilisedMargin": utilized_margin,
+                "sodLimit": sod_limit,
+                "withdrawableBalance": withdrawable,
+                "totalBalance": available_balance + utilized_margin,
+                "raw": funds_data  # Include raw data for debugging
             }
         }
 
