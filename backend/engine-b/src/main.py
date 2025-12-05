@@ -394,7 +394,8 @@ class SymbolMapper:
             logger.info(f"✅ Symbol Map Updated: {len(self.symbol_map)} symbols loaded (incl. fallback)")
 
         except Exception as e:
-            logger.error(f"❌ Symbol Map Refresh Failed: {e}, using fallback")
+            logger.error(f"❌ Symbol Map Refresh Failed: {e}, reloading fallback")
+            self._load_fallback_mapping()  # Restore fallback mappings on failure
 
     def get_id(self, symbol: str) -> Optional[str]:
         return self.symbol_map.get(symbol.upper())
