@@ -318,7 +318,9 @@ class SymbolMapper:
     def _load_fallback_mapping(self):
         """Load fallback mapping for critical symbols"""
         fallback = {
+            # NSE Indices
             "NIFTY": "13", "NIFTY50": "13", "BANKNIFTY": "25", "FINNIFTY": "26",
+            # NSE Equities
             "RELIANCE": "1333", "TCS": "2968", "HDFCBANK": "1394", "INFY": "1594",
             "ICICIBANK": "1270", "HINDUNILVR": "1552", "ITC": "1663", "SBIN": "2837",
             "BHARTIARTL": "411", "KOTAKBANK": "1922", "LT": "2031", "AXISBANK": "152",
@@ -326,7 +328,13 @@ class SymbolMapper:
             "TATAMOTORS": "2975", "WIPRO": "3145", "ULTRACEMCO": "3073", "POWERGRID": "2640",
             "NTPC": "2379", "M&M": "2142", "TATASTEEL": "3012", "JSWSTEEL": "1828",
             "INDUSINDBK": "1600", "BAJFINANCE": "163", "BAJAJFINSV": "164",
-            "HCLTECH": "1391", "DRREDDY": "1165", "ADANIENT": "25", "ADANIPORTS": "26"
+            "HCLTECH": "1391", "DRREDDY": "1165", "ADANIENT": "25", "ADANIPORTS": "26",
+            # MCX Commodities (Security IDs from Dhan MCX Master)
+            "CRUDEOIL": "428416", "CRUDEOILM": "428424",
+            "GOLD": "428219", "GOLDM": "428226", "GOLDPETAL": "428281",
+            "SILVER": "428359", "SILVERM": "428366", "SILVERMIC": "428371",
+            "NATURALGAS": "428431", "COPPER": "428439", "ZINC": "428456",
+            "LEAD": "428463", "ALUMINIUM": "428478", "NICKEL": "428485"
         }
         self.symbol_map = fallback
         self.id_map = {int(v): k for k, v in fallback.items()}
@@ -352,8 +360,8 @@ class SymbolMapper:
                 low_memory=False
             )
 
-            # Filter for NSE Equity & Derivatives
-            df = df[df['SEM_EXM_EXCH_ID'].isin(['NSE', 'NSE_FNO'])]
+            # Filter for NSE Equity, Derivatives & MCX Commodities
+            df = df[df['SEM_EXM_EXCH_ID'].isin(['NSE', 'NSE_FNO', 'MCX'])]
 
             # Build Maps
             self.symbol_map = pd.Series(
@@ -712,11 +720,11 @@ class MarketDataEngine:
 
                     # Determine exchange segment and instrument type
                     # MCX Commodities (Crude Oil, Gold, Silver)
-                    if symbol in ["CRUDEOIL", "CRUDEOILM", "GOLD", "GOLDM", "GOLDPETAL", "SILVER", "SILVERM", "SILVERMIC", 
+                    if symbol in ["CRUDEOIL", "CRUDEOILM", "GOLD", "GOLDM", "GOLDPETAL", "SILVER", "SILVERM", "SILVERMIC",
                                   "NATURALGAS", "COPPER", "ZINC", "LEAD", "ALUMINIUM", "NICKEL", "COTTON"]:
                         exchange_segment = "MCX_COMM"
                         instrument_type = "FUTCOM"  # Futures of Commodity
-                        logger.info(f"🏭 MCX Commodity detected: {symbol} using MCX_COMM/FUTCOM")
+                        logger.info(f"🏭 MCX Commodity detected: {symbol} (sec_id={sec_id}) using MCX_COMM/FUTCOM")
                     # NSE/BSE Indices
                     elif symbol in ["NIFTY", "NIFTY50", "BANKNIFTY", "NIFTYBANK", "FINNIFTY"]:
                         exchange_segment = "IDX_I"
@@ -726,6 +734,7 @@ class MarketDataEngine:
                         exchange_segment = "NSE_EQ"
                         instrument_type = "EQUITY"
 
+                    logger.info(f"📡 Calling DhanHQ historical_daily_data for {symbol}: sec_id={sec_id}, segment={exchange_segment}")
                     resp = self.dhan.historical_daily_data(
                         security_id=sec_id,
                         exchange_segment=exchange_segment,
@@ -733,6 +742,8 @@ class MarketDataEngine:
                         from_date=from_date,
                         to_date=to_date
                     )
+
+                    logger.info(f"📡 DhanHQ response for {symbol}: status={resp.get('status') if resp else 'None'}, has_data={bool(resp.get('data') if resp else False)}")
 
                     if resp and resp.get('status') == 'success' and resp.get('data'):
                         data = resp['data']
@@ -754,6 +765,12 @@ class MarketDataEngine:
                             source = "dhan"
                             self.data_source_stats["dhan"] += 1
                             logger.info(f"📊 Fetched {len(df)} days from DhanHQ for {symbol}")
+                        else:
+                            logger.warning(f"⚠️ DhanHQ returned only {len(df)} rows for {symbol}, need at least 50")
+                    else:
+                        logger.warning(f"⚠️ DhanHQ returned non-success for {symbol}: {resp}")
+                else:
+                    logger.warning(f"⚠️ No security ID found for {symbol} in SymbolMapper")
             except Exception as e:
                 logger.warning(f"DhanHQ fetch failed for {symbol}: {e}")
 
