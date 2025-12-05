@@ -1601,16 +1601,24 @@ async def get_market_knowledge():
         }
     }
 
+
+class BatchSignalsRequest(BaseModel):
+    """Request model for batch signals"""
+    symbols: List[str]
+    fast: bool = True
+
+
 @app.post("/api/v1/signal/batch")
-async def generate_batch_signals(symbols: List[str], fast: bool = True):
+@app.post("/api/v1/signals/batch")  # Alias for frontend compatibility
+async def generate_batch_signals(request: BatchSignalsRequest):
     """Generate signals for multiple symbols"""
-    if len(symbols) > 50:
+    if len(request.symbols) > 50:
         raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
 
     signals = []
-    for symbol in symbols:
+    for symbol in request.symbols:
         try:
-            signal = await generate_signal(SignalRequest(symbol=symbol, fast=fast))
+            signal = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
             signals.append(signal)
         except Exception as e:
             logger.error(f"Batch signal error for {symbol}: {e}")
