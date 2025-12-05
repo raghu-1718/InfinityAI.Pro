@@ -710,10 +710,18 @@ class MarketDataEngine:
                     to_date = datetime.now().strftime("%Y-%m-%d")
                     from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-                    # Determine segment
-                    if symbol in ["NIFTY", "NIFTY50", "BANKNIFTY", "NIFTYBANK", "FINNIFTY"]:
+                    # Determine exchange segment and instrument type
+                    # MCX Commodities (Crude Oil, Gold, Silver)
+                    if symbol in ["CRUDEOIL", "CRUDEOILM", "GOLD", "GOLDM", "GOLDPETAL", "SILVER", "SILVERM", "SILVERMIC", 
+                                  "NATURALGAS", "COPPER", "ZINC", "LEAD", "ALUMINIUM", "NICKEL", "COTTON"]:
+                        exchange_segment = "MCX_COMM"
+                        instrument_type = "FUTCOM"  # Futures of Commodity
+                        logger.info(f"🏭 MCX Commodity detected: {symbol} using MCX_COMM/FUTCOM")
+                    # NSE/BSE Indices
+                    elif symbol in ["NIFTY", "NIFTY50", "BANKNIFTY", "NIFTYBANK", "FINNIFTY"]:
                         exchange_segment = "IDX_I"
                         instrument_type = "INDEX"
+                    # Default: NSE Equity
                     else:
                         exchange_segment = "NSE_EQ"
                         instrument_type = "EQUITY"
@@ -1731,6 +1739,7 @@ def get_security_id(symbol: str) -> str:
     """Get Dhan security ID for a symbol"""
     # Security ID mapping (NSE Equity symbols to Dhan Security IDs)
     security_id_map = {
+        # NSE Equities
         "RELIANCE": "1333",
         "TCS": "2968",
         "HDFCBANK": "1394",
@@ -1741,15 +1750,27 @@ def get_security_id(symbol: str) -> str:
         "ITC": "1660",
         "BHARTIARTL": "2885",
         "LT": "1660",
+        # Indices
         "NIFTY": "13",
         "BANKNIFTY": "25",
         "SENSEX": "1",
         "FINNIFTY": "26009",
+        # MCX Commodities
         "CRUDEOIL": "11",
+        "CRUDEOILM": "12",
         "GOLD": "5",
         "GOLDM": "6",
+        "GOLDPETAL": "7",
         "SILVER": "8",
-        "SILVERM": "9"
+        "SILVERM": "9",
+        "SILVERMIC": "10",
+        "NATURALGAS": "13",
+        "COPPER": "14",
+        "ZINC": "15",
+        "LEAD": "16",
+        "ALUMINIUM": "17",
+        "NICKEL": "18",
+        "COTTON": "19"
     }
     return security_id_map.get(symbol.upper(), symbol)
 
