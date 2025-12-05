@@ -1270,10 +1270,16 @@ async def get_user_demat_simple(user_id: str):
 
         logger.info(f"Raw funds response for {user_id}: {funds}")
 
+        # Check if Dhan API returned an error
+        if isinstance(funds, dict) and funds.get("status") == "failure":
+            error_msg = funds.get("remarks", {}).get("message", "Unknown error")
+            logger.error(f"Dhan API error for {user_id}: {error_msg}")
+            raise HTTPException(status_code=401, detail=f"Dhan API error: {error_msg}. Please re-enter your access token.")
+
         # Process funds - handle both SDK formats (with or without "data" wrapper)
         if isinstance(funds, dict):
             # Check if data is wrapped in "data" key or returned directly
-            if "data" in funds:
+            if "data" in funds and isinstance(funds.get("data"), dict):
                 funds_data = funds.get("data", {})
             elif "availabelBalance" in funds or "sodLimit" in funds:
                 # Direct response format (no wrapper)
@@ -1287,20 +1293,32 @@ async def get_user_demat_simple(user_id: str):
 
         # Process holdings - handle both SDK formats
         if isinstance(holdings, dict):
-            holdings_data = holdings.get("data", []) if "data" in holdings else []
+            if holdings.get("status") == "failure":
+                logger.warning(f"Holdings fetch failed for {user_id}: {holdings.get('remarks', {}).get('message', 'Unknown')}")
+                holdings_data = []
+            elif "data" in holdings and isinstance(holdings.get("data"), list):
+                holdings_data = holdings.get("data", [])
+            else:
+                holdings_data = []
         else:
             holdings_data = []
         total_holdings_value = sum(
             h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
-            for h in holdings_data
+            for h in holdings_data if isinstance(h, dict)
         )
 
         # Process positions - handle both SDK formats
         if isinstance(positions, dict):
-            positions_data = positions.get("data", []) if "data" in positions else []
+            if positions.get("status") == "failure":
+                logger.warning(f"Positions fetch failed for {user_id}: {positions.get('remarks', {}).get('message', 'Unknown')}")
+                positions_data = []
+            elif "data" in positions and isinstance(positions.get("data"), list):
+                positions_data = positions.get("data", [])
+            else:
+                positions_data = []
         else:
             positions_data = []
-        total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
+        total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data if isinstance(p, dict))
 
         # Extract balance values (Dhan API has typo: "availabelBalance")
         available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
