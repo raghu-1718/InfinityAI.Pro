@@ -376,8 +376,22 @@ class SymbolMapper:
 
             self.meta_map = df.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
 
+            # Merge fallback critical symbols (MCX commodities use expiry-based names in CSV)
+            fallback_critical = {
+                "CRUDEOIL": "428416", "CRUDEOILM": "428424",
+                "GOLD": "428219", "GOLDM": "428226", "GOLDPETAL": "428281",
+                "SILVER": "428359", "SILVERM": "428366", "SILVERMIC": "428371",
+                "NATURALGAS": "428431", "COPPER": "428439", "ZINC": "428456",
+                "LEAD": "428463", "ALUMINIUM": "428478", "NICKEL": "428485",
+                "NIFTY": "13", "NIFTY50": "13", "BANKNIFTY": "25", "FINNIFTY": "26"
+            }
+            for sym, sec_id in fallback_critical.items():
+                if sym not in self.symbol_map:
+                    self.symbol_map[sym] = sec_id
+                    logger.info(f"📌 Added fallback mapping: {sym} -> {sec_id}")
+
             self.last_updated = datetime.now()
-            logger.info(f"✅ Symbol Map Updated: {len(self.symbol_map)} symbols loaded")
+            logger.info(f"✅ Symbol Map Updated: {len(self.symbol_map)} symbols loaded (incl. fallback)")
 
         except Exception as e:
             logger.error(f"❌ Symbol Map Refresh Failed: {e}, using fallback")
