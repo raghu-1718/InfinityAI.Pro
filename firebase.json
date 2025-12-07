@@ -1,4 +1,11 @@
 {
+  "functions": [
+    {
+      "source": "frontend/web/functions",
+      "codebase": "default",
+      "runtime": "nodejs20"
+    }
+  ],
   "firestore": {
     "rules": "infra/firebase/firestore.rules",
     "indexes": "infra/firebase/firestore.indexes.json"

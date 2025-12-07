@@ -10,7 +10,8 @@ const firebaseConfig = {
   projectId: "gen-lang-client-0779271931",
   storageBucket: "gen-lang-client-0779271931.firebasestorage.app",
   messagingSenderId: "429140669077",
-  appId: "1:429140669077:web:e071ad7a136c74a3ea219c"
+  appId: "1:429140669077:web:e071ad7a136c74a3ea219c",
+  measurementId: "G-NY37ZKLPBX"
 };
 
 // Initialize Firebase (prevent multiple initializations)
