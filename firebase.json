@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "main",
     "public": "frontend/web-app/out",
     "ignore": [
       "firebase.json",
@@ -40,7 +41,6 @@
           }
         ]
       }
-    ],
-    "site": "after-yesterday-473512-k3"
+    ]
   }
 }
