@@ -43,3 +43,7 @@ frontend/web/build/
 dhan_credentials_secure.json
 **/dhan_credentials*.json
 node_modules
+firebase-sa-key.json
+token.txt
+PATH.txt
+settings.txt
