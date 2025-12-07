@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "infra/firebase/firestore.rules",
+    "indexes": "infra/firebase/firestore.indexes.json"
+  },
   "hosting": {
     "target": "main",
     "public": "frontend/web-app/out",

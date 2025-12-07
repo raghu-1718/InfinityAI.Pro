@@ -129,7 +129,7 @@ MARKET_AGENT = None
 
 if HAS_GOOGLE_INTEGRATIONS:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER_B = TradingLogger(
@@ -183,7 +183,7 @@ NEWS_AGGREGATOR = None
 
 if HAS_ENHANCED_GENAI:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
 
         ENHANCED_GENAI_CLIENT = EnhancedGenAIClient(
             project_id=PROJECT_ID,
@@ -229,9 +229,12 @@ app.add_middleware(SecurityHeadersMiddleware)
 ALLOWED_ORIGINS = [
     "https://infinityai.pro",
     "https://www.infinityai.pro",
+    "https://app.infinityai.pro",
     "https://engine-a.infinityai.pro",
     "https://engine-b.infinityai.pro",
     "https://engine-c.infinityai.pro",
+    "https://gen-lang-client-0779271931.web.app",
+    "https://gen-lang-client-0779271931.firebaseapp.com",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
@@ -289,7 +292,7 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
         # Strip any trailing whitespace/newlines from the secret

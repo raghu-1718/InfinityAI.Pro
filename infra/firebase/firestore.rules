@@ -5,6 +5,20 @@ service cloud.firestore {
     // Allow users to read/write their own profile data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow creation for new users during signup
+      allow create: if request.auth != null;
+    }
+
+    // Coupon system - backend managed (Cloud Run services)
+    match /coupons/{couponId} {
+      allow read: if true;  // Allow verification
+      allow write: if false; // Only backend can write
+    }
+
+    // Coupon sessions - backend managed
+    match /coupon_sessions/{sessionId} {
+      allow read: if true;  // Allow session lookup
+      allow write: if false; // Only backend can write
     }
 
     // Dhan credentials: write-only for users, read for cloud functions
@@ -29,17 +43,17 @@ service cloud.firestore {
     // Engine health, AI signals, trades — public read, function write
     match /engine_health/{docId} {
       allow read: if true;
- allow write: if request.auth != null; // Assuming functions will be authenticated
+      allow write: if request.auth != null;
     }
 
     match /ai_signals/{docId} {
       allow read: if true;
- allow write: if request.auth != null; // Assuming functions will be authenticated
+      allow write: if request.auth != null;
     }
 
     match /trades/{docId} {
       allow read: if true;
- allow write: if request.auth != null; // Assuming functions will be authenticated
+      allow write: if request.auth != null;
     }
   }
 }
