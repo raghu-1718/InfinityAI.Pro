@@ -76,10 +76,10 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 ### Infrastructure
 
 | Component | Service | Region | URL |
-|-----------|---------|--------|-----|
-| Engine A | Cloud Run | us-central1 | `engine-a-573866363639.us-central1.run.app` |
-| Engine B | Cloud Run | us-central1 | `engine-b-573866363639.us-central1.run.app` |
-| Engine C | Cloud Run | us-central1 | `engine-c-573866363639.us-central1.run.app` |
+|-----------|---------|--------|----- |
+| Engine A | Cloud Run | us-central1 | `engine-a-429140669077.us-central1.run.app` |
+| Engine B | Cloud Run | us-central1 | `engine-b-429140669077.us-central1.run.app` |
+| Engine C | Cloud Run | us-central1 | `engine-c-429140669077.us-central1.run.app` |
 | Frontend | Firebase Hosting | Global CDN | `infinityai.pro` |
 | Database | Firestore | us-central1 | Native mode |
 | Auth | Firebase Auth | Global | Google + Coupon |
@@ -375,7 +375,7 @@ git clone https://github.com/your-org/InfinityAI.Pro.git
 
 # Configure GCP
 gcloud auth login
-gcloud config set project after-yesterday-473512-k3
+gcloud config set project gen-lang-client-0779271931
 
 # Deploy all engines
 ./scripts/deploy-3-engine-architecture.ps1

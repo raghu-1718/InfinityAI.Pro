@@ -262,7 +262,7 @@ class EnhancedGenAIClient:
             location: GCP region (default us-central1)
             model_id: Gemini model to use
         """
-        self.project_id = project_id or os.getenv("GCP_PROJECT_ID", "after-yesterday-473512-k3")
+        self.project_id = project_id or os.getenv("GCP_PROJECT_ID", "gen-lang-client-0779271931")
         self.location = location
         self.model_id = model_id
         self._client = None

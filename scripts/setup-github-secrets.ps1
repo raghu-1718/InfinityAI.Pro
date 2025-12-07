@@ -38,8 +38,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $repo = "raghu-1718/InfinityAI.Pro"
-$projectId = "after-yesterday-473512-k3"
-$projectNumber = "573866363639"
+$projectId = "gen-lang-client-0779271931"
+$projectNumber = "429140669077"
 
 Write-Host "Repository: $repo" -ForegroundColor Green
 Write-Host "GCP Project: $projectId" -ForegroundColor Green

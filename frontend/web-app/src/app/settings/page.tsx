@@ -43,7 +43,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
 
 // Engine C API URL
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-573866363639.us-central1.run.app";
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-429140669077.us-central1.run.app";
 
 interface DhanCredentials {
   client_id: string;
@@ -751,13 +751,13 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
-                        https://after-yesterday-473512-k3.web.app/api/dhan/postback
+                        https://gen-lang-client-0779271931.web.app/api/dhan/postback
                       </code>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://after-yesterday-473512-k3.web.app/api/dhan/postback');
+                          navigator.clipboard.writeText('https://gen-lang-client-0779271931.web.app/api/dhan/postback');
                           toast.success('Copied!');
                         }}
                       >
@@ -766,13 +766,13 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md font-mono break-all">
-                        https://after-yesterday-473512-k3.web.app/api/dhan/callback
+                        https://gen-lang-client-0779271931.web.app/api/dhan/callback
                       </code>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://after-yesterday-473512-k3.web.app/api/dhan/callback');
+                          navigator.clipboard.writeText('https://gen-lang-client-0779271931.web.app/api/dhan/callback');
                           toast.success('Copied!');
                         }}
                       >

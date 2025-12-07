@@ -50,9 +50,9 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-573866363639.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-573866363639.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-573866363639.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
 
   # ============================================
   # Validate Backend - Engine A

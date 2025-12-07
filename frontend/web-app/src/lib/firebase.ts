@@ -5,12 +5,12 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where,
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyD-9AkKUYvpjOcmqYPxV-OdqYCftPtUeXs",
-  authDomain: "after-yesterday-473512-k3.firebaseapp.com",
-  projectId: "after-yesterday-473512-k3",
-  storageBucket: "after-yesterday-473512-k3.firebasestorage.app",
-  messagingSenderId: "573866363639",
-  appId: "1:573866363639:web:752c98bf447bef1086e1f2"
+  apiKey: "AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k",
+  authDomain: "gen-lang-client-0779271931.firebaseapp.com",
+  projectId: "gen-lang-client-0779271931",
+  storageBucket: "gen-lang-client-0779271931.firebasestorage.app",
+  messagingSenderId: "429140669077",
+  appId: "1:429140669077:web:e071ad7a136c74a3ea219c"
 };
 
 // Initialize Firebase (prevent multiple initializations)

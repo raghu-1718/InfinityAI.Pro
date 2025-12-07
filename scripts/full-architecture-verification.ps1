@@ -2,14 +2,14 @@
 # InfinityAI.Pro - Full Architecture Verification & Cleanup Script
 # =====================================================================
 # Purpose: Verify DhanHQ-only architecture and clean remaining legacy
-# Project: after-yesterday-473512-k3
-# Date: December 4, 2025
+# Project: gen-lang-client-0779271931
+# Date: December 7, 2025
 # =====================================================================
 
 $ErrorActionPreference = "Continue"
 
-$PROJECT_ID = "after-yesterday-473512-k3"
-$LEGACY_PROJECT = "infinitygt-b2287"
+$PROJECT_ID = "gen-lang-client-0779271931"
+$LEGACY_PROJECT = "after-yesterday-473512-k3"
 $REGION = "us-central1"
 
 Write-Host "╔════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -105,9 +105,9 @@ Write-Host ""
 
 # Current active services
 $ACTIVE_SERVICES = @(
-    @{Name="engine-a-573866363639"; Expected=$true; Description="Engine A (Orchestration)"},
-    @{Name="engine-b-573866363639"; Expected=$true; Description="Engine B (AI/ML)"},
-    @{Name="engine-c-573866363639"; Expected=$true; Description="Engine C (Execution)"}
+    @{Name="engine-a-429140669077"; Expected=$true; Description="Engine A (Orchestration)"},
+    @{Name="engine-b-429140669077"; Expected=$true; Description="Engine B (AI/ML)"},
+    @{Name="engine-c-429140669077"; Expected=$true; Description="Engine C (Execution)"}
 )
 
 # Legacy services that should NOT exist

@@ -38,9 +38,9 @@ on:
         type: boolean
 
 env:
-  GCP_PROJECT_ID: after-yesterday-473512-k3
+  GCP_PROJECT_ID: gen-lang-client-0779271931
   GCP_REGION: us-central1
-  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/after-yesterday-473512-k3/infinityai
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/gen-lang-client-0779271931/infinityai
 
 jobs:
   # ============================================
@@ -138,7 +138,7 @@ jobs:
             --timeout=300 \
             --min-instances=0 \
             --max-instances=5 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_B_URL=https://engine-b-573866363639.us-central1.run.app,ENGINE_C_URL=https://engine-c-573866363639.us-central1.run.app" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_B_URL=https://engine-b-429140669077.us-central1.run.app,ENGINE_C_URL=https://engine-c-429140669077.us-central1.run.app" \
             --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest"
 
       - name: Health Check
@@ -146,7 +146,7 @@ jobs:
           echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
           echo "🔍 Running health check..."
-          if curl -sf https://engine-a-573866363639.us-central1.run.app/health; then
+          if curl -sf https://engine-a-429140669077.us-central1.run.app/health; then
             echo "✅ Engine A is healthy!"
           else
             echo "⚠️ Health check failed - service may still be starting"
@@ -214,7 +214,7 @@ jobs:
             --concurrency=50 \
             --min-instances=0 \
             --max-instances=10 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-573866363639.us-central1.run.app,ENGINE_C_URL=https://engine-c-573866363639.us-central1.run.app" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-429140669077.us-central1.run.app,ENGINE_C_URL=https://engine-c-429140669077.us-central1.run.app" \
             --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,GEMINI_API_KEY=gemini-api-key:latest"
 
       - name: Health Check
@@ -222,7 +222,7 @@ jobs:
           echo "⏳ Waiting for deployment to stabilize (Engine B is larger)..."
           sleep 45
           echo "🔍 Running health check..."
-          if curl -sf https://engine-b-573866363639.us-central1.run.app/health; then
+          if curl -sf https://engine-b-429140669077.us-central1.run.app/health; then
             echo "✅ Engine B is healthy!"
           else
             echo "⚠️ Health check failed - service may still be starting"
@@ -289,7 +289,7 @@ jobs:
             --timeout=300 \
             --min-instances=0 \
             --max-instances=5 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-573866363639.us-central1.run.app,ENGINE_B_URL=https://engine-b-573866363639.us-central1.run.app" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-429140669077.us-central1.run.app,ENGINE_B_URL=https://engine-b-429140669077.us-central1.run.app" \
             --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,ENCRYPTION_KEY=encryption-key:latest"
 
       - name: Health Check
@@ -297,7 +297,7 @@ jobs:
           echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
           echo "🔍 Running health check..."
-          if curl -sf https://engine-c-573866363639.us-central1.run.app/health; then
+          if curl -sf https://engine-c-429140669077.us-central1.run.app/health; then
             echo "✅ Engine C is healthy!"
           else
             echo "⚠️ Health check failed - service may still be starting"
@@ -337,10 +337,10 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-573866363639.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-573866363639.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-573866363639.us-central1.run.app
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: after-yesterday-473512-k3
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: gen-lang-client-0779271931
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -373,7 +373,7 @@ jobs:
         if: needs.deploy-engine-a.result == 'success'
         run: |
           echo "🔍 Checking Engine A..."
-          response=$(curl -sf https://engine-a-573866363639.us-central1.run.app/health)
+          response=$(curl -sf https://engine-a-429140669077.us-central1.run.app/health)
           echo "$response" | jq '.'
           echo "✅ Engine A verified!"
 
@@ -381,7 +381,7 @@ jobs:
         if: needs.deploy-engine-b.result == 'success'
         run: |
           echo "🔍 Checking Engine B..."
-          response=$(curl -sf https://engine-b-573866363639.us-central1.run.app/health)
+          response=$(curl -sf https://engine-b-429140669077.us-central1.run.app/health)
           echo "$response" | jq '.'
           echo "✅ Engine B verified!"
 
@@ -389,7 +389,7 @@ jobs:
         if: needs.deploy-engine-c.result == 'success'
         run: |
           echo "🔍 Checking Engine C..."
-          response=$(curl -sf https://engine-c-573866363639.us-central1.run.app/health)
+          response=$(curl -sf https://engine-c-429140669077.us-central1.run.app/health)
           echo "$response" | jq '.'
           echo "✅ Engine C verified!"
 
@@ -398,7 +398,7 @@ jobs:
           echo "🔒 Checking Security Headers..."
           for engine in engine-a engine-b engine-c; do
             echo "--- $engine ---"
-            headers=$(curl -sI "https://${engine}-573866363639.us-central1.run.app/health")
+            headers=$(curl -sI "https://${engine}-429140669077.us-central1.run.app/health")
             echo "$headers" | grep -i "strict-transport\|x-frame\|x-content-type" || echo "Headers check done"
           done
 
@@ -412,15 +412,15 @@ jobs:
           echo "Triggered by: ${{ github.actor }}"
           echo ""
           echo "📦 Services:"
-          echo "  Engine A: https://engine-a-573866363639.us-central1.run.app"
-          echo "  Engine B: https://engine-b-573866363639.us-central1.run.app"
-          echo "  Engine C: https://engine-c-573866363639.us-central1.run.app"
-          echo "  Frontend: https://after-yesterday-473512-k3.web.app"
+          echo "  Engine A: https://engine-a-429140669077.us-central1.run.app"
+          echo "  Engine B: https://engine-b-429140669077.us-central1.run.app"
+          echo "  Engine C: https://engine-c-429140669077.us-central1.run.app"
+          echo "  Frontend: https://gen-lang-client-0779271931.web.app"
           echo ""
           echo "📊 API Docs:"
-          echo "  Engine A: https://engine-a-573866363639.us-central1.run.app/docs"
-          echo "  Engine B: https://engine-b-573866363639.us-central1.run.app/docs"
-          echo "  Engine C: https://engine-c-573866363639.us-central1.run.app/docs"
+          echo "  Engine A: https://engine-a-429140669077.us-central1.run.app/docs"
+          echo "  Engine B: https://engine-b-429140669077.us-central1.run.app/docs"
+          echo "  Engine C: https://engine-c-429140669077.us-central1.run.app/docs"
           echo "=========================================="
 
   # ============================================

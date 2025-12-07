@@ -72,7 +72,7 @@ interface CouponAuthContextType {
 const CouponAuthContext = createContext<CouponAuthContextType | undefined>(undefined);
 
 // Engine C URL for coupon verification
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-573866363639.us-central1.run.app';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app';
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<CouponSession | null>(null);
