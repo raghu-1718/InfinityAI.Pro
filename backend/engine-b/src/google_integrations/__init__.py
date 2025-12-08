@@ -151,3 +151,35 @@ except Exception as e:
     HAS_ENHANCED_DATA = False
     import logging
     logging.getLogger("InfinityAI.GoogleIntegrations").error(f"Enhanced data sources error: {type(e).__name__}: {e}")
+
+# Finance AI Model (v4.1 - Specialized Finance AI)
+try:
+    from .finance_ai_model import (
+        FinanceAIModel,
+        FinanceModelType,
+        FinanceSignal,
+        MarketAnalysis,
+        get_finance_ai_model,
+        get_stock_signal,
+        get_market_trend,
+        get_options_recommendation,
+        FINANCE_SYSTEM_PROMPTS
+    )
+    HAS_FINANCE_AI = True
+    __all__.extend([
+        "FinanceAIModel",
+        "FinanceModelType",
+        "FinanceSignal",
+        "MarketAnalysis",
+        "get_finance_ai_model",
+        "get_stock_signal",
+        "get_market_trend",
+        "get_options_recommendation",
+        "FINANCE_SYSTEM_PROMPTS",
+        "HAS_FINANCE_AI"
+    ])
+except ImportError as e:
+    HAS_FINANCE_AI = False
+    import logging
+    logging.getLogger("InfinityAI.GoogleIntegrations").warning(f"Finance AI model import failed: {e}")
+

@@ -3402,5 +3402,268 @@ async def get_stock_intelligence_endpoint(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================================
+# FINANCE AI MODEL ENDPOINTS (v4.1)
+# Advanced AI-powered trading analysis using Gemini
+# ============================================================================
+
+# Import Finance AI Model
+try:
+    from src.google_integrations.finance_ai_model import (
+        get_finance_ai_model,
+        FinanceModelType,
+        get_stock_signal,
+        get_market_trend,
+        get_options_recommendation
+    )
+    HAS_FINANCE_AI = True
+except ImportError:
+    HAS_FINANCE_AI = False
+
+
+class FinanceAIRequest(BaseModel):
+    """Request model for Finance AI analysis."""
+    symbol: str
+    current_price: float
+    technical_indicators: Optional[Dict[str, Any]] = None
+    news_items: Optional[List[str]] = None
+    model_type: str = "stock_analyst"
+
+
+class OptionsStrategyRequest(BaseModel):
+    """Request model for options strategy."""
+    index: str = "NIFTY"
+    spot_price: float
+    outlook: str = "NEUTRAL"  # BULLISH, BEARISH, NEUTRAL
+    capital: float = 100000
+    risk_appetite: str = "MODERATE"  # LOW, MODERATE, HIGH
+
+
+class RiskAnalysisRequest(BaseModel):
+    """Request model for portfolio risk analysis."""
+    positions: List[Dict[str, Any]]
+    account_value: float
+
+
+@app.post("/api/v1/finance-ai/signal")
+async def get_finance_ai_signal(request: FinanceAIRequest):
+    """
+    Get AI-powered trading signal using Gemini Finance Model.
+
+    This endpoint uses specialized finance prompts and Indian market knowledge
+    to generate accurate trading signals with entry, stop-loss, and targets.
+    """
+    if not HAS_FINANCE_AI:
+        raise HTTPException(status_code=503, detail="Finance AI model not available")
+
+    try:
+        model = get_finance_ai_model()
+
+        # Map string to enum
+        model_type_map = {
+            "stock_analyst": FinanceModelType.STOCK_ANALYST,
+            "options_strategist": FinanceModelType.OPTIONS_STRATEGIST,
+            "technical_analyst": FinanceModelType.TECHNICAL_ANALYST,
+            "risk_manager": FinanceModelType.RISK_MANAGER,
+            "sentiment_analyst": FinanceModelType.SENTIMENT_ANALYST,
+        }
+        model_type = model_type_map.get(request.model_type, FinanceModelType.STOCK_ANALYST)
+
+        signal = await model.analyze_stock(
+            symbol=request.symbol,
+            current_price=request.current_price,
+            technical_indicators=request.technical_indicators,
+            news_items=request.news_items,
+            model_type=model_type
+        )
+
+        return {
+            "status": "success",
+            "symbol": signal.symbol,
+            "signal": {
+                "action": signal.action,
+                "confidence": signal.confidence,
+                "entry_price": signal.entry_price,
+                "stop_loss": signal.stop_loss,
+                "target_1": signal.target_1,
+                "target_2": signal.target_2,
+                "target_3": signal.target_3,
+                "risk_reward_ratio": signal.risk_reward_ratio,
+                "position_size_pct": signal.position_size_pct,
+                "timeframe": signal.timeframe,
+                "risk_level": signal.risk_level
+            },
+            "reasoning": signal.reasoning,
+            "key_factors": signal.key_factors,
+            "model": "gemini-2.0-flash",
+            "model_type": request.model_type,
+            "timestamp": signal.timestamp.isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Finance AI signal error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/finance-ai/market-analysis")
+async def get_finance_ai_market_analysis(request: FinanceAIRequest):
+    """
+    Get comprehensive market analysis using Finance AI.
+
+    Returns trend analysis, support/resistance levels, and recommendations.
+    """
+    if not HAS_FINANCE_AI:
+        raise HTTPException(status_code=503, detail="Finance AI model not available")
+
+    try:
+        model = get_finance_ai_model()
+        analysis = await model.get_market_analysis(
+            symbol=request.symbol,
+            current_price=request.current_price,
+            technical_data=request.technical_indicators
+        )
+
+        return {
+            "status": "success",
+            "symbol": analysis.symbol,
+            "analysis": {
+                "trend": analysis.trend,
+                "trend_strength": analysis.trend_strength,
+                "support_levels": analysis.support_levels,
+                "resistance_levels": analysis.resistance_levels,
+                "key_indicators": analysis.key_indicators,
+                "sentiment_score": analysis.sentiment_score,
+                "volume_analysis": analysis.volume_analysis,
+                "sector_outlook": analysis.sector_outlook,
+                "global_cues": analysis.global_cues
+            },
+            "recommendation": analysis.recommendation,
+            "model": "gemini-2.0-flash",
+            "timestamp": analysis.timestamp.isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Finance AI market analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/finance-ai/options-strategy")
+async def get_finance_ai_options_strategy(request: OptionsStrategyRequest):
+    """
+    Get AI-powered options strategy recommendation.
+
+    Considers index levels, outlook, capital, and risk appetite
+    to suggest optimal options strategies.
+    """
+    if not HAS_FINANCE_AI:
+        raise HTTPException(status_code=503, detail="Finance AI model not available")
+
+    try:
+        model = get_finance_ai_model()
+        strategy = await model.get_options_strategy(
+            index=request.index,
+            spot_price=request.spot_price,
+            outlook=request.outlook,
+            capital=request.capital,
+            risk_appetite=request.risk_appetite
+        )
+
+        return {
+            "status": "success",
+            "index": request.index,
+            "spot_price": request.spot_price,
+            "outlook": request.outlook,
+            "strategy": strategy,
+            "model": "gemini-2.0-flash",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Finance AI options strategy error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/finance-ai/risk-analysis")
+async def get_finance_ai_risk_analysis(request: RiskAnalysisRequest):
+    """
+    Get AI-powered portfolio risk analysis.
+
+    Analyzes position-level and portfolio-level risks,
+    provides hedge recommendations and position adjustments.
+    """
+    if not HAS_FINANCE_AI:
+        raise HTTPException(status_code=503, detail="Finance AI model not available")
+
+    try:
+        model = get_finance_ai_model()
+        risk_analysis = await model.analyze_risk(
+            positions=request.positions,
+            account_value=request.account_value
+        )
+
+        return {
+            "status": "success",
+            "account_value": request.account_value,
+            "positions_count": len(request.positions),
+            "risk_analysis": risk_analysis,
+            "model": "gemini-2.0-flash",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Finance AI risk analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/finance-ai/status")
+async def get_finance_ai_status():
+    """
+    Get Finance AI model status and capabilities.
+    """
+    capabilities = {
+        "finance_ai_available": HAS_FINANCE_AI,
+        "models": [
+            "stock_analyst",
+            "options_strategist",
+            "risk_manager",
+            "sentiment_analyst",
+            "technical_analyst",
+            "portfolio_optimizer"
+        ],
+        "features": [
+            "Stock signal generation",
+            "Market trend analysis",
+            "Options strategy recommendations",
+            "Portfolio risk analysis",
+            "Sentiment analysis",
+            "Technical analysis"
+        ],
+        "indian_market_support": True,
+        "instruments": [
+            "Equities (NSE/BSE)",
+            "Index Options (NIFTY, BANKNIFTY, SENSEX)",
+            "Stock Options",
+            "Commodities"
+        ]
+    }
+
+    if HAS_FINANCE_AI:
+        try:
+            model = get_finance_ai_model()
+            capabilities["model_name"] = model.model_name
+            capabilities["project_id"] = model.project_id
+            capabilities["initialized"] = model._initialized
+        except Exception as e:
+            capabilities["initialization_error"] = str(e)
+
+    return {
+        "status": "success",
+        "capabilities": capabilities,
+        "gemini_model": "gemini-2.0-flash",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
+
