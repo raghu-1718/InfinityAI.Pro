@@ -7,8 +7,12 @@ import { SignalsCard } from '@/components/dashboard/signals-card';
 import { QuickTradeCard } from '@/components/dashboard/quick-trade';
 import { RecentOrdersCard } from '@/components/dashboard/recent-orders';
 import { AutoTradingCard } from '@/components/dashboard/auto-trading';
+import { GeminiChat } from '@/components/dashboard/gemini-chat';
 import { useEngineHealth, useFunds, useHoldings, useRiskMetrics } from '@/hooks/useApi';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   // Initialize data fetching
@@ -44,11 +48,19 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your trading activity.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back! Here's an overview of your trading activity.
+          </p>
+        </div>
+        <Link href="/ai">
+          <Button className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Ask Gemini AI
+          </Button>
+        </Link>
       </div>
 
       {/* Auto Trading - Prominently at the top */}
@@ -68,9 +80,9 @@ export default function DashboardPage() {
           <RecentOrdersCard />
         </div>
 
-        {/* Right Column - Quick Actions & Signals */}
+        {/* Right Column - Gemini AI Chat & Signals */}
         <div className="space-y-6">
-          <QuickTradeCard />
+          <GeminiChat />
           <SignalsCard />
         </div>
       </div>

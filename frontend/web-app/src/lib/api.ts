@@ -617,6 +617,114 @@ export const engineB = {
     );
     return res.json();
   },
+
+  // ============================================================================
+  // FINANCE AI MODEL ENDPOINTS (Gemini-powered)
+  // ============================================================================
+
+  // Finance AI Status - Check if Finance AI is available
+  async getFinanceAIStatus() {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/status`
+    );
+    return res.json();
+  },
+
+  // Finance AI Signal - Get AI-powered trading signal
+  async getFinanceAISignal(data: {
+    symbol: string;
+    current_price: number;
+    technical_indicators?: Record<string, any>;
+    news_items?: string[];
+    model_type?: 'stock_analyst' | 'options_strategist' | 'technical_analyst' | 'risk_manager' | 'sentiment_analyst';
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/signal`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/signal`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  // Finance AI Market Analysis - Get comprehensive market analysis
+  async getFinanceAIMarketAnalysis(data: {
+    symbol: string;
+    current_price: number;
+    technical_indicators?: Record<string, any>;
+    news_headlines?: string[];
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/market-analysis`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/market-analysis`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  // Finance AI Options Strategy - Get AI-powered options strategy
+  async getFinanceAIOptionsStrategy(data: {
+    index: string;
+    spot_price: number;
+    outlook: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+    capital: number;
+    risk_appetite: 'LOW' | 'MODERATE' | 'HIGH';
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/options-strategy`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/options-strategy`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  // Finance AI Risk Analysis - Get AI-powered portfolio risk analysis
+  async getFinanceAIRiskAnalysis(data: {
+    positions: Array<{
+      symbol: string;
+      quantity: number;
+      entry_price: number;
+      current_price: number;
+    }>;
+    account_value: number;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/risk-analysis`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/risk-analysis`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  // Free-form Gemini Chat for any trading question
+  async askGemini(data: { question: string; context?: string }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/gemini/chat`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/gemini/chat`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
 };
 
 // Engine C - Execution

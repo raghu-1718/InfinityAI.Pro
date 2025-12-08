@@ -3099,6 +3099,63 @@ async def analyze_options(symbol: str = "NIFTY", strategy: str = "auto"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class GeminiChatRequest(BaseModel):
+    """Request model for Gemini chat."""
+    question: str
+    context: Optional[str] = None
+
+
+@app.post("/api/v1/gemini/chat")
+async def gemini_chat(request: GeminiChatRequest):
+    """
+    Free-form chat with Gemini for any trading-related questions.
+    Supports context from previous conversation.
+    """
+    try:
+        # Try Finance AI model first (best for finance)
+        if HAS_FINANCE_AI:
+            from src.google_integrations.finance_ai_model import get_finance_ai_model
+            model = get_finance_ai_model()
+
+            # Construct prompt
+            prompt = f"""You are an expert Indian stock market analyst and trading advisor.
+Answer the following question accurately and helpfully.
+
+Question: {request.question}
+
+{f"Context: {request.context}" if request.context else ""}
+
+Provide a clear, actionable answer focused on Indian markets (NSE/BSE).
+Include specific numbers, prices, and recommendations where appropriate."""
+
+            response = await model._call_gemini(prompt)
+
+            return {
+                "status": "success",
+                "response": response,
+                "model": "gemini-2.0-flash",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+        # Fallback to Enhanced GenAI
+        elif HAS_ENHANCED_GENAI and ENHANCED_GENAI_CLIENT:
+            response = await ENHANCED_GENAI_CLIENT.chat(request.question, request.context)
+            return {
+                "status": "success",
+                "response": response.get("response", ""),
+                "function_calls": response.get("function_calls", []),
+                "model": "gemini-2.0-flash",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+        else:
+            raise HTTPException(status_code=503, detail="No AI model available")
+
+    except Exception as e:
+        logger.error(f"Gemini chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/v1/market-data/{symbol}")
 async def get_live_market_data(symbol: str, exchange: str = "NSE", data_type: str = "all"):
     """

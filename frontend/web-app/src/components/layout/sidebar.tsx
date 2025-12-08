@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronLeft,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Gemini AI', href: '/ai', icon: Sparkles },
   { name: 'Trading', href: '/trading', icon: TrendingUp },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'AI Signals', href: '/signals', icon: Brain },
@@ -155,8 +157,8 @@ export function Sidebar() {
         {/* Version */}
         {sidebarOpen && (
           <div className="border-t p-4">
-            <p className="text-xs text-muted-foreground">InfinityAI.Pro v3.5</p>
-            <p className="text-xs text-muted-foreground">3-Engine Architecture</p>
+            <p className="text-xs text-muted-foreground">InfinityAI.Pro v4.0</p>
+            <p className="text-xs text-muted-foreground">Gemini AI Powered</p>
           </div>
         )}
       </div>
