@@ -1,17 +1,11 @@
 {
   "name": "InfinityAI.Pro Dev Container",
-  "build": {
-    "dockerfile": "../Dockerfile",
-    "context": ".."
-  },
-  "postCreateCommand": "pip install -r backend/requirements.txt && npm install --prefix frontend && gcloud auth application-default login --quiet || true",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install --upgrade pip && (test -f backend/requirements.txt && pip install -r backend/requirements.txt || true) && (test -f frontend/web-app/package.json && cd frontend/web-app && npm install || true)",
   "forwardPorts": [8080, 3000, 5000, 8085],
   "remoteUser": "vscode",
 
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace,type=bind",
-    "source=${localWorkspaceFolder}/.secrets,target=/workspace/.secrets,type=bind"
-  ],
+  "mounts": [],
 
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
@@ -31,7 +25,7 @@
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.analysis.autoImportCompletions": true,
-        "cloudcode.project": "infinity-ai-5ec7c",
+        "cloudcode.project": "gen-lang-client-0779271931",
         "cloudcode.region": "us-central1",
         "cloudcode.framework": "python",
         "editor.formatOnSave": true,
@@ -39,12 +33,8 @@
         "github.copilot.enable": true,
         "terminal.integrated.defaultProfile.linux": "bash",
         "terminal.integrated.env.linux": {
-          "GOOGLE_APPLICATION_CREDENTIALS": "/workspace/.secrets/service-account.json",
-          "GCP_PROJECT": "infinity-ai-5ec7c",
-          "FIREBASE_PROJECT": "infinity-ai-5ec7c",
-          "GEMINI_API_KEY": "${env:GEMINI_API_KEY}",
-          "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
-          "ANTHROPIC_API_KEY": "${env:ANTHROPIC_API_KEY}"
+          "GCP_PROJECT": "gen-lang-client-0779271931",
+          "FIREBASE_PROJECT": "gen-lang-client-0779271931"
         }
       },
       "extensions": [
@@ -66,16 +56,10 @@
     }
   },
 
-  "runArgs": [
-    "--env-file",
-    "/workspace/.env"
-  ],
-
   "containerEnv": {
-    "GCP_PROJECT": "infinity-ai-5ec7c",
-    "GOOGLE_APPLICATION_CREDENTIALS": "/workspace/.secrets/service-account.json",
+    "GCP_PROJECT": "gen-lang-client-0779271931",
     "PYTHONPATH": "/workspace",
-    "FIREBASE_PROJECT": "infinity-ai-5ec7c"
+    "FIREBASE_PROJECT": "gen-lang-client-0779271931"
   },
 
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
