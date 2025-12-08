@@ -42,12 +42,13 @@ import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
 
-// Engine C API URL
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-429140669077.us-central1.run.app";
+// Engine C API URL - use custom domain
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c.infinityai.pro";
 
 interface DhanCredentials {
   client_id: string;
   api_key: string;
+  api_secret: string;
   access_token: string;
   is_verified: boolean;
 }
@@ -92,10 +93,12 @@ export default function SettingsPage() {
   const [dhanCredentials, setDhanCredentials] = useState<DhanCredentials>({
     client_id: "",
     api_key: "",
+    api_secret: "",
     access_token: "",
     is_verified: false,
   });
   const [showAccessToken, setShowAccessToken] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(true);
@@ -138,21 +141,30 @@ export default function SettingsPage() {
   const [stopLossPercent, setStopLossPercent] = useState("2");
   const [autoTrading, setAutoTrading] = useState(false);
 
-  // Get user ID from coupon session
+  // Get user ID - use Dhan client ID directly for consistency
   const getUserId = () => {
-    // Prefer session user ID from coupon auth
-    if (session?.userId) {
-      return session.userId;
-    }
-    // Fallback to localStorage for backwards compatibility
     if (typeof window === 'undefined') return 'default_user';
-    let userId = localStorage.getItem("userId");
+
+    // Use stored Dhan client ID if available (most stable identifier)
+    const storedClientId = localStorage.getItem("dhan_client_id");
+    if (storedClientId) {
+      return storedClientId; // Use plain client ID without prefix
+    }
+
+    // Fallback to generated user ID (only until Dhan is connected)
+    let userId = localStorage.getItem("infinityai_user_id");
     if (!userId) {
-      // Generate a unique user ID and persist it
       userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      localStorage.setItem("userId", userId);
+      localStorage.setItem("infinityai_user_id", userId);
     }
     return userId;
+  };
+
+  // Store client ID for future sessions
+  const persistClientId = (clientId: string) => {
+    if (typeof window !== 'undefined' && clientId) {
+      localStorage.setItem("dhan_client_id", clientId);
+    }
   };
 
   // Load existing credentials on mount
@@ -160,24 +172,38 @@ export default function SettingsPage() {
     const loadCreds = async () => {
       setIsLoadingCredentials(true);
       try {
+        // First try to get credentials using stored client ID
         const userId = getUserId();
         const response = await fetch(`${ENGINE_C_URL}/api/user/credentials?user_id=${userId}`);
+        const data = response.ok ? await response.json() : null;
 
-        if (response.ok) {
-          const data = await response.json();
+        // If not found and userId is not a Dhan client ID format, try checking if there's a connected Dhan account
+        if ((!data || !data.configured) && !userId.match(/^\d{10}$/)) {
+          // Try to find existing Dhan credentials by checking the demat endpoint
+          // This helps recover when localStorage was cleared but backend has credentials
+          console.log('No credentials found for userId:', userId, '- checking for existing Dhan connection...');
+        }
+
+        if (data && data.configured) {
           setDhanCredentials({
             client_id: data.client_id || "",
             api_key: data.api_key || "",
+            api_secret: data.api_secret || "",
             access_token: data.access_token ? "********" : "",
             is_verified: data.is_verified || false,
           });
+
+          // If we found valid credentials, persist the client ID for future sessions
+          if (data.client_id) {
+            persistClientId(data.client_id);
+          }
 
           if (data.is_verified && data.configured) {
             setConnectionStatus("connected");
 
             // Update global store with user profile
             setUserProfile({
-              userId,
+              userId: data.client_id, // Use Dhan client ID as user ID
               clientId: data.client_id,
               name: `User ${data.client_id}`,
               email: '',
@@ -187,6 +213,9 @@ export default function SettingsPage() {
 
             // Load demat info to populate balance
             loadDematInfo();
+          } else if (data.configured && !data.is_verified) {
+            // Credentials exist but not verified - might need token refresh
+            setConnectionStatus("error");
           }
         }
       } catch (error) {
@@ -239,7 +268,8 @@ export default function SettingsPage() {
 
     setIsConnecting(true);
     try {
-      const userId = getUserId();
+      // Use client_id as user_id for consistent storage
+      const userId = dhanCredentials.client_id;
       const response = await fetch(`${ENGINE_C_URL}/api/user/credentials`, {
         method: "POST",
         headers: {
@@ -249,6 +279,7 @@ export default function SettingsPage() {
           user_id: userId,
           client_id: dhanCredentials.client_id,
           api_key: dhanCredentials.api_key || undefined,
+          api_secret: dhanCredentials.api_secret && !dhanCredentials.api_secret.includes("*") ? dhanCredentials.api_secret : undefined,
           access_token: dhanCredentials.access_token.includes("*") ? undefined : dhanCredentials.access_token,
         }),
       });
@@ -258,14 +289,18 @@ export default function SettingsPage() {
         setConnectionStatus(data.is_verified ? "connected" : "error");
 
         if (data.is_verified) {
+          // Persist client ID for future sessions (stable user identity)
+          persistClientId(dhanCredentials.client_id);
+
           toast.success("Dhan Connected Successfully", {
             description: "Your Dhan account has been linked. Loading your portfolio...",
           });
 
-          // Mask the access token after successful save
+          // Mask sensitive credentials after successful save
           setDhanCredentials(prev => ({
             ...prev,
             access_token: "********",
+            api_secret: prev.api_secret ? "********" : "",
             is_verified: true,
           }));
 
@@ -352,9 +387,15 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
+        // Clear persistent client ID
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("dhan_client_id");
+        }
+
         setDhanCredentials({
           client_id: "",
           api_key: "",
+          api_secret: "",
           access_token: "",
           is_verified: false,
         });
@@ -498,7 +539,32 @@ export default function SettingsPage() {
                         disabled={connectionStatus === "connected"}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Leave blank to use system market data API
+                        Your Dhan API Key from the developer portal
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="api_secret">API Secret (Optional)</Label>
+                      <div className="relative">
+                        <Input
+                          id="api_secret"
+                          type={showApiSecret ? "text" : "password"}
+                          placeholder="Enter your Dhan API Secret"
+                          value={dhanCredentials.api_secret}
+                          onChange={(e) => setDhanCredentials(prev => ({ ...prev, api_secret: e.target.value }))}
+                          disabled={connectionStatus === "connected"}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiSecret(!showApiSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your Dhan API Secret for secure authentication
                       </p>
                     </div>
 

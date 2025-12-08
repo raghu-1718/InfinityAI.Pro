@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 # Get encryption key from Secret Manager or environment
 def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
     try:
         # Try to get from Secret Manager first
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
         name = f"projects/{project_id}/secrets/user-credentials-key/versions/latest"
         response = client.access_secret_version(request={"name": name})
         return response.payload.data
@@ -32,7 +32,6 @@ def get_encryption_key() -> bytes:
         if key:
             return base64.urlsafe_b64decode(key)
         # Generate a consistent key based on project ID (for development only)
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
         return base64.urlsafe_b64encode(hashlib.sha256(project_id.encode()).digest())
 
 

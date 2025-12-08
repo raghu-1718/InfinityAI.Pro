@@ -22,26 +22,36 @@ from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 import joblib
 
-# Lazy import for User Credentials Management
-UserCredentialsManager = None
+# Lazy import for User Credentials Management (using GCP Secret Manager)
+SecretManagerCredentials = None
 _credentials_manager = None
 
 def get_credentials_manager():
-    """Lazy load UserCredentialsManager to avoid startup failures"""
-    global UserCredentialsManager, _credentials_manager
+    """Lazy load SecretManagerCredentials for GCP Secret Manager storage"""
+    global SecretManagerCredentials, _credentials_manager
     if _credentials_manager is None:
         try:
-            # Try relative import first (for src.main module context)
+            # Try to use GCP Secret Manager (preferred)
             try:
-                from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+                from src.secret_manager_credentials import SecretManagerCredentials as SMC, get_secret_manager_credentials as gsmc
             except ImportError:
-                # Fallback to direct import (for local testing)
-                from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
-            UserCredentialsManager = UCM
-            _credentials_manager = gcm()
+                from secret_manager_credentials import SecretManagerCredentials as SMC, get_secret_manager_credentials as gsmc
+            SecretManagerCredentials = SMC
+            _credentials_manager = gsmc()
+            logger.info("✅ Using GCP Secret Manager for credentials storage")
         except Exception as e:
-            logger.warning(f"Failed to initialize UserCredentialsManager: {e}")
-            return None
+            logger.warning(f"GCP Secret Manager not available, falling back to Firestore: {e}")
+            # Fallback to Firestore-based storage
+            try:
+                try:
+                    from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+                except ImportError:
+                    from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+                _credentials_manager = gcm()
+                logger.info("✅ Using Firestore for credentials storage (fallback)")
+            except Exception as e2:
+                logger.error(f"Failed to initialize any credentials manager: {e2}")
+                return None
     return _credentials_manager
 
 
@@ -535,34 +545,52 @@ class ExecutionAnalyticsRequest(BaseModel):
     orders: List[Dict[str, Any]]
 
 # --- DhanHQ Client Helper ---
+async def get_dhan_client_async(user_id: str) -> dhanhq:
+    """
+    Async version: Create authenticated DhanHQ client for a specific user.
+    Uses GCP Secret Manager for credentials.
+    """
+    try:
+        creds_manager = get_credentials_manager()
+        creds = await creds_manager.get_user_credentials(user_id)
+
+        if creds:
+            # Credentials are nested under 'credentials' key
+            credentials = creds.get("credentials", {})
+            client_id = credentials.get("client_id")
+            access_token = credentials.get("access_token")
+
+            if client_id and access_token:
+                logger.info(f"✅ DhanHQ client created for user {user_id}")
+                return dhanhq(client_id, access_token)
+
+        logger.error(f"User credentials not found for user_id: {user_id}")
+        raise HTTPException(status_code=401, detail="User credentials not found or invalid")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get user credentials: {e}")
+        raise HTTPException(status_code=401, detail="User credentials not found or invalid")
+
+
 def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
     """
-    Create authenticated DhanHQ client.
+    Sync version: Create authenticated DhanHQ client.
 
-    If user_id is provided, uses that user's credentials from Firestore.
+    If user_id is provided, uses that user's credentials from GCP Secret Manager.
     Otherwise, falls back to admin credentials from Secret Manager (for market data).
+
+    NOTE: For user-specific credentials in async endpoints, use get_dhan_client_async() instead.
     """
     if user_id:
-        # Get user-specific credentials from Firestore
-        try:
-            db = firestore.Client()
-            doc = db.collection("user_credentials").document(user_id).get()
-            if doc.exists:
-                data = doc.to_dict()
-                creds = data.get("credentials", {})
-                client_id = creds.get("client_id")
-                # Decrypt access token
-                from user_credentials import get_credentials_manager
-                manager = get_credentials_manager()
-                access_token = manager._decrypt(creds.get("access_token", ""))
+        # For user-specific credentials, the caller should use get_dhan_client_async in async contexts
+        # This sync version is for backwards compatibility in sync code paths
+        raise HTTPException(
+            status_code=500,
+            detail="Use get_dhan_client_async() for user-specific credentials in async endpoints"
+        )
 
-                if client_id and access_token:
-                    return dhanhq(client_id, access_token)
-        except Exception as e:
-            logger.error(f"Failed to get user credentials: {e}")
-            raise HTTPException(status_code=401, detail="User credentials not found or invalid")
-
-    # Fallback to admin credentials (for market data)
+    # Admin credentials (for market data only)
     client_id = os.getenv("DHAN_CLIENT_ID")
     access_token = os.getenv("DHAN_ACCESS_TOKEN")
 
@@ -681,7 +709,7 @@ async def delete_user_credentials(user_id: str):
 async def verify_user_connection(request: UserCredentialsVerifyRequest):
     """Verify user's Dhan connection and fetch account details"""
     try:
-        dhan_client = get_dhan_client(user_id=request.user_id)
+        dhan_client = await get_dhan_client_async(user_id=request.user_id)
 
         # Fetch funds
         funds = dhan_client.get_fund_limits()
@@ -723,7 +751,7 @@ async def get_user_account_details(user_id: str):
     Requires user to have configured their Dhan credentials.
     """
     try:
-        dhan_client = get_dhan_client(user_id=user_id)
+        dhan_client = await get_dhan_client_async(user_id=user_id)
 
         # Fetch all account data
         funds = dhan_client.get_fund_limits()
@@ -745,23 +773,40 @@ async def get_user_account_details(user_id: str):
         else:
             funds_data = {}
 
-        # Process holdings
-        holdings_data = holdings.get("data", []) if isinstance(holdings, dict) and "data" in holdings else []
-        total_holdings_value = sum(
-            h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
-            for h in holdings_data
-        )
-        total_holdings_pnl = sum(h.get("unrealizedProfit", 0) for h in holdings_data)
+        # Process holdings - handle string errors and missing data
+        holdings_data = []
+        total_holdings_value = 0
+        total_holdings_pnl = 0
+        if isinstance(holdings, dict):
+            holdings_data = holdings.get("data", []) if "data" in holdings else []
+            if isinstance(holdings_data, list):
+                total_holdings_value = sum(
+                    h.get("currentValue", 0) or h.get("buyAvg", 0) * h.get("totalQty", 0)
+                    for h in holdings_data if isinstance(h, dict)
+                )
+                total_holdings_pnl = sum(h.get("unrealizedProfit", 0) for h in holdings_data if isinstance(h, dict))
+        logger.info(f"Holdings for user {user_id}: {holdings}")
 
-        # Process positions
-        positions_data = positions.get("data", []) if isinstance(positions, dict) and "data" in positions else []
-        total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data)
+        # Process positions - handle string errors and missing data
+        positions_data = []
+        total_positions_pnl = 0
+        if isinstance(positions, dict):
+            positions_data = positions.get("data", []) if "data" in positions else []
+            if isinstance(positions_data, list):
+                total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data if isinstance(p, dict))
+        logger.info(f"Positions for user {user_id}: {positions}")
 
-        # Process orders
-        orders_data = orders.get("data", []) if isinstance(orders, dict) and "data" in orders else []
+        # Process orders - handle string errors and missing data
+        orders_data = []
+        if isinstance(orders, dict):
+            orders_data = orders.get("data", []) if "data" in orders else []
+        logger.info(f"Orders for user {user_id}: {orders}")
 
-        # Process trades
-        trades_data = trades.get("data", []) if isinstance(trades, dict) and "data" in trades else []
+        # Process trades - handle string errors and missing data
+        trades_data = []
+        if isinstance(trades, dict):
+            trades_data = trades.get("data", []) if "data" in trades else []
+        logger.info(f"Trades for user {user_id}: {trades}")
 
         # Extract balance values (handle both typo and correct spelling)
         available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
@@ -1155,9 +1200,10 @@ async def get_user_credentials_simple(user_id: str):
             "configured": True,
             "client_id": creds.get("credentials", {}).get("client_id", ""),
             "api_key": creds.get("credentials", {}).get("api_key", ""),
+            "api_secret": "********" if creds.get("credentials", {}).get("api_secret") else "",
             "access_token": "********" if creds.get("credentials", {}).get("access_token") else "",
-            "is_verified": creds.get("connection_status") == "connected",
-            "connection_status": creds.get("connection_status", "unknown")
+            "is_verified": creds.get("is_active", False),
+            "connection_status": "connected" if creds.get("is_active") else "pending_verification"
         }
 
     except Exception as e:

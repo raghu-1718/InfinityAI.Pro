@@ -133,23 +133,48 @@ export function useUserProfile() {
   });
 }
 
+// Helper to get user ID from localStorage
+const getStoredUserId = () => {
+  if (typeof window === 'undefined') return null;
+  // First check for stored Dhan client ID (most reliable)
+  const dhanClientId = localStorage.getItem('dhan_client_id');
+  if (dhanClientId) return dhanClientId;
+  // Fallback to generated user ID
+  return localStorage.getItem('infinityai_user_id');
+};
+
 // Funds Hook - Now uses user's connected account
 export function useFunds() {
-  const { userProfile, setFunds, dematData } = useAppStore();
+  const { userProfile, setFunds, setUserProfile } = useAppStore();
 
   return useQuery({
-    queryKey: ['funds', userProfile?.userId],
+    queryKey: ['funds', userProfile?.userId || getStoredUserId()],
     queryFn: async () => {
+      // Determine the user ID to use
+      const userId = userProfile?.userId || getStoredUserId();
+
       // If user has connected their account, use their demat data
-      if (userProfile?.isConnected && userProfile?.userId) {
+      if (userId) {
         try {
-          const dematRes = await engineC.getUserDemat(userProfile.userId);
+          const dematRes = await engineC.getUserDemat(userId);
           if (dematRes && dematRes.funds) {
+            // Update userProfile if not already set
+            if (!userProfile?.isConnected && dematRes.funds.raw?.dhanClientId) {
+              setUserProfile({
+                userId: dematRes.funds.raw.dhanClientId,
+                clientId: dematRes.funds.raw.dhanClientId,
+                name: `User ${dematRes.funds.raw.dhanClientId}`,
+                email: '',
+                isConnected: true,
+                isVerified: true,
+              });
+            }
+
             setFunds({
               availableBalance: dematRes.funds.availableBalance || 0,
-              sodLimit: 0,
+              sodLimit: dematRes.funds.sodLimit || 0,
               collateralAmount: dematRes.funds.utilisedMargin || 0,
-              dhanClientId: userProfile.clientId,
+              dhanClientId: dematRes.funds.raw?.dhanClientId || userId,
             });
             return { status: 'success', data: dematRes.funds };
           }

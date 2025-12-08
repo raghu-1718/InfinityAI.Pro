@@ -61,9 +61,18 @@ INFINITYAI_SYSTEM_PROMPT = """You are InfinityAI Trading Assistant, an expert AI
 
 ## YOUR IDENTITY
 - Name: InfinityAI Pro Trading Assistant
-- Version: 3.7.7 (Vertex AI Enhanced)
+- Version: 4.0.0 (Gemini 3 Pro Enhanced)
 - Platform: InfinityAI.Pro - Automated Trading Platform
 - Broker Integration: Dhan (India's fastest trading API)
+- Powered by: Google Gemini 3 Pro & 2.5 Flash (December 2025)
+
+## AI CAPABILITIES (Gemini Models Available)
+- **Gemini 3 Pro**: Most advanced reasoning, complex analysis (25 RPM, 1M TPM)
+- **Gemini 2.5 Pro**: Deep reasoning for risk analysis (15 RPM, 1M TPM)
+- **Gemini 2.5 Flash**: Fast signal generation (1K RPM, 1M TPM)
+- **Gemini 2.5 Flash Lite**: High-throughput news/sentiment (4K RPM, unlimited RPD)
+- **Imagen 4.0**: Chart pattern recognition and visualization
+- **Available Credits**: ₹89,272 Gen App Builder + ₹26,781 Trial = ₹1,16,054 total
 
 ## YOUR CAPABILITIES
 
@@ -82,17 +91,18 @@ You can execute trades through the platform (with user confirmation):
 - execute_paper_trade(symbol, action, quantity, price): Simulate trades
 - Real trades go through Dhan API with proper risk management
 
-### 3. MARKET KNOWLEDGE
+### 3. MARKET KNOWLEDGE (Updated December 2025)
 You are trained on:
-- SEBI regulations and compliance rules
+- SEBI regulations and compliance rules (2025 updates)
 - NSE/BSE trading hours (9:15 AM - 3:30 PM IST)
 - Weekly expiry schedule: Mon=MIDCPNIFTY, Tue=FINNIFTY, Wed=BANKNIFTY, Thu=NIFTY, Fri=SENSEX
-- Lot sizes effective from Dec 30, 2025: NIFTY=65, BANKNIFTY=30, FINNIFTY=60, MIDCPNIFTY=120
-- Current lot sizes (pre-Dec 2025): NIFTY=75, BANKNIFTY=35, FINNIFTY=65, MIDCPNIFTY=140
+- NEW Lot sizes effective Dec 30, 2025: NIFTY=65, BANKNIFTY=30, FINNIFTY=60, MIDCPNIFTY=120
+- Current lot sizes (until Dec 29, 2025): NIFTY=75, BANKNIFTY=35, FINNIFTY=65, MIDCPNIFTY=140
 - STT rates: Futures 0.02%, Options (sell) 0.1%
 - Circuit breakers: 10%, 15%, 20% thresholds
 - Options Greeks and Black-Scholes pricing
 - Technical analysis patterns and indicators
+- Global market correlations (US, Europe, Asia)
 
 ### 4. ANALYSIS MODES
 - signal: Generate BUY/SELL/HOLD signals with confidence
@@ -221,7 +231,8 @@ class EnhancedGenAIClient:
         self,
         project_id: str = None,
         location: str = "us-central1",
-        model_id: str = "gemini-2.0-flash"
+        model_id: str = "gemini-2.5-flash",  # Upgraded to 2.5-flash for better performance
+        advanced_model_id: str = "gemini-3-pro"  # Use Gemini 3 Pro for complex analysis
     ):
         """
         Initialize the enhanced GenAI client.
@@ -229,16 +240,29 @@ class EnhancedGenAIClient:
         Args:
             project_id: GCP project ID (default from env)
             location: GCP region (default us-central1)
-            model_id: Gemini model to use
+            model_id: Primary Gemini model (default: gemini-2.5-flash for speed)
+            advanced_model_id: Advanced model for complex reasoning (default: gemini-3-pro)
         """
         self.project_id = project_id or os.getenv("GCP_PROJECT_ID", "gen-lang-client-0779271931")
         self.location = location
         self.model_id = model_id
+        self.advanced_model_id = advanced_model_id
         self._client = None
         self._initialized = False
         self.token_usage = {"input": 0, "output": 0, "total": 0}
 
+        # Model configuration for different tasks
+        self.model_config = {
+            "fast": "gemini-2.5-flash-lite",      # 4K RPM - for high-volume tasks
+            "standard": "gemini-2.5-flash",       # 1K RPM - default for signals
+            "quality": "gemini-2.5-pro",          # 15 RPM - complex reasoning
+            "advanced": "gemini-3-pro",           # 25 RPM - most capable
+            "image": "gemini-3-pro-image",        # For chart analysis
+            "experimental": "gemini-2.5-pro-exp", # 150 RPM - new features
+        }
+
         logger.info(f"EnhancedGenAIClient created for project: {self.project_id}")
+        logger.info(f"Models: primary={model_id}, advanced={advanced_model_id}")
 
     @property
     def client(self):
@@ -591,7 +615,252 @@ Provide specific strike prices, premiums expected, and risk-reward.
             "input_cost_usd": round(input_cost, 4),
             "output_cost_usd": round(output_cost, 4),
             "total_cost_usd": round(input_cost + output_cost, 4),
-            "note": "Covered by trial credits"
+            "note": "Covered by trial credits (₹1,16,054 available)"
+        }
+
+    async def advanced_analysis_gemini3(
+        self,
+        query: str,
+        use_advanced_reasoning: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Use Gemini 3 Pro for advanced analysis requiring deep reasoning.
+
+        Best for:
+        - Complex multi-factor analysis
+        - Options strategy optimization
+        - Risk scenario modeling
+        - Portfolio rebalancing decisions
+
+        Args:
+            query: Complex analysis query
+            use_advanced_reasoning: Use Gemini 3 Pro (default True)
+
+        Returns:
+            Advanced analysis results
+        """
+        model = self.advanced_model_id if use_advanced_reasoning else self.model_id
+
+        enhanced_prompt = f"""[ADVANCED ANALYSIS MODE - Gemini 3 Pro]
+
+{query}
+
+Please provide:
+1. Deep multi-factor analysis
+2. Consider all market correlations
+3. Risk scenarios (best/worst/expected)
+4. Confidence intervals for predictions
+5. Step-by-step reasoning for your conclusions
+
+Be comprehensive but actionable."""
+
+        try:
+            config = types.GenerateContentConfig(
+                system_instruction=INFINITYAI_SYSTEM_PROMPT,
+                temperature=0.2,  # Lower for more precise reasoning
+                max_output_tokens=8192,  # More tokens for detailed analysis
+                tools=self._get_tools()
+            )
+
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=model,
+                contents=enhanced_prompt,
+                config=config
+            )
+
+            # Track usage
+            if hasattr(response, 'usage_metadata'):
+                self.token_usage["input"] += response.usage_metadata.prompt_token_count
+                self.token_usage["output"] += response.usage_metadata.candidates_token_count
+                self.token_usage["total"] += response.usage_metadata.total_token_count
+
+            return {
+                "response": response.text if hasattr(response, 'text') else str(response),
+                "model": model,
+                "analysis_type": "advanced",
+                "token_usage": self.token_usage.copy(),
+                "timestamp": datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Advanced analysis error: {e}")
+            return {"error": str(e), "model": model}
+
+    async def high_volume_analysis(
+        self,
+        queries: List[str],
+        model_tier: str = "fast"
+    ) -> List[Dict[str, Any]]:
+        """
+        Process multiple queries efficiently using high-throughput model.
+
+        Uses gemini-2.5-flash-lite (4K RPM, unlimited RPD) for high volume.
+
+        Args:
+            queries: List of analysis queries
+            model_tier: 'fast' (4K RPM) or 'standard' (1K RPM)
+
+        Returns:
+            List of analysis results
+        """
+        model = self.model_config.get(model_tier, "gemini-2.5-flash-lite")
+        results = []
+
+        for query in queries:
+            try:
+                config = types.GenerateContentConfig(
+                    system_instruction=INFINITYAI_SYSTEM_PROMPT,
+                    temperature=0.5,
+                    max_output_tokens=1024
+                )
+
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=model,
+                    contents=query,
+                    config=config
+                )
+
+                results.append({
+                    "query": query,
+                    "response": response.text if hasattr(response, 'text') else str(response),
+                    "model": model,
+                    "success": True
+                })
+
+            except Exception as e:
+                results.append({
+                    "query": query,
+                    "error": str(e),
+                    "model": model,
+                    "success": False
+                })
+
+        return results
+
+    async def multimodal_chart_analysis(
+        self,
+        chart_data: bytes,
+        symbol: str,
+        chart_type: str = "candlestick"
+    ) -> Dict[str, Any]:
+        """
+        Analyze trading charts using Gemini 3 Pro Image capabilities.
+
+        Args:
+            chart_data: Base64 encoded chart image
+            symbol: Stock/index symbol
+            chart_type: Type of chart (candlestick, line, etc.)
+
+        Returns:
+            Chart pattern analysis and signals
+        """
+        prompt = f"""Analyze this {chart_type} chart for {symbol}.
+
+Identify:
+1. Chart patterns (head & shoulders, double top/bottom, triangles, etc.)
+2. Support and resistance levels
+3. Trend direction and strength
+4. Key candlestick patterns
+5. Volume analysis if visible
+6. Trading signal based on chart patterns
+
+Provide specific price levels and actionable insights."""
+
+        try:
+            # Use image-capable model
+            model = self.model_config.get("image", "gemini-3-pro-image")
+
+            config = types.GenerateContentConfig(
+                system_instruction=INFINITYAI_SYSTEM_PROMPT,
+                temperature=0.3,
+                max_output_tokens=2048
+            )
+
+            # Create multimodal content
+            import base64
+            image_part = types.Part.from_bytes(
+                data=chart_data if isinstance(chart_data, bytes) else base64.b64decode(chart_data),
+                mime_type="image/png"
+            )
+
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=model,
+                contents=[prompt, image_part],
+                config=config
+            )
+
+            return {
+                "symbol": symbol,
+                "chart_type": chart_type,
+                "analysis": response.text if hasattr(response, 'text') else str(response),
+                "model": model,
+                "timestamp": datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Chart analysis error: {e}")
+            return {"error": str(e), "symbol": symbol}
+
+    def select_model_for_task(self, task: str) -> str:
+        """
+        Intelligently select the best model for a given task.
+
+        Args:
+            task: Type of task (signal, risk, sentiment, options, etc.)
+
+        Returns:
+            Best model ID for the task
+        """
+        task_model_map = {
+            # High-volume, low-latency tasks -> Flash Lite (4K RPM)
+            "sentiment": self.model_config["fast"],
+            "news": self.model_config["fast"],
+            "bulk_screening": self.model_config["fast"],
+
+            # Standard tasks -> Flash (1K RPM)
+            "signal": self.model_config["standard"],
+            "technical": self.model_config["standard"],
+            "quick_analysis": self.model_config["standard"],
+
+            # Complex reasoning -> Pro (15 RPM)
+            "risk": self.model_config["quality"],
+            "options": self.model_config["quality"],
+            "portfolio": self.model_config["quality"],
+
+            # Most advanced -> Gemini 3 Pro (25 RPM)
+            "strategy": self.model_config["advanced"],
+            "multi_factor": self.model_config["advanced"],
+            "scenario_analysis": self.model_config["advanced"],
+
+            # Image/chart analysis
+            "chart": self.model_config["image"],
+            "pattern_recognition": self.model_config["image"],
+        }
+
+        return task_model_map.get(task, self.model_id)
+
+    def get_available_models(self) -> Dict[str, Any]:
+        """Get all available Gemini models and their capabilities."""
+        return {
+            "models": self.model_config,
+            "current_primary": self.model_id,
+            "current_advanced": self.advanced_model_id,
+            "rate_limits": {
+                "gemini-2.5-flash-lite": {"rpm": 4000, "tpm": "4M", "rpd": "unlimited"},
+                "gemini-2.5-flash": {"rpm": 1000, "tpm": "1M", "rpd": "10K"},
+                "gemini-2.5-pro": {"rpm": 15, "tpm": "1M", "rpd": "300"},
+                "gemini-2.5-pro-exp": {"rpm": 150, "tpm": "2M", "rpd": "10K"},
+                "gemini-3-pro": {"rpm": 25, "tpm": "1M", "rpd": "250"},
+                "gemini-3-pro-image": {"rpm": 20, "tpm": "100K", "rpd": "250"},
+            },
+            "credits_available": {
+                "gen_app_builder": "₹89,272.51",
+                "free_trial": "₹26,781.76 (expires Dec 14, 2025)",
+                "total": "₹1,16,054.27"
+            }
         }
 
 

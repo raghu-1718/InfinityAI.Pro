@@ -25,6 +25,7 @@ import joblib
 try:
     from src.google_integrations import (
         GenAIClient,
+        GeminiModel,  # Added for model selection
         TradingLogger,
         TradingEventType,
         ModelStorage,
@@ -35,6 +36,7 @@ try:
     GOOGLE_INTEGRATIONS_AVAILABLE = True
 except ImportError as e:
     GOOGLE_INTEGRATIONS_AVAILABLE = False
+    GeminiModel = None  # Fallback
     print(f"⚠️ Google integrations not available: {e}")
 
 # Setup logging
@@ -376,11 +378,12 @@ if GOOGLE_INTEGRATIONS_AVAILABLE:
         )
         logger.info("✅ Trading History Storage initialized")
 
-        # Initialize GenAI Client (Gemini SDK)
+        # Initialize GenAI Client (Gemini SDK) - Upgraded to Gemini 2.5 Flash
         GENAI_CLIENT = GenAIClient(
-            project_id=PROJECT_ID
+            project_id=PROJECT_ID,
+            model=GeminiModel.GEMINI_25_FLASH  # Upgraded from 2.0
         )
-        logger.info("✅ GenAI Client initialized")
+        logger.info("✅ GenAI Client initialized with Gemini 2.5 Flash")
 
         # Initialize Agent Orchestrator for multi-agent workflows
         AGENT_ORCHESTRATOR = create_trading_workflow(GENAI_CLIENT)

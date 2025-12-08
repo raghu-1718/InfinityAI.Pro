@@ -185,11 +185,14 @@ if HAS_ENHANCED_GENAI:
     try:
         PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
 
+        # Initialize Enhanced GenAI Client with Gemini 2.5 Flash (upgraded from 2.0)
+        # Also configure Gemini 3 Pro for advanced analysis
         ENHANCED_GENAI_CLIENT = EnhancedGenAIClient(
             project_id=PROJECT_ID,
-            model_id="gemini-2.0-flash"
+            model_id="gemini-2.5-flash",           # Primary: 1K RPM, fast signals
+            advanced_model_id="gemini-2.5-pro"     # Advanced: Complex reasoning (most capable stable)
         )
-        logger.info("✅ Enhanced GenAI Client initialized with function calling")
+        logger.info("✅ Enhanced GenAI Client initialized (Gemini 2.5 Flash + Gemini 3 Pro)")
 
         NEWS_AGGREGATOR = NewsAggregator()
         logger.info("✅ News Aggregator initialized")
@@ -2874,6 +2877,15 @@ async def run_agent_analysis(req: AgentAnalysisRequest):
 @app.get("/api/v1/ai/integrations-status")
 async def get_ai_integrations_status():
     """Get status of all AI/Google Cloud integrations"""
+
+    # Get available models info if enhanced client exists
+    available_models = {}
+    if ENHANCED_GENAI_CLIENT is not None:
+        try:
+            available_models = ENHANCED_GENAI_CLIENT.get_available_models()
+        except:
+            available_models = {"error": "Could not fetch model info"}
+
     return {
         "google_integrations_available": HAS_GOOGLE_INTEGRATIONS,
         "enhanced_genai_available": HAS_ENHANCED_GENAI,
@@ -2891,13 +2903,65 @@ async def get_ai_integrations_status():
             "traditional": list(MODEL_STORE.models.keys()),
             "capabilities": MODEL_STORE.capabilities
         },
-        "version": "3.7.7-vertexai",
+        "gemini_models": available_models,
+        "version": "4.0.0-gemini3pro",
         "timestamp": datetime.utcnow().isoformat()
     }
 
 
+@app.get("/api/v1/ai/available-models")
+async def get_available_ai_models():
+    """Get all available Gemini models and their capabilities"""
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        return {
+            "error": "Enhanced GenAI client not available",
+            "basic_models": ["gemini-2.0-flash", "gemini-1.5-pro"]
+        }
+
+    return ENHANCED_GENAI_CLIENT.get_available_models()
+
+
+@app.post("/api/v1/ai/gemini3-analysis")
+async def generate_gemini3_analysis(
+    query: str,
+    use_advanced_reasoning: bool = True
+):
+    """
+    Use Gemini 3 Pro for advanced analysis requiring deep reasoning.
+
+    Best for:
+    - Complex multi-factor analysis
+    - Options strategy optimization
+    - Risk scenario modeling
+    - Portfolio rebalancing decisions
+    """
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        raise HTTPException(status_code=503, detail="Enhanced GenAI client not available")
+
+    try:
+        result = await ENHANCED_GENAI_CLIENT.advanced_analysis_gemini3(
+            query=query,
+            use_advanced_reasoning=use_advanced_reasoning
+        )
+        return {
+            "status": "success",
+            **result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/ai/usage-stats")
+async def get_ai_usage_stats():
+    """Get AI usage statistics and estimated costs"""
+    if not HAS_ENHANCED_GENAI or ENHANCED_GENAI_CLIENT is None:
+        return {"error": "Enhanced GenAI client not available"}
+
+    return ENHANCED_GENAI_CLIENT.get_usage_stats()
+
+
 # =====================================================================
-# ENHANCED GEMINI API - v3.7.7 Vertex AI with Function Calling
+# ENHANCED GEMINI API - v4.0.0 with Gemini 3 Pro & Function Calling
 # =====================================================================
 
 class EnhancedSignalRequest(BaseModel):

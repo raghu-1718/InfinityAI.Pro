@@ -27,11 +27,66 @@ logger = logging.getLogger("InfinityAI.GenAI")
 
 
 class GeminiModel(Enum):
-    """Available Gemini models for trading analysis."""
-    FLASH = "gemini-2.0-flash"
-    FLASH_LITE = "gemini-2.0-flash-lite"
+    """Available Gemini models for trading analysis - Updated December 2025."""
+
+    # === GEMINI 3.0 MODELS (Latest - December 2025 Preview) ===
+    GEMINI_3_PRO = "gemini-3-pro-preview"            # Most advanced, preview version
+    GEMINI_3_PRO_IMAGE = "gemini-3-pro-image-preview"  # Multimodal with image generation
+
+    # === GEMINI 2.5 MODELS (Production Ready) ===
+    GEMINI_25_PRO = "gemini-2.5-pro"                 # Best for complex reasoning, 15 RPM
+    GEMINI_25_PRO_EXP = "gemini-2.0-pro-exp"         # Experimental features (2.0 based)
+    GEMINI_25_FLASH = "gemini-2.5-flash"             # Fast & efficient, 1K RPM
+    GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"   # Ultra-fast, 4K RPM, unlimited RPD
+    GEMINI_25_FLASH_IMAGE = "gemini-2.5-flash-image" # Image generation with 2.5
+
+    # === GEMINI 2.0 MODELS (Stable) ===
+    FLASH = "gemini-2.0-flash"                       # Default fast model, 2K RPM
+    FLASH_LITE = "gemini-2.0-flash-lite"             # Lightweight, 4K RPM
+    FLASH_EXP = "gemini-2.0-flash-exp"               # Experimental, 10 RPM
+    FLASH_001 = "gemini-2.0-flash-001"               # Stable version
+
+    # === GEMINI 1.5 MODELS (Legacy) ===
     PRO = "gemini-1.5-pro"
-    PRO_LATEST = "gemini-1.5-pro-latest"
+    PRO_LATEST = "gemini-pro-latest"
+
+    # === SPECIALIZED MODELS ===
+    GEMINI_25_PRO_TTS = "gemini-2.5-pro-preview-tts"   # Text-to-speech preview
+    GEMINI_25_FLASH_TTS = "gemini-2.5-flash-preview-tts"  # Fast TTS preview
+    COMPUTER_USE = "gemini-2.5-computer-use-preview-10-2025"  # Computer use
+
+    # === IMAGE GENERATION (Imagen 4.0) ===
+    IMAGEN_4_FAST = "imagen-4.0-fast-generate-001"   # Fast image generation
+    IMAGEN_4_STANDARD = "imagen-4.0-generate-001"    # Standard quality
+    IMAGEN_4_ULTRA = "imagen-4.0-ultra-generate-001" # Ultra quality
+    IMAGEN_4_ULTRA = "imagen-4.0-ultra-generate"     # Ultra quality
+
+    # === VIDEO GENERATION (Veo 3.0) ===
+    VEO_3_FAST = "veo-3.0-fast-generate"             # Fast video generation
+    VEO_3_STANDARD = "veo-3.0-generate"              # Standard video
+
+
+# Model selection helpers
+class ModelTier(Enum):
+    """Model tiers for different use cases."""
+    FASTEST = GeminiModel.GEMINI_25_FLASH_LITE      # 4K RPM, unlimited RPD
+    FAST = GeminiModel.FLASH                        # 2K RPM, good balance
+    BALANCED = GeminiModel.GEMINI_25_FLASH          # 1K RPM, better quality
+    QUALITY = GeminiModel.GEMINI_25_PRO             # 15 RPM, best reasoning
+    ADVANCED = GeminiModel.GEMINI_3_PRO             # Latest, most capable
+
+
+# Default models for different tasks
+DEFAULT_MODELS = {
+    "signal_generation": GeminiModel.GEMINI_25_FLASH,      # Fast signals
+    "risk_analysis": GeminiModel.GEMINI_25_PRO,            # Complex reasoning
+    "sentiment_analysis": GeminiModel.GEMINI_25_FLASH_LITE, # High volume
+    "chart_analysis": GeminiModel.GEMINI_3_PRO_IMAGE,      # Image understanding
+    "market_summary": GeminiModel.FLASH,                   # Quick summaries
+    "options_analysis": GeminiModel.GEMINI_25_PRO,         # Complex math
+    "news_analysis": GeminiModel.GEMINI_25_FLASH_LITE,     # High throughput
+    "advanced_reasoning": GeminiModel.GEMINI_3_PRO,        # Most capable
+}
 
 
 @dataclass
