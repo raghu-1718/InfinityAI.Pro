@@ -3116,13 +3116,13 @@ async def gemini_chat(request: GeminiChatRequest):
         if HAS_FINANCE_AI:
             from src.google_integrations.finance_ai_model import get_finance_ai_model
             import google.genai.types as genai_types
-            
+
             model = get_finance_ai_model()
-            
+
             # Ensure client is initialized
             if not model._ensure_client():
                 raise HTTPException(status_code=503, detail="Finance AI model not available")
-            
+
             # Construct prompt
             system_prompt = """You are an expert Indian stock market analyst and trading advisor.
 You have deep knowledge of NSE, BSE, NIFTY, Bank NIFTY, and all Indian market instruments.
@@ -3145,14 +3145,14 @@ Be concise but comprehensive."""
                     max_output_tokens=2048,
                 )
             )
-            
+
             return {
                 "status": "success",
                 "response": response.text,
                 "model": "gemini-2.0-flash",
                 "timestamp": datetime.utcnow().isoformat()
             }
-        
+
         # Fallback to Enhanced GenAI
         elif HAS_ENHANCED_GENAI and ENHANCED_GENAI_CLIENT:
             response = await ENHANCED_GENAI_CLIENT.chat(request.question, request.context)
@@ -3163,10 +3163,10 @@ Be concise but comprehensive."""
                 "model": "gemini-2.0-flash",
                 "timestamp": datetime.utcnow().isoformat()
             }
-        
+
         else:
             raise HTTPException(status_code=503, detail="No AI model available")
-            
+
     except Exception as e:
         logger.error(f"Gemini chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

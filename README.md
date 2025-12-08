@@ -3,9 +3,9 @@
 <div align="center">
 
 ![InfinityAI.Pro](https://img.shields.io/badge/InfinityAI.Pro-Trading%20Platform-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-4.2.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-4.0-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-Production-brightgreen?style=for-the-badge)
-![AI](https://img.shields.io/badge/AI-Gemini%202.5%20Pro-purple?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Gemini%202.0%20Flash-purple?style=for-the-badge)
 
 **🚀 Next-Generation AI Trading for Indian Markets**
 
@@ -32,20 +32,20 @@
 
 ## 🎯 Overview
 
-InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform designed specifically for Indian financial markets. The platform leverages cutting-edge AI/ML technologies, including **Google's Gemini 2.5 Pro** model, ensemble machine learning, and advanced risk management algorithms to provide institutional-grade trading capabilities.
+InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform designed specifically for Indian financial markets. The platform leverages cutting-edge AI/ML technologies, including **Google's Gemini 2.0 Flash** model, ensemble machine learning, and advanced risk management algorithms to provide institutional-grade trading capabilities.
 
 ### Key Highlights
 
 | Feature | Specification |
 |---------|---------------|
-| **Primary AI** | Google Gemini 2.5 Pro (Advanced Analysis) |
-| **Fast AI** | Google Gemini 2.5 Flash (High-Speed Signals) |
+| **Primary AI** | Google Gemini 2.0 Flash (Analysis & Chat) |
 | **ML Ensemble** | XGBoost, LightGBM, CatBoost, Random Forest |
 | **Broker Integration** | DhanHQ (Full API + OAuth 2.0) |
-| **Response Time** | 750-1000ms (including AI processing) |
-| **Uptime** | 99.9% (Cloud Run auto-scaling) |
+| **Cloud Platform** | Google Cloud Platform (GCP) |
+| **Project ID** | `gen-lang-client-0779271931` |
+| **Region** | `us-central1` |
 | **Markets** | NSE, BSE, NFO, MCX |
-| **AI Credits** | ₹1,16,054.27 Available |
+| **Total API Endpoints** | 114 across 3 engines |
 
 ---
 
@@ -55,16 +55,18 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         INFINITYAI.PRO PLATFORM v4.2.0                       │
+│                         INFINITYAI.PRO PLATFORM v4.0                        │
+│                    GCP Project: gen-lang-client-0779271931                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │   ┌────────────────┐    ┌────────────────┐    ┌────────────────┐            │
 │   │   ENGINE A     │◄──►│   ENGINE B     │◄──►│   ENGINE C     │            │
-│   │ v4.0.0-gemini  │    │ v4.2.0-stable  │    │ v4.1-robust    │            │
+│   │    v3.7        │    │    v4.0        │    │    v3.5        │            │
 │   │                │    │                │    │                │            │
-│   │ • Orchestration│    │ • Gemini 2.5   │    │ • DhanHQ API   │            │
-│   │ • Risk Mgmt    │    │ • ML Ensemble  │    │ • OAuth Flow   │            │
-│   │ • Coordination │    │ • Signals      │    │ • Execution    │            │
+│   │ • Risk Mgmt    │    │ • Gemini 2.0   │    │ • DhanHQ API   │            │
+│   │ • VaR/CVaR     │    │ • ML Ensemble  │    │ • OAuth Flow   │            │
+│   │ • Kelly Sizing │    │ • AI Signals   │    │ • Execution    │            │
+│   │ • 8 Endpoints  │    │ • 63 Endpoints │    │ • 43 Endpoints │            │
 │   └────────────────┘    └────────────────┘    └────────────────┘            │
 │          │                     │                     │                      │
 │          └─────────────────────┼─────────────────────┘                      │
@@ -74,8 +76,8 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 │                    │  ┌─────────────────┐  │                                │
 │                    │  │ Secret Manager  │  │                                │
 │                    │  │ Cloud Logging   │  │                                │
-│                    │  │ Cloud Storage   │  │                                │
-│                    │  │ Vertex AI       │  │                                │
+│                    │  │ Cloud Run       │  │                                │
+│                    │  │ Artifact Reg.   │  │                                │
 │                    │  └─────────────────┘  │                                │
 │                    └───────────────────────┘                                │
 │                                │                                            │
@@ -83,9 +85,11 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 │   │                        FIREBASE                               │          │
 │   │  ┌────────────┐  ┌────────────┐  ┌────────────┐              │          │
 │   │  │ Firestore  │  │   Auth     │  │  Hosting   │              │          │
-│   │  │ User Data  │  │ Google SSO │  │ infinityai │              │          │
-│   │  │ Credentials│  │ Coupon     │  │   .pro     │              │          │
+│   │  │ (nam5)     │  │ Google SSO │  │ infinityai │              │          │
+│   │  │ NATIVE     │  │            │  │   .pro     │              │          │
 │   │  └────────────┘  └────────────┘  └────────────┘              │          │
+│   │                                                               │          │
+│   │  13 Firebase Functions (Cloud Functions Gen 2)               │          │
 │   └──────────────────────────────────────────────────────────────┘          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -95,109 +99,130 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 
 | Component | Service | Version | URL |
 |-----------|---------|---------|-----|
-| **Engine A** | Cloud Run | v4.0.0-gemini3pro | `engine-a.infinityai.pro` |
-| **Engine B** | Cloud Run | v4.2.0-stable | `engine-b.infinityai.pro` |
-| **Engine C** | Cloud Run | v4.1-robust-parsing | `engine-c.infinityai.pro` |
-| **Frontend** | Firebase Hosting | Latest | `infinityai.pro` |
-| **Database** | Firestore | Native mode | us-central1 |
-| **Auth** | Firebase Auth | v9 | Google + Coupon |
-| **Secrets** | GCP Secret Manager | v1 | us-central1 |
+| **Engine A** | Cloud Run | v3.7-google-integrations | `engine-a-429140669077.us-central1.run.app` |
+| **Engine B** | Cloud Run | v4.0-enhanced-trading-ai | `engine-b-429140669077.us-central1.run.app` |
+| **Engine C** | Cloud Run | v3.5-enhanced-execution | `engine-c-429140669077.us-central1.run.app` |
+| **Frontend** | Firebase Hosting | v4.0 (Next.js 16) | `infinityai.pro` |
+| **Database** | Firestore | NATIVE mode | nam5 (US multi-region) |
+| **Auth** | Firebase Auth | v9 | Google SSO |
+| **Secrets** | GCP Secret Manager | 9 secrets | us-central1 |
+| **Functions** | Firebase Functions | 13 functions | Gen 2 |
 
 ---
 
 ## ⚙️ Engine Specifications
 
-### Engine A - Orchestration & Risk Management
-**Version: v4.0.0-gemini3pro** | **Status: ✅ Production**
+### Engine A - Risk Management & Analytics
+**Version: v3.7-google-integrations** | **Status: ✅ Production** | **Endpoints: 8**
 
-Central orchestrator and risk management hub coordinating all trading operations.
+Central risk management hub with portfolio analytics and position sizing.
 
 #### Capabilities
 | Feature | Description |
 |---------|-------------|
-| **OAuth Management** | DhanHQ OAuth 2.0 flow orchestration |
 | **VaR Calculation** | Value at Risk (95%, 99% confidence) |
 | **CVaR** | Expected Shortfall / Conditional VaR |
 | **Sortino Ratio** | Downside risk-adjusted returns |
 | **Kelly Criterion** | Optimal position sizing |
 | **Max Drawdown** | Portfolio drawdown tracking |
-| **Engine Coordination** | Multi-engine orchestration |
+| **Risk Scoring** | Multi-factor risk assessment |
+| **Portfolio Risk** | Correlation & diversification analysis |
+
+#### Google Integrations
+- ✅ GenAI (Gemini)
+- ✅ Cloud Logging
+- ✅ Cloud Storage
+- ✅ Agent Orchestrator
 
 #### Key Endpoints
 ```
 GET  /health                    - Health check
 POST /api/v1/risk/var           - Value at Risk
+POST /api/v1/risk/cvar          - Conditional VaR
+POST /api/v1/risk/sortino       - Sortino Ratio
 POST /api/v1/risk/kelly         - Kelly position sizing
-POST /api/v1/orchestrate        - Trading pipeline
 GET  /api/v1/capabilities       - Engine capabilities
 ```
 
 ---
 
 ### Engine B - AI/ML Signal Generation
-**Version: v4.2.0-stable** | **Status: ✅ Production**
+**Version: v4.0-enhanced-trading-ai** | **Status: ✅ Production** | **Endpoints: 63**
 
-Intelligence core with Gemini 2.5 Pro integration and ensemble ML models.
+Intelligence core with Gemini 2.0 Flash integration and ensemble ML models.
 
 #### Gemini Model Configuration
-| Task | Model | Rate Limit | Use Case |
-|------|-------|------------|----------|
-| **Fast** | gemini-2.5-flash-lite | 4,000 RPM | High-volume signals |
-| **Standard** | gemini-2.5-flash | 1,000 RPM | Real-time analysis |
-| **Quality** | gemini-2.5-pro | 15 RPM | Complex reasoning |
-| **Advanced** | gemini-2.5-pro | 15 RPM | Deep analysis |
-| **Experimental** | gemini-2.0-pro-exp | 150 RPM | Cutting-edge features |
+| Feature | Status |
+|---------|--------|
+| **Primary Model** | Gemini 2.0 Flash |
+| **GenAI Integration** | ✅ Active |
+| **Signal Agent** | ✅ Active |
+| **Risk Agent** | ✅ Active |
+| **Enhanced Trading AI** | ✅ Active |
 
 #### ML Ensemble Stack
-| Model | Accuracy | Latency | Strength |
-|-------|----------|---------|----------|
-| XGBoost | 72% | 15ms | Complex patterns |
-| LightGBM | 70% | 8ms | Speed |
-| CatBoost | 71% | 12ms | Categorical data |
-| Random Forest | 68% | 20ms | Stability |
-| **Ensemble** | **74%** | **25ms** | **Combined strength** |
+| Model | Status | Strength |
+|-------|--------|----------|
+| XGBoost | ✅ Active | Complex patterns |
+| LightGBM | ✅ Active | Speed |
+| CatBoost | ✅ Active | Categorical data |
+| Random Forest | ✅ Active | Stability |
+| Transformers | ✅ Active | NLP/Sentiment |
+| NLTK Sentiment | ✅ Active | Text analysis |
+| TA-Lib | ✅ Active | Technical indicators |
+| yFinance | ✅ Active | Market data |
+
+#### Enhanced Features
+- ✅ Indian Market Knowledge
+- ✅ SEBI 2025 Compliance
+- ✅ Smart Entry/Exit
+- ✅ Position Sizing
+- ✅ Risk Management
 
 #### Key Endpoints
 ```
-GET  /api/v1/ai/available-models     - List AI models
-POST /api/v1/ai/gemini3-analysis     - Gemini 2.5 Pro analysis
-POST /api/v1/ai/enhanced-signal      - Enhanced trading signal
-GET  /api/v1/ai/integrations-status  - AI integration status
-GET  /api/v1/ai/usage-stats          - Token usage & costs
-GET  /api/v1/market/pulse            - Real-time market pulse
+GET  /health                         - Health check
+POST /api/v1/gemini/chat             - Free-form Gemini AI chat
+POST /api/v1/gemini/analyze          - Gemini analysis
+POST /api/v1/finance-ai/signal       - AI trading signal
+POST /api/v1/finance-ai/market-analysis - Market analysis
+POST /api/v1/finance-ai/options-strategy - Options strategy
+POST /api/v1/finance-ai/risk-analysis - Risk analysis
 POST /api/v1/signal                  - ML signal generation
 POST /api/v1/sentiment               - Sentiment analysis
+GET  /api/v1/market/pulse            - Real-time market pulse
 ```
 
-#### Sample Gemini Analysis Output
+#### Sample Gemini Chat Response
 ```json
 {
   "status": "success",
-  "response": "**Signal:** BUY with 65% confidence\n**Entry:** ₹1540-1545\n**Stop Loss:** ₹1520\n**Target:** ₹1580\n**Risk:Reward:** 1:2.4\n\n**Technical Analysis:**\n- RSI at 58.81 (NEUTRAL)\n- Above 21-day EMA & 50-day SMA (BULLISH)\n- MACD showing consolidation...",
-  "model": "gemini-2.5-pro",
-  "analysis_type": "advanced",
-  "token_usage": {
-    "input": 2989,
-    "output": 1484,
-    "total": 5150
-  }
+  "response": "NIFTY 50 is the flagship index of the National Stock Exchange of India, comprising the 50 largest and most liquid stocks...",
+  "model": "gemini-2.0-flash"
 }
 ```
 
 ---
 
 ### Engine C - Trade Execution & Broker Integration
-**Version: v4.1-robust-parsing** | **Status: ✅ Production**
+**Version: v3.5-enhanced-execution** | **Status: ✅ Production** | **Endpoints: 43**
 
-Handles DhanHQ integration with OAuth 2.0, credential management via GCP Secret Manager, and trade execution.
+Handles DhanHQ integration with OAuth 2.0, credential management via GCP Secret Manager, and intelligent trade execution.
+
+#### ML Capabilities
+- ✅ Slippage Prediction
+- ✅ Order Timing Optimization
+- ✅ TWAP Splitting
+- ✅ VWAP Splitting
+- ✅ Execution Analytics
 
 #### Broker Integration
 | Feature | Specification |
 |---------|---------------|
 | **Broker** | DhanHQ |
 | **Authentication** | OAuth 2.0 with Secret Manager |
-| **Credential Storage** | GCP Secret Manager (encrypted) |
-| **API Coverage** | 40+ endpoints |
+| **Credential Storage** | GCP Secret Manager (per-user) |
+| **API Coverage** | 43 endpoints |
 | **Order Types** | Market, Limit, SL, SL-M, Cover, Bracket |
 | **Segments** | NSE, BSE, NFO, MCX, CDS |
 
@@ -208,7 +233,7 @@ User Dashboard → OAuth Connect → DhanHQ Authorization
               Engine C Receives Token
                       ↓
          Store in GCP Secret Manager
-              (user-creds-{firebase_id})
+              (user-creds-{user_id})
                       ↓
          Firestore Reference Updated
                       ↓
@@ -217,47 +242,85 @@ User Dashboard → OAuth Connect → DhanHQ Authorization
 
 #### Key Endpoints
 ```
+GET  /health                         - Health check
+GET  /api/v1/dhan/status             - Broker status
 GET  /api/v1/user/{client_id}/balance    - Account balance
 GET  /api/v1/user/{client_id}/positions  - Open positions
 GET  /api/v1/user/{client_id}/orders     - Order book
-POST /api/v1/order/place                 - Place order
-PUT  /api/v1/order/modify                - Modify order
-DELETE /api/v1/order/cancel              - Cancel order
-GET  /api/v1/dhan/status                 - Broker status
+GET  /api/v1/user/{client_id}/holdings   - Holdings
+POST /api/v1/order/place             - Place order
+PUT  /api/v1/order/modify            - Modify order
+DELETE /api/v1/order/cancel          - Cancel order
 ```
 
 ---
 
-## 🤖 Gemini Integration
+## 🤖 Gemini AI Integration
 
-### Available Models
+### Current Model
+| Model | Use Case | Status |
+|-------|----------|--------|
+| **Gemini 2.0 Flash** | Real-time AI chat & analysis | ✅ Active |
 
-| Model | Capabilities | Best For |
-|-------|-------------|----------|
-| **gemini-2.5-pro** | Deep reasoning, multi-factor analysis | Complex trading decisions |
-| **gemini-2.5-flash** | Fast, efficient | Real-time signals |
-| **gemini-2.5-flash-lite** | Ultra-fast, high-volume | Batch processing |
-| **gemini-2.0-pro-exp** | Experimental features | R&D, testing |
+### AI Features
 
-### Credits & Usage
+#### Gemini Chat (`/api/v1/gemini/chat`)
+Free-form AI Q&A for any trading question:
+- Market analysis
+- Stock research
+- Trading strategies
+- Risk assessment
+- Indian market insights
 
-| Credit Type | Amount | Expiry |
-|-------------|--------|--------|
-| Gen App Builder Trial | ₹89,272.51 | Dec 2026 |
-| Free Trial | ₹26,781.76 | Dec 14, 2025 |
-| **Total Available** | **₹1,16,054.27** | - |
-
-### AI Capabilities
-
-- **Multi-Factor Analysis**: Technical + Fundamental + Sentiment fusion
-- **Market Context**: Indian market timing, holidays, regulations
-- **Risk Scenarios**: Best/Worst/Expected case modeling
-- **Position Sizing**: Kelly Criterion recommendations
-- **Entry/Exit Signals**: Precise price levels with reasoning
+#### Finance AI Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/v1/finance-ai/signal` | AI-powered trading signals |
+| `/api/v1/finance-ai/market-analysis` | Comprehensive market analysis |
+| `/api/v1/finance-ai/options-strategy` | Options strategy recommendations |
+| `/api/v1/finance-ai/risk-analysis` | Portfolio risk assessment |
 
 ---
 
-## 📊 Market Data Accuracy
+## 📊 GCP Resources
+
+### Enabled APIs (56 total)
+| Category | APIs |
+|----------|------|
+| **AI/ML** | aiplatform, generativelanguage, ml |
+| **Compute** | run, cloudfunctions, cloudbuild |
+| **Storage** | firestore, storage, secretmanager |
+| **Networking** | dns, domains, certificatemanager |
+| **Monitoring** | logging, monitoring, cloudtrace |
+
+### Secret Manager
+| Secret | Purpose |
+|--------|---------|
+| `gemini-api-key` | Gemini AI authentication |
+| `dhan-client-id` | Dhan OAuth client ID |
+| `dhan-access-token` | Dhan API access |
+| `encryption-key` | Data encryption |
+| `firebase-admin-sdk` | Firebase admin credentials |
+| `user-creds-*` | Per-user Dhan credentials (3 users) |
+
+### Firebase Functions (13)
+- `analyzeImageWithRoboticsER`
+- `analyzePortfolio`
+- `getAiSignals`
+- `getBatchAiSignals`
+- `getDhanOverview`
+- `getEngineBStatus`
+- `getGeminiAnalysis`
+- `getVertexAiAnalysis`
+- `saveDhanCredentials`
+- `startTrading`
+- `stopTrading`
+- `submitDhanCredentialsV2`
+- `syncHoldings`
+
+---
+
+## 📈 Market Data Accuracy
 
 ### Index Specifications (Updated December 2025)
 
@@ -282,24 +345,32 @@ GET  /api/v1/dhan/status                 - Broker status
 
 ## ⚡ Performance Metrics
 
-### Response Times (Production)
+### Current Service Status
 
-| Engine | Endpoint | P50 | P95 |
-|--------|----------|-----|-----|
-| Engine A | /health | 765ms | 900ms |
-| Engine B | /health | 764ms | 950ms |
-| Engine B | /ai/gemini3-analysis | 1.5s | 2.5s |
-| Engine C | /health | 759ms | 800ms |
-| Engine C | /user/balance | 500ms | 800ms |
+| Engine | Version | Status | Health |
+|--------|---------|--------|--------|
+| Engine A | v3.7-google-integrations | ✅ Active | Healthy |
+| Engine B | v4.0-enhanced-trading-ai | ✅ Active | Healthy |
+| Engine C | v3.5-enhanced-execution | ✅ Active | Healthy |
+
+### API Endpoints
+
+| Engine | Endpoints | Description |
+|--------|-----------|-------------|
+| Engine A | 8 | Risk management & analytics |
+| Engine B | 63 | AI/ML & signals |
+| Engine C | 43 | Execution & broker |
+| **Total** | **114** | All endpoints |
 
 ### Scalability
 
 | Metric | Value |
 |--------|-------|
-| Max Concurrent Users | 10,000 |
+| Cloud Run Auto-scale | 0-100 instances |
+| Region | us-central1 |
 | Auto-scale Range | 0-100 instances |
-| Cold Start Time | ~3s |
-| AI Requests/Minute | 4,000+ |
+| Region | us-central1 |
+| Firestore | nam5 (US multi-region) |
 
 ---
 
@@ -309,9 +380,9 @@ GET  /api/v1/dhan/status                 - Broker status
 ```
 Firebase Auth (Google SSO)
         ↓
-   Coupon Verification (INFINITY2025)
+   User Dashboard Access
         ↓
-   DhanHQ OAuth 2.0
+   DhanHQ OAuth 2.0 (per-user)
         ↓
    GCP Secret Manager Storage
 ```
@@ -355,9 +426,6 @@ cd InfinityAI.Pro
 gcloud auth login
 gcloud config set project gen-lang-client-0779271931
 
-# Deploy all engines
-./scripts/deploy-3-engine-architecture.ps1
-
 # Verify deployment
 ./scripts/cloud_health_check.ps1
 ```
@@ -366,9 +434,12 @@ gcloud config set project gen-lang-client-0779271931
 
 | Secret | Description |
 |--------|-------------|
-| `GEMINI_API_KEY` | Google Gemini API key |
+| `gemini-api-key` | Google Gemini API key |
+| `dhan-client-id` | DhanHQ OAuth client ID |
+| `dhan-access-token` | DhanHQ API access token |
 | `user-creds-*` | Per-user DhanHQ credentials |
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase admin credentials |
+| `firebase-admin-sdk` | Firebase admin credentials |
+| `encryption-key` | Data encryption key |
 
 ---
 
@@ -377,12 +448,12 @@ gcloud config set project gen-lang-client-0779271931
 ```
 InfinityAI.Pro/
 ├── backend/
-│   ├── engine-a/             # Orchestration & Risk
-│   ├── engine-b/             # AI/ML Signals
-│   ├── engine-c/             # Trade Execution
+│   ├── engine-a/             # Risk Management (v3.7)
+│   ├── engine-b/             # AI/ML Signals (v4.0)
+│   ├── engine-c/             # Trade Execution (v3.5)
 │   └── shared/               # Common utilities
 ├── frontend/
-│   └── web-app/              # Next.js Dashboard
+│   └── web-app/              # Next.js 16 Dashboard
 ├── config/                   # Trading configs
 ├── docs/                     # Documentation
 ├── infra/
@@ -391,7 +462,8 @@ InfinityAI.Pro/
 │   └── ci-cd/                # GitHub Actions
 ├── monitoring/               # Alert configs
 ├── scripts/                  # Deployment scripts
-└── tests/                    # Test suites
+├── tests/                    # Test suites
+└── .devcontainer/            # Codespaces config
 ```
 
 ---
@@ -417,7 +489,8 @@ Copyright © 2025 InfinityAI.Pro. All rights reserved.
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini_2.5-8E75B2?style=flat&logo=google&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_2.0-8E75B2?style=flat&logo=google&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat&logo=next.js&logoColor=white)
 
 **Last Updated: December 8, 2025**
 
