@@ -1,16 +1,17 @@
 // API Client for InfinityAI.Pro 3-Engine Architecture
 
+// Direct Cloud Run URLs (subdomains require Cloud Run domain mapping which isn't set up)
 const API_CONFIG = {
-  ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a.infinityai.pro',
-  ENGINE_B: process.env.NEXT_PUBLIC_ENGINE_B_URL || 'https://engine-b.infinityai.pro',
-  ENGINE_C: process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c.infinityai.pro',
+  ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app',
+  ENGINE_B: process.env.NEXT_PUBLIC_ENGINE_B_URL || 'https://engine-b-429140669077.us-central1.run.app',
+  ENGINE_C: process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app',
 };
 
-// Fallback to Cloud Run URLs if custom domains aren't ready
+// Fallback URLs (same as primary since custom domains aren't mapped to Cloud Run)
 const FALLBACK_URLS = {
-  ENGINE_A: 'https://engine-a-573866363639.us-central1.run.app',
-  ENGINE_B: 'https://engine-b-573866363639.us-central1.run.app',
-  ENGINE_C: 'https://engine-c-573866363639.us-central1.run.app',
+  ENGINE_A: 'https://engine-a-429140669077.us-central1.run.app',
+  ENGINE_B: 'https://engine-b-429140669077.us-central1.run.app',
+  ENGINE_C: 'https://engine-c-429140669077.us-central1.run.app',
 };
 
 async function fetchWithFallback(primaryUrl: string, fallbackUrl: string, options?: RequestInit) {

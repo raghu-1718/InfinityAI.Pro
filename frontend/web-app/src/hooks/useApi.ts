@@ -427,6 +427,42 @@ export function useStartInstrumentTrade() {
   });
 }
 
+// Start auto-trading with full configuration
+export function useStartAutoTrading() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: engineA.startAutoTrading,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['positions'] });
+      queryClient.invalidateQueries({ queryKey: ['signals'] });
+      queryClient.invalidateQueries({ queryKey: ['auto-trade-status'] });
+    },
+  });
+}
+
+// Stop auto-trading
+export function useStopAutoTrading() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: engineA.stopAutoTrading,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auto-trade-status'] });
+    },
+  });
+}
+
+// Get auto-trading status
+export function useAutoTradingStatus() {
+  return useQuery({
+    queryKey: ['auto-trade-status'],
+    queryFn: engineA.getAutoTradingStatus,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+}
+
 export function useCalculateRiskScore() {
   return useMutation({
     mutationFn: engineA.calculateRiskScore,

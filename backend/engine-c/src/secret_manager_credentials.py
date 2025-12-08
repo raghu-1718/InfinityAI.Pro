@@ -182,6 +182,22 @@ class SecretManagerCredentials:
             logger.error(f"Error listing users: {e}")
             return []
 
+    async def update_connection_status(self, user_id: str, status: str, account_data: dict = None) -> bool:
+        """
+        Update the connection status for a user.
+        Note: This is a no-op for Secret Manager as we don't store status separately.
+        The status is always derived from whether credentials exist and are valid.
+
+        Args:
+            user_id: The user ID
+            status: Connection status (connected, failed, etc.)
+            account_data: Optional account data from Dhan (ignored for Secret Manager)
+        """
+        logger.info(f"Connection status update for user {user_id}: {status}")
+        # For Secret Manager, we don't need to store status separately
+        # The credential existence implies connected status
+        return True
+
 
 # Singleton instance
 _secret_manager_credentials: Optional[SecretManagerCredentials] = None

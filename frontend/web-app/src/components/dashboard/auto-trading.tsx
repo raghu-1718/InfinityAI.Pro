@@ -18,7 +18,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useAppStore, TradingInstrument } from '@/lib/store';
-import { useFunds, useSignals, usePlaceOrder, useStartInstrumentTrade } from '@/hooks/useApi';
+import { useFunds, useSignals, usePlaceOrder, useStartAutoTrading, useStopAutoTrading } from '@/hooks/useApi';
+import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { formatCurrency } from '@/lib/format';
 import {
   Play,
@@ -55,10 +56,14 @@ export function AutoTradingCard() {
   const stopTradingSession = useAppStore((s) => s.stopTradingSession);
   const updateStoreTradingSession = useAppStore((s) => s.updateTradingSession);
 
+  // Get user context for user_id
+  const { user, session: authSession } = useCouponAuth();
+
   const { refetch: refetchFunds } = useFunds();
   const { data: signalsData } = useSignals();
   const placeOrderMutation = usePlaceOrder();
-  const startInstrumentTradeMutation = useStartInstrumentTrade();
+  const startAutoTradeMutation = useStartAutoTrading();
+  const stopAutoTradeMutation = useStopAutoTrading();
 
   // Initialize local state from persisted store config
   const [tradingAmount, setTradingAmount] = useState<number>(tradingConfig.tradingAmount);
@@ -149,7 +154,7 @@ export function AutoTradingCard() {
       .join(', ');
   };
 
-  // Start auto trading - calls backend with instrument configuration
+  // Start auto trading - calls backend with full configuration
   const handleStart = async () => {
     if (tradingAmount > availableBalance) {
       setStatusMessage('⚠️ Insufficient funds! Reduce trading amount.');
@@ -161,20 +166,27 @@ export function AutoTradingCard() {
       return;
     }
 
-    // Build trading configuration for backend
+    // Get user_id from auth context (use dhanClientId or session userId)
+    const userId = user?.dhanClientId || authSession?.userId || 'default';
+
+    // Build complete trading configuration for backend
     const tradingConfigPayload = {
+      user_id: userId,
       instruments: selectedMarkets,
+      tradingAmount: tradingAmount,
       riskLevel,
-      stopLoss: stopLossPercent,
-      takeProfit: takeProfitPercent,
-      strategy: useAISignals ? 'ai-signals' : 'momentum',
+      stopLossPercent,
+      takeProfitPercent,
+      maxTradesPerDay,
+      useAISignals,
+      min_confidence: riskConfigs[riskLevel as keyof typeof riskConfigs].minConfidence,
     };
 
     console.log('Starting auto-trading with config:', tradingConfigPayload);
 
     try {
-      // Call backend to start instrument-specific trading
-      await startInstrumentTradeMutation.mutateAsync(tradingConfigPayload);
+      // Call backend to start auto-trading with full config
+      await startAutoTradeMutation.mutateAsync(tradingConfigPayload);
 
       // Update local state
       setSession({
@@ -199,14 +211,21 @@ export function AutoTradingCard() {
   };
 
   // Stop auto trading
-  const handleStop = () => {
-    setSession((prev) => ({
-      ...prev,
-      isActive: false,
-    }));
-    // Update global store
-    stopTradingSession();
-    setStatusMessage('⏹️ Auto trading stopped. Session summary saved.');
+  const handleStop = async () => {
+    try {
+      // Call backend to stop auto-trading
+      await stopAutoTradeMutation.mutateAsync();
+
+      setSession((prev) => ({
+        ...prev,
+        isActive: false,
+      }));
+      // Update global store
+      stopTradingSession();
+      setStatusMessage('⏹️ Auto trading stopped. Session summary saved.');
+    } catch (error: any) {
+      setStatusMessage(`❌ Failed to stop trading: ${error.message || 'Backend error'}`);
+    }
   };
 
   // Pause/Resume trading

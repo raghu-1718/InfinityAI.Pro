@@ -80,13 +80,13 @@ def get_coupon_auth_manager():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Engine B URL for AI signals
-ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-573866363639.us-central1.run.app")
+# Engine B URL for AI signals (correct project ID)
+ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
-    version="3.6-coupon-auth"
+    version="3.7-secure-credentials"
 )
 
 
@@ -104,20 +104,6 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Failed to initialize default coupons: {e}")
 
-# Security Headers Middleware
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        return response
-
-app.add_middleware(SecurityHeadersMiddleware)
-
-# Add CORS middleware
 # CORS allowed origins for production
 ALLOWED_ORIGINS = [
     "https://infinityai.pro",
@@ -133,13 +119,32 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
+# Add CORS middleware FIRST (added last so it executes first in FastAPI)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+# Security Headers Middleware - skip CORS preflight requests
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip security headers for CORS preflight (OPTIONS) requests
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        # Relaxed CSP for API responses
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 # ==============================================================================
@@ -677,16 +682,21 @@ async def get_user_credentials_status(user_id: str):
                 "connection_status": "not_configured"
             }
 
+        # Handle both nested and flat credential structures
+        credentials = creds.get("credentials", creds)
+        client_id = credentials.get("client_id")
+
         return {
             "user_id": user_id,
             "configured": True,
-            "client_id": creds["credentials"]["client_id"],
-            "connection_status": creds["connection_status"],
-            "is_active": creds["is_active"],
-            "updated_at": creds["updated_at"].isoformat() if creds["updated_at"] else None
+            "client_id": client_id,
+            "connection_status": creds.get("connection_status", "connected" if client_id else "not_configured"),
+            "is_active": creds.get("is_active", True),
+            "updated_at": creds.get("updated_at")
         }
 
     except Exception as e:
+        logger.error(f"Error getting user credentials status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/v1/user/credentials/{user_id}")
@@ -1003,10 +1013,13 @@ async def modify_order(request: OrderModifyRequest):
 
 # --- Order Status & Data Endpoints ---
 @app.get("/api/dhan/orders")
-async def get_orders():
+async def get_orders(user_id: Optional[str] = None):
     """Fetch all orders for the day"""
     try:
-        dhan_client = get_dhan_client()
+        if user_id:
+            dhan_client = await get_dhan_client_async(user_id)
+        else:
+            dhan_client = get_dhan_client()
         response = dhan_client.get_order_list()
 
         if isinstance(response, dict) and response.get("status") == "success":
@@ -1033,10 +1046,13 @@ async def get_order_by_id(order_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch order: {str(e)}")
 
 @app.get("/api/dhan/positions")
-async def get_positions():
+async def get_positions(user_id: Optional[str] = None):
     """Fetch open positions"""
     try:
-        dhan_client = get_dhan_client()
+        if user_id:
+            dhan_client = await get_dhan_client_async(user_id)
+        else:
+            dhan_client = get_dhan_client()
         response = dhan_client.get_positions()
 
         if isinstance(response, dict) and response.get("status") == "success":
@@ -1048,10 +1064,13 @@ async def get_positions():
         raise HTTPException(status_code=500, detail=f"Failed to fetch positions: {str(e)}")
 
 @app.get("/api/dhan/holdings")
-async def get_holdings():
+async def get_holdings(user_id: Optional[str] = None):
     """Fetch user holdings"""
     try:
-        dhan_client = get_dhan_client()
+        if user_id:
+            dhan_client = await get_dhan_client_async(user_id)
+        else:
+            dhan_client = get_dhan_client()
         response = dhan_client.get_holdings()
 
         if isinstance(response, dict) and response.get("status") == "success":
@@ -1063,13 +1082,16 @@ async def get_holdings():
         raise HTTPException(status_code=500, detail=f"Failed to fetch holdings: {str(e)}")
 
 @app.get("/api/dhan/funds")
-async def get_funds():
+async def get_funds(user_id: Optional[str] = None):
     """
     Fetch available funds and margin details from DhanHQ.
     Returns available balance, utilized margin, and other fund details.
     """
     try:
-        dhan_client = get_dhan_client()
+        if user_id:
+            dhan_client = await get_dhan_client_async(user_id)
+        else:
+            dhan_client = get_dhan_client()
         response = dhan_client.get_fund_limits()
 
         if isinstance(response, dict) and response.get("status") == "success":

@@ -463,9 +463,9 @@ class ComprehensiveRiskRequest(BaseModel):
     risk_free_rate: float = 0.05
 
 # --- Config ---
-# Use custom domains for production inter-engine communication
-ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b.infinityai.pro")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c.infinityai.pro")
+# Use Cloud Run URLs for production inter-engine communication (subdomains not mapped)
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-429140669077.us-central1.run.app")
 
 # --- Health & Root ---
 @app.get("/healthz")
@@ -1191,6 +1191,153 @@ async def get_integrations_status():
         "agent_orchestrator": AGENT_ORCHESTRATOR is not None,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ==================== Auto-Trading Orchestration Endpoints ====================
+# These endpoints forward to Engine C with proper user context
+
+class AutoTradeStartRequest(BaseModel):
+    """Request model for starting auto-trading"""
+    user_id: Optional[str] = None
+    instruments: Optional[List[str]] = None
+    tradingAmount: Optional[float] = None
+    riskLevel: Optional[str] = "moderate"
+    stopLossPercent: Optional[float] = 2.0
+    takeProfitPercent: Optional[float] = 4.0
+    maxTradesPerDay: Optional[int] = 10
+    useAISignals: Optional[bool] = True
+    min_confidence: Optional[float] = 0.70
+
+@app.post("/api/v1/auto-trade/start")
+async def start_auto_trading(request: AutoTradeStartRequest):
+    """
+    Start AI auto-trading by forwarding to Engine C.
+    Passes user credentials and trading configuration.
+    """
+    try:
+        # Build payload for Engine C
+        payload = {
+            "user_id": request.user_id,
+            "min_confidence": request.min_confidence or 0.70,
+            "trading_amount": request.tradingAmount or 1000,
+            "max_daily_trades": request.maxTradesPerDay or 10,
+            "instruments": request.instruments,
+            "risk_level": request.riskLevel,
+        }
+
+        # Remove None values
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{ENGINE_C_URL}/api/auto-trade/start",
+                json=payload
+            )
+            response.raise_for_status()
+            result = response.json()
+
+        return {
+            "status": result.get("status", "started"),
+            "user_id": request.user_id,
+            "config": {
+                "instruments": request.instruments,
+                "tradingAmount": request.tradingAmount,
+                "riskLevel": request.riskLevel,
+                "stopLossPercent": request.stopLossPercent,
+                "takeProfitPercent": request.takeProfitPercent,
+                "maxTradesPerDay": request.maxTradesPerDay,
+                "min_confidence": request.min_confidence,
+            },
+            "engine_c_response": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Engine C error: {e.response.text}")
+        raise HTTPException(status_code=e.response.status_code, detail=f"Engine C error: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Failed to start auto-trading: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/auto-trade/stop")
+async def stop_auto_trading():
+    """Stop AI auto-trading by forwarding to Engine C."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(f"{ENGINE_C_URL}/api/auto-trade/stop")
+            response.raise_for_status()
+            result = response.json()
+
+        return {
+            "status": "stopped",
+            "engine_c_response": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to stop auto-trading: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/auto-trade/status")
+async def get_auto_trading_status():
+    """Get AI auto-trading status from Engine C."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{ENGINE_C_URL}/api/auto-trade/status")
+            response.raise_for_status()
+            result = response.json()
+
+        return {
+            "status": "success",
+            **result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get auto-trading status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/auto-trade/config")
+async def update_auto_trading_config(request: AutoTradeStartRequest):
+    """
+    Update auto-trading configuration without stopping.
+    Forwards to Engine C.
+    """
+    try:
+        payload = {
+            "user_id": request.user_id,
+            "min_confidence": request.min_confidence,
+            "trading_amount": request.tradingAmount,
+            "max_daily_trades": request.maxTradesPerDay,
+            "instruments": request.instruments,
+            "risk_level": request.riskLevel,
+        }
+
+        # Remove None values
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Start with new config (Engine C handles already running state)
+            response = await client.post(
+                f"{ENGINE_C_URL}/api/auto-trade/start",
+                json=payload
+            )
+            response.raise_for_status()
+            result = response.json()
+
+        return {
+            "status": "config_updated",
+            "config": payload,
+            "engine_c_response": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to update auto-trading config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
