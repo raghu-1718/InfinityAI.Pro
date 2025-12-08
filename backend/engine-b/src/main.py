@@ -3115,28 +3115,44 @@ async def gemini_chat(request: GeminiChatRequest):
         # Try Finance AI model first (best for finance)
         if HAS_FINANCE_AI:
             from src.google_integrations.finance_ai_model import get_finance_ai_model
+            import google.genai.types as genai_types
+            
             model = get_finance_ai_model()
-
+            
+            # Ensure client is initialized
+            if not model._ensure_client():
+                raise HTTPException(status_code=503, detail="Finance AI model not available")
+            
             # Construct prompt
-            prompt = f"""You are an expert Indian stock market analyst and trading advisor.
-Answer the following question accurately and helpfully.
+            system_prompt = """You are an expert Indian stock market analyst and trading advisor.
+You have deep knowledge of NSE, BSE, NIFTY, Bank NIFTY, and all Indian market instruments.
+Provide clear, actionable answers focused on Indian markets.
+Include specific numbers, prices, levels, and recommendations where appropriate.
+Be concise but comprehensive."""
 
-Question: {request.question}
+            user_prompt = request.question
+            if request.context:
+                user_prompt = f"Context: {request.context}\n\nQuestion: {request.question}"
 
-{f"Context: {request.context}" if request.context else ""}
-
-Provide a clear, actionable answer focused on Indian markets (NSE/BSE).
-Include specific numbers, prices, and recommendations where appropriate."""
-
-            response = await model._call_gemini(prompt)
-
+            # Call Gemini
+            response = await asyncio.to_thread(
+                model._client.models.generate_content,
+                model=model.model_name,
+                contents=user_prompt,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.4,
+                    max_output_tokens=2048,
+                )
+            )
+            
             return {
                 "status": "success",
-                "response": response,
+                "response": response.text,
                 "model": "gemini-2.0-flash",
                 "timestamp": datetime.utcnow().isoformat()
             }
-
+        
         # Fallback to Enhanced GenAI
         elif HAS_ENHANCED_GENAI and ENHANCED_GENAI_CLIENT:
             response = await ENHANCED_GENAI_CLIENT.chat(request.question, request.context)
@@ -3147,15 +3163,13 @@ Include specific numbers, prices, and recommendations where appropriate."""
                 "model": "gemini-2.0-flash",
                 "timestamp": datetime.utcnow().isoformat()
             }
-
+        
         else:
             raise HTTPException(status_code=503, detail="No AI model available")
-
+            
     except Exception as e:
         logger.error(f"Gemini chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
 @app.get("/api/v1/market-data/{symbol}")
 async def get_live_market_data(symbol: str, exchange: str = "NSE", data_type: str = "all"):
     """
