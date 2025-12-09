@@ -1,0 +1,1311 @@
+[
+  {
+    "insertId": "69386079000c7181d6a3150d",
+    "labels": {
+      "instanceId": "0007e26d681dfa5c3a810a938bae8024379c8e701ccbe9974ba0cccb741fd75f24166c0f2d5f4f36302122dc2edde8fc86bbdc358ff6d1d022d9fbedc6ec3802082e122fc80a4a456a58600ac814"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:46:34.045164692Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00019-b8l",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:45300 - \"GET /openapi.json HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:46:33.815489Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003303700s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "347",
+      "requestUrl": "https://engine-c-429140669077.us-central1.run.app/openapi.json",
+      "responseSize": "27892",
+      "serverIp": "2600:1900:4240:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69386079000c74b89caa1c1f",
+    "labels": {
+      "instanceId": "0007e26d681dfa5c3a810a938bae8024379c8e701ccbe9974ba0cccb741fd75f24166c0f2d5f4f36302122dc2edde8fc86bbdc358ff6d1d022d9fbedc6ec3802082e122fc80a4a456a58600ac814"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:46:34.046587271Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00019-b8l",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "c524084fbdd72513",
+    "timestamp": "2025-12-09T17:46:33.811010Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/0c65a42fb7aace08c01fd516ffea165f"
+  },
+  {
+    "insertId": "693860720005d29bb3272209",
+    "labels": {
+      "instanceId": "0007e26d681dfa5c3a810a938bae8024379c8e701ccbe9974ba0cccb741fd75f24166c0f2d5f4f36302122dc2edde8fc86bbdc358ff6d1d022d9fbedc6ec3802082e122fc80a4a456a58600ac814"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:46:26.387727227Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00019-b8l",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:58236 - \"GET /openapi.json HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:46:26.381595Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.103622705s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "347",
+      "requestUrl": "https://engine-c-429140669077.us-central1.run.app/openapi.json",
+      "responseSize": "27892",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "693860720005d5a88faba28e",
+    "labels": {
+      "instanceId": "0007e26d681dfa5c3a810a938bae8024379c8e701ccbe9974ba0cccb741fd75f24166c0f2d5f4f36302122dc2edde8fc86bbdc358ff6d1d022d9fbedc6ec3802082e122fc80a4a456a58600ac814"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:46:26.388420217Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00019-b8l",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "f3fe07d994584e79",
+    "timestamp": "2025-12-09T17:46:26.273467Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/831560c382ee6d75e965e05f88a5e748",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6938606800052de9b9ae90cc",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:46:16.591843539Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:59040 - \"GET /api/v1/capabilities HTTP/1.1\" 404 Not Found",
+    "timestamp": "2025-12-09T17:46:16.339433Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002858310s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "354",
+      "requestUrl": "https://engine-a-429140669077.us-central1.run.app/api/v1/capabilities",
+      "responseSize": "386",
+      "serverIp": "2600:1900:4241:200::",
+      "status": 404,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69386068000530625349d054",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:46:16.594875231Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "dadcdfd7feea6e22",
+    "timestamp": "2025-12-09T17:46:16.335593Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/d5f166ff0c0cc5e3fcd3da34d2dacd20",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69386059000e4314f68627a7",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:46:01.940348513Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:4124 - \"GET /api/v1/capabilities HTTP/1.1\" 404 Not Found",
+    "timestamp": "2025-12-09T17:46:01.934676Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003081290s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "353",
+      "requestUrl": "https://engine-a-429140669077.us-central1.run.app/api/v1/capabilities",
+      "responseSize": "386",
+      "serverIp": "2600:1900:4241:200::",
+      "status": 404,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69386059000e46321f84f831",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:46:01.943265938Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "a66c6691371117d8",
+    "timestamp": "2025-12-09T17:46:01.926739Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/99d2ad1eb77c8313a3bb9bd417ee85ef",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6938603c0000a5d55053c46e",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:45:32.372775227Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:19650 - \"GET /api/v1/ai/available-models HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:45:32.042453Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002744390s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "360",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/ai/available-models",
+      "responseSize": "1134",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "6938603c0000a884cb5d8c7a",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:45:32.372789972Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "fae46c23744e5d9a",
+    "timestamp": "2025-12-09T17:45:32.038642Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/ea4d64a0c58905c28a703de406c1b393",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6938602f0005cf679cbe165b",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:45:19.388110253Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:23272 - \"GET /api/v1/ai/available-models HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:45:19.380775Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002460980s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "361",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/ai/available-models",
+      "responseSize": "1134",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "6938602f0005d1838c543ca6",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:45:19.385679270Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "4555b187cee8a572",
+    "timestamp": "2025-12-09T17:45:19.377493Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/16dda40b68e362618dda64f1ddb8aa5d",
+    "traceSampled": true
+  },
+  {
+    "insertId": "693860150009ccad910949c5",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:53.748174620Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:41456 - \"GET /api/v1/finance-ai/status HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:44:53.642221Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002328960s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "358",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/finance-ai/status",
+      "responseSize": "1028",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "693860150009ceb319f6a8ce",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:53.746564406Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "35610f8e73899001",
+    "timestamp": "2025-12-09T17:44:53.638704Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/2ac781c7add7dca0205568d23ecaa838",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6938600c000a96075c4b64f0",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:44.757441742Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:42640 - \"GET /api/v1/finance-ai/status HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:44:44.693767Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002566150s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "384",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/finance-ai/status",
+      "responseSize": "1028",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "6938600c000a985a3da82997",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:44.757551428Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "2e3e7c98115cff1a",
+    "timestamp": "2025-12-09T17:44:44.690285Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/8ada38c920e68ab8ec7e3b92de47a360"
+  },
+  {
+    "insertId": "69386003000db6e96d71e5be",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:36.096329511Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:42626 - \"GET /openapi.json HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:44:35.898793Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003143740s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "347",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/openapi.json",
+      "responseSize": "42882",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69386003000db92040080118",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:36.097076250Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "5159710ff155b2ff",
+    "timestamp": "2025-12-09T17:44:35.894647Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/05662ed43dde32f93ce7a99398704537",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385ffb000bad3aefd04aab",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:27.771829976Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:23312 - \"GET /openapi.json HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:44:27.765242Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003069880s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "346",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/openapi.json",
+      "responseSize": "42882",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385ffb000bafd178156759",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:27.772961693Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "23d6ef5b16d62903",
+    "timestamp": "2025-12-09T17:44:27.760831Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/7c6bdac7be844f3997d83758675b25ff"
+  },
+  {
+    "insertId": "69385ff4000267f5997aa27f",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:20.445463958Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:7822 - \"GET /openapi.json HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:44:20.157685Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.118269371s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "GET",
+      "requestSize": "346",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/openapi.json",
+      "responseSize": "42882",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385ff400026b3f685e19d4",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:20.445745982Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "718723d1be606221",
+    "timestamp": "2025-12-09T17:44:20.038639Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/cb243121d7754533d829a7273561f4d2",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385fea00069c19326fe18b",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:10.454201598Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:35384 - \"POST /api/v1/gemini/analyze HTTP/1.1\" 404 Not Found",
+    "timestamp": "2025-12-09T17:44:10.433177Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002284650s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "449",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/gemini/analyze",
+      "responseSize": "386",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 404,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fea00069e460f74577d",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:10.455686105Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "05bef8798b54fa0d",
+    "timestamp": "2025-12-09T17:44:10.429683Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/b1498bb81a82364db228dd179ec9a227"
+  },
+  {
+    "insertId": "69385fe20006fd48a220521d",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:44:02.463512292Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:58380 - \"POST /api/v1/gemini/analyze HTTP/1.1\" 404 Not Found",
+    "timestamp": "2025-12-09T17:44:02.458056Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002567780s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "458",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/gemini/analyze",
+      "responseSize": "386",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 404,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fe20006ffdd514d96f1",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:44:02.464476548Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "f40feeddcb9365f0",
+    "timestamp": "2025-12-09T17:44:02.454387Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/7a916e045a8de85dad29ff54bdf7c312",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385fcf00032e986709fed3",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:43:43.260983542Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:33016 - \"POST /api/v1/sentiment HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:43:43.208536Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002692600s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "456",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/sentiment",
+      "responseSize": "500",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fcf000330d3b3174499",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:43:43.261583007Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "d8f6be99b9f68967",
+    "timestamp": "2025-12-09T17:43:43.204720Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/9fb0ce115a6cb08b40b5c20291d4e14b",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385fc7000c8acbdd35d221",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:43:35.936398335Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:33004 - \"POST /api/v1/sentiment HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:43:35.821963Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.002769s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "485",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/sentiment",
+      "responseSize": "529",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fc7000c8c9f6fad07ce",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:43:35.936547967Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "d6e189a6ca17f929",
+    "timestamp": "2025-12-09T17:43:35.818136Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/d918f157736584e3f70e18c6601fe271"
+  },
+  {
+    "insertId": "69385fbf0003c3a10642e0cf",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:43:27.277804751Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:52138 - \"POST /api/v1/signal HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:43:27.246689Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.028260921s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "507",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/signal",
+      "responseSize": "775",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fbf0003c65e934652da",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:43:27.277880378Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "b8cbd71800c3cccc",
+    "timestamp": "2025-12-09T17:43:27.217908Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/10a50db5d570021804cae40b6127bed0",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385fb4000b9bf30eac1fa8",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:43:16.953496837Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:6820 - \"POST /api/v1/signal HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:43:16.760819Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.030924270s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "482",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/signal",
+      "responseSize": "775",
+      "serverIp": "2600:1900:4245:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fb4000b9ee4b354c6e0",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:43:16.953251260Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "e56454cb774f2bc0",
+    "timestamp": "2025-12-09T17:43:16.728941Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/413248e2611c119dac23d432aa145c78"
+  },
+  {
+    "insertId": "69385fad00046b948d42f6e9",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:43:09.294591027Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:20600 - \"POST /api/v1/signal HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:43:09.289684Z"
+  },
+  {
+    "insertId": "69385fad0003fc936dd11ff8",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,261 - InfinityAI.EngineB - INFO - ? Fetched 200 days from Yahoo Finance for RELIANCE",
+    "timestamp": "2025-12-09T17:43:09.261267Z"
+  },
+  {
+    "insertId": "69385fad00017447ec90971f",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "  df = yf.download(yahoo_symbol, period=f\"{days}d\", interval=\"1d\", progress=False)",
+    "timestamp": "2025-12-09T17:43:09.095303Z"
+  },
+  {
+    "insertId": "69385fad000174424f21db4e",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "/app/src/main.py:803: FutureWarning: YF.download() has changed argument auto_adjust default to True",
+    "timestamp": "2025-12-09T17:43:09.095298Z"
+  },
+  {
+    "insertId": "69385fad00016901bfe01b5a",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,092 - InfinityAI.EngineB - INFO - Using YFinance fallback for RELIANCE",
+    "timestamp": "2025-12-09T17:43:09.092417Z"
+  },
+  {
+    "insertId": "69385fad000168b9bb1699e9",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,092 - InfinityAI.EngineB - WARNING - ?? DhanHQ returned non-success for RELIANCE: {'status': 'failure', 'remarks': \"Invalid leading whitespace, reserved character(s), or return character(s) in header value: '-NoNewline\\\\r\\\\nPLACEHOLDER_ACCESS_TOKEN\\\\r\\\\n'\", 'data': ''}",
+    "timestamp": "2025-12-09T17:43:09.092345Z"
+  },
+  {
+    "insertId": "69385fad0001687ce6360a54",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,092 - InfinityAI.EngineB - INFO - ? DhanHQ response for RELIANCE: status=failure, has_data=False",
+    "timestamp": "2025-12-09T17:43:09.092284Z"
+  },
+  {
+    "insertId": "69385fad000168439f5b15c4",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.429471796Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,092 - root - ERROR - Exception in dhanhq>>intraday_history_minute_charts: Invalid leading whitespace, reserved character(s), or return character(s) in header value: '-NoNewline\\r\\nPLACEHOLDER_ACCESS_TOKEN\\r\\n'",
+    "timestamp": "2025-12-09T17:43:09.092227Z"
+  },
+  {
+    "insertId": "69385fad0001654be861a58c",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-09T17:43:09.097355071Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-09 17:43:09,091 - InfinityAI.EngineB - INFO - ? Calling DhanHQ historical_daily_data for RELIANCE: sec_id=1333, segment=NSE_EQ",
+    "timestamp": "2025-12-09T17:43:09.091467Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.201606087s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "506",
+      "requestUrl": "https://engine-b-429140669077.us-central1.run.app/api/v1/signal",
+      "responseSize": "775",
+      "serverIp": "2600:1900:4243:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385fad00046dd5ab689a6c",
+    "labels": {
+      "instanceId": "0007e26d6831103fb515d4e33eb46de803ce9f9ea77db21fc292b940631000ec9c3ed3b5e1aa97dc5e3e64e9563da3e4a87c6a8c637276f80d24090d7f8676ae815ffa8e20837f8547f9d70313"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:43:09.293961323Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00013-9wz",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "51e4031596116ea1",
+    "timestamp": "2025-12-09T17:43:09.082834Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/78783c66c9f65eedea6ba3d34e4aecf1",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385f8e000d2b55ae7c9f2f",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:42:38.868474669Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:14550 - \"POST /api/v1/risk/kelly HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-09T17:42:38.863061Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003304040s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "454",
+      "requestUrl": "https://engine-a-429140669077.us-central1.run.app/api/v1/risk/kelly",
+      "responseSize": "507",
+      "serverIp": "2600:1900:4241:200::",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385f8e000d2df1aca60b6b",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:42:38.868609210Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "052c7dcffe1f6385",
+    "timestamp": "2025-12-09T17:42:38.858408Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/60980f481061dcbaee28fbbf47a6a3db",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385f7d000c9ea2da7deeff",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:42:21.831769772Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:44118 - \"POST /api/v1/risk/kelly HTTP/1.1\" 422 Unprocessable Entity",
+    "timestamp": "2025-12-09T17:42:21.827042Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003958470s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "444",
+      "requestUrl": "https://engine-a-429140669077.us-central1.run.app/api/v1/risk/kelly",
+      "responseSize": "604",
+      "serverIp": "2600:1900:4244:200::",
+      "status": 422,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385f7d000ca18058c6df64",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:42:21.836881400Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "8660c51393c393e4",
+    "timestamp": "2025-12-09T17:42:21.817748Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/3b54934f40e27096712cc3ec87e77db7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69385f45000d3c7647cafc44",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-09T17:41:25.874265136Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:41066 - \"POST /api/v1/risk/kelly HTTP/1.1\" 422 Unprocessable Entity",
+    "timestamp": "2025-12-09T17:41:25.867446Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004241670s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "2405:201:d04a:5034:b5e9:bc9b:a312:f7d4",
+      "requestMethod": "POST",
+      "requestSize": "444",
+      "requestUrl": "https://engine-a-429140669077.us-central1.run.app/api/v1/risk/kelly",
+      "responseSize": "604",
+      "serverIp": "2600:1900:4242:200::",
+      "status": 422,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26220; en-IN) PowerShell/7.5.4"
+    },
+    "insertId": "69385f45000d3faafb520cf2",
+    "labels": {
+      "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-09T17:41:25.875424377Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-a",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-a-00010-fz8",
+        "service_name": "engine-a"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "WARNING",
+    "spanId": "9cbc7d6488c13464",
+    "timestamp": "2025-12-09T17:41:25.862122Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/4c1c42bca336d7443fbcaf3cde723f3c",
+    "traceSampled": true
+  }
+]

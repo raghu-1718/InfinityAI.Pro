@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import asyncio
 import aiohttp
+import sys
 
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +22,20 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 import joblib
+
+# Performance optimization imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared'))
+try:
+    from performance import (
+        get_cache_manager, cache_response,
+        ConnectionPoolManager, get_aiohttp_session,
+        get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
+        get_health_monitor, with_circuit_breaker, CircuitBreakerConfig
+    )
+    HAS_PERFORMANCE_MODULE = True
+except ImportError as e:
+    HAS_PERFORMANCE_MODULE = False
+    print(f"⚠️ Performance module not available: {e}")
 
 # Lazy import for User Credentials Management (using GCP Secret Manager)
 SecretManagerCredentials = None
@@ -82,20 +97,60 @@ logger = logging.getLogger(__name__)
 
 # Engine B URL for AI signals (correct project ID)
 ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
+ENGINE_A_URL = os.environ.get("ENGINE_A_URL", "https://engine-a-429140669077.us-central1.run.app")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
-    version="3.7-secure-credentials"
+    version="3.8-performance-optimized"
 )
 
 
 # ==============================================================================
-# STARTUP EVENT - Initialize Default Coupons
+# STARTUP EVENT - Initialize Performance Components & Default Coupons
 # ==============================================================================
 @app.on_event("startup")
 async def startup_event():
-    """Initialize default coupons on startup"""
+    """Initialize performance components and default coupons on startup"""
+    # Initialize performance module
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            # Initialize connection pool
+            await ConnectionPoolManager.initialize()
+            logger.info("✅ Connection pool initialized")
+
+            # Initialize caches
+            cache = get_cache_manager("engine_c", max_size=5000, default_ttl=30.0)
+            await cache.initialize()
+            logger.info("✅ Cache manager initialized")
+
+            # Initialize health monitor
+            monitor = get_health_monitor()
+
+            # Register health checks for dependencies
+            async def check_engine_b():
+                session = await get_aiohttp_session()
+                async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"Engine B unhealthy: {resp.status}")
+
+            async def check_engine_a():
+                session = await get_aiohttp_session()
+                async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"Engine A unhealthy: {resp.status}")
+
+            monitor.register_service("engine_b", check_engine_b, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
+            monitor.register_service("engine_a", check_engine_a, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
+
+            # Start background health monitoring
+            await monitor.start_monitoring(interval=30.0)
+            logger.info("✅ Health monitoring started")
+
+        except Exception as e:
+            logger.warning(f"Performance module initialization warning: {e}")
+
+    # Initialize coupons
     try:
         manager = get_coupon_auth_manager()
         if manager:
@@ -103,6 +158,28 @@ async def startup_event():
             logger.info("✅ Default coupons initialized")
     except Exception as e:
         logger.warning(f"Failed to initialize default coupons: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Graceful shutdown of performance components"""
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            # Stop health monitoring
+            monitor = get_health_monitor()
+            await monitor.stop_monitoring()
+
+            # Close connection pools
+            await ConnectionPoolManager.shutdown()
+
+            # Shutdown caches
+            cache = get_cache_manager("engine_c")
+            await cache.shutdown()
+
+            logger.info("✅ Graceful shutdown complete")
+        except Exception as e:
+            logger.warning(f"Shutdown warning: {e}")
+
 
 # CORS allowed origins for production
 ALLOWED_ORIGINS = [
@@ -148,11 +225,10 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 
 # ==============================================================================
-# AI AUTO-TRADING SYSTEM
+# AI AUTO-TRADING SYSTEM (Optimized for 24/7 Operation)
 # ==============================================================================
 class AIAutoTradingSystem:
     """AI-powered automatic trading system that uses Engine B ML signals"""
-
     def __init__(self):
         self.is_active = False
         self.trading_task = None
@@ -166,17 +242,42 @@ class AIAutoTradingSystem:
         logger.info("✅ AI Auto-Trading System initialized")
 
     async def fetch_ai_signals(self) -> List[Dict]:
-        """Fetch ML signals from Engine B"""
+        """Fetch ML signals from Engine B (optimized with connection pooling)"""
+        cache_key = "ai_signals"
+
+        # Check cache first (signals valid for 5 seconds)
+        if HAS_PERFORMANCE_MODULE:
+            cache = get_cache_manager("engine_c")
+            cached = await cache.get(cache_key)
+            if cached is not None:
+                return cached
+
         try:
-            async with aiohttp.ClientSession() as session:
-                url = f"{ENGINE_B_URL}/api/ai-signals"
-                async with session.get(url, timeout=30) as response:
+            url = f"{ENGINE_B_URL}/api/ai-signals"
+            
+            if HAS_PERFORMANCE_MODULE:
+                session = await get_aiohttp_session()
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data.get("ai_signals", [])
+                        signals = data.get("ai_signals", [])
+                        # Cache for 5 seconds to reduce API calls
+                        cache = get_cache_manager("engine_c")
+                        await cache.set(cache_key, signals, ttl=5.0)
+                        return signals
                     else:
                         logger.warning(f"Engine B returned status {response.status}")
                         return []
+            else:
+                # Fallback to non-pooled request
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            return data.get("ai_signals", [])
+                        else:
+                            logger.warning(f"Engine B returned status {response.status}")
+                            return []
         except Exception as e:
             logger.error(f"Error fetching AI signals: {e}")
             return []
@@ -866,22 +967,81 @@ async def get_user_account_details(user_id: str):
 @app.get("/health")
 @app.get("/api/health")
 async def healthz():
+    # Get performance stats if available
+    performance_stats = {}
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            cache = get_cache_manager("engine_c")
+            performance_stats["cache"] = await cache.stats()
+        except:
+            performance_stats["cache"] = {"status": "error"}
+        try:
+            performance_stats["connections"] = ConnectionPoolManager.get_stats()
+        except:
+            performance_stats["connections"] = {"status": "error"}
+        try:
+            monitor = get_health_monitor()
+            performance_stats["health"] = await monitor.get_status()
+        except:
+            performance_stats["health"] = {"status": "error"}
+
     return {
         "status": "healthy",
         "service": "engine-c-execution",
         "broker": "DhanHQ",
-        "version": "3.5-enhanced-execution",
+        "version": "3.7-performance-optimized",
         "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
+        "performance": performance_stats if performance_stats else "modules_not_loaded",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@app.get("/api/performance/stats")
+async def get_performance_stats():
+    """Get detailed performance statistics for monitoring"""
+    stats = {
+        "service": "engine-c",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            cache = get_cache_manager("engine_c")
+            stats["cache"] = await cache.stats()
+        except:
+            stats["cache"] = {"status": "error"}
+        
+        try:
+            stats["connections"] = ConnectionPoolManager.get_stats()
+        except:
+            stats["connections"] = {"status": "error"}
+        
+        try:
+            monitor = get_health_monitor()
+            stats["health_monitor"] = await monitor.get_status()
+        except:
+            stats["health_monitor"] = {"status": "error"}
+    else:
+        stats["performance_modules"] = {"status": "not_available"}
+
+    # Add auto-trading status
+    global ai_auto_trader
+    if ai_auto_trader:
+        stats["auto_trading"] = {
+            "active": ai_auto_trader.is_active,
+            "executions_today": len(ai_auto_trader.execution_history),
+            "config": ai_auto_trader.config
+        }
+
+    return stats
 
 @app.get("/")
 async def root():
     return {
         "service": "InfinityAI.Pro Engine C (Trade Execution & Order Optimization)",
         "status": "ready",
-        "version": "3.5-enhanced-execution",
-        "ml_features": ["Slippage Prediction", "Order Timing", "TWAP/VWAP Splitting", "Execution Analytics"]
+        "version": "3.7-performance-optimized",
+        "ml_features": ["Slippage Prediction", "Order Timing", "TWAP/VWAP Splitting", "Execution Analytics"],
+        "optimizations": ["Connection Pooling", "Response Caching", "Health Monitoring", "Circuit Breaker"]
     }
 
 # --- Execution Optimization Endpoints ---
@@ -1473,23 +1633,31 @@ async def dhan_oauth_callback(request: Request):
             except Exception:
                 raise HTTPException(status_code=500, detail="Dhan credentials not configured")
 
-        # Exchange authorization code for access token
-        async with aiohttp.ClientSession() as session:
-            token_url = "https://api.dhan.co/v2/token"
-            payload = {
-                "client_id": dhan_client_id,
-                "client_secret": dhan_client_secret,
-                "code": code,
-                "grant_type": "authorization_code"
-            }
+        # Exchange authorization code for access token (optimized with connection pooling)
+        token_url = "https://api.dhan.co/v2/token"
+        payload = {
+            "client_id": dhan_client_id,
+            "client_secret": dhan_client_secret,
+            "code": code,
+            "grant_type": "authorization_code"
+        }
 
-            async with session.post(token_url, json=payload) as response:
+        if HAS_PERFORMANCE_MODULE:
+            session = await get_aiohttp_session()
+            async with session.post(token_url, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     logger.error(f"Token exchange failed: {error_text}")
                     raise HTTPException(status_code=response.status, detail="Token exchange failed")
-
                 token_data = await response.json()
+        else:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(token_url, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Token exchange failed: {error_text}")
+                        raise HTTPException(status_code=response.status, detail="Token exchange failed")
+                    token_data = await response.json()
 
         access_token = token_data.get("access_token")
         if not access_token:

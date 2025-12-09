@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from google.cloud import secretmanager
 import httpx
@@ -20,6 +21,20 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 import joblib
+
+# Performance Optimization Imports
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+    from performance import (
+        PerformanceCache,
+        ConnectionPoolManager,
+        HealthMonitor,
+        CircuitBreaker
+    )
+    PERFORMANCE_MODULES_AVAILABLE = True
+except ImportError as e:
+    PERFORMANCE_MODULES_AVAILABLE = False
+    print(f"⚠️ Performance modules not available: {e}")
 
 # Google Cloud Integrations (Official SDKs)
 try:
@@ -43,10 +58,63 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ==============================================================================
+# PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
+# ==============================================================================
+perf_cache: Optional[PerformanceCache] = None
+connection_manager: Optional[ConnectionPoolManager] = None
+health_monitor: Optional[HealthMonitor] = None
+http_client: Optional[httpx.AsyncClient] = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup/shutdown"""
+    global perf_cache, connection_manager, health_monitor, http_client
+
+    # Startup
+    logger.info("🚀 Engine A starting up...")
+
+    # Initialize performance modules
+    if PERFORMANCE_MODULES_AVAILABLE:
+        try:
+            perf_cache = PerformanceCache(max_size=2000, max_memory_mb=150)
+            connection_manager = ConnectionPoolManager()
+            await connection_manager.initialize()
+            health_monitor = HealthMonitor(check_interval=45)
+            health_monitor.add_endpoint("engine_b", os.environ.get("ENGINE_B_URL", "http://engine-b:8080") + "/health")
+            health_monitor.add_endpoint("engine_c", os.environ.get("ENGINE_C_URL", "http://engine-c:8080") + "/health")
+            asyncio.create_task(health_monitor.start_monitoring())
+            logger.info("✅ Performance modules initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Performance modules init failed: {e}")
+
+    # Create shared httpx client
+    http_client = httpx.AsyncClient(
+        timeout=httpx.Timeout(30.0, connect=10.0),
+        limits=httpx.Limits(max_keepalive_connections=50, max_connections=100),
+        follow_redirects=True
+    )
+    logger.info("✅ HTTP client pool initialized")
+
+    yield  # App is running
+
+    # Shutdown
+    logger.info("🛑 Engine A shutting down...")
+    if http_client:
+        await http_client.aclose()
+    if connection_manager:
+        await connection_manager.shutdown()
+    if health_monitor:
+        health_monitor.stop_monitoring()
+    logger.info("✅ Engine A cleanup complete")
+
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine A (Orchestration & Risk Management)",
     description="Orchestration, OAuth, Risk Scoring & Portfolio Optimization",
-    version="3.1-ml"
+    version="3.2-performance",
+    lifespan=lifespan
 )
 
 # Security Headers Middleware
@@ -629,22 +697,21 @@ async def dhan_callback(request: DhanTokenExchangeRequest):
         "grant_type": "authorization_code"
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            response = await client.post(token_url, json=payload)
-            response.raise_for_status()
-            token_data = response.json()
+    try:
+        response = await http_client.post(token_url, json=payload, timeout=15.0)
+        response.raise_for_status()
+        token_data = response.json()
 
-            # TODO: Store access_token securely in Firestore or GSM
-            return {
-                "status": "success",
-                "message": "Token exchange complete",
-                "access_token": token_data.get("access_token"),
-                "token_type": token_data.get("token_type"),
-                "expires_in": token_data.get("expires_in")
-            }
-        except httpx.HTTPError as e:
-            raise HTTPException(502, f"Dhan OAuth token exchange failed: {str(e)}")
+        # TODO: Store access_token securely in Firestore or GSM
+        return {
+            "status": "success",
+            "message": "Token exchange complete",
+            "access_token": token_data.get("access_token"),
+            "token_type": token_data.get("token_type"),
+            "expires_in": token_data.get("expires_in")
+        }
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Dhan OAuth token exchange failed: {str(e)}")
 
 @app.get("/api/auth/dhan/validate")
 async def validate_dhan_token():
@@ -678,17 +745,17 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
     if not ENGINE_B_URL or not ENGINE_C_URL:
         raise HTTPException(500, "ENGINE_B_URL or ENGINE_C_URL not configured")
 
-    # 1. Get AI Signal from Engine-B
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            signal_response = await client.post(
-                f"{ENGINE_B_URL}/api/v1/signal",
-                json={"symbol": req.symbol}
-            )
-            signal_response.raise_for_status()
-            signal_data = signal_response.json()
-        except httpx.HTTPError as e:
-            raise HTTPException(502, f"Engine B (AI/ML) error: {str(e)}")
+    # 1. Get AI Signal from Engine-B (using connection pool)
+    try:
+        signal_response = await http_client.post(
+            f"{ENGINE_B_URL}/api/v1/signal",
+            json={"symbol": req.symbol},
+            timeout=15.0
+        )
+        signal_response.raise_for_status()
+        signal_data = signal_response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Engine B (AI/ML) error: {str(e)}")
 
     signal = signal_data.get("signal", "HOLD").upper()
 
@@ -731,18 +798,18 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
         "price": 0.0
     }
 
-    # 3. Schedule Execution with Engine C (Background Task)
+    # 3. Schedule Execution with Engine C (Background Task - using connection pool)
     async def send_execution():
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            try:
-                exec_response = await client.post(
-                    f"{ENGINE_C_URL}/api/dhan/place-order",
-                    json=exec_payload
-                )
-                exec_response.raise_for_status()
-                print(f"✅ Execution successful: {exec_response.json()}")
-            except Exception as e:
-                print(f"❌ Execution failed: {str(e)}")
+        try:
+            exec_response = await http_client.post(
+                f"{ENGINE_C_URL}/api/dhan/place-order",
+                json=exec_payload,
+                timeout=15.0
+            )
+            exec_response.raise_for_status()
+            logger.info(f"✅ Execution successful: {exec_response.json()}")
+        except Exception as e:
+            logger.error(f"❌ Execution failed: {str(e)}")
 
     bg.add_task(send_execution)
 
@@ -840,32 +907,33 @@ async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: Backgrou
     logger.info(f"🚀 Starting instrument-specific trading: {req.instruments}")
     logger.info(f"📊 Risk level: {req.riskLevel}, Min confidence: {risk_config['minConfidence']}")
 
-    # 1. Get AI Signals from Engine-B with instrument filter
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    # 1. Get AI Signals from Engine-B with instrument filter (using connection pool)
+    try:
+        # Request signals for selected instruments
+        signal_response = await http_client.post(
+            f"{ENGINE_B_URL}/api/v1/signals/instruments",
+            json={
+                "instruments": req.instruments,
+                "min_confidence": risk_config["minConfidence"],
+                "strategy": req.strategy
+            },
+            timeout=30.0
+        )
+        signal_response.raise_for_status()
+        signals_data = signal_response.json()
+    except httpx.HTTPError as e:
+        logger.warning(f"Engine B instrument signals not available, falling back to standard: {str(e)}")
+        # Fallback to standard signal endpoint if instrument endpoint not available
         try:
-            # Request signals for selected instruments
-            signal_response = await client.post(
-                f"{ENGINE_B_URL}/api/v1/signals/instruments",
-                json={
-                    "instruments": req.instruments,
-                    "min_confidence": risk_config["minConfidence"],
-                    "strategy": req.strategy
-                }
+            signal_response = await http_client.post(
+                f"{ENGINE_B_URL}/api/v1/signal",
+                json={"symbol": req.symbol or "NIFTY"},
+                timeout=30.0
             )
             signal_response.raise_for_status()
-            signals_data = signal_response.json()
-        except httpx.HTTPError as e:
-            logger.warning(f"Engine B instrument signals not available, falling back to standard: {str(e)}")
-            # Fallback to standard signal endpoint if instrument endpoint not available
-            try:
-                signal_response = await client.post(
-                    f"{ENGINE_B_URL}/api/v1/signal",
-                    json={"symbol": req.symbol or "NIFTY"}
-                )
-                signal_response.raise_for_status()
-                signals_data = {"signals": [signal_response.json()]}
-            except httpx.HTTPError as e2:
-                raise HTTPException(502, f"Engine B (AI/ML) error: {str(e2)}")
+            signals_data = {"signals": [signal_response.json()]}
+        except httpx.HTTPError as e2:
+            raise HTTPException(502, f"Engine B (AI/ML) error: {str(e2)}")
 
     signals = signals_data.get("signals", [])
 
@@ -942,18 +1010,18 @@ async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: Backgrou
             "take_profit_pct": req.takeProfit
         }
 
-        # Schedule execution in background
+        # Schedule execution in background (using connection pool)
         async def send_execution(payload):
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                try:
-                    exec_response = await client.post(
-                        f"{ENGINE_C_URL}/api/dhan/place-order",
-                        json=payload
-                    )
-                    exec_response.raise_for_status()
-                    logger.info(f"✅ {payload['transaction_type']} execution successful: {exec_response.json()}")
-                except Exception as e:
-                    logger.error(f"❌ Execution failed: {str(e)}")
+            try:
+                exec_response = await http_client.post(
+                    f"{ENGINE_C_URL}/api/dhan/place-order",
+                    json=payload,
+                    timeout=15.0
+                )
+                exec_response.raise_for_status()
+                logger.info(f"✅ {payload['transaction_type']} execution successful: {exec_response.json()}")
+            except Exception as e:
+                logger.error(f"❌ Execution failed: {str(e)}")
 
         bg.add_task(send_execution, exec_payload)
         executed_trades.append({
@@ -1228,13 +1296,13 @@ async def start_auto_trading(request: AutoTradeStartRequest):
         # Remove None values
         payload = {k: v for k, v in payload.items() if v is not None}
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{ENGINE_C_URL}/api/auto-trade/start",
-                json=payload
-            )
-            response.raise_for_status()
-            result = response.json()
+        response = await http_client.post(
+            f"{ENGINE_C_URL}/api/auto-trade/start",
+            json=payload,
+            timeout=30.0
+        )
+        response.raise_for_status()
+        result = response.json()
 
         return {
             "status": result.get("status", "started"),
@@ -1264,10 +1332,9 @@ async def start_auto_trading(request: AutoTradeStartRequest):
 async def stop_auto_trading():
     """Stop AI auto-trading by forwarding to Engine C."""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(f"{ENGINE_C_URL}/api/auto-trade/stop")
-            response.raise_for_status()
-            result = response.json()
+        response = await http_client.post(f"{ENGINE_C_URL}/api/auto-trade/stop", timeout=30.0)
+        response.raise_for_status()
+        result = response.json()
 
         return {
             "status": "stopped",
@@ -1284,10 +1351,9 @@ async def stop_auto_trading():
 async def get_auto_trading_status():
     """Get AI auto-trading status from Engine C."""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(f"{ENGINE_C_URL}/api/auto-trade/status")
-            response.raise_for_status()
-            result = response.json()
+        response = await http_client.get(f"{ENGINE_C_URL}/api/auto-trade/status", timeout=30.0)
+        response.raise_for_status()
+        result = response.json()
 
         return {
             "status": "success",
@@ -1319,14 +1385,14 @@ async def update_auto_trading_config(request: AutoTradeStartRequest):
         # Remove None values
         payload = {k: v for k, v in payload.items() if v is not None}
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Start with new config (Engine C handles already running state)
-            response = await client.post(
-                f"{ENGINE_C_URL}/api/auto-trade/start",
-                json=payload
-            )
-            response.raise_for_status()
-            result = response.json()
+        # Start with new config (Engine C handles already running state) - using connection pool
+        response = await http_client.post(
+            f"{ENGINE_C_URL}/api/auto-trade/start",
+            json=payload,
+            timeout=30.0
+        )
+        response.raise_for_status()
+        result = response.json()
 
         return {
             "status": "config_updated",

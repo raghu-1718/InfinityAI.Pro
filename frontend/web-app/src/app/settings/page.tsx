@@ -1181,7 +1181,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Save Button */}
-              <Button 
+              <Button
                 className="w-full"
                 onClick={async () => {
                   const userId = getUserId();

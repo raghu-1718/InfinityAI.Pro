@@ -14,6 +14,7 @@ Features:
 - Sentiment classification
 - Symbol-specific news filtering
 - Multi-source aggregation
+- Optimized with connection pooling for 24/7 operation
 """
 
 import asyncio
@@ -41,6 +42,15 @@ try:
 except ImportError:
     HAS_FEEDPARSER = False
     logger.warning("feedparser not available. Install with: pip install feedparser")
+
+# Shared session reference (set from main.py on startup)
+_shared_session: Optional[aiohttp.ClientSession] = None
+
+
+def set_shared_session(session: aiohttp.ClientSession):
+    """Set the shared aiohttp session from main.py"""
+    global _shared_session
+    _shared_session = session
 
 
 # =====================================================================
@@ -367,8 +377,15 @@ class NewsAggregator:
                 f"apiKey={self._newsapi_key}"
             )
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+            # Use shared session for connection pooling
+            session = _shared_session
+            should_close = False
+            if session is None or session.closed:
+                session = aiohttp.ClientSession()
+                should_close = True
+
+            try:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as response:
                     if response.status == 200:
                         data = await response.json()
 
@@ -397,6 +414,11 @@ class NewsAggregator:
                             article.symbols = self._find_symbols(
                                 article.title + " " + article.summary
                             )
+
+                            articles.append(article)
+            finally:
+                if should_close:
+                    await session.close()
 
                             articles.append(article)
 

@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 import logging
 import time
@@ -22,6 +23,20 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import lightgbm as lgb
 import joblib
+
+# Performance Optimization Imports
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+    from performance import (
+        PerformanceCache,
+        ConnectionPoolManager,
+        HealthMonitor,
+        CircuitBreaker
+    )
+    PERFORMANCE_MODULES_AVAILABLE = True
+except ImportError as e:
+    PERFORMANCE_MODULES_AVAILABLE = False
+    print(f"⚠️ Performance modules not available: {e}")
 
 # CatBoost for enhanced ensemble
 try:
@@ -346,18 +361,31 @@ class SymbolMapper:
         self.id_map = {int(v): k for k, v in fallback.items()}
 
     async def refresh(self):
-        """Downloads and parses the master scrip CSV from DhanHQ"""
+        """Downloads and parses the master scrip CSV from DhanHQ (optimized with connection pooling)"""
+        global aiohttp_session
+
         if not HAS_AIOHTTP:
             logger.warning("aiohttp not available, using fallback symbol map")
             return
 
         try:
             logger.info("🔄 Refreshing Master Scrip List from DhanHQ...")
-            async with aiohttp.ClientSession() as session:
+
+            # Use shared session if available, otherwise create temp session
+            session = aiohttp_session
+            should_close = False
+            if session is None or session.closed:
+                session = aiohttp.ClientSession()
+                should_close = True
+
+            try:
                 async with session.get(self.MASTER_URL, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                     if resp.status != 200:
                         raise Exception(f"Failed to fetch CSV: {resp.status}")
                     csv_text = await resp.text()
+            finally:
+                if should_close:
+                    await session.close()
 
             # Parse CSV
             df = pd.read_csv(
@@ -1300,14 +1328,66 @@ class SentimentAnalyzer:
 SENTIMENT_ANALYZER = SentimentAnalyzer()
 
 # =====================================================================
+# PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
+# =====================================================================
+perf_cache: Optional[PerformanceCache] = None
+connection_manager: Optional[ConnectionPoolManager] = None
+health_monitor: Optional[HealthMonitor] = None
+aiohttp_session: Optional[aiohttp.ClientSession] = None
+
+# =====================================================================
 # API ENDPOINTS
 # =====================================================================
 
 @app.on_event("startup")
 async def startup_event():
-    """Bootstrap application state"""
+    """Bootstrap application state with performance optimizations"""
+    global perf_cache, connection_manager, health_monitor, aiohttp_session
+
+    # Initialize performance modules
+    if PERFORMANCE_MODULES_AVAILABLE:
+        try:
+            perf_cache = PerformanceCache(max_size=5000, max_memory_mb=200)
+            connection_manager = ConnectionPoolManager()
+            await connection_manager.initialize()
+            health_monitor = HealthMonitor(check_interval=60)
+            health_monitor.add_endpoint("dhan_api", "https://api.dhan.co/v2")
+            asyncio.create_task(health_monitor.start_monitoring())
+            logger.info("✅ Performance modules initialized for Engine B")
+        except Exception as e:
+            logger.warning(f"⚠️ Performance modules init failed: {e}")
+
+    # Create shared aiohttp session for efficient connections
+    if HAS_AIOHTTP:
+        connector = aiohttp.TCPConnector(
+            limit=50,
+            limit_per_host=20,
+            ttl_dns_cache=300,
+            keepalive_timeout=60
+        )
+        timeout = aiohttp.ClientTimeout(total=30, connect=10)
+        aiohttp_session = aiohttp.ClientSession(connector=connector, timeout=timeout)
+        logger.info("✅ Shared aiohttp session initialized")
+
     await SYMBOL_MAPPER.refresh()
-    logger.info("🚀 InfinityAI Engine B Started")
+    logger.info("🚀 InfinityAI Engine B Started (Performance Optimized)")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Graceful shutdown with cleanup"""
+    global aiohttp_session, connection_manager, health_monitor
+
+    logger.info("🛑 Engine B shutting down...")
+
+    if aiohttp_session:
+        await aiohttp_session.close()
+    if connection_manager:
+        await connection_manager.shutdown()
+    if health_monitor:
+        health_monitor.stop_monitoring()
+
+    logger.info("✅ Engine B cleanup complete")
 
 @app.get("/healthz")
 @app.get("/health")
