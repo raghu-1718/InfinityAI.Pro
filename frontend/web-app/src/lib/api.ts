@@ -346,10 +346,11 @@ export const engineA = {
     takeProfitPercent: number;
     maxTradesPerDay: number;
     useAISignals: boolean;
+    user_id?: string;
   }) {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/start`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/start`,
+      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/start`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -362,7 +363,7 @@ export const engineA = {
   async stopAutoTrading() {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/stop`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/stop`,
+      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/stop`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -374,7 +375,7 @@ export const engineA = {
   async getAutoTradingStatus() {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/status`
+      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/status`
     );
     return res.json();
   },
