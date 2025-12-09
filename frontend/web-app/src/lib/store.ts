@@ -101,6 +101,13 @@ export interface TradingConfig {
   tradingAmount: number;
   useAISignals: boolean;
   autoRebalance: boolean;
+  // Extended settings
+  minCapital: number;
+  maxCapital: number;
+  maxRiskPerTrade: number;
+  minConfidence: number;
+  trailingStopLoss: boolean;
+  positionSizingMethod: 'fixed' | 'percentage' | 'kelly';
 }
 
 export interface TradingSession {
@@ -199,6 +206,13 @@ export const useAppStore = create<AppState>()(
           tradingAmount: 10000,
           useAISignals: true,
           autoRebalance: false,
+          // Extended settings with defaults
+          minCapital: 5000,
+          maxCapital: 100000,
+          maxRiskPerTrade: 0.02,
+          minConfidence: 0.75,
+          trailingStopLoss: false,
+          positionSizingMethod: 'fixed',
         },
         setTradingConfig: (config) =>
           set((state) => ({

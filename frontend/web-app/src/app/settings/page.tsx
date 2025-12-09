@@ -140,6 +140,17 @@ export default function SettingsPage() {
   const [maxPositionSize, setMaxPositionSize] = useState("25000");
   const [stopLossPercent, setStopLossPercent] = useState("2");
   const [autoTrading, setAutoTrading] = useState(false);
+  // Extended trading settings
+  const [takeProfitPercent, setTakeProfitPercent] = useState("4");
+  const [maxTradesPerDay, setMaxTradesPerDay] = useState("10");
+  const [minCapital, setMinCapital] = useState("5000");
+  const [maxCapital, setMaxCapital] = useState("100000");
+  const [maxRiskPerTrade, setMaxRiskPerTrade] = useState("2");
+  const [minConfidence, setMinConfidence] = useState("75");
+  const [trailingStopLoss, setTrailingStopLoss] = useState(false);
+  const [positionSizingMethod, setPositionSizingMethod] = useState("fixed");
+  const [tradingSettingsLoading, setTradingSettingsLoading] = useState(false);
+  const [tradingSettingsSaved, setTradingSettingsSaved] = useState(false);
 
   // Get user ID - use Dhan client ID directly for consistency
   const getUserId = () => {
@@ -968,12 +979,35 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Trading Preferences</CardTitle>
-              <CardDescription>Configure risk management and trading parameters</CardDescription>
+              <CardDescription>Configure risk management and trading parameters. These settings are synced to the cloud and will apply to all auto-trading sessions.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Risk Level */}
               <div className="space-y-2">
                 <Label htmlFor="risk">Risk Level</Label>
-                <Select value={riskLevel} onValueChange={setRiskLevel}>
+                <Select value={riskLevel} onValueChange={(v) => {
+                  setRiskLevel(v);
+                  // Apply presets based on risk level
+                  if (v === 'low') {
+                    setStopLossPercent("1.5");
+                    setTakeProfitPercent("3");
+                    setMaxTradesPerDay("5");
+                    setMaxRiskPerTrade("1");
+                    setMinConfidence("85");
+                  } else if (v === 'medium') {
+                    setStopLossPercent("2");
+                    setTakeProfitPercent("4");
+                    setMaxTradesPerDay("10");
+                    setMaxRiskPerTrade("2");
+                    setMinConfidence("75");
+                  } else if (v === 'high') {
+                    setStopLossPercent("3");
+                    setTakeProfitPercent("6");
+                    setMaxTradesPerDay("20");
+                    setMaxRiskPerTrade("4");
+                    setMinConfidence("65");
+                  }
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select risk level" />
                   </SelectTrigger>
@@ -983,9 +1017,41 @@ export default function SettingsPage() {
                     <SelectItem value="high">Aggressive (High Risk)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  {riskLevel === 'low' && 'Lower risk with fewer trades, higher confidence threshold (85%)'}
+                  {riskLevel === 'medium' && 'Balanced risk/reward with medium confidence threshold (75%)'}
+                  {riskLevel === 'high' && 'Higher risk with more trades, lower confidence threshold (65%)'}
+                </p>
               </div>
+
+              {/* Capital Settings */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minCapital">Min Capital (₹)</Label>
+                  <Input
+                    id="minCapital"
+                    type="number"
+                    value={minCapital}
+                    onChange={(e) => setMinCapital(e.target.value)}
+                    placeholder="5000"
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum capital required to start trading</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxCapital">Max Capital (₹)</Label>
+                  <Input
+                    id="maxCapital"
+                    type="number"
+                    value={maxCapital}
+                    onChange={(e) => setMaxCapital(e.target.value)}
+                    placeholder="100000"
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum capital to use for trading</p>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="maxPosition">Max Position Size (₹)</Label>
+                <Label htmlFor="maxPosition">Trading Amount per Trade (₹)</Label>
                 <Input
                   id="maxPosition"
                   type="number"
@@ -994,29 +1060,177 @@ export default function SettingsPage() {
                   placeholder="25000"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="stopLoss">Default Stop Loss (%)</Label>
-                <Input
-                  id="stopLoss"
-                  type="number"
-                  value={stopLossPercent}
-                  onChange={(e) => setStopLossPercent(e.target.value)}
-                  placeholder="2"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Auto Trading</Label>
-                  <p className="text-sm text-muted-foreground">Enable automated trade execution</p>
+
+              {/* Stop Loss & Take Profit */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stopLoss">Stop Loss (%)</Label>
+                  <Input
+                    id="stopLoss"
+                    type="number"
+                    value={stopLossPercent}
+                    onChange={(e) => setStopLossPercent(e.target.value)}
+                    placeholder="2"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                  />
                 </div>
-                <Switch
-                  checked={autoTrading}
-                  onCheckedChange={setAutoTrading}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="takeProfit">Take Profit (%)</Label>
+                  <Input
+                    id="takeProfit"
+                    type="number"
+                    value={takeProfitPercent}
+                    onChange={(e) => setTakeProfitPercent(e.target.value)}
+                    placeholder="4"
+                    min="1"
+                    max="20"
+                    step="0.5"
+                  />
+                </div>
               </div>
-              <Button className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                Save Trading Preferences
+
+              {/* Risk per Trade & Max Trades */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="maxRisk">Max Risk per Trade (%)</Label>
+                  <Input
+                    id="maxRisk"
+                    type="number"
+                    value={maxRiskPerTrade}
+                    onChange={(e) => setMaxRiskPerTrade(e.target.value)}
+                    placeholder="2"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum portfolio risk per single trade</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxTrades">Max Trades per Day</Label>
+                  <Input
+                    id="maxTrades"
+                    type="number"
+                    value={maxTradesPerDay}
+                    onChange={(e) => setMaxTradesPerDay(e.target.value)}
+                    placeholder="10"
+                    min="1"
+                    max="50"
+                  />
+                </div>
+              </div>
+
+              {/* AI Confidence */}
+              <div className="space-y-2">
+                <Label htmlFor="minConf">Min AI Confidence (%)</Label>
+                <Input
+                  id="minConf"
+                  type="number"
+                  value={minConfidence}
+                  onChange={(e) => setMinConfidence(e.target.value)}
+                  placeholder="75"
+                  min="50"
+                  max="99"
+                />
+                <p className="text-xs text-muted-foreground">Minimum AI confidence score required to execute a trade</p>
+              </div>
+
+              {/* Position Sizing Method */}
+              <div className="space-y-2">
+                <Label>Position Sizing Method</Label>
+                <Select value={positionSizingMethod} onValueChange={setPositionSizingMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    <SelectItem value="percentage">Percentage of Capital</SelectItem>
+                    <SelectItem value="kelly">Kelly Criterion</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {positionSizingMethod === 'fixed' && 'Use fixed trading amount per trade'}
+                  {positionSizingMethod === 'percentage' && 'Use percentage of available capital'}
+                  {positionSizingMethod === 'kelly' && 'Use Kelly criterion based on win rate'}
+                </p>
+              </div>
+
+              {/* Toggles */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Trailing Stop Loss</Label>
+                    <p className="text-sm text-muted-foreground">Move stop loss as price moves in your favor</p>
+                  </div>
+                  <Switch
+                    checked={trailingStopLoss}
+                    onCheckedChange={setTrailingStopLoss}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Auto Trading</Label>
+                    <p className="text-sm text-muted-foreground">Enable automated trade execution</p>
+                  </div>
+                  <Switch
+                    checked={autoTrading}
+                    onCheckedChange={setAutoTrading}
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <Button 
+                className="w-full"
+                onClick={async () => {
+                  const userId = getUserId();
+                  setTradingSettingsLoading(true);
+                  try {
+                    const response = await fetch(
+                      `${ENGINE_C_URL}/api/trading-settings/${userId}`,
+                      {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          stop_loss_percent: parseFloat(stopLossPercent),
+                          take_profit_percent: parseFloat(takeProfitPercent),
+                          max_trades_per_day: parseInt(maxTradesPerDay),
+                          trading_amount: parseFloat(maxPositionSize),
+                          min_capital: parseFloat(minCapital),
+                          max_capital: parseFloat(maxCapital),
+                          risk_level: riskLevel === 'low' ? 'conservative' : riskLevel === 'high' ? 'aggressive' : 'moderate',
+                          max_risk_per_trade: parseFloat(maxRiskPerTrade) / 100,
+                          min_confidence: parseFloat(minConfidence) / 100,
+                          use_ai_signals: true,
+                          auto_rebalance: false,
+                          trailing_stop_loss: trailingStopLoss,
+                          position_sizing_method: positionSizingMethod,
+                        }),
+                      }
+                    );
+                    if (response.ok) {
+                      setTradingSettingsSaved(true);
+                      setTimeout(() => setTradingSettingsSaved(false), 3000);
+                    }
+                  } catch (error) {
+                    console.error('Failed to save trading settings:', error);
+                  } finally {
+                    setTradingSettingsLoading(false);
+                  }
+                }}
+                disabled={tradingSettingsLoading}
+              >
+                {tradingSettingsLoading ? (
+                  <>Saving...</>
+                ) : tradingSettingsSaved ? (
+                  <>✓ Settings Saved to Cloud!</>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Trading Preferences
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>

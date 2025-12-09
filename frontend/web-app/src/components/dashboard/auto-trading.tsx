@@ -73,9 +73,102 @@ export function AutoTradingCard() {
   const [takeProfitPercent, setTakeProfitPercent] = useState<number>(tradingConfig.takeProfitPercent);
   const [useAISignals, setUseAISignals] = useState<boolean>(tradingConfig.useAISignals);
   const [autoRebalance, setAutoRebalance] = useState<boolean>(tradingConfig.autoRebalance);
+  // Extended settings
+  const [minCapital, setMinCapital] = useState<number>(tradingConfig.minCapital || 5000);
+  const [maxCapital, setMaxCapital] = useState<number>(tradingConfig.maxCapital || 100000);
+  const [maxRiskPerTrade, setMaxRiskPerTrade] = useState<number>(tradingConfig.maxRiskPerTrade || 0.02);
+  const [minConfidence, setMinConfidence] = useState<number>(tradingConfig.minConfidence || 0.75);
+  const [trailingStopLoss, setTrailingStopLoss] = useState<boolean>(tradingConfig.trailingStopLoss || false);
+  const [positionSizingMethod, setPositionSizingMethod] = useState<string>(tradingConfig.positionSizingMethod || 'fixed');
+  const [settingsLoading, setSettingsLoading] = useState<boolean>(false);
+  const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
 
   // Market/Instrument selection state - sync with store
   const [selectedMarkets, setSelectedMarkets] = useState<TradingInstrument[]>(tradingConfig.selectedInstruments);
+
+  // Load settings from backend on mount
+  useEffect(() => {
+    const userId = user?.dhanClientId || authSession?.userId;
+    if (userId) {
+      loadSettingsFromBackend(userId);
+    }
+  }, [user?.dhanClientId, authSession?.userId]);
+
+  // Function to load settings from backend
+  const loadSettingsFromBackend = async (userId: string) => {
+    try {
+      setSettingsLoading(true);
+      const response = await fetch(
+        `https://engine-c-429140669077.us-central1.run.app/api/trading-settings/${userId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const settings = data.settings;
+        // Update local state with backend settings
+        if (!data.is_default) {
+          setStopLossPercent(settings.stop_loss_percent || 2);
+          setTakeProfitPercent(settings.take_profit_percent || 4);
+          setMaxTradesPerDay(settings.max_trades_per_day || 10);
+          setTradingAmount(settings.trading_amount || 10000);
+          setMinCapital(settings.min_capital || 5000);
+          setMaxCapital(settings.max_capital || 100000);
+          setRiskLevel(settings.risk_level || 'moderate');
+          setMaxRiskPerTrade(settings.max_risk_per_trade || 0.02);
+          setMinConfidence(settings.min_confidence || 0.75);
+          setSelectedMarkets((settings.selected_instruments || ['equities']) as TradingInstrument[]);
+          setUseAISignals(settings.use_ai_signals ?? true);
+          setAutoRebalance(settings.auto_rebalance ?? false);
+          setTrailingStopLoss(settings.trailing_stop_loss ?? false);
+          setPositionSizingMethod(settings.position_sizing_method || 'fixed');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load trading settings:', error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  // Function to save settings to backend
+  const saveSettingsToBackend = async () => {
+    const userId = user?.dhanClientId || authSession?.userId;
+    if (!userId) return;
+
+    try {
+      setSettingsLoading(true);
+      const response = await fetch(
+        `https://engine-c-429140669077.us-central1.run.app/api/trading-settings/${userId}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stop_loss_percent: stopLossPercent,
+            take_profit_percent: takeProfitPercent,
+            max_trades_per_day: maxTradesPerDay,
+            trading_amount: tradingAmount,
+            min_capital: minCapital,
+            max_capital: maxCapital,
+            risk_level: riskLevel,
+            max_risk_per_trade: maxRiskPerTrade,
+            min_confidence: minConfidence,
+            selected_instruments: selectedMarkets,
+            use_ai_signals: useAISignals,
+            auto_rebalance: autoRebalance,
+            trailing_stop_loss: trailingStopLoss,
+            position_sizing_method: positionSizingMethod,
+          }),
+        }
+      );
+      if (response.ok) {
+        setSettingsSaved(true);
+        setTimeout(() => setSettingsSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save trading settings:', error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   // Sync config changes to store
   useEffect(() => {
@@ -88,8 +181,14 @@ export function AutoTradingCard() {
       tradingAmount,
       useAISignals,
       autoRebalance,
+      minCapital,
+      maxCapital,
+      maxRiskPerTrade,
+      minConfidence,
+      trailingStopLoss,
+      positionSizingMethod: positionSizingMethod as 'fixed' | 'percentage' | 'kelly',
     });
-  }, [selectedMarkets, riskLevel, stopLossPercent, takeProfitPercent, maxTradesPerDay, tradingAmount, useAISignals, autoRebalance, setTradingConfig]);
+  }, [selectedMarkets, riskLevel, stopLossPercent, takeProfitPercent, maxTradesPerDay, tradingAmount, useAISignals, autoRebalance, minCapital, maxCapital, maxRiskPerTrade, minConfidence, trailingStopLoss, positionSizingMethod, setTradingConfig]);
 
   // Available markets/instruments for trading (with typed IDs)
   const marketOptions: { id: TradingInstrument; name: string; icon: string; description: string }[] = [
@@ -626,6 +725,124 @@ export function AutoTradingCard() {
               disabled={session.isActive}
             />
           </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="trailing-sl" className="text-sm">Trailing Stop Loss</Label>
+            </div>
+            <Switch
+              id="trailing-sl"
+              checked={trailingStopLoss}
+              onCheckedChange={setTrailingStopLoss}
+              disabled={session.isActive}
+            />
+          </div>
+        </div>
+
+        {/* Extended Risk Settings */}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm font-medium">Advanced Risk Settings</Label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Min Capital (₹)</Label>
+              <Input
+                type="number"
+                value={minCapital}
+                onChange={(e) => setMinCapital(Number(e.target.value))}
+                disabled={session.isActive}
+                min={1000}
+                step={1000}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Max Capital (₹)</Label>
+              <Input
+                type="number"
+                value={maxCapital}
+                onChange={(e) => setMaxCapital(Number(e.target.value))}
+                disabled={session.isActive}
+                min={1000}
+                step={1000}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Max Risk per Trade (%)</Label>
+              <div className="flex items-center gap-2">
+                <Slider
+                  value={[maxRiskPerTrade * 100]}
+                  onValueChange={([v]) => setMaxRiskPerTrade(v / 100)}
+                  min={0.5}
+                  max={10}
+                  step={0.5}
+                  disabled={session.isActive}
+                  className="flex-1"
+                />
+                <span className="text-sm font-medium w-12">{(maxRiskPerTrade * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Min AI Confidence (%)</Label>
+              <div className="flex items-center gap-2">
+                <Slider
+                  value={[minConfidence * 100]}
+                  onValueChange={([v]) => setMinConfidence(v / 100)}
+                  min={50}
+                  max={99}
+                  step={1}
+                  disabled={session.isActive}
+                  className="flex-1"
+                />
+                <span className="text-sm font-medium w-12">{(minConfidence * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Position Sizing Method</Label>
+            <Select
+              value={positionSizingMethod}
+              onValueChange={setPositionSizingMethod}
+              disabled={session.isActive}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                <SelectItem value="percentage">Percentage of Capital</SelectItem>
+                <SelectItem value="kelly">Kelly Criterion</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Save Settings Button */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={saveSettingsToBackend}
+            variant="outline"
+            className="flex-1"
+            disabled={session.isActive || settingsLoading}
+          >
+            {settingsLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+            )}
+            {settingsSaved ? 'Settings Saved!' : 'Save Settings to Cloud'}
+          </Button>
+          {settingsSaved && (
+            <Badge variant="default" className="bg-green-500">
+              ✓ Saved
+            </Badge>
+          )}
         </div>
 
         <Separator />

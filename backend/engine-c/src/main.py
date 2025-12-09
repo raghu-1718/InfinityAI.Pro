@@ -1785,6 +1785,245 @@ async def get_ai_trade_history(limit: int = 50):
     }
 
 
+# ==================== USER TRADING SETTINGS ENDPOINTS ====================
+
+@app.get("/api/trading-settings/{user_id}")
+async def get_user_trading_settings(user_id: str):
+    """
+    Get user's trading configuration settings.
+    Returns defaults if no custom settings exist.
+
+    Settings include:
+    - stop_loss_percent, take_profit_percent
+    - max_trades_per_day, trading_amount
+    - min_capital, max_capital
+    - risk_level, max_risk_per_trade
+    - min_confidence (for AI signals)
+    - selected_instruments, use_ai_signals
+    """
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Settings manager not available")
+
+        result = await manager.get_trading_settings(user_id)
+        return result
+
+    except Exception as e:
+        logger.error(f"Error fetching trading settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/trading-settings/{user_id}")
+async def save_user_trading_settings(user_id: str, request: Request):
+    """
+    Save/update user's trading configuration settings.
+
+    Body can include any of:
+    - stop_loss_percent: float (0.5-10.0)
+    - take_profit_percent: float (1.0-20.0)
+    - max_trades_per_day: int (1-50)
+    - trading_amount: float (min 1000)
+    - min_capital: float
+    - max_capital: float
+    - risk_level: 'conservative' | 'moderate' | 'aggressive'
+    - max_risk_per_trade: float (0.005-0.10)
+    - min_confidence: float (0.5-0.99)
+    - selected_instruments: list[str]
+    - use_ai_signals: bool
+    - auto_rebalance: bool
+    - trailing_stop_loss: bool
+    - position_sizing_method: 'fixed' | 'percentage' | 'kelly'
+    """
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Settings manager not available")
+
+        body = await request.json() if await request.body() else {}
+        result = await manager.save_trading_settings(user_id, body)
+
+        # Also update the active AI trading system config if user is trading
+        if body.get("min_confidence"):
+            AI_TRADING_SYSTEM.config["min_confidence"] = float(body["min_confidence"])
+        if body.get("max_risk_per_trade"):
+            AI_TRADING_SYSTEM.config["max_risk_per_trade"] = float(body["max_risk_per_trade"])
+        if body.get("max_trades_per_day"):
+            AI_TRADING_SYSTEM.config["max_daily_trades"] = int(body["max_trades_per_day"])
+        if body.get("trading_amount"):
+            AI_TRADING_SYSTEM.config["trading_amount"] = float(body["trading_amount"])
+
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error saving trading settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/trading-settings/{user_id}")
+async def reset_user_trading_settings(user_id: str):
+    """Reset user's trading settings to defaults"""
+    try:
+        manager = get_credentials_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="Settings manager not available")
+
+        success = await manager.delete_trading_settings(user_id)
+        if success:
+            return {"status": "success", "message": "Trading settings reset to defaults"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to reset settings")
+
+    except Exception as e:
+        logger.error(f"Error resetting trading settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/trading-settings-schema")
+async def get_trading_settings_schema():
+    """Get the schema/documentation for trading settings with allowed values"""
+    return {
+        "schema": {
+            "stop_loss_percent": {
+                "type": "float",
+                "description": "Default stop loss percentage",
+                "min": 0.5,
+                "max": 10.0,
+                "default": 2.0,
+                "unit": "%"
+            },
+            "take_profit_percent": {
+                "type": "float",
+                "description": "Default take profit percentage",
+                "min": 1.0,
+                "max": 20.0,
+                "default": 4.0,
+                "unit": "%"
+            },
+            "max_trades_per_day": {
+                "type": "int",
+                "description": "Maximum number of trades allowed per day",
+                "min": 1,
+                "max": 50,
+                "default": 10
+            },
+            "trading_amount": {
+                "type": "float",
+                "description": "Default amount per trade in INR",
+                "min": 1000,
+                "default": 10000,
+                "unit": "INR"
+            },
+            "min_capital": {
+                "type": "float",
+                "description": "Minimum capital required to trade",
+                "min": 1000,
+                "default": 5000,
+                "unit": "INR"
+            },
+            "max_capital": {
+                "type": "float",
+                "description": "Maximum capital to use for trading",
+                "default": 100000,
+                "unit": "INR"
+            },
+            "risk_level": {
+                "type": "string",
+                "description": "Overall risk tolerance level",
+                "options": ["conservative", "moderate", "aggressive"],
+                "default": "moderate",
+                "details": {
+                    "conservative": "Lower risk, fewer trades, higher confidence threshold (85%)",
+                    "moderate": "Balanced risk/reward, medium confidence threshold (75%)",
+                    "aggressive": "Higher risk, more trades, lower confidence threshold (65%)"
+                }
+            },
+            "max_risk_per_trade": {
+                "type": "float",
+                "description": "Maximum portfolio risk per trade as decimal",
+                "min": 0.005,
+                "max": 0.10,
+                "default": 0.02,
+                "unit": "fraction (0.02 = 2%)"
+            },
+            "min_confidence": {
+                "type": "float",
+                "description": "Minimum AI confidence to execute trade",
+                "min": 0.5,
+                "max": 0.99,
+                "default": 0.75,
+                "unit": "fraction (0.75 = 75%)"
+            },
+            "selected_instruments": {
+                "type": "array",
+                "description": "List of instruments to trade",
+                "options": [
+                    "equities",
+                    "nifty-options",
+                    "banknifty-options",
+                    "sensex-options",
+                    "finnifty-options",
+                    "crude-options",
+                    "gold-options",
+                    "silver-options"
+                ],
+                "default": ["equities"]
+            },
+            "use_ai_signals": {
+                "type": "bool",
+                "description": "Whether to use AI-generated trading signals",
+                "default": True
+            },
+            "auto_rebalance": {
+                "type": "bool",
+                "description": "Automatically rebalance portfolio",
+                "default": False
+            },
+            "trailing_stop_loss": {
+                "type": "bool",
+                "description": "Enable trailing stop loss for positions",
+                "default": False
+            },
+            "position_sizing_method": {
+                "type": "string",
+                "description": "Method for calculating position sizes",
+                "options": ["fixed", "percentage", "kelly"],
+                "default": "fixed",
+                "details": {
+                    "fixed": "Fixed amount per trade (trading_amount)",
+                    "percentage": "Percentage of available capital",
+                    "kelly": "Kelly criterion based on win rate"
+                }
+            }
+        },
+        "risk_presets": {
+            "conservative": {
+                "stop_loss_percent": 1.5,
+                "take_profit_percent": 3.0,
+                "max_trades_per_day": 5,
+                "max_risk_per_trade": 0.01,
+                "min_confidence": 0.85
+            },
+            "moderate": {
+                "stop_loss_percent": 2.0,
+                "take_profit_percent": 4.0,
+                "max_trades_per_day": 10,
+                "max_risk_per_trade": 0.02,
+                "min_confidence": 0.75
+            },
+            "aggressive": {
+                "stop_loss_percent": 3.0,
+                "take_profit_percent": 6.0,
+                "max_trades_per_day": 20,
+                "max_risk_per_trade": 0.04,
+                "min_confidence": 0.65
+            }
+        }
+    }
+
+
 # ==================== Portfolio Endpoint ====================
 
 @app.get("/api/portfolio")

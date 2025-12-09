@@ -202,6 +202,167 @@ class UserCredentialsManager:
             logger.error(f"Error listing users: {e}")
             return []
 
+    # ==================== USER TRADING SETTINGS ====================
+
+    async def save_trading_settings(
+        self,
+        user_id: str,
+        settings: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Save user's trading configuration settings in Firestore
+
+        Settings include:
+        - stop_loss_percent: Default stop loss percentage (e.g., 2.0)
+        - take_profit_percent: Default take profit percentage (e.g., 4.0)
+        - max_trades_per_day: Maximum trades allowed per day
+        - trading_amount: Default amount per trade (in INR)
+        - min_capital: Minimum capital required to trade
+        - max_capital: Maximum capital to use for trading
+        - risk_level: 'conservative' | 'moderate' | 'aggressive'
+        - max_risk_per_trade: Max risk as fraction (e.g., 0.02 = 2%)
+        - min_confidence: Minimum AI confidence to execute (e.g., 0.75)
+        - selected_instruments: List of instruments to trade
+        - use_ai_signals: Whether to use AI signals
+        - auto_rebalance: Whether to auto-rebalance portfolio
+        - trailing_stop_loss: Enable trailing stop loss
+        - position_sizing_method: 'fixed' | 'percentage' | 'kelly'
+        """
+        try:
+            # Validate and set defaults
+            validated_settings = {
+                "stop_loss_percent": float(settings.get("stop_loss_percent", 2.0)),
+                "take_profit_percent": float(settings.get("take_profit_percent", 4.0)),
+                "max_trades_per_day": int(settings.get("max_trades_per_day", 10)),
+                "trading_amount": float(settings.get("trading_amount", 10000)),
+                "min_capital": float(settings.get("min_capital", 5000)),
+                "max_capital": float(settings.get("max_capital", 100000)),
+                "risk_level": settings.get("risk_level", "moderate"),
+                "max_risk_per_trade": float(settings.get("max_risk_per_trade", 0.02)),
+                "min_confidence": float(settings.get("min_confidence", 0.75)),
+                "selected_instruments": settings.get("selected_instruments", ["equities"]),
+                "use_ai_signals": bool(settings.get("use_ai_signals", True)),
+                "auto_rebalance": bool(settings.get("auto_rebalance", False)),
+                "trailing_stop_loss": bool(settings.get("trailing_stop_loss", False)),
+                "position_sizing_method": settings.get("position_sizing_method", "fixed"),
+                "updated_at": datetime.utcnow(),
+            }
+
+            # Validate risk_level
+            if validated_settings["risk_level"] not in ["conservative", "moderate", "aggressive"]:
+                validated_settings["risk_level"] = "moderate"
+
+            # Validate position_sizing_method
+            if validated_settings["position_sizing_method"] not in ["fixed", "percentage", "kelly"]:
+                validated_settings["position_sizing_method"] = "fixed"
+
+            # Validate ranges
+            validated_settings["stop_loss_percent"] = max(0.5, min(10.0, validated_settings["stop_loss_percent"]))
+            validated_settings["take_profit_percent"] = max(1.0, min(20.0, validated_settings["take_profit_percent"]))
+            validated_settings["max_trades_per_day"] = max(1, min(50, validated_settings["max_trades_per_day"]))
+            validated_settings["max_risk_per_trade"] = max(0.005, min(0.10, validated_settings["max_risk_per_trade"]))
+            validated_settings["min_confidence"] = max(0.5, min(0.99, validated_settings["min_confidence"]))
+
+            # Save to Firestore in trading_settings collection
+            doc_ref = self.db.collection("trading_settings").document(user_id)
+            doc_ref.set(validated_settings, merge=True)
+
+            logger.info(f"✅ Saved trading settings for user {user_id}")
+            return {
+                "status": "success",
+                "message": "Trading settings saved successfully",
+                "user_id": user_id,
+                "settings": validated_settings
+            }
+
+        except Exception as e:
+            logger.error(f"Error saving trading settings: {e}")
+            raise ValueError(f"Failed to save trading settings: {str(e)}")
+
+    async def get_trading_settings(self, user_id: str) -> Dict[str, Any]:
+        """
+        Retrieve user's trading configuration settings
+        Returns default settings if none exist
+        """
+        try:
+            doc_ref = self.db.collection("trading_settings").document(user_id)
+            doc = doc_ref.get()
+
+            # Default settings
+            defaults = {
+                "stop_loss_percent": 2.0,
+                "take_profit_percent": 4.0,
+                "max_trades_per_day": 10,
+                "trading_amount": 10000,
+                "min_capital": 5000,
+                "max_capital": 100000,
+                "risk_level": "moderate",
+                "max_risk_per_trade": 0.02,
+                "min_confidence": 0.75,
+                "selected_instruments": ["equities"],
+                "use_ai_signals": True,
+                "auto_rebalance": False,
+                "trailing_stop_loss": False,
+                "position_sizing_method": "fixed",
+            }
+
+            if not doc.exists:
+                logger.info(f"No trading settings found for {user_id}, returning defaults")
+                return {
+                    "user_id": user_id,
+                    "settings": defaults,
+                    "is_default": True
+                }
+
+            data = doc.to_dict()
+            # Merge with defaults in case of missing fields
+            settings = {**defaults, **data}
+            # Remove Firestore timestamp fields
+            settings.pop("updated_at", None)
+
+            return {
+                "user_id": user_id,
+                "settings": settings,
+                "is_default": False,
+                "last_updated": data.get("updated_at")
+            }
+
+        except Exception as e:
+            logger.error(f"Error retrieving trading settings: {e}")
+            # Return defaults on error
+            return {
+                "user_id": user_id,
+                "settings": {
+                    "stop_loss_percent": 2.0,
+                    "take_profit_percent": 4.0,
+                    "max_trades_per_day": 10,
+                    "trading_amount": 10000,
+                    "min_capital": 5000,
+                    "max_capital": 100000,
+                    "risk_level": "moderate",
+                    "max_risk_per_trade": 0.02,
+                    "min_confidence": 0.75,
+                    "selected_instruments": ["equities"],
+                    "use_ai_signals": True,
+                    "auto_rebalance": False,
+                    "trailing_stop_loss": False,
+                    "position_sizing_method": "fixed",
+                },
+                "is_default": True,
+                "error": str(e)
+            }
+
+    async def delete_trading_settings(self, user_id: str) -> bool:
+        """Delete user's trading settings (reset to defaults)"""
+        try:
+            doc_ref = self.db.collection("trading_settings").document(user_id)
+            doc_ref.delete()
+            logger.info(f"✅ Deleted trading settings for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting trading settings: {e}")
+            return False
+
 
 # Singleton instance
 _credentials_manager: Optional[UserCredentialsManager] = None

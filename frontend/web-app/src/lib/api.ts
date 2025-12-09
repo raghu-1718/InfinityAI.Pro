@@ -53,6 +53,47 @@ export interface RiskScoreResponse {
   recommendation: string;
 }
 
+// User Trading Settings Types
+export interface TradingSettings {
+  stop_loss_percent: number;
+  take_profit_percent: number;
+  max_trades_per_day: number;
+  trading_amount: number;
+  min_capital: number;
+  max_capital: number;
+  risk_level: 'conservative' | 'moderate' | 'aggressive';
+  max_risk_per_trade: number;
+  min_confidence: number;
+  selected_instruments: string[];
+  use_ai_signals: boolean;
+  auto_rebalance: boolean;
+  trailing_stop_loss: boolean;
+  position_sizing_method: 'fixed' | 'percentage' | 'kelly';
+}
+
+export interface TradingSettingsResponse {
+  user_id: string;
+  settings: TradingSettings;
+  is_default: boolean;
+  last_updated?: string;
+  status?: string;
+  message?: string;
+}
+
+export interface TradingSettingsSchema {
+  schema: Record<string, {
+    type: string;
+    description: string;
+    min?: number;
+    max?: number;
+    default: unknown;
+    unit?: string;
+    options?: string[];
+    details?: Record<string, string>;
+  }>;
+  risk_presets: Record<string, Partial<TradingSettings>>;
+}
+
 export interface VaRRequest {
   returns: number[];
   confidence?: number;
@@ -852,6 +893,46 @@ export const engineC = {
       `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
       `${FALLBACK_URLS.ENGINE_C}/api/user/credentials?user_id=${userId}`,
       { method: 'DELETE' }
+    );
+    return res.json();
+  },
+
+  // ==================== USER TRADING SETTINGS ====================
+
+  async getTradingSettings(userId: string): Promise<TradingSettingsResponse> {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`
+    );
+    return res.json();
+  },
+
+  async saveTradingSettings(userId: string, settings: Partial<TradingSettings>): Promise<TradingSettingsResponse> {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      }
+    );
+    return res.json();
+  },
+
+  async resetTradingSettings(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`,
+      { method: 'DELETE' }
+    );
+    return res.json();
+  },
+
+  async getTradingSettingsSchema(): Promise<TradingSettingsSchema> {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`,
+      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings-schema`
     );
     return res.json();
   },
