@@ -25,23 +25,8 @@ import lightgbm as lgb
 import joblib
 
 # Performance Optimization Imports (optional - graceful degradation)
+# These will be initialized after logger is available
 PERFORMANCE_MODULES_AVAILABLE = False
-PerformanceCache = None
-ConnectionPoolManager = None
-HealthMonitor = None
-CircuitBreaker = None
-
-try:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-    from performance import (
-        PerformanceCache,
-        ConnectionPoolManager,
-        HealthMonitor,
-        CircuitBreaker
-    )
-    PERFORMANCE_MODULES_AVAILABLE = True
-except ImportError as e:
-    pass  # Performance modules are optional
 
 # CatBoost for enhanced ensemble
 try:
@@ -127,6 +112,20 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("InfinityAI.EngineB")
+
+# Now try to import performance modules (after logger is available)
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+    from performance import CacheManager, ConnectionPoolManager, HealthMonitor, CircuitBreaker
+    PERFORMANCE_MODULES_AVAILABLE = True
+    logger.info("✅ Performance modules loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
+    # Define placeholders when not available
+    CacheManager = None
+    ConnectionPoolManager = None
+    HealthMonitor = None
+    CircuitBreaker = None
 
 # Import Indian Market Knowledge Base (after logger is defined)
 try:
@@ -1337,9 +1336,10 @@ SENTIMENT_ANALYZER = SentimentAnalyzer()
 # =====================================================================
 # PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
 # =====================================================================
-perf_cache: Optional[PerformanceCache] = None
-connection_manager: Optional[ConnectionPoolManager] = None
-health_monitor: Optional[HealthMonitor] = None
+# Using Any type to avoid NameError when performance modules not available
+perf_cache: Optional[Any] = None
+connection_manager: Optional[Any] = None
+health_monitor: Optional[Any] = None
 aiohttp_session: Optional[aiohttp.ClientSession] = None
 
 # =====================================================================
@@ -1352,9 +1352,9 @@ async def startup_event():
     global perf_cache, connection_manager, health_monitor, aiohttp_session
 
     # Initialize performance modules
-    if PERFORMANCE_MODULES_AVAILABLE:
+    if PERFORMANCE_MODULES_AVAILABLE and CacheManager is not None:
         try:
-            perf_cache = PerformanceCache(max_size=5000, default_ttl=60.0, name="engine_b")
+            perf_cache = CacheManager(max_size=5000, default_ttl=60.0, name="engine_b")
             await perf_cache.initialize()
             connection_manager = ConnectionPoolManager()
             await connection_manager.initialize()
@@ -1374,7 +1374,7 @@ async def startup_event():
         timeout = aiohttp.ClientTimeout(total=30, connect=10)
         aiohttp_session = aiohttp.ClientSession(connector=connector, timeout=timeout)
         logger.info("✅ Shared aiohttp session initialized")
-        
+
         # Set shared session for data connector and news integration
         try:
             from services.data_connector import set_shared_session as set_dc_session

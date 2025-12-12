@@ -23,23 +23,8 @@ from sklearn.covariance import LedoitWolf
 import joblib
 
 # Performance Optimization Imports (optional - graceful degradation)
+# These are deferred to after logger initialization
 PERFORMANCE_MODULES_AVAILABLE = False
-PerformanceCache = None
-ConnectionPoolManager = None
-HealthMonitor = None
-CircuitBreaker = None
-
-try:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-    from performance import (
-        PerformanceCache,
-        ConnectionPoolManager,
-        HealthMonitor,
-        CircuitBreaker
-    )
-    PERFORMANCE_MODULES_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
 
 # Google Cloud Integrations (Official SDKs)
 try:
@@ -63,12 +48,27 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Now try to import performance modules (after logger is available)
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+    from performance import CacheManager, ConnectionPoolManager, HealthMonitor, CircuitBreaker
+    PERFORMANCE_MODULES_AVAILABLE = True
+    logger.info("✅ Performance modules loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
+    # Define placeholders when not available
+    CacheManager = None
+    ConnectionPoolManager = None
+    HealthMonitor = None
+    CircuitBreaker = None
+
 # ==============================================================================
 # PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
 # ==============================================================================
-perf_cache: Optional[PerformanceCache] = None
-connection_manager: Optional[ConnectionPoolManager] = None
-health_monitor: Optional[HealthMonitor] = None
+# Using Any type to avoid NameError when performance modules not available
+perf_cache: Optional[Any] = None
+connection_manager: Optional[Any] = None
+health_monitor: Optional[Any] = None
 http_client: Optional[httpx.AsyncClient] = None
 
 
@@ -81,9 +81,9 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Engine A starting up...")
 
     # Initialize performance modules
-    if PERFORMANCE_MODULES_AVAILABLE:
+    if PERFORMANCE_MODULES_AVAILABLE and CacheManager is not None:
         try:
-            perf_cache = PerformanceCache(max_size=2000, default_ttl=60.0, name="engine_a")
+            perf_cache = CacheManager(max_size=2000, default_ttl=60.0, name="engine_a")
             await perf_cache.initialize()
             connection_manager = ConnectionPoolManager()
             await connection_manager.initialize()
