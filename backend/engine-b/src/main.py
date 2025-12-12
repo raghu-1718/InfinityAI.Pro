@@ -24,7 +24,13 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
-# Performance Optimization Imports
+# Performance Optimization Imports (optional - graceful degradation)
+PERFORMANCE_MODULES_AVAILABLE = False
+PerformanceCache = None
+ConnectionPoolManager = None
+HealthMonitor = None
+CircuitBreaker = None
+
 try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
     from performance import (
@@ -35,8 +41,7 @@ try:
     )
     PERFORMANCE_MODULES_AVAILABLE = True
 except ImportError as e:
-    PERFORMANCE_MODULES_AVAILABLE = False
-    print(f"⚠️ Performance modules not available: {e}")
+    pass  # Performance modules are optional
 
 # CatBoost for enhanced ensemble
 try:

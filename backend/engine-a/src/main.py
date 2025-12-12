@@ -22,7 +22,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 import joblib
 
-# Performance Optimization Imports
+# Performance Optimization Imports (optional - graceful degradation)
+PERFORMANCE_MODULES_AVAILABLE = False
+PerformanceCache = None
+ConnectionPoolManager = None
+HealthMonitor = None
+CircuitBreaker = None
+
 try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
     from performance import (
@@ -33,8 +39,7 @@ try:
     )
     PERFORMANCE_MODULES_AVAILABLE = True
 except ImportError as e:
-    PERFORMANCE_MODULES_AVAILABLE = False
-    print(f"⚠️ Performance modules not available: {e}")
+    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
 
 # Google Cloud Integrations (Official SDKs)
 try:
