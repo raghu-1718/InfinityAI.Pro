@@ -78,13 +78,11 @@ async def lifespan(app: FastAPI):
     # Initialize performance modules
     if PERFORMANCE_MODULES_AVAILABLE:
         try:
-            perf_cache = PerformanceCache(max_size=2000, max_memory_mb=150)
+            perf_cache = PerformanceCache(max_size=2000, default_ttl=60.0, name="engine_a")
+            await perf_cache.initialize()
             connection_manager = ConnectionPoolManager()
             await connection_manager.initialize()
-            health_monitor = HealthMonitor(check_interval=45)
-            health_monitor.add_endpoint("engine_b", os.environ.get("ENGINE_B_URL", "http://engine-b:8080") + "/health")
-            health_monitor.add_endpoint("engine_c", os.environ.get("ENGINE_C_URL", "http://engine-c:8080") + "/health")
-            asyncio.create_task(health_monitor.start_monitoring())
+            health_monitor = HealthMonitor()
             logger.info("✅ Performance modules initialized")
         except Exception as e:
             logger.warning(f"⚠️ Performance modules init failed: {e}")
@@ -106,7 +104,9 @@ async def lifespan(app: FastAPI):
     if connection_manager:
         await connection_manager.shutdown()
     if health_monitor:
-        health_monitor.stop_monitoring()
+        await health_monitor.stop_monitoring()
+    if perf_cache:
+        await perf_cache.shutdown()
     logger.info("✅ Engine A cleanup complete")
 
 

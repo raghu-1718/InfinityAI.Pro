@@ -15,9 +15,13 @@ from .health_monitor import (
     with_circuit_breaker
 )
 
+# Aliases for backward compatibility
+PerformanceCache = CacheManager
+
 __all__ = [
     # Cache
     'CacheManager',
+    'PerformanceCache',  # Alias
     'cache_response',
     'get_cache_manager',
     # Connection Pool

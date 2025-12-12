@@ -254,7 +254,7 @@ class AIAutoTradingSystem:
 
         try:
             url = f"{ENGINE_B_URL}/api/ai-signals"
-            
+
             if HAS_PERFORMANCE_MODULE:
                 session = await get_aiohttp_session()
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
@@ -1009,12 +1009,12 @@ async def get_performance_stats():
             stats["cache"] = await cache.stats()
         except:
             stats["cache"] = {"status": "error"}
-        
+
         try:
             stats["connections"] = ConnectionPoolManager.get_stats()
         except:
             stats["connections"] = {"status": "error"}
-        
+
         try:
             monitor = get_health_monitor()
             stats["health_monitor"] = await monitor.get_status()

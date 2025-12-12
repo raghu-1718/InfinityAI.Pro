@@ -408,7 +408,9 @@ class SymbolMapper:
                 index=df.SEM_SMST_SECURITY_ID.astype(int)
             ).to_dict()
 
-            self.meta_map = df.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
+            # Handle duplicate security IDs by keeping first occurrence
+            df_unique = df.drop_duplicates(subset=['SEM_SMST_SECURITY_ID'], keep='first')
+            self.meta_map = df_unique.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
 
             # Merge fallback critical symbols (MCX commodities use expiry-based names in CSV)
             fallback_critical = {
@@ -1347,12 +1349,11 @@ async def startup_event():
     # Initialize performance modules
     if PERFORMANCE_MODULES_AVAILABLE:
         try:
-            perf_cache = PerformanceCache(max_size=5000, max_memory_mb=200)
+            perf_cache = PerformanceCache(max_size=5000, default_ttl=60.0, name="engine_b")
+            await perf_cache.initialize()
             connection_manager = ConnectionPoolManager()
             await connection_manager.initialize()
-            health_monitor = HealthMonitor(check_interval=60)
-            health_monitor.add_endpoint("dhan_api", "https://api.dhan.co/v2")
-            asyncio.create_task(health_monitor.start_monitoring())
+            health_monitor = HealthMonitor()
             logger.info("✅ Performance modules initialized for Engine B")
         except Exception as e:
             logger.warning(f"⚠️ Performance modules init failed: {e}")
@@ -1368,6 +1369,18 @@ async def startup_event():
         timeout = aiohttp.ClientTimeout(total=30, connect=10)
         aiohttp_session = aiohttp.ClientSession(connector=connector, timeout=timeout)
         logger.info("✅ Shared aiohttp session initialized")
+        
+        # Set shared session for data connector and news integration
+        try:
+            from services.data_connector import set_shared_session as set_dc_session
+            set_dc_session(aiohttp_session)
+        except ImportError:
+            pass
+        try:
+            from google_integrations.news_integration import set_shared_session as set_news_session
+            set_news_session(aiohttp_session)
+        except ImportError:
+            pass
 
     await SYMBOL_MAPPER.refresh()
     logger.info("🚀 InfinityAI Engine B Started (Performance Optimized)")
@@ -1376,7 +1389,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Graceful shutdown with cleanup"""
-    global aiohttp_session, connection_manager, health_monitor
+    global aiohttp_session, connection_manager, health_monitor, perf_cache
 
     logger.info("🛑 Engine B shutting down...")
 
@@ -1385,7 +1398,9 @@ async def shutdown_event():
     if connection_manager:
         await connection_manager.shutdown()
     if health_monitor:
-        health_monitor.stop_monitoring()
+        await health_monitor.stop_monitoring()
+    if perf_cache:
+        await perf_cache.shutdown()
 
     logger.info("✅ Engine B cleanup complete")
 
