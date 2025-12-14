@@ -383,20 +383,23 @@ class SymbolMapper:
             # Filter for NSE Equity, Derivatives & MCX Commodities
             df = df[df['SEM_EXM_EXCH_ID'].isin(['NSE', 'NSE_FNO', 'MCX'])]
 
+            # Remove duplicates before building maps to avoid "index must be unique" error
+            df_symbols = df.drop_duplicates(subset=['SEM_TRADING_SYMBOL'], keep='first')
+            df_sec_ids = df.drop_duplicates(subset=['SEM_SMST_SECURITY_ID'], keep='first')
+
             # Build Maps
             self.symbol_map = pd.Series(
-                df.SEM_SMST_SECURITY_ID.astype(str).values,
-                index=df.SEM_TRADING_SYMBOL
+                df_symbols.SEM_SMST_SECURITY_ID.astype(str).values,
+                index=df_symbols.SEM_TRADING_SYMBOL
             ).to_dict()
 
             self.id_map = pd.Series(
-                df.SEM_TRADING_SYMBOL.values,
-                index=df.SEM_SMST_SECURITY_ID.astype(int)
+                df_sec_ids.SEM_TRADING_SYMBOL.values,
+                index=df_sec_ids.SEM_SMST_SECURITY_ID.astype(int)
             ).to_dict()
 
             # Handle duplicate security IDs by keeping first occurrence
-            df_unique = df.drop_duplicates(subset=['SEM_SMST_SECURITY_ID'], keep='first')
-            self.meta_map = df_unique.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
+            self.meta_map = df_sec_ids.set_index('SEM_SMST_SECURITY_ID')[['SEM_SERIES', 'SEM_LOT_UNITS']].to_dict('index')
 
             # Merge fallback critical symbols (MCX commodities use expiry-based names in CSV)
             fallback_critical = {
