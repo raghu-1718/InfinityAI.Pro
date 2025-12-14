@@ -22,10 +22,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 import joblib
 
-# Performance Optimization Imports (optional - graceful degradation)
-# These are deferred to after logger initialization
-PERFORMANCE_MODULES_AVAILABLE = False
-
 # Google Cloud Integrations (Official SDKs)
 try:
     from src.google_integrations import (
@@ -48,51 +44,19 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Now try to import performance modules (after logger is available)
-try:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-    from performance import CacheManager, ConnectionPoolManager, HealthMonitor, CircuitBreaker
-    PERFORMANCE_MODULES_AVAILABLE = True
-    logger.info("✅ Performance modules loaded successfully")
-except ImportError as e:
-    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
-    # Define placeholders when not available
-    CacheManager = None
-    ConnectionPoolManager = None
-    HealthMonitor = None
-    CircuitBreaker = None
-
-# ==============================================================================
-# PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
-# ==============================================================================
-# Using Any type to avoid NameError when performance modules not available
-perf_cache: Optional[Any] = None
-connection_manager: Optional[Any] = None
-health_monitor: Optional[Any] = None
+# Shared HTTP client for efficient connection reuse
 http_client: Optional[httpx.AsyncClient] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup/shutdown"""
-    global perf_cache, connection_manager, health_monitor, http_client
+    global http_client
 
     # Startup
     logger.info("🚀 Engine A starting up...")
 
-    # Initialize performance modules
-    if PERFORMANCE_MODULES_AVAILABLE and CacheManager is not None:
-        try:
-            perf_cache = CacheManager(max_size=2000, default_ttl=60.0, name="engine_a")
-            await perf_cache.initialize()
-            connection_manager = ConnectionPoolManager()
-            await connection_manager.initialize()
-            health_monitor = HealthMonitor()
-            logger.info("✅ Performance modules initialized")
-        except Exception as e:
-            logger.warning(f"⚠️ Performance modules init failed: {e}")
-
-    # Create shared httpx client
+    # Create shared httpx client for efficient connection reuse
     http_client = httpx.AsyncClient(
         timeout=httpx.Timeout(30.0, connect=10.0),
         limits=httpx.Limits(max_keepalive_connections=50, max_connections=100),
@@ -106,12 +70,6 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Engine A shutting down...")
     if http_client:
         await http_client.aclose()
-    if connection_manager:
-        await connection_manager.shutdown()
-    if health_monitor:
-        await health_monitor.stop_monitoring()
-    if perf_cache:
-        await perf_cache.shutdown()
     logger.info("✅ Engine A cleanup complete")
 
 

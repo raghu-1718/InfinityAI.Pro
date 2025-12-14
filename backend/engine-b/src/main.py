@@ -24,10 +24,6 @@ import xgboost as xgb
 import lightgbm as lgb
 import joblib
 
-# Performance Optimization Imports (optional - graceful degradation)
-# These will be initialized after logger is available
-PERFORMANCE_MODULES_AVAILABLE = False
-
 # CatBoost for enhanced ensemble
 try:
     from catboost import CatBoostClassifier
@@ -112,20 +108,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("InfinityAI.EngineB")
-
-# Now try to import performance modules (after logger is available)
-try:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-    from performance import CacheManager, ConnectionPoolManager, HealthMonitor, CircuitBreaker
-    PERFORMANCE_MODULES_AVAILABLE = True
-    logger.info("✅ Performance modules loaded successfully")
-except ImportError as e:
-    logger.warning(f"⚠️ Performance modules not available (optional): {e}")
-    # Define placeholders when not available
-    CacheManager = None
-    ConnectionPoolManager = None
-    HealthMonitor = None
-    CircuitBreaker = None
 
 # Import Indian Market Knowledge Base (after logger is defined)
 try:
@@ -1333,13 +1315,7 @@ class SentimentAnalyzer:
 
 SENTIMENT_ANALYZER = SentimentAnalyzer()
 
-# =====================================================================
-# PERFORMANCE OPTIMIZATION - Global Instances for 24/7 Operation
-# =====================================================================
-# Using Any type to avoid NameError when performance modules not available
-perf_cache: Optional[Any] = None
-connection_manager: Optional[Any] = None
-health_monitor: Optional[Any] = None
+# Shared HTTP session for efficient connection reuse
 aiohttp_session: Optional[aiohttp.ClientSession] = None
 
 # =====================================================================
@@ -1348,20 +1324,8 @@ aiohttp_session: Optional[aiohttp.ClientSession] = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Bootstrap application state with performance optimizations"""
-    global perf_cache, connection_manager, health_monitor, aiohttp_session
-
-    # Initialize performance modules
-    if PERFORMANCE_MODULES_AVAILABLE and CacheManager is not None:
-        try:
-            perf_cache = CacheManager(max_size=5000, default_ttl=60.0, name="engine_b")
-            await perf_cache.initialize()
-            connection_manager = ConnectionPoolManager()
-            await connection_manager.initialize()
-            health_monitor = HealthMonitor()
-            logger.info("✅ Performance modules initialized for Engine B")
-        except Exception as e:
-            logger.warning(f"⚠️ Performance modules init failed: {e}")
+    """Bootstrap application state"""
+    global aiohttp_session
 
     # Create shared aiohttp session for efficient connections
     if HAS_AIOHTTP:
@@ -1388,24 +1352,18 @@ async def startup_event():
             pass
 
     await SYMBOL_MAPPER.refresh()
-    logger.info("🚀 InfinityAI Engine B Started (Performance Optimized)")
+    logger.info("🚀 InfinityAI Engine B Started")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Graceful shutdown with cleanup"""
-    global aiohttp_session, connection_manager, health_monitor, perf_cache
+    global aiohttp_session
 
     logger.info("🛑 Engine B shutting down...")
 
     if aiohttp_session:
         await aiohttp_session.close()
-    if connection_manager:
-        await connection_manager.shutdown()
-    if health_monitor:
-        await health_monitor.stop_monitoring()
-    if perf_cache:
-        await perf_cache.shutdown()
 
     logger.info("✅ Engine B cleanup complete")
 
