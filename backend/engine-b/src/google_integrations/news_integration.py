@@ -420,8 +420,6 @@ class NewsAggregator:
                 if should_close:
                     await session.close()
 
-                            articles.append(article)
-
         except Exception as e:
             logger.error(f"Error fetching from NewsAPI: {e}")
 
