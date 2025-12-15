@@ -124,6 +124,49 @@ def get_background_trading_manager():
             return None
     return _background_trading_manager
 
+
+# Lazy import for Vertex AI Agent Integration
+_vertex_agent_integration = None
+_automated_trade_executor = None
+
+def get_vertex_agent():
+    """Lazy load VertexAgentIntegration"""
+    global _vertex_agent_integration
+    if _vertex_agent_integration is None:
+        try:
+            try:
+                from src.vertex_agent_integration import VertexAgentIntegration, get_vertex_agent_integration
+            except ImportError:
+                from vertex_agent_integration import VertexAgentIntegration, get_vertex_agent_integration
+            _vertex_agent_integration = get_vertex_agent_integration()
+            # Initialize with Firestore if available
+            if _firestore_db is not None:
+                _vertex_agent_integration.initialize(_firestore_db)
+            logger.info("✅ VertexAgentIntegration initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize VertexAgentIntegration: {e}")
+            return None
+    return _vertex_agent_integration
+
+def get_trade_executor():
+    """Lazy load AutomatedTradeExecutor"""
+    global _automated_trade_executor
+    if _automated_trade_executor is None:
+        try:
+            try:
+                from src.vertex_agent_integration import AutomatedTradeExecutor, get_automated_trade_executor
+            except ImportError:
+                from vertex_agent_integration import AutomatedTradeExecutor, get_automated_trade_executor
+            _automated_trade_executor = get_automated_trade_executor()
+            # Initialize with Firestore if available
+            if _firestore_db is not None:
+                _automated_trade_executor.initialize(_firestore_db)
+            logger.info("✅ AutomatedTradeExecutor initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize AutomatedTradeExecutor: {e}")
+            return None
+    return _automated_trade_executor
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1018,12 +1061,26 @@ async def healthz():
         except:
             performance_stats["health"] = {"status": "error"}
 
+    # Check Vertex AI Agent status
+    agent_status = "unavailable"
+    try:
+        agent = get_vertex_agent()
+        if agent:
+            agent_status = "operational"
+    except:
+        agent_status = "error"
+
     return {
         "status": "healthy",
         "service": "engine-c-execution",
         "broker": "DhanHQ",
-        "version": "3.7-performance-optimized",
+        "version": "3.8-ai-agent-integrated",
         "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
+        "ai_agent": {
+            "status": agent_status,
+            "engine_id": "8753627684120035328",
+            "model": "gemini-2.5-pro"
+        },
         "performance": performance_stats if performance_stats else "modules_not_loaded",
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -2164,6 +2221,247 @@ async def trigger_background_trading(user_id: str, request: Request):
             "error": str(e),
             "user_id": user_id
         }
+
+
+# ==================== VERTEX AI AGENT ENDPOINTS ====================
+# Financial Advisor Agent Integration for AI-driven trading
+
+class AgentChatRequest(BaseModel):
+    """Request model for agent chat"""
+    user_id: str
+    message: str
+    context: Optional[Dict[str, Any]] = None
+
+class AgentAnalysisRequest(BaseModel):
+    """Request model for trade analysis"""
+    user_id: str
+    symbol: str
+    current_price: Optional[float] = None
+    market_data: Optional[Dict[str, Any]] = None
+    portfolio_context: Optional[Dict[str, Any]] = None
+
+class AutomatedTradingRequest(BaseModel):
+    """Request model for automated trading cycle"""
+    user_id: str
+    watchlist: List[str]
+    config: Optional[Dict[str, Any]] = None
+
+@app.get("/api/agent/status")
+async def get_agent_status():
+    """Get Vertex AI Agent status and configuration"""
+    try:
+        agent = get_vertex_agent()
+        if not agent:
+            return {
+                "status": "unavailable",
+                "message": "Vertex AI Agent not initialized",
+                "agent_engine_id": None
+            }
+
+        return {
+            "status": "operational",
+            "agent_engine_id": agent.agent_engine_id,
+            "agent_engine_name": agent.agent_engine_name,
+            "project_id": agent.project_id,
+            "region": agent.region,
+            "model": "gemini-2.5-pro",
+            "capabilities": [
+                "market_analysis",
+                "trade_recommendations",
+                "risk_assessment",
+                "portfolio_review",
+                "entry_exit_timing",
+                "strategy_evaluation"
+            ],
+            "integration": {
+                "engine_b": agent.engine_b_url,
+                "firestore": agent.is_initialized
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Agent status error: {e}")
+        return {"status": "error", "error": str(e)}
+
+@app.post("/api/agent/chat")
+async def chat_with_agent(request: AgentChatRequest):
+    """
+    Chat with Financial Advisor Agent.
+    Free-form conversation about trading, markets, investments.
+    """
+    try:
+        agent = get_vertex_agent()
+        if not agent:
+            raise HTTPException(status_code=503, detail="Vertex AI Agent not available")
+
+        result = await agent.chat_with_agent(
+            user_id=request.user_id,
+            message=request.message,
+            context=request.context
+        )
+
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "Agent chat failed"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Agent chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/agent/analyze")
+async def analyze_trade_opportunity(request: AgentAnalysisRequest):
+    """
+    Analyze a specific trade opportunity using AI Agent.
+    Returns detailed recommendation with entry/exit points.
+    """
+    try:
+        agent = get_vertex_agent()
+        if not agent:
+            raise HTTPException(status_code=503, detail="Vertex AI Agent not available")
+
+        result = await agent.analyze_trade_opportunity(
+            user_id=request.user_id,
+            symbol=request.symbol,
+            current_price=request.current_price or 0,
+            market_data=request.market_data,
+            portfolio_context=request.portfolio_context
+        )
+
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "Analysis failed"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Trade analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/agent/signal/{user_id}/{symbol}")
+async def get_realtime_signal(user_id: str, symbol: str, timeframe: str = "intraday"):
+    """
+    Get real-time trading signal combining:
+    - Engine B technical analysis
+    - Market pulse data
+    - Financial Advisor Agent strategic analysis
+
+    This is the main endpoint for automated trading decisions.
+    """
+    try:
+        agent = get_vertex_agent()
+        if not agent:
+            raise HTTPException(status_code=503, detail="Vertex AI Agent not available")
+
+        result = await agent.get_realtime_trade_signal(
+            user_id=user_id,
+            symbol=symbol,
+            timeframe=timeframe
+        )
+
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "Signal generation failed"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Real-time signal error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/agent/should-execute")
+async def should_execute_trade(request: Request):
+    """
+    Final decision gate: Should we execute this trade?
+    Checks signal against user's risk parameters.
+    """
+    try:
+        body = await request.json()
+        user_id = body.get("user_id")
+        symbol = body.get("symbol")
+        signal = body.get("signal", {})
+        user_config = body.get("config", {})
+
+        if not user_id or not symbol:
+            raise HTTPException(status_code=400, detail="user_id and symbol are required")
+
+        agent = get_vertex_agent()
+        if not agent:
+            raise HTTPException(status_code=503, detail="Vertex AI Agent not available")
+
+        result = await agent.should_execute_trade(
+            user_id=user_id,
+            symbol=symbol,
+            signal=signal,
+            user_config=user_config
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Trade decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/agent/auto-trade")
+async def run_automated_trading(request: AutomatedTradingRequest):
+    """
+    Run a complete automated trading cycle.
+    Analyzes watchlist symbols and executes trades based on AI recommendations.
+
+    This endpoint can be called manually or via Cloud Scheduler.
+    """
+    try:
+        executor = get_trade_executor()
+        if not executor:
+            raise HTTPException(status_code=503, detail="Automated Trade Executor not available")
+
+        config = request.config or {
+            "min_confidence": 0.7,
+            "max_risk_per_trade": 0.02,
+            "max_daily_trades": 10,
+            "trading_amount": 1000
+        }
+
+        result = await executor.run_automated_trading_cycle(
+            user_id=request.user_id,
+            watchlist=request.watchlist,
+            config=config
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Automated trading error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/agent/session/create/{user_id}")
+async def create_agent_session(user_id: str):
+    """Create a new session with the Financial Advisor Agent"""
+    try:
+        agent = get_vertex_agent()
+        if not agent:
+            raise HTTPException(status_code=503, detail="Vertex AI Agent not available")
+
+        result = await agent.create_agent_session(user_id)
+
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "Session creation failed"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Session creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== ACTIVITY LOG ENDPOINTS ====================
