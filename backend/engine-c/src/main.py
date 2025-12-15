@@ -15,6 +15,16 @@ from google.cloud import secretmanager
 from google.cloud import firestore
 import uvicorn
 
+# Initialize Firestore client globally
+try:
+    _firestore_db = firestore.Client()
+    logger_init = logging.getLogger("firestore_init")
+    logger_init.info("✅ Firestore client initialized")
+except Exception as e:
+    _firestore_db = None
+    logger_init = logging.getLogger("firestore_init")
+    logger_init.warning(f"⚠️ Firestore client not initialized: {e}")
+
 # ML Libraries for Execution Optimization
 import numpy as np
 import pandas as pd
@@ -90,6 +100,29 @@ def get_coupon_auth_manager():
             logger.warning(f"Failed to initialize CouponAuthManager: {e}")
             return None
     return _coupon_auth_manager
+
+
+# Lazy import for Background Trading Manager
+_background_trading_manager = None
+
+def get_background_trading_manager():
+    """Lazy load BackgroundTradingManager"""
+    global _background_trading_manager
+    if _background_trading_manager is None:
+        try:
+            try:
+                from src.background_trading import BackgroundTradingManager, ActivityType
+            except ImportError:
+                from background_trading import BackgroundTradingManager, ActivityType
+            _background_trading_manager = BackgroundTradingManager()
+            # Initialize with Firestore if available
+            if _firestore_db is not None:
+                _background_trading_manager.initialize(_firestore_db)
+            logger.info("✅ BackgroundTradingManager initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize BackgroundTradingManager: {e}")
+            return None
+    return _background_trading_manager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -1951,6 +1984,321 @@ async def get_ai_trade_history(limit: int = 50):
         "total_trades": len(AI_TRADING_SYSTEM.execution_history),
         "trades": history
     }
+
+
+# ==================== BACKGROUND TRADING ENDPOINTS ====================
+# These endpoints enable persistent trading that continues even when browser is closed
+
+@app.post("/api/background-trading/start")
+async def start_background_trading(request: Request):
+    """
+    Start persistent background trading session.
+    Trading continues even when browser is closed via Cloud Scheduler.
+    """
+    try:
+        body = await request.json() if await request.body() else {}
+        user_id = body.get("user_id")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            raise HTTPException(status_code=503, detail="Background trading service not available")
+
+        config = {
+            "min_confidence": body.get("min_confidence", 0.7),
+            "max_risk_per_trade": body.get("max_risk_per_trade", 0.02),
+            "max_daily_trades": body.get("max_daily_trades", 10),
+            "trading_amount": body.get("trading_amount", 1000),
+            "instruments": body.get("instruments", ["equities"]),
+            "strategy": body.get("strategy", "ai-signals"),
+        }
+
+        result = await manager.start_trading_session(user_id, config)
+
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Failed to start"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Background trading start error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/background-trading/stop")
+async def stop_background_trading(request: Request):
+    """Stop background trading session"""
+    try:
+        body = await request.json() if await request.body() else {}
+        user_id = body.get("user_id")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            raise HTTPException(status_code=503, detail="Background trading service not available")
+
+        result = await manager.stop_trading_session(user_id)
+
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Failed to stop"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Background trading stop error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/background-trading/status/{user_id}")
+async def get_background_trading_status(user_id: str):
+    """Get background trading session status"""
+    try:
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            return {"active": False, "message": "Background trading service not available"}
+
+        return await manager.get_session_status(user_id)
+
+    except Exception as e:
+        logger.error(f"Background trading status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/background-trading/execute-cycle")
+async def execute_trading_cycle(request: Request):
+    """
+    Execute one trading cycle for a user (called by Cloud Scheduler).
+    This endpoint is invoked periodically during market hours.
+    """
+    try:
+        body = await request.json() if await request.body() else {}
+        user_id = body.get("user_id")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            raise HTTPException(status_code=503, detail="Background trading service not available")
+
+        if user_id:
+            # Execute for specific user
+            result = await manager.execute_trading_cycle(user_id)
+        else:
+            # Execute for all active sessions
+            result = await manager.execute_all_active_sessions()
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Trading cycle execution error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/background-trading/trigger/{user_id}")
+async def trigger_background_trading(user_id: str, request: Request):
+    """
+    Trigger trading signals for a specific user.
+    Called by Cloud Scheduler during market hours.
+    """
+    try:
+        body = await request.json() if await request.body() else {}
+        trigger_type = body.get("trigger_type", "manual")
+        source = body.get("source", "unknown")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            return {
+                "success": False,
+                "message": "Background trading service not available"
+            }
+
+        # Check if session is active
+        status = await manager.get_session_status(user_id)
+        if not status.get("active", False):
+            return {
+                "success": False,
+                "message": "No active trading session for user",
+                "user_id": user_id
+            }
+
+        # Execute trading cycle for this user
+        result = await manager.execute_trading_cycle(user_id)
+
+        # Import ActivityType for logging
+        try:
+            from src.background_trading import ActivityType
+        except ImportError:
+            from background_trading import ActivityType
+
+        # Log the scheduled trigger
+        await manager.log_activity(
+            user_id=user_id,
+            activity_type=ActivityType.API_CALL,
+            details={
+                "action": "scheduled_trigger",
+                "trigger_type": trigger_type,
+                "source": source,
+                "result": result
+            }
+        )
+
+        return {
+            "success": True,
+            "user_id": user_id,
+            "trigger_type": trigger_type,
+            "source": source,
+            "result": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Background trading trigger error for {user_id}: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "user_id": user_id
+        }
+
+
+# ==================== ACTIVITY LOG ENDPOINTS ====================
+# Track all user activities for real-time monitoring
+
+@app.post("/api/activity/log")
+async def log_user_activity(request: Request):
+    """Log a user activity"""
+    try:
+        body = await request.json()
+        user_id = body.get("user_id")
+        activity_type = body.get("type")
+        details = body.get("details", {})
+
+        if not user_id or not activity_type:
+            raise HTTPException(status_code=400, detail="user_id and type are required")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            raise HTTPException(status_code=503, detail="Activity logging service not available")
+
+        # Import ActivityType enum
+        try:
+            from src.background_trading import ActivityType
+        except ImportError:
+            from background_trading import ActivityType
+
+        # Map string to enum
+        try:
+            activity_enum = ActivityType(activity_type)
+        except ValueError:
+            activity_enum = ActivityType.API_CALL
+
+        success = await manager.log_activity(user_id, activity_enum, details)
+
+        return {"success": success, "message": "Activity logged" if success else "Failed to log activity"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Activity logging error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/activity/log/{user_id}")
+async def get_user_activity_log(
+    user_id: str,
+    date: str = None,
+    activity_type: str = None,
+    limit: int = 100
+):
+    """Get activity log for a user"""
+    try:
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            return {"activities": [], "message": "Activity logging service not available"}
+
+        activities = await manager.get_activity_log(user_id, date, activity_type, limit)
+
+        return {
+            "user_id": user_id,
+            "count": len(activities),
+            "activities": activities
+        }
+
+    except Exception as e:
+        logger.error(f"Get activity log error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/activity/summary/{user_id}")
+async def get_user_activity_summary(user_id: str, date: str = None):
+    """Get daily activity summary for a user"""
+    try:
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            return {"message": "Activity logging service not available"}
+
+        summary = await manager.get_daily_summary(user_id, date)
+
+        return summary
+
+    except Exception as e:
+        logger.error(f"Get activity summary error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/activity/today/{user_id}")
+async def get_today_activity(user_id: str):
+    """
+    Get comprehensive activity report for today.
+    Shows all actions, trades, logins, etc. since midnight.
+    """
+    try:
+        from datetime import datetime
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+
+        manager = get_background_trading_manager()
+        if not manager or not manager.is_initialized:
+            return {
+                "user_id": user_id,
+                "date": today,
+                "message": "Activity tracking service initializing...",
+                "activities": []
+            }
+
+        # Get activities and summary
+        activities = await manager.get_activity_log(user_id, date=today, limit=200)
+        summary = await manager.get_daily_summary(user_id, today)
+
+        # Get trading session status
+        trading_status = await manager.get_session_status(user_id)
+
+        return {
+            "user_id": user_id,
+            "date": today,
+            "summary": {
+                "total_activities": summary.get("total_activities", 0),
+                "activity_breakdown": summary.get("activity_counts", {}),
+                "first_activity": summary.get("first_activity"),
+                "last_activity": summary.get("last_activity"),
+            },
+            "trading_session": {
+                "active": trading_status.get("active", False),
+                "trades_today": trading_status.get("trades_today", 0),
+                "total_pnl_today": trading_status.get("total_pnl_today", 0),
+                "signals_processed": trading_status.get("signals_processed", 0),
+            },
+            "recent_activities": activities[:50],  # Last 50 activities
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Get today activity error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== USER TRADING SETTINGS ENDPOINTS ====================

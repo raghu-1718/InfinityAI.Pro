@@ -779,34 +779,47 @@ export const engineC = {
     return res.json();
   },
 
-  async getFunds(): Promise<FundsResponse> {
+  async getFunds(userId?: string): Promise<FundsResponse> {
+    const queryParam = userId ? `?user_id=${userId}` : '';
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/funds`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/funds`
+      `${API_CONFIG.ENGINE_C}/api/dhan/funds${queryParam}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/dhan/funds${queryParam}`
     );
     return res.json();
   },
 
-  async getPositions() {
+  async getPositions(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : '';
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/positions`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/positions`
+      `${API_CONFIG.ENGINE_C}/api/dhan/positions${queryParam}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/dhan/positions${queryParam}`
     );
     return res.json();
   },
 
-  async getHoldings() {
+  async getHoldings(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : '';
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/holdings`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/holdings`
+      `${API_CONFIG.ENGINE_C}/api/dhan/holdings${queryParam}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/dhan/holdings${queryParam}`
     );
     return res.json();
   },
 
-  async getOrders() {
+  async getOrders(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : '';
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/orders`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/orders`
+      `${API_CONFIG.ENGINE_C}/api/dhan/orders${queryParam}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/dhan/orders${queryParam}`
+    );
+    return res.json();
+  },
+
+  // Get complete user account with funds, positions, holdings
+  async getUserAccount(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/v1/user/${userId}/account`,
+      `${FALLBACK_URLS.ENGINE_C}/api/v1/user/${userId}/account`
     );
     return res.json();
   },
@@ -933,6 +946,108 @@ export const engineC = {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`,
       `${FALLBACK_URLS.ENGINE_C}/api/trading-settings-schema`
+    );
+    return res.json();
+  },
+
+  // ============================================================================
+  // BACKGROUND TRADING API - Persistent trading that runs even when browser closed
+  // ============================================================================
+
+  async startBackgroundTrading(data: {
+    user_id: string;
+    min_confidence?: number;
+    max_risk_per_trade?: number;
+    max_daily_trades?: number;
+    trading_amount?: number;
+    instruments?: string[];
+    strategy?: string;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/background-trading/start`,
+      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/start`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async stopBackgroundTrading(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/background-trading/stop`,
+      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/stop`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      }
+    );
+    return res.json();
+  },
+
+  async getBackgroundTradingStatus(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/background-trading/status/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/status/${userId}`
+    );
+    return res.json();
+  },
+
+  // ============================================================================
+  // ACTIVITY LOGGING API - Track all user activities in real-time
+  // ============================================================================
+
+  async logActivity(data: {
+    user_id: string;
+    type: string;
+    details?: Record<string, any>;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/activity/log`,
+      `${FALLBACK_URLS.ENGINE_C}/api/activity/log`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async getActivityLog(userId: string, options?: {
+    date?: string;
+    activity_type?: string;
+    limit?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (options?.date) params.append('date', options.date);
+    if (options?.activity_type) params.append('activity_type', options.activity_type);
+    if (options?.limit) params.append('limit', options.limit.toString());
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/activity/log/${userId}${queryString}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/activity/log/${userId}${queryString}`
+    );
+    return res.json();
+  },
+
+  async getActivitySummary(userId: string, date?: string) {
+    const queryString = date ? `?date=${date}` : '';
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/activity/summary/${userId}${queryString}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/activity/summary/${userId}${queryString}`
+    );
+    return res.json();
+  },
+
+  async getTodayActivity(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/activity/today/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/activity/today/${userId}`
     );
     return res.json();
   },

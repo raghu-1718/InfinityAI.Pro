@@ -242,7 +242,7 @@ function PositionAnalysisCard({ analysis }: { analysis: PositionAnalysisResponse
                 </div>
                 <div className="rounded-lg border p-2 text-center">
                   <p className="text-xs text-muted-foreground">Volatility</p>
-                  <p className="font-mono text-sm">{((market_context?.volatility || 0) * 100).toFixed(1)}%</p>
+                  <p className="font-mono text-sm">{market_context?.volatility?.toFixed(1) || 0}%</p>
                 </div>
                 <div className="rounded-lg border p-2 text-center">
                   <p className="text-xs text-muted-foreground">Status</p>

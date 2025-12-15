@@ -90,7 +90,7 @@ interface DualAuthContextType {
 const DualAuthContext = createContext<DualAuthContextType | undefined>(undefined);
 
 // Engine C URL for coupon verification
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c.infinityai.pro';
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -253,7 +253,9 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
+
+      console.log('Verifying coupon:', couponCode, 'for user:', firebaseUser.email);
 
       const response = await fetch(`${ENGINE_C_URL}/api/auth/coupon/verify`, {
         method: 'POST',
@@ -267,7 +269,21 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       });
       clearTimeout(timeoutId);
 
+      console.log('Coupon verify response status:', response.status);
+
+      // Handle non-OK responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Coupon verify failed:', response.status, errorData);
+        setLoading(false);
+        return {
+          success: false,
+          error: errorData.detail || errorData.message || `Server error: ${response.status}`
+        };
+      }
+
       const data = await response.json();
+      console.log('Coupon verify data:', data);
 
       if (data.success) {
         const newCouponData = {

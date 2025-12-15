@@ -143,6 +143,74 @@ const getStoredUserId = () => {
   return localStorage.getItem('infinityai_user_id');
 };
 
+// Complete User Account Hook - Fetches funds, positions, holdings, orders in one call
+export function useUserAccount() {
+  const { userProfile, setFunds, setUserProfile, setDematData } = useAppStore();
+  const userId = userProfile?.userId || getStoredUserId();
+
+  return useQuery({
+    queryKey: ['userAccount', userId],
+    queryFn: async () => {
+      if (!userId) {
+        throw new Error('No user ID available');
+      }
+
+      const res = await engineC.getUserAccount(userId);
+
+      if (res.status === 'success') {
+        // Update funds in store
+        if (res.funds) {
+          setFunds({
+            availableBalance: res.funds.availabelBalance || res.funds.availableBalance || 0,
+            sodLimit: res.funds.sodLimit || 0,
+            collateralAmount: res.funds.collateralAmount || res.funds.utilizedAmount || 0,
+            dhanClientId: res.funds.dhanClientId || userId,
+          });
+        }
+
+        // Update user profile if needed
+        if (!userProfile?.isConnected) {
+          setUserProfile({
+            userId: userId,
+            clientId: res.user_id || userId,
+            name: `User ${res.user_id || userId}`,
+            email: '',
+            isConnected: true,
+            isVerified: true,
+          });
+        }
+
+        // Update demat data
+        setDematData({
+          holdings: {
+            totalValue: res.holdings?.total_value || 0,
+            count: res.holdings?.count || 0,
+            items: Array.isArray(res.holdings?.data) ? res.holdings.data : [],
+          },
+          positions: {
+            totalPnl: res.positions?.total_pnl || res.account_summary?.total_positions_pnl || 0,
+            count: res.positions?.count || 0,
+            items: Array.isArray(res.positions?.data) ? res.positions.data : [],
+          },
+          funds: {
+            availableBalance: res.funds?.availabelBalance || res.funds?.availableBalance || 0,
+            utilisedMargin: res.funds?.utilizedAmount || 0,
+            totalBalance: (res.funds?.availabelBalance || 0) + (res.funds?.collateralAmount || 0),
+          },
+        });
+
+        return res;
+      }
+
+      throw new Error(res.detail || 'Failed to fetch user account');
+    },
+    refetchInterval: 15000, // 15 seconds for real-time updates
+    staleTime: 10000,
+    enabled: !!userId,
+    retry: 2,
+  });
+}
+
 // Funds Hook - Now uses user's connected account
 export function useFunds() {
   const { userProfile, setFunds, setUserProfile } = useAppStore();
@@ -153,17 +221,27 @@ export function useFunds() {
       // Determine the user ID to use
       const userId = userProfile?.userId || getStoredUserId();
 
-      // If user has connected their account, use their demat data
+      // If user has connected their account, fetch their funds directly
       if (userId) {
         try {
-          const dematRes = await engineC.getUserDemat(userId);
-          if (dematRes && dematRes.funds) {
+          // Use the user-specific funds endpoint
+          const res = await engineC.getFunds(userId);
+          if (res.status === 'success' && res.data) {
+            const fundsData = res.data as {
+              dhanClientId?: string;
+              availabelBalance?: number;
+              availableBalance?: number;
+              sodLimit?: number;
+              collateralAmount?: number;
+              utilizedAmount?: number;
+            };
+
             // Update userProfile if not already set
-            if (!userProfile?.isConnected && dematRes.funds.raw?.dhanClientId) {
+            if (!userProfile?.isConnected && fundsData.dhanClientId) {
               setUserProfile({
-                userId: dematRes.funds.raw.dhanClientId,
-                clientId: dematRes.funds.raw.dhanClientId,
-                name: `User ${dematRes.funds.raw.dhanClientId}`,
+                userId: fundsData.dhanClientId,
+                clientId: fundsData.dhanClientId,
+                name: `User ${fundsData.dhanClientId}`,
                 email: '',
                 isConnected: true,
                 isVerified: true,
@@ -171,32 +249,32 @@ export function useFunds() {
             }
 
             setFunds({
-              availableBalance: dematRes.funds.availableBalance || 0,
-              sodLimit: dematRes.funds.sodLimit || 0,
-              collateralAmount: dematRes.funds.utilisedMargin || 0,
-              dhanClientId: dematRes.funds.raw?.dhanClientId || userId,
+              availableBalance: fundsData.availabelBalance || fundsData.availableBalance || 0,
+              sodLimit: fundsData.sodLimit || 0,
+              collateralAmount: fundsData.collateralAmount || fundsData.utilizedAmount || 0,
+              dhanClientId: fundsData.dhanClientId || userId,
             });
-            return { status: 'success', data: dematRes.funds };
+            return res;
           }
         } catch (e) {
           console.error('Failed to fetch user funds:', e);
         }
       }
 
-      // Fallback to admin account funds
+      // Fallback to default funds (no user_id)
       const res = await engineC.getFunds();
       if (res.status === 'success' && res.data) {
         setFunds({
-          availableBalance: res.data.availabelBalance,
-          sodLimit: res.data.sodLimit,
-          collateralAmount: res.data.collateralAmount,
-          dhanClientId: res.data.dhanClientId,
+          availableBalance: res.data.availabelBalance || 0,
+          sodLimit: res.data.sodLimit || 0,
+          collateralAmount: res.data.collateralAmount || 0,
+          dhanClientId: res.data.dhanClientId || 'default',
         });
       }
       return res;
     },
-    refetchInterval: 60000, // 1 minute
-    staleTime: 30000,
+    refetchInterval: 30000, // 30 seconds for real-time updates
+    staleTime: 15000,
     enabled: true,
   });
 }
@@ -204,13 +282,13 @@ export function useFunds() {
 // Positions Hook - Fetches positions using user's credentials if connected
 export function usePositions() {
   const { userProfile } = useAppStore();
+  const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['positions', userProfile?.userId],
+    queryKey: ['positions', userId],
     queryFn: async () => {
-      // If user is connected, their credentials are stored on backend
-      // The backend will use the user's credentials for this request
-      const res = await engineC.getPositions();
+      // Pass user_id to get user-specific positions
+      const res = await engineC.getPositions(userId || undefined);
 
       // Ensure data is always an array
       if (res && res.data && !Array.isArray(res.data)) {
@@ -218,21 +296,22 @@ export function usePositions() {
       }
       return res;
     },
-    refetchInterval: 10000,
+    refetchInterval: 10000, // 10 seconds for real-time position updates
     staleTime: 5000,
+    enabled: !!userId, // Only fetch if we have a user ID
   });
 }
 
 // Holdings Hook - Fetches holdings using user's credentials if connected
 export function useHoldings() {
   const { userProfile } = useAppStore();
+  const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['holdings', userProfile?.userId],
+    queryKey: ['holdings', userId],
     queryFn: async () => {
-      // If user is connected, their credentials are stored on backend
-      // The backend will use the user's credentials for this request
-      const res = await engineC.getHoldings();
+      // Pass user_id to get user-specific holdings
+      const res = await engineC.getHoldings(userId || undefined);
 
       // Ensure data is always an array
       if (res && res.data && !Array.isArray(res.data)) {
@@ -242,16 +321,21 @@ export function useHoldings() {
     },
     refetchInterval: 60000,
     staleTime: 30000,
+    enabled: !!userId, // Only fetch if we have a user ID
   });
 }
 
 // Orders Hook
 export function useOrders() {
+  const { userProfile } = useAppStore();
+  const userId = userProfile?.userId || getStoredUserId();
+
   return useQuery({
-    queryKey: ['orders'],
-    queryFn: () => engineC.getOrders(),
+    queryKey: ['orders', userId],
+    queryFn: () => engineC.getOrders(userId || undefined),
     refetchInterval: 5000,
     staleTime: 2000,
+    enabled: !!userId, // Only fetch if we have a user ID
   });
 }
 
@@ -612,8 +696,9 @@ export function useAllPositionsAnalysis(enabled = true) {
   const positions = Array.isArray(positionsData?.data) ? positionsData.data : [];
 
   // Transform Dhan positions to PositionAnalysisRequest format
+  // Note: Dhan API uses camelCase with 'drv' prefix for derivative fields
   const positionDataList: PositionAnalysisRequest[] = positions.map((p: any) => ({
-    symbol: p.tradingSymbol || p.securityId,
+    symbol: p.tradingSymbol?.split('-')[0] || p.securityId,
     trading_symbol: p.tradingSymbol || '',
     security_id: p.securityId || '',
     position_type: (p.netQty || 0) > 0 ? 'LONG' : 'SHORT',
@@ -626,9 +711,10 @@ export function useAllPositionsAnalysis(enabled = true) {
     net_qty: p.netQty || p.buyQty - (p.sellQty || 0),
     realized_profit: p.realizedProfit || 0,
     unrealized_profit: p.unrealizedProfit || 0,
-    expiry_date: p.expiryDate,
-    option_type: p.optionType,
-    strike_price: p.strikePrice,
+    // Dhan uses drvExpiryDate, drvOptionType, drvStrikePrice for derivatives
+    expiry_date: p.drvExpiryDate || p.expiryDate,
+    option_type: p.drvOptionType === 'PUT' ? 'PUT' : p.drvOptionType === 'CALL' ? 'CALL' : p.optionType,
+    strike_price: p.drvStrikePrice || p.strikePrice,
     current_price: p.dayClosePrice || p.lastTradedPrice,
   }));
 
@@ -665,4 +751,265 @@ export function usePositionRiskSummary() {
   } : null;
 
   return { summary, analysisData, isLoading, error };
+}
+
+// ==========================================
+// Background Trading Hooks
+// ==========================================
+
+// Background Trading Status Interface
+interface BackgroundTradingStatus {
+  user_id: string;
+  is_active: boolean;
+  strategy: string;
+  started_at?: string;
+  config?: Record<string, unknown>;
+  last_execution?: {
+    timestamp: string;
+    trades_executed: number;
+    status: string;
+  };
+  execution_history?: Array<{
+    timestamp: string;
+    action: string;
+    result: string;
+  }>;
+}
+
+// Get Background Trading Status
+export function useBackgroundTradingStatus(userId: string | undefined) {
+  return useQuery<BackgroundTradingStatus>({
+    queryKey: ['background-trading', 'status', userId],
+    queryFn: () => engineC.getBackgroundTradingStatus(userId!),
+    enabled: !!userId,
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 10000,
+    retry: 2,
+  });
+}
+
+// Start Background Trading Mutation
+export function useStartBackgroundTrading() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      strategy = 'auto_options',
+      config = {},
+    }: {
+      userId: string;
+      strategy?: string;
+      config?: Record<string, unknown>;
+    }) => engineC.startBackgroundTrading({
+      user_id: userId,
+      strategy,
+      ...config,
+    }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['background-trading', 'status', variables.userId],
+      });
+      // Log activity
+      engineC.logActivity({
+        user_id: variables.userId,
+        type: 'BACKGROUND_TRADING_STARTED',
+        details: { strategy: variables.strategy },
+      });
+    },
+  });
+}
+
+// Stop Background Trading Mutation
+export function useStopBackgroundTrading() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => engineC.stopBackgroundTrading(userId),
+    onSuccess: (_data, userId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['background-trading', 'status', userId],
+      });
+      // Log activity
+      engineC.logActivity({
+        user_id: userId,
+        type: 'BACKGROUND_TRADING_STOPPED',
+        details: {},
+      });
+    },
+  });
+}
+
+// ==========================================
+// Activity Tracking Hooks
+// ==========================================
+
+// Activity Log Interface
+interface ActivityLog {
+  id: string;
+  user_id: string;
+  action: string;
+  details: Record<string, unknown>;
+  timestamp: string;
+  ip_address?: string;
+  user_agent?: string;
+}
+
+interface ActivityLogsResponse {
+  user_id: string;
+  logs: ActivityLog[];
+  total_count: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+interface ActivitySummary {
+  user_id: string;
+  total_actions: number;
+  actions_by_type: Record<string, number>;
+  first_activity: string;
+  last_activity: string;
+  most_common_action: string;
+  active_hours: number[];
+  peak_activity_hour: number;
+  daily_average: number;
+}
+
+// Get Activity Logs
+export function useActivityLogs(
+  userId: string | undefined,
+  options?: {
+    limit?: number;
+    date?: string;
+    activityType?: string;
+  }
+) {
+  return useQuery<ActivityLogsResponse>({
+    queryKey: ['activity', 'logs', userId, options],
+    queryFn: () =>
+      engineC.getActivityLog(userId!, {
+        limit: options?.limit,
+        date: options?.date,
+        activity_type: options?.activityType,
+      }),
+    enabled: !!userId,
+    staleTime: 30000,
+    refetchInterval: 60000, // Refresh every minute
+  });
+}
+
+// Get Activity Summary
+export function useActivitySummary(userId: string | undefined, days = 7) {
+  return useQuery<ActivitySummary>({
+    queryKey: ['activity', 'summary', userId, days],
+    queryFn: async () => {
+      // Fetch logs for the period and compute summary
+      const response = await engineC.getActivityLog(userId!, { limit: 1000 });
+      const logs = response.logs || response.activities || [];
+
+      const actionCounts: Record<string, number> = {};
+      const hourCounts: Record<number, number> = {};
+
+      logs.forEach((log: ActivityLog) => {
+        // Count by action type
+        actionCounts[log.action] = (actionCounts[log.action] || 0) + 1;
+
+        // Count by hour
+        const hour = new Date(log.timestamp).getHours();
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      });
+
+      const mostCommonAction = Object.entries(actionCounts).sort(
+        (a, b) => b[1] - a[1]
+      )[0]?.[0] || 'NONE';
+
+      const peakActivityHour = Object.entries(hourCounts).sort(
+        (a, b) => b[1] - a[1]
+      )[0]?.[0] || 0;
+
+      return {
+        user_id: userId!,
+        total_actions: logs.length,
+        actions_by_type: actionCounts,
+        first_activity: logs[logs.length - 1]?.timestamp || '',
+        last_activity: logs[0]?.timestamp || '',
+        most_common_action: mostCommonAction,
+        active_hours: Object.keys(hourCounts).map(Number),
+        peak_activity_hour: Number(peakActivityHour),
+        daily_average: Math.round(logs.length / days),
+      };
+    },
+    enabled: !!userId,
+    staleTime: 300000, // Cache for 5 minutes
+  });
+}
+
+// Log Activity Mutation
+export function useLogActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      action,
+      details = {},
+    }: {
+      userId: string;
+      action: string;
+      details?: Record<string, unknown>;
+    }) => engineC.logActivity({
+      user_id: userId,
+      type: action,
+      details,
+    }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['activity', 'logs', variables.userId],
+      });
+    },
+  });
+}
+
+// Hook to automatically log page visits
+export function usePageActivityLogger(userId: string | undefined, pageName: string) {
+  const logActivity = useLogActivity();
+
+  useEffect(() => {
+    if (userId) {
+      logActivity.mutate({
+        userId,
+        action: 'PAGE_VISIT',
+        details: {
+          page: pageName,
+          timestamp: new Date().toISOString(),
+          url: typeof window !== 'undefined' ? window.location.href : '',
+        },
+      });
+    }
+  }, [userId, pageName]); // Only log once when page loads
+}
+
+// Hook to log trading actions
+export function useTradingActivityLogger(userId: string | undefined) {
+  const logActivity = useLogActivity();
+
+  const logTrade = useCallback(
+    (action: string, details: Record<string, unknown>) => {
+      if (userId) {
+        logActivity.mutate({
+          userId,
+          action: `TRADE_${action.toUpperCase()}`,
+          details: {
+            ...details,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+    },
+    [userId, logActivity]
+  );
+
+  return { logTrade };
 }
