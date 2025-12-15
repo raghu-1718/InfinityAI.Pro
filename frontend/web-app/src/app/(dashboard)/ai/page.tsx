@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -17,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { GeminiChat } from '@/components/dashboard/gemini-chat';
-import { engineB } from '@/lib/api';
+import { engineB, engineC } from '@/lib/api';
 import {
   Sparkles,
   TrendingUp,
@@ -34,6 +37,13 @@ import {
   CheckCircle2,
   RefreshCw,
   Zap,
+  Bot,
+  MessageSquare,
+  Send,
+  Play,
+  Pause,
+  Settings2,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +75,135 @@ export default function GeminiAIPage() {
   const [outlook, setOutlook] = useState<'BULLISH' | 'BEARISH' | 'NEUTRAL'>('NEUTRAL');
   const [capital, setCapital] = useState('200000');
   const [riskAppetite, setRiskAppetite] = useState<'LOW' | 'MODERATE' | 'HIGH'>('MODERATE');
+
+  // AI Agent state
+  const [agentStatus, setAgentStatus] = useState<any>(null);
+  const [agentMessages, setAgentMessages] = useState<Array<{role: string; content: string; timestamp: Date}>>([]);
+  const [agentInput, setAgentInput] = useState('');
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
+  const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
+  const [autoTradingStatus, setAutoTradingStatus] = useState<any>(null);
+  const [agentConfig, setAgentConfig] = useState({
+    min_confidence: 0.7,
+    max_risk_per_trade: 0.02,
+    max_daily_trades: 10,
+    trading_amount: 1000,
+  });
+  const [watchlist, setWatchlist] = useState<string[]>(['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const userId = '1101302170'; // Your Dhan user ID
+
+  // Fetch agent status on mount
+  useEffect(() => {
+    const fetchAgentStatus = async () => {
+      try {
+        const status = await engineC.getAgentStatus();
+        setAgentStatus(status);
+      } catch (err) {
+        console.error('Failed to fetch agent status:', err);
+      }
+    };
+    fetchAgentStatus();
+  }, []);
+
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [agentMessages]);
+
+  // Handle sending message to AI Agent
+  const handleSendToAgent = async () => {
+    if (!agentInput.trim()) return;
+
+    const userMessage = agentInput.trim();
+    setAgentInput('');
+    setAgentMessages(prev => [...prev, { role: 'user', content: userMessage, timestamp: new Date() }]);
+    setIsAgentLoading(true);
+
+    try {
+      const response = await engineC.chatWithAgent({
+        user_id: userId,
+        message: userMessage,
+        context: { market: 'NSE', session_type: 'trading_consultation' }
+      });
+
+      if (response.success) {
+        setAgentMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response.response || response.message || 'Response received',
+          timestamp: new Date()
+        }]);
+      } else {
+        setAgentMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `Error: ${response.error || 'Failed to get response'}`,
+          timestamp: new Date()
+        }]);
+      }
+    } catch (err: any) {
+      setAgentMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Error: ${err.message || 'Connection failed'}`,
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsAgentLoading(false);
+    }
+  };
+
+  // Handle AI Agent trade analysis
+  const handleAgentAnalyze = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await engineC.analyzeTradeOpportunity({
+        user_id: userId,
+        symbol,
+        current_price: parseFloat(currentPrice) || undefined,
+      });
+      setResult(response);
+    } catch (err: any) {
+      setError(err.message || 'Failed to get AI analysis');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle real-time signal from AI Agent
+  const handleGetAgentSignal = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await engineC.getRealtimeSignal(userId, symbol, 'intraday');
+      setResult(response);
+    } catch (err: any) {
+      setError(err.message || 'Failed to get AI signal');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Toggle automated trading
+  const handleToggleAutoTrading = async () => {
+    try {
+      if (!autoTradingEnabled) {
+        // Start auto trading
+        const response = await engineC.runAutomatedTrading({
+          user_id: userId,
+          watchlist,
+          config: agentConfig
+        });
+        setAutoTradingStatus(response);
+        setAutoTradingEnabled(true);
+      } else {
+        // Stop - just disable locally (Cloud Scheduler handles actual cycles)
+        setAutoTradingEnabled(false);
+        setAutoTradingStatus(null);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to toggle auto trading');
+    }
+  };
 
   const handleGetSignal = async () => {
     setIsLoading(true);
@@ -439,7 +578,11 @@ export default function GeminiAIPage() {
         {/* Left Column - Analysis Tools */}
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="agent" className="flex items-center gap-1">
+                <Bot className="h-4 w-4" />
+                AI Agent
+              </TabsTrigger>
               <TabsTrigger value="signal" className="flex items-center gap-1">
                 <Target className="h-4 w-4" />
                 Signal
@@ -453,6 +596,163 @@ export default function GeminiAIPage() {
                 Options
               </TabsTrigger>
             </TabsList>
+
+            {/* AI Agent Tab - Vertex AI Financial Advisor */}
+            <TabsContent value="agent" className="space-y-4">
+              {/* Agent Status Card */}
+              <Card className={cn(
+                "border-2",
+                agentStatus?.status === 'operational' ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : "border-yellow-500/50"
+              )}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-purple-500" />
+                      Vertex AI Financial Advisor
+                    </CardTitle>
+                    <Badge variant={agentStatus?.status === 'operational' ? 'default' : 'secondary'}>
+                      {agentStatus?.status || 'Checking...'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Model:</span>{' '}
+                      <span className="font-medium">{agentStatus?.model || 'gemini-2.5-pro'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Region:</span>{' '}
+                      <span className="font-medium">{agentStatus?.region || 'us-central1'}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Auto Trading Controls */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Automated AI Trading
+                  </CardTitle>
+                  <CardDescription>Let AI analyze and execute trades during market hours</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {autoTradingEnabled ? (
+                        <Play className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Pause className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="font-medium">Auto Trading</p>
+                        <p className="text-sm text-muted-foreground">
+                          {autoTradingEnabled ? 'Running - AI is monitoring markets' : 'Paused'}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={autoTradingEnabled}
+                      onCheckedChange={handleToggleAutoTrading}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Min Confidence</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={agentConfig.min_confidence}
+                        onChange={(e) => setAgentConfig(prev => ({...prev, min_confidence: parseFloat(e.target.value)}))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Risk/Trade</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="0.1"
+                        step="0.01"
+                        value={agentConfig.max_risk_per_trade}
+                        onChange={(e) => setAgentConfig(prev => ({...prev, max_risk_per_trade: parseFloat(e.target.value)}))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Daily Trades</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={agentConfig.max_daily_trades}
+                        onChange={(e) => setAgentConfig(prev => ({...prev, max_daily_trades: parseInt(e.target.value)}))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Amount/Trade (₹)</Label>
+                      <Input
+                        type="number"
+                        min="100"
+                        value={agentConfig.trading_amount}
+                        onChange={(e) => setAgentConfig(prev => ({...prev, trading_amount: parseInt(e.target.value)}))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Watchlist Symbols</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {watchlist.map((sym) => (
+                        <Badge key={sym} variant="outline" className="cursor-pointer hover:bg-destructive/10" onClick={() => setWatchlist(prev => prev.filter(s => s !== sym))}>
+                          {sym} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick AI Analysis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Quick AI Analysis</CardTitle>
+                  <CardDescription>Get instant analysis from Financial Advisor</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Symbol</Label>
+                    <Select value={symbol} onValueChange={setSymbol}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {popularStocks.map((stock) => (
+                          <SelectItem key={stock.symbol} value={stock.symbol}>
+                            {stock.symbol}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleAgentAnalyze} disabled={isLoading} variant="outline">
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Brain className="h-4 w-4 mr-2" />}
+                      Analyze
+                    </Button>
+                    <Button onClick={handleGetAgentSignal} disabled={isLoading}>
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+                      Get Signal
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* Signal Tab */}
             <TabsContent value="signal" className="space-y-4">
@@ -639,6 +939,54 @@ export default function GeminiAIPage() {
           {!isLoading && result && (
             <Card>
               <CardContent className="pt-4">
+                {activeTab === 'agent' && result && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-5 w-5 text-purple-500" />
+                      <h3 className="font-semibold">AI Agent Analysis Result</h3>
+                    </div>
+                    {result.recommendation && (
+                      <Card className="bg-primary/5">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className={cn(
+                              result.recommendation.action === 'BUY' ? 'bg-green-500' :
+                              result.recommendation.action === 'SELL' ? 'bg-red-500' : 'bg-yellow-500'
+                            )}>
+                              {result.recommendation.action}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Confidence: {((result.recommendation.confidence || 0) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                          <p className="text-sm">{result.recommendation.reasoning || result.response}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {result.signal && (
+                      <div className="grid grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="pt-4 text-center">
+                            <p className="text-xs text-muted-foreground">Entry</p>
+                            <p className="text-lg font-bold">₹{result.signal.entry_price?.toFixed(2) || 'Market'}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4 text-center">
+                            <p className="text-xs text-muted-foreground">Stop Loss</p>
+                            <p className="text-lg font-bold text-red-500">₹{result.signal.stop_loss?.toFixed(2) || 'N/A'}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4 text-center">
+                            <p className="text-xs text-muted-foreground">Target</p>
+                            <p className="text-lg font-bold text-green-500">₹{result.signal.target?.toFixed(2) || 'N/A'}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {activeTab === 'signal' && renderSignalResult()}
                 {activeTab === 'analysis' && renderAnalysisResult()}
                 {activeTab === 'options' && renderOptionsResult()}
@@ -649,7 +997,70 @@ export default function GeminiAIPage() {
 
         {/* Right Column - Chat */}
         <div>
-          <GeminiChat expanded className="h-[calc(100vh-200px)] sticky top-6" />
+          {activeTab === 'agent' ? (
+            /* AI Agent Chat Interface */
+            <Card className="h-[calc(100vh-200px)] sticky top-6 flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-purple-500" />
+                  Chat with Financial Advisor
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-4">
+                    {agentMessages.length === 0 && (
+                      <div className="text-center text-muted-foreground py-8">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Start a conversation with your AI Financial Advisor</p>
+                        <p className="text-sm mt-2">Ask about market analysis, trade recommendations, or portfolio advice</p>
+                      </div>
+                    )}
+                    {agentMessages.map((msg, i) => (
+                      <div key={i} className={cn(
+                        "flex",
+                        msg.role === 'user' ? 'justify-end' : 'justify-start'
+                      )}>
+                        <div className={cn(
+                          "max-w-[80%] rounded-lg p-3",
+                          msg.role === 'user' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted'
+                        )}>
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-xs opacity-60 mt-1">
+                            {msg.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {isAgentLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-lg p-3">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+                <div className="flex gap-2 mt-4">
+                  <Input
+                    placeholder="Ask about trading, markets, or your portfolio..."
+                    value={agentInput}
+                    onChange={(e) => setAgentInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendToAgent()}
+                    disabled={isAgentLoading}
+                  />
+                  <Button onClick={handleSendToAgent} disabled={isAgentLoading || !agentInput.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <GeminiChat expanded className="h-[calc(100vh-200px)] sticky top-6" />
+          )}
         </div>
       </div>
     </div>

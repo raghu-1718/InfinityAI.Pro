@@ -1051,6 +1051,111 @@ export const engineC = {
     );
     return res.json();
   },
+
+  // ============================================================================
+  // VERTEX AI AGENT API - Financial Advisor Agent for AI-driven trading
+  // ============================================================================
+
+  async getAgentStatus() {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/status`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/status`
+    );
+    return res.json();
+  },
+
+  async chatWithAgent(data: {
+    user_id: string;
+    message: string;
+    context?: Record<string, any>;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/chat`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/chat`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async analyzeTradeOpportunity(data: {
+    user_id: string;
+    symbol: string;
+    current_price?: number;
+    market_data?: Record<string, any>;
+    portfolio_context?: Record<string, any>;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/analyze`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/analyze`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async getRealtimeSignal(userId: string, symbol: string, timeframe: string = 'intraday') {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`
+    );
+    return res.json();
+  },
+
+  async shouldExecuteTrade(data: {
+    user_id: string;
+    symbol: string;
+    signal: Record<string, any>;
+    config?: Record<string, any>;
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/should-execute`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/should-execute`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async runAutomatedTrading(data: {
+    user_id: string;
+    watchlist: string[];
+    config?: {
+      min_confidence?: number;
+      max_risk_per_trade?: number;
+      max_daily_trades?: number;
+      trading_amount?: number;
+    };
+  }) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/auto-trade`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/auto-trade`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async createAgentSession(userId: string) {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_C}/api/agent/session/create/${userId}`,
+      `${FALLBACK_URLS.ENGINE_C}/api/agent/session/create/${userId}`,
+      { method: 'POST' }
+    );
+    return res.json();
+  },
 };
 
 // Combined API

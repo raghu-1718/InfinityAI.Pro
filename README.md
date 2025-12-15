@@ -560,8 +560,8 @@ All trading activities are logged to Firestore in real-time for transparency and
   "status": "healthy",
   "service": "engine-a-orchestrator",
   "version": "3.7-google-integrations",
-  "ml_capabilities": ["risk_scoring", "position_sizing", "var_calculation", 
-                      "cvar_calculation", "sortino_ratio", "kelly_criterion", 
+  "ml_capabilities": ["risk_scoring", "position_sizing", "var_calculation",
+                      "cvar_calculation", "sortino_ratio", "kelly_criterion",
                       "portfolio_risk", "max_drawdown"]
 }
 ```
@@ -588,7 +588,7 @@ All trading activities are logged to Firestore in real-time for transparency and
   "service": "engine-c-execution",
   "broker": "DhanHQ",
   "version": "3.7-performance-optimized",
-  "ml_capabilities": ["slippage_prediction", "order_timing", 
+  "ml_capabilities": ["slippage_prediction", "order_timing",
                       "twap_splitting", "vwap_splitting", "execution_analytics"]
 }
 ```
