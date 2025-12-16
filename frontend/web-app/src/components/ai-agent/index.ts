@@ -3,4 +3,4 @@
  * InfinityAI.Pro Frontend
  */
 
-export { AIAgentChat, AIAgentAnalysis, AIAutoTradeControl } from './AIAgentComponents';
+export { AIAgentChat, RealTimeSignal, AutomatedTradingControl } from './AIAgentComponents';
