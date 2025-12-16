@@ -729,7 +729,7 @@ export function usePositionRiskSummary() {
 
   // Ensure analysisData is always an array for safe operations
   const safeAnalysisData = Array.isArray(analysisData) ? analysisData : [];
-  
+
   const summary = safeAnalysisData.length > 0 ? {
     totalPositions: safeAnalysisData.length,
     totalUnrealizedPnL: safeAnalysisData.reduce((sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0), 0),
@@ -758,28 +758,43 @@ export function usePositionRiskSummary() {
 
 // Background Trading Status Interface
 interface BackgroundTradingStatus {
-  user_id: string;
+  user_id?: string;
   is_active: boolean;
-  strategy: string;
+  active?: boolean; // API returns 'active', we normalize to 'is_active'
+  state?: string;
+  strategy?: string;
   started_at?: string;
   config?: Record<string, unknown>;
+  trades_today?: number;
+  total_pnl_today?: number;
+  signals_processed?: number;
   last_execution?: {
     timestamp: string;
     trades_executed: number;
     status: string;
   };
+  last_run?: string | null;
   execution_history?: Array<{
     timestamp: string;
     action: string;
     result: string;
   }>;
+  errors?: string[];
 }
 
 // Get Background Trading Status
 export function useBackgroundTradingStatus(userId: string | undefined) {
   return useQuery<BackgroundTradingStatus>({
     queryKey: ['background-trading', 'status', userId],
-    queryFn: () => engineC.getBackgroundTradingStatus(userId!),
+    queryFn: async () => {
+      const data = await engineC.getBackgroundTradingStatus(userId!);
+      // Normalize API response - API returns 'active', frontend expects 'is_active'
+      return {
+        ...data,
+        is_active: data.active ?? data.is_active ?? false,
+        strategy: data.config?.strategy || data.strategy || 'auto_options',
+      };
+    },
     enabled: !!userId,
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 10000,

@@ -153,7 +153,7 @@ export function ActivityDashboard({ userId }: ActivityDashboardProps) {
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-lg">
                 <div className="text-2xl font-bold">
-                  {tradingStatus?.last_execution?.trades_executed || 0}
+                  {tradingStatus?.trades_today ?? tradingStatus?.last_execution?.trades_executed ?? 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Trades Today</div>
               </div>
