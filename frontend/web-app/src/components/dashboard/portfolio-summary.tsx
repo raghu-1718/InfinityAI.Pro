@@ -134,8 +134,9 @@ export function PortfolioSummary() {
                 const pnl = pos.unrealizedProfit || pos.pnl || 0;
                 const isPosPositive = pnl >= 0;
 
-                // Find AI analysis for this position
-                const analysis = analysisData?.find((a) =>
+                // Find AI analysis for this position (with defensive array check)
+                const analysisArray = Array.isArray(analysisData) ? analysisData : [];
+                const analysis = analysisArray.find((a) =>
                   a.symbol === pos.tradingSymbol ||
                   a.symbol?.includes(pos.tradingSymbol?.split('-')[0])
                 );

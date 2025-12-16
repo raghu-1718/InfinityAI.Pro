@@ -709,7 +709,14 @@ export function useAllPositionsAnalysis(enabled = true) {
 
   return useQuery<PositionAnalysisResponse[]>({
     queryKey: ['positions', 'analysis', 'all', positionDataList.map((p) => p.symbol).join(',')],
-    queryFn: () => engineB.analyzePortfolioPositions(positionDataList),
+    queryFn: async () => {
+      const response = await engineB.analyzePortfolioPositions(positionDataList);
+      // Ensure we always return an array (API might wrap in {data: [...]})
+      if (Array.isArray(response)) return response;
+      if (response?.data && Array.isArray(response.data)) return response.data;
+      if (response?.results && Array.isArray(response.results)) return response.results;
+      return [];
+    },
     enabled: enabled && !positionsLoading && positionDataList.length > 0,
     staleTime: 60000,
     refetchInterval: 120000,
@@ -720,26 +727,29 @@ export function useAllPositionsAnalysis(enabled = true) {
 export function usePositionRiskSummary() {
   const { data: analysisData, isLoading, error } = useAllPositionsAnalysis();
 
-  const summary = analysisData ? {
-    totalPositions: analysisData.length,
-    totalUnrealizedPnL: analysisData.reduce((sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0), 0),
-    averageRiskScore: analysisData.reduce((sum, a) => sum + (a.ai_recommendation?.score || 50), 0) / analysisData.length,
-    highRiskCount: analysisData.filter((a) => (a.ai_recommendation?.score || 50) > 70).length,
-    buyRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'HOLD').length,
-    sellRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'EXIT_CONSIDERATION').length,
-    holdRecommendations: analysisData.filter((a) => a.ai_recommendation?.action === 'MONITOR').length,
-    totalMaxLoss: analysisData.reduce((sum, a) => {
+  // Ensure analysisData is always an array for safe operations
+  const safeAnalysisData = Array.isArray(analysisData) ? analysisData : [];
+  
+  const summary = safeAnalysisData.length > 0 ? {
+    totalPositions: safeAnalysisData.length,
+    totalUnrealizedPnL: safeAnalysisData.reduce((sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0), 0),
+    averageRiskScore: safeAnalysisData.reduce((sum, a) => sum + (a.ai_recommendation?.score || 50), 0) / safeAnalysisData.length,
+    highRiskCount: safeAnalysisData.filter((a) => (a.ai_recommendation?.score || 50) > 70).length,
+    buyRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'HOLD').length,
+    sellRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'EXIT_CONSIDERATION').length,
+    holdRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'MONITOR').length,
+    totalMaxLoss: safeAnalysisData.reduce((sum, a) => {
       const maxLoss = a.risk_metrics?.max_loss;
       return sum + (typeof maxLoss === 'number' ? maxLoss : 0);
     }, 0),
     positionsByConfidence: {
-      high: analysisData.filter((a) => a.ai_recommendation?.confidence === 'HIGH').length,
-      medium: analysisData.filter((a) => a.ai_recommendation?.confidence === 'MEDIUM').length,
-      low: analysisData.filter((a) => a.ai_recommendation?.confidence === 'LOW').length,
+      high: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'HIGH').length,
+      medium: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'MEDIUM').length,
+      low: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'LOW').length,
     },
   } : null;
 
-  return { summary, analysisData, isLoading, error };
+  return { summary, analysisData: safeAnalysisData, isLoading, error };
 }
 
 // ==========================================
