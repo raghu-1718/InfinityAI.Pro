@@ -197,17 +197,15 @@ export default function GeminiAIPage() {
     try {
       if (!autoTradingEnabled) {
         // Start auto trading
-        const response = await engineC.runAutomatedTrading({
+        await engineC.runAutomatedTrading({
           user_id: currentUserId,
           watchlist,
           config: agentConfig
         });
-        setAutoTradingStatus(response);
         setAutoTradingEnabled(true);
       } else {
         // Stop - just disable locally (Cloud Scheduler handles actual cycles)
         setAutoTradingEnabled(false);
-        setAutoTradingStatus(null);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to toggle auto trading');
