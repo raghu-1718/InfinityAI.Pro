@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
+import { getUserId, setDhanClientId, clearDhanClientId } from "@/lib/user";
 
 // Engine C API URL - use custom domain
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c.infinityai.pro";
@@ -152,30 +153,12 @@ export default function SettingsPage() {
   const [tradingSettingsLoading, setTradingSettingsLoading] = useState(false);
   const [tradingSettingsSaved, setTradingSettingsSaved] = useState(false);
 
-  // Get user ID - use Dhan client ID directly for consistency
-  const getUserId = () => {
-    if (typeof window === 'undefined') return 'default_user';
+  // User ID is now managed by the shared user utility (imported from @/lib/user)
+  // getUserId() prioritizes: Dhan Client ID > Firebase UID > Coupon Session > Generated ID
 
-    // Use stored Dhan client ID if available (most stable identifier)
-    const storedClientId = localStorage.getItem("dhan_client_id");
-    if (storedClientId) {
-      return storedClientId; // Use plain client ID without prefix
-    }
-
-    // Fallback to generated user ID (only until Dhan is connected)
-    let userId = localStorage.getItem("infinityai_user_id");
-    if (!userId) {
-      userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      localStorage.setItem("infinityai_user_id", userId);
-    }
-    return userId;
-  };
-
-  // Store client ID for future sessions
+  // Store client ID for future sessions - use shared utility
   const persistClientId = (clientId: string) => {
-    if (typeof window !== 'undefined' && clientId) {
-      localStorage.setItem("dhan_client_id", clientId);
-    }
+    setDhanClientId(clientId);
   };
 
   // Load existing credentials on mount
@@ -398,10 +381,8 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        // Clear persistent client ID
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem("dhan_client_id");
-        }
+        // Clear persistent client ID using shared utility
+        clearDhanClientId();
 
         setDhanCredentials({
           client_id: "",

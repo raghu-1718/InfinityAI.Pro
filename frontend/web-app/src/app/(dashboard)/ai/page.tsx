@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -21,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { GeminiChat } from '@/components/dashboard/gemini-chat';
 import { engineB, engineC } from '@/lib/api';
+import { getUserId, getUserDisplayInfo } from '@/lib/user';
 import {
   Sparkles,
   TrendingUp,
@@ -35,15 +35,14 @@ import {
   Minus,
   AlertTriangle,
   CheckCircle2,
-  RefreshCw,
   Zap,
   Bot,
   MessageSquare,
   Send,
   Play,
   Pause,
-  Settings2,
   Activity,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -82,7 +81,6 @@ export default function GeminiAIPage() {
   const [agentInput, setAgentInput] = useState('');
   const [isAgentLoading, setIsAgentLoading] = useState(false);
   const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
-  const [autoTradingStatus, setAutoTradingStatus] = useState<any>(null);
   const [agentConfig, setAgentConfig] = useState({
     min_confidence: 0.7,
     max_risk_per_trade: 0.02,
@@ -91,7 +89,18 @@ export default function GeminiAIPage() {
   });
   const [watchlist, setWatchlist] = useState<string[]>(['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const userId = '1101302170'; // Your Dhan user ID
+
+  // Dynamic user identification
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userInfo, setUserInfo] = useState<{ userId: string; isDhanConnected: boolean; displayName: string } | null>(null);
+
+  // Initialize user ID on client side
+  useEffect(() => {
+    const id = getUserId();
+    const info = getUserDisplayInfo();
+    setCurrentUserId(id);
+    setUserInfo(info);
+  }, []);
 
   // Fetch agent status on mount
   useEffect(() => {
@@ -122,27 +131,27 @@ export default function GeminiAIPage() {
 
     try {
       const response = await engineC.chatWithAgent({
-        user_id: userId,
+        user_id: currentUserId,
         message: userMessage,
         context: { market: 'NSE', session_type: 'trading_consultation' }
       });
 
       if (response.success) {
-        setAgentMessages(prev => [...prev, { 
-          role: 'assistant', 
+        setAgentMessages(prev => [...prev, {
+          role: 'assistant',
           content: response.response || response.message || 'Response received',
           timestamp: new Date()
         }]);
       } else {
-        setAgentMessages(prev => [...prev, { 
-          role: 'assistant', 
+        setAgentMessages(prev => [...prev, {
+          role: 'assistant',
           content: `Error: ${response.error || 'Failed to get response'}`,
           timestamp: new Date()
         }]);
       }
     } catch (err: any) {
-      setAgentMessages(prev => [...prev, { 
-        role: 'assistant', 
+      setAgentMessages(prev => [...prev, {
+        role: 'assistant',
         content: `Error: ${err.message || 'Connection failed'}`,
         timestamp: new Date()
       }]);
@@ -157,7 +166,7 @@ export default function GeminiAIPage() {
     setError(null);
     try {
       const response = await engineC.analyzeTradeOpportunity({
-        user_id: userId,
+        user_id: currentUserId,
         symbol,
         current_price: parseFloat(currentPrice) || undefined,
       });
@@ -174,7 +183,7 @@ export default function GeminiAIPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await engineC.getRealtimeSignal(userId, symbol, 'intraday');
+      const response = await engineC.getRealtimeSignal(currentUserId, symbol, 'intraday');
       setResult(response);
     } catch (err: any) {
       setError(err.message || 'Failed to get AI signal');
@@ -189,7 +198,7 @@ export default function GeminiAIPage() {
       if (!autoTradingEnabled) {
         // Start auto trading
         const response = await engineC.runAutomatedTrading({
-          user_id: userId,
+          user_id: currentUserId,
           watchlist,
           config: agentConfig
         });
@@ -599,6 +608,33 @@ export default function GeminiAIPage() {
 
             {/* AI Agent Tab - Vertex AI Financial Advisor */}
             <TabsContent value="agent" className="space-y-4">
+              {/* User Identity Card */}
+              <Card className={cn(
+                "border",
+                userInfo?.isDhanConnected ? "border-green-500/30 bg-green-50/30 dark:bg-green-950/10" : "border-yellow-500/30 bg-yellow-50/30 dark:bg-yellow-950/10"
+              )}>
+                <CardContent className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm">
+                        {userInfo?.isDhanConnected ? (
+                          <>Trading as <span className="font-medium text-green-600">Dhan User {currentUserId}</span></>
+                        ) : (
+                          <span className="text-yellow-600">Connect your Dhan account in Settings to enable trading</span>
+                        )}
+                      </span>
+                    </div>
+                    {userInfo?.isDhanConnected && (
+                      <Badge variant="outline" className="text-green-600 border-green-500">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Connected
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Agent Status Card */}
               <Card className={cn(
                 "border-2",
@@ -655,6 +691,7 @@ export default function GeminiAIPage() {
                     </div>
                     <Switch
                       checked={autoTradingEnabled}
+                      disabled={!userInfo?.isDhanConnected}
                       onCheckedChange={handleToggleAutoTrading}
                     />
                   </div>
@@ -1023,8 +1060,8 @@ export default function GeminiAIPage() {
                       )}>
                         <div className={cn(
                           "max-w-[80%] rounded-lg p-3",
-                          msg.role === 'user' 
-                            ? 'bg-primary text-primary-foreground' 
+                          msg.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
                         )}>
                           <p className="text-sm whitespace-pre-wrap">{msg.content}</p>

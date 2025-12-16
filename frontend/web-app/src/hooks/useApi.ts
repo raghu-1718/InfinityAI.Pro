@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, engineA, engineB, engineC } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
 import { useEffect, useCallback } from 'react';
+import { getUserId } from '@/lib/user';
 
 // Engine Health Hooks
 export function useEngineHealth() {
@@ -47,18 +48,6 @@ export function useEngineHealth() {
 
   return query;
 }
-
-// Helper to get user ID consistently
-const getUserId = () => {
-  if (typeof window === 'undefined') return 'default_user';
-  let userId = localStorage.getItem('userId');
-  if (!userId) {
-    // Generate a unique user ID and persist it
-    userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    localStorage.setItem('userId', userId);
-  }
-  return userId;
-};
 
 // User Profile Hook - Fetches user's Dhan credentials status
 export function useUserProfile() {
