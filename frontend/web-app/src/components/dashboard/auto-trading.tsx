@@ -47,6 +47,16 @@ interface TradingSession {
   winRate: number;
 }
 
+// Minimal Signal type used by Auto Trading
+interface Signal {
+  symbol?: string;
+  confidence?: number;
+  signal?: 'BUY' | 'SELL' | 'HOLD' | string;
+  security_id?: string;
+  current_price?: number;
+  [key: string]: unknown;
+} 
+
 export function AutoTradingCard() {
   const funds = useAppStore((s) => s.funds);
   const tradingConfig = useAppStore((s) => s.tradingConfig);
@@ -236,7 +246,7 @@ export function AutoTradingCard() {
 
   const availableBalance = funds?.availableBalance || 0;
   const signals = signalsData?.data || [];
-  const activeSignals = Array.isArray(signals) ? signals.filter((s: any) => s.confidence > 0.7) : [];
+  const activeSignals: Signal[] = Array.isArray(signals) ? signals.filter((s: any) => typeof (s as any).confidence === 'number' && (s as any).confidence > 0.7) : []; 
 
   // Risk level configurations
   const riskConfigs = {
@@ -304,8 +314,9 @@ export function AutoTradingCard() {
         ? getSelectedMarketNames()
         : `${selectedMarkets.length} markets`;
       setStatusMessage(`🚀 Auto trading started on ${marketNames}! Scanning for signals...`);
-    } catch (error: any) {
-      setStatusMessage(`❌ Failed to start trading: ${error.message || 'Backend error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`❌ Failed to start trading: ${msg || 'Backend error'}`);
     }
   };
 
@@ -322,8 +333,9 @@ export function AutoTradingCard() {
       // Update global store
       stopTradingSession();
       setStatusMessage('⏹️ Auto trading stopped. Session summary saved.');
-    } catch (error: any) {
-      setStatusMessage(`❌ Failed to stop trading: ${error.message || 'Backend error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`❌ Failed to stop trading: ${msg || 'Backend error'}`);
     }
   };
 
@@ -339,8 +351,8 @@ export function AutoTradingCard() {
     if (!session.isActive || isPaused) return;
 
     // Helper function to determine if a signal matches selected instruments
-    const signalMatchesInstruments = (signal: any): boolean => {
-      const symbol = signal.symbol?.toUpperCase() || '';
+    const signalMatchesInstruments = (signal: Signal): boolean => {
+      const symbol = (signal.symbol || '').toUpperCase();
 
       // Check equities (no options suffix)
       if (selectedMarkets.includes('equities') &&
@@ -431,8 +443,9 @@ export function AutoTradingCard() {
               tradesExecuted: prev.tradesExecuted + 1,
             }));
             setStatusMessage(`✅ Trade executed: ${signal.signal} ${signal.symbol}`);
-          } catch (error: any) {
-            setStatusMessage(`❌ Trade failed: ${error.message || 'Unknown error'}`);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            setStatusMessage(`❌ Trade failed: ${msg || 'Unknown error'}`);
           }
         } else {
           setStatusMessage('🔍 Scanning market for high-confidence signals...');
@@ -943,7 +956,7 @@ export function AutoTradingCard() {
               {activeSignals.length} high-confidence signals available
             </p>
             <div className="flex flex-wrap gap-1">
-              {activeSignals.slice(0, 5).map((signal: any, idx: number) => (
+              {activeSignals.slice(0, 5).map((signal: Signal, idx: number) => (
                 <Badge key={idx} variant="secondary" className="text-xs">
                   {signal.symbol} • {signal.action}
                 </Badge>
