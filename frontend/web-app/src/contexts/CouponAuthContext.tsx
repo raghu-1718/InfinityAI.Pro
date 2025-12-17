@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth';
-import { auth, createOrUpdateUserProfile, getUserProfile, UserProfile } from '@/lib/firebase';
+import { User } from 'firebase/auth';
+import { auth, createOrUpdateUserProfile, getUserProfile, UserProfile, signInWithGoogle as firebaseSignInWithGoogle, logOut as firebaseLogOut, onAuthChange } from '@/lib/firebase';
 
 // Storage keys
 const COUPON_SESSION_KEY = 'infinityai_coupon_session';
@@ -103,8 +103,8 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     const storedAuthType = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TYPE_KEY) : null;
     const storedCouponSession = typeof window !== 'undefined' ? localStorage.getItem(COUPON_SESSION_KEY) : null;
 
-    // Listen for Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    // Listen for Firebase auth state changes (safe wrapper handles SSR case)
+    const unsubscribe = onAuthChange(async (fbUser) => {
       if (!isMounted) return;
 
       if (fbUser) {
@@ -223,17 +223,17 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      const res = await firebaseSignInWithGoogle();
+      if (!res.success) {
+        setLoading(false);
+        return { success: false, error: res.error || 'Google sign-in failed' };
+      }
 
-      const result = await signInWithPopup(auth, provider);
-      const fbUser = result.user;
-
-      // Create or update user profile in Firestore
-      const profile = await createOrUpdateUserProfile(fbUser);
+      const fbUser = res.user!;
+      const profile = res.profile ?? await getUserProfile(fbUser.uid);
 
       setFirebaseUser(fbUser);
-      setUserProfile(profile);
+      setUserProfile(profile || null);
       setAuthType('firebase');
 
       setSession({
@@ -246,7 +246,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
       setUser({
         userId: fbUser.uid,
-        name: fbUser.displayName || 'User',
+        name: fbUser.displayName || profile?.displayName || 'User',
         email: fbUser.email || undefined,
         dhanConnected: profile?.dhanConnected || false,
         dhanClientId: profile?.dhanClientId,
@@ -352,10 +352,8 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setLoading(true);
     try {
-      // Sign out from Firebase if signed in
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
+      // Sign out using firebase helper (safe for SSR)
+      await firebaseLogOut();
 
       // Try to notify backend for coupon logout
       try {

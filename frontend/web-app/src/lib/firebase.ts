@@ -36,31 +36,49 @@ export const googleProvider = typeof window !== 'undefined' ? new GoogleAuthProv
 // ============================================
 
 export async function signInWithGoogle() {
+  if (!auth || !googleProvider) {
+    console.warn('signInWithGoogle called before Firebase initialization (SSR or missing config)');
+    return { success: false, error: 'Firebase not initialized' } as const;
+  }
+
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
     // Create or update user profile in Firestore
-    await createOrUpdateUserProfile(user);
+    const profile = await createOrUpdateUserProfile(user);
 
-    return { success: true, user };
+    return { success: true, user, profile } as const;
   } catch (error) {
     console.error('Google sign-in error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' } as const;
   }
 }
 
 export async function logOut() {
+  if (!auth) {
+    console.warn('logOut called before Firebase initialization (SSR or missing config); skipping signOut');
+    return { success: true } as const;
+  }
+
   try {
     await signOut(auth);
-    return { success: true };
+    return { success: true } as const;
   } catch (error) {
     console.error('Sign-out error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' } as const;
   }
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {
+  // If auth is not initialized (SSR), call the callback with null and return a noop
+  if (!auth) {
+    console.warn('onAuthChange registered before Firebase initialization (SSR); invoking callback(null) and returning noop');
+    // Call callback asynchronously to mirror onAuthStateChanged behavior
+    setTimeout(() => callback(null), 0);
+    return () => {};
+  }
+
   return onAuthStateChanged(auth, callback);
 }
 
