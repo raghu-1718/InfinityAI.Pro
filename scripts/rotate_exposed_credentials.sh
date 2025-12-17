@@ -90,12 +90,26 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Phase 3: Rotating Secrets in GCP Secret Manager${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
+# Parse arguments
+DRY_RUN=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --dry-run) DRY_RUN=true; shift ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
 # Function to update secret
 update_secret() {
     local secret_name=$1
     local secret_value=$2
 
     echo -e "${YELLOW}Rotating ${secret_name}...${NC}"
+
+    if [ "$DRY_RUN" = "true" ]; then
+        echo -e "${YELLOW}[DRY RUN] Would add new version to ${secret_name} with value: ${secret_value:0:12}...${NC}"
+        return 0
+    fi
 
     # Add new version to existing secret
     echo -n "${secret_value}" | gcloud secrets versions add ${secret_name} --data-file=- 2>&1
