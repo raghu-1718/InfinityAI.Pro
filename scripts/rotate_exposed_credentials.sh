@@ -28,14 +28,25 @@ NC='\033[0m' # No Color
 PROJECT_ID="after-yesterday-473512-k3"
 REGION="us-central1"
 
+# Parse args early to allow dry-run to skip operations that require gcloud
+DRY_RUN=false
+for arg in "$@"; do
+    if [ "$arg" = "--dry-run" ]; then
+        DRY_RUN=true
+    fi
+done
+
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   InfinityAI.Pro - Credential Rotation & Security Cleanup   ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Set GCP project
-echo -e "${YELLOW}Setting GCP project...${NC}"
-gcloud config set project ${PROJECT_ID}
+if [ "$DRY_RUN" = "true" ]; then
+    echo -e "${YELLOW}[DRY RUN] Skipping gcloud project configuration${NC}"
+else
+    echo -e "${YELLOW}Setting GCP project...${NC}"
+    gcloud config set project ${PROJECT_ID}
+fi
 
 ###############################################################################
 # Phase 1: Identify Exposed Credentials
