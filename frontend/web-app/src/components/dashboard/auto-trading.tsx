@@ -430,6 +430,10 @@ export function AutoTradingCard() {
               validity: 'DAY',
               security_id: signal.security_id || signal.symbol || '',
               quantity: Math.floor(tradingAmount / (signal.current_price || 1000)),
+              // Required by OrderRequest - set sensible defaults; adjust if needed
+              exchange_segment: 'NSE',
+              product_type: 'CNC',
+              order_type: 'MARKET',
             });
 
             setSession((prev) => ({
