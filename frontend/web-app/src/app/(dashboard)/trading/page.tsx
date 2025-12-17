@@ -433,8 +433,11 @@ function PositionRow({ position }: { position: Position }) {
 }
 
 function HoldingRow({ holding }: { holding: Holding }) {
-  const pnl = (holding.ltp - holding.avgCostPrice) * holding.totalQty;
-  const pnlPercent = ((holding.ltp - holding.avgCostPrice) / holding.avgCostPrice) * 100;
+  const ltp = holding.ltp ?? holding.avgCostPrice ?? 0;
+  const avg = holding.avgCostPrice ?? 0;
+  const qty = holding.totalQty ?? 0;
+  const pnl = (ltp - avg) * qty;
+  const pnlPercent = avg > 0 ? ((ltp - avg) / avg) * 100 : 0;
   const isProfit = pnl >= 0;
 
   return (

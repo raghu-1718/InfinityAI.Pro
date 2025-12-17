@@ -195,7 +195,7 @@ export default function PortfolioPage() {
                   ) : (
                     <div className="space-y-2">
                       {holdings.map((holding: Holding, idx: number) => {
-                        const symbol = holding.tradingSymbol || holding.securityId;
+                        const symbol = holding.tradingSymbol || holding.securityId || '';
                         const signal = getSignalForHolding(symbol);
                         return (
                           <HoldingRow

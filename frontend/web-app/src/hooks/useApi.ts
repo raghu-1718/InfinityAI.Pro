@@ -408,7 +408,7 @@ export function useRiskMetrics(returns: number[]) {
 }
 
 // VaR Hook
-export function useVaR(returns: number[], confidence = 0.95, method = 'historical') {
+export function useVaR(returns: number[], confidence = 0.95, method: 'historical' | 'parametric' | 'cornish-fisher' = 'historical') {
   return useQuery({
     queryKey: ['risk', 'var', returns.length, confidence, method],
     queryFn: () => engineA.calculateVaR({ returns, confidence, method }),

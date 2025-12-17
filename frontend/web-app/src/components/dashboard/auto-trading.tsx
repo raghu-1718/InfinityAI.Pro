@@ -426,10 +426,7 @@ export function AutoTradingCard() {
           try {
             // Use real startTrade mutation through Engine A orchestration
             await placeOrderMutation.mutateAsync({
-              transaction_type: signal.signal,
-              exchange_segment: 'NSE_EQ',
-              product_type: 'INTRADAY',
-              order_type: 'MARKET',
+              transaction_type: signal.signal === 'SELL' ? 'SELL' : 'BUY',
               validity: 'DAY',
               security_id: signal.security_id || signal.symbol,
               quantity: Math.floor(tradingAmount / (signal.current_price || 1000)),
@@ -958,7 +955,7 @@ export function AutoTradingCard() {
             <div className="flex flex-wrap gap-1">
               {activeSignals.slice(0, 5).map((signal: Signal, idx: number) => (
                 <Badge key={idx} variant="secondary" className="text-xs">
-                  {signal.symbol} • {signal.action}
+                  {signal.symbol} • {signal.signal ?? 'HOLD'}
                 </Badge>
               ))}
             </div>

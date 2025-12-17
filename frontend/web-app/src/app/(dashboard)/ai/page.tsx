@@ -550,7 +550,7 @@ export default function GeminiAIPage() {
               <Zap className="h-5 w-5 text-primary mt-0.5" />
               <div>
                 <p className="font-medium">Recommendation</p>
-                <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                <p className="text-sm text-muted-foreground">{result.recommendation?.reasoning ?? result.recommendation?.summary ?? JSON.stringify(result.recommendation)}</p>
               </div>
             </div>
           </CardContent>
