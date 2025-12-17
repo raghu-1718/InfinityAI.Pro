@@ -14,13 +14,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
-// Initialize Firebase (prevent multiple initializations)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// Initialize Firebase only in the browser (avoid running during Next.js prerender/SSR)
+let app = undefined as ReturnType<typeof initializeApp> | undefined;
+let authClient = null as ReturnType<typeof getAuth> | null;
+let dbClient = null as ReturnType<typeof getFirestore> | null;
 
-// Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+if (typeof window !== 'undefined') {
+  // Only initialize in browser contexts
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  authClient = getAuth(app);
+  dbClient = getFirestore(app);
+}
+
+// Exports: may be null during SSR; callers must handle null (we add guards in this file)
+export const auth = authClient;
+export const db = dbClient;
+export const googleProvider = typeof window !== 'undefined' ? new GoogleAuthProvider() : null;
 
 // ============================================
 // Authentication Functions
@@ -83,6 +92,12 @@ export interface UserProfile {
 }
 
 export async function createOrUpdateUserProfile(user: User): Promise<UserProfile | null> {
+  if (!db) {
+    // Running during SSR/prerender — skip Firebase calls
+    console.warn('createOrUpdateUserProfile called during SSR; skipping Firebase operations');
+    return null;
+  }
+
   try {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
@@ -130,6 +145,11 @@ export async function createOrUpdateUserProfile(user: User): Promise<UserProfile
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  if (!db) {
+    console.warn('getUserProfile called during SSR; returning null');
+    return null;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
@@ -145,6 +165,11 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 export async function updateUserSettings(uid: string, settings: Partial<UserProfile['settings']>): Promise<boolean> {
+  if (!db) {
+    console.warn('updateUserSettings called during SSR; skipping');
+    return false;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
@@ -158,6 +183,11 @@ export async function updateUserSettings(uid: string, settings: Partial<UserProf
 }
 
 export async function updateDhanConnection(uid: string, connected: boolean, clientId?: string): Promise<boolean> {
+  if (!db) {
+    console.warn('updateDhanConnection called during SSR; skipping');
+    return false;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
@@ -195,6 +225,11 @@ export interface TradeRecord {
 }
 
 export async function saveTradeRecord(trade: Omit<TradeRecord, 'id'>): Promise<string | null> {
+  if (!db) {
+    console.warn('saveTradeRecord called during SSR; skipping');
+    return null;
+  }
+
   try {
     const tradesRef = collection(db, 'trades');
     const newTradeRef = doc(tradesRef);
@@ -212,6 +247,11 @@ export async function saveTradeRecord(trade: Omit<TradeRecord, 'id'>): Promise<s
 }
 
 export async function getUserTrades(userId: string, limit = 50): Promise<TradeRecord[]> {
+  if (!db) {
+    console.warn('getUserTrades called during SSR; returning empty list');
+    return [];
+  }
+
   try {
     const tradesRef = collection(db, 'trades');
     const q = query(tradesRef, where('userId', '==', userId));
@@ -253,6 +293,11 @@ export interface SignalRecord {
 }
 
 export async function saveSignalRecord(signal: Omit<SignalRecord, 'id'>): Promise<string | null> {
+  if (!db) {
+    console.warn('saveSignalRecord called during SSR; skipping');
+    return null;
+  }
+
   try {
     const signalsRef = collection(db, 'signals');
     const newSignalRef = doc(signalsRef);
@@ -270,6 +315,11 @@ export async function saveSignalRecord(signal: Omit<SignalRecord, 'id'>): Promis
 }
 
 export async function getUserSignals(userId: string, limit = 100): Promise<SignalRecord[]> {
+  if (!db) {
+    console.warn('getUserSignals called during SSR; returning empty list');
+    return [];
+  }
+
   try {
     const signalsRef = collection(db, 'signals');
     const q = query(signalsRef, where('userId', '==', userId));
