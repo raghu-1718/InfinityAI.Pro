@@ -100,7 +100,7 @@ type StrategyLeg = {
 type AIResult = {
   symbol?: string;
   model?: string;
-  recommendation?: { action?: string; confidence?: number; reasoning?: string };
+  recommendation?: { action?: string; confidence?: number; reasoning?: string; summary?: string };
   signal?: Signal;
   analysis?: Analysis;
   index?: string | number;
