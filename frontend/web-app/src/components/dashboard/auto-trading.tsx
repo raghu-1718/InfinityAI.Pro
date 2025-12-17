@@ -428,12 +428,9 @@ export function AutoTradingCard() {
             await placeOrderMutation.mutateAsync({
               transaction_type: signal.signal === 'SELL' ? 'SELL' : 'BUY',
               validity: 'DAY',
-              security_id: signal.security_id || signal.symbol,
+              security_id: signal.security_id || signal.symbol || '',
               quantity: Math.floor(tradingAmount / (signal.current_price || 1000)),
             });
-
-            // Refresh funds after trade
-            refetchFunds();
 
             setSession((prev) => ({
               ...prev,
