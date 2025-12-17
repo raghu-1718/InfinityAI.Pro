@@ -101,7 +101,7 @@
     },
     "dhan_integration": {
       "status": "PASS",
-      "client_id": "1101302170",
+      "client_id": "<DHAN_CLIENT_ID>",
       "token_valid": true,
       "endpoints_tested": {
         "funds": "PASS",
@@ -250,7 +250,7 @@
       "funds_retrieved": true,
       "positions_retrieved": true,
       "account_details": {
-        "client_id": "1101302170",
+        "client_id": "<DHAN_CLIENT_ID>",
         "balance": 247.18,
         "active_positions": 1,
         "position_details": "NIFTY-Dec2025-25850-PE (75 qty)"

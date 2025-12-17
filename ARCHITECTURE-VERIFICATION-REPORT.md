@@ -189,7 +189,7 @@ Fallback: `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/start`  ✅
 
 | User ID | Status | Broker |
 |---------|--------|--------|
-| 1101302170 | ✅ Active | Dhan |
+| <DHAN_CLIENT_ID> | ✅ Active | Dhan |
 | user_1764682538160_kyuj8s | ✅ Active | Dhan |
 | user_1765143860975_jr274i | ✅ Active | Dhan |
 

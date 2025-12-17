@@ -285,7 +285,7 @@ from dhanhq import dhanhq
 
 # Initialize client
 dhan = dhanhq(
-    client_id=os.getenv("DHAN_CLIENT_ID"),      # 1101302170
+    client_id=os.getenv("DHAN_CLIENT_ID"),      # <DHAN_CLIENT_ID>
     access_token=os.getenv("DHAN_ACCESS_TOKEN")  # JWT token
 )
 ```
@@ -298,9 +298,9 @@ dhan = dhanhq(
 - **Order Status**: Check if orders executed
 
 **Credentials (Secret Manager):**
-- `dhan-client-id`: 1101302170
-- `dhan-api-key`: 01830809
-- `dhan-api-secret`: 25bf2488-e6e9-4cf0-a0f3-fac1d26340f0
+- `dhan-client-id`: <DHAN_CLIENT_ID>
+- `dhan-api-key`: <DHAN_API_KEY>
+- `dhan-api-secret`: <DHAN_API_SECRET>
 - `dhan-access-token`: Updated daily (expires every 24h)
 
 #### 2. **Orchestration Logic**
@@ -522,7 +522,7 @@ response = requests.post(
         "Content-Type": "application/json"
     },
     json={
-        "dhanClientId": "1101302170",
+        "dhanClientId": "<DHAN_CLIENT_ID>",
         "transactionType": "BUY",  # or "SELL"
         "exchangeSegment": "NSE_EQ",
         "productType": "INTRADAY",  # or "DELIVERY"
@@ -926,7 +926,7 @@ async function testConnection() {
 
 2. **Account Details Card:**
    ```
-   Client ID: 1101302170
+   Client ID: <DHAN_CLIENT_ID>
    Account Name: Raghu (fetched from DhanHQ)
    Account Status: Active
    Last Updated: 10:30:15 AM
@@ -1440,7 +1440,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
 1️⃣1️⃣ ENGINE C: Places order via DhanHQ API
    📡 POST https://api.dhan.co/v2/orders
    Headers: { "access-token": "eyJ0..." }
-   Body: { dhanClientId: "1101302170", transactionType: "BUY", ... }
+   Body: { dhanClientId: "<DHAN_CLIENT_ID>", transactionType: "BUY", ... }
    
 1️⃣2️⃣ DHANHQ: Processes order on NSE
    🏦 Order sent to National Stock Exchange

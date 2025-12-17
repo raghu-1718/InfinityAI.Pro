@@ -1,9 +1,9 @@
 #!/bin/bash
 ###############################################################################
 # InfinityAI.Pro - Credential Rotation Script
-# 
+#
 # Purpose: Rotate all exposed Dhan API credentials and other sensitive keys
-# 
+#
 # This script:
 # 1. Identifies all hardcoded credentials in the codebase
 # 2. Generates secure placeholder values
@@ -94,12 +94,12 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 update_secret() {
     local secret_name=$1
     local secret_value=$2
-    
+
     echo -e "${YELLOW}Rotating ${secret_name}...${NC}"
-    
+
     # Add new version to existing secret
     echo -n "${secret_value}" | gcloud secrets versions add ${secret_name} --data-file=- 2>&1
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Successfully rotated ${secret_name}${NC}"
         return 0
@@ -161,8 +161,11 @@ echo -e "\n${YELLOW}Checking for remaining hardcoded credentials...${NC}"
 # Search for exposed credential patterns
 FOUND_CREDS=0
 
-if grep -r "1101302170" --exclude-dir={.git,node_modules,reports,*.md,*.json} . 2>/dev/null; then
-    echo -e "${RED}✗ Found hardcoded client ID 1101302170${NC}"
+
+
+# Also check for any 10-digit numeric sequences that may look like Dhan client IDs
+if grep -r -E "\b[0-9]{10}\b" --exclude-dir={.git,node_modules,reports,*.md,*.json} . 2>/dev/null; then
+    echo -e "${YELLOW}⚠️ Potential 10-digit client IDs found in repository; review and mask if they are real.${NC}"
     FOUND_CREDS=1
 fi
 

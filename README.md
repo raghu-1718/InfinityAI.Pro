@@ -259,7 +259,7 @@ Handles DhanHQ integration with OAuth 2.0, credential management via GCP Secret 
 | **API Coverage** | 43+ endpoints |
 | **Order Types** | Market, Limit, SL, SL-M, Cover, Bracket |
 | **Segments** | NSE, BSE, NFO, MCX, CDS |
-| **Connected Users** | Active (e.g., 1101302170) |
+| **Connected Users** | Active (e.g., <DHAN_CLIENT_ID>) |
 
 #### Credential Flow
 ```
@@ -438,7 +438,7 @@ Free-form AI Q&A for any trading question:
 | `dhan-access-token` | Dhan API access |
 | `encryption-key` | Data encryption |
 | `firebase-admin-sdk` | Firebase admin credentials |
-| `user-creds-1101302170` | User Dhan credentials |
+| `user-creds-<DHAN_CLIENT_ID>` | User Dhan credentials |
 | `user-creds-*` | Additional per-user credentials |
 
 ### Cloud Storage (3 buckets)

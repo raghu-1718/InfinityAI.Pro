@@ -4,7 +4,8 @@
 param(
     [string]$ProjectId = "gen-lang-client-0779271931",
     [string]$Region = "asia-south1",
-    [string]$ServiceAccount = "429140669077-compute@developer.gserviceaccount.com"
+    [string]$ServiceAccount = "429140669077-compute@developer.gserviceaccount.com",
+    [string]$UserId = "<DHAN_CLIENT_ID>"    # Replace with a real Dhan client ID or pass as parameter
 )
 
 $EngineCUrl = "https://engine-c.infinityai.pro"
@@ -19,7 +20,7 @@ Write-Host "======================================" -ForegroundColor Cyan
 Write-Host "`n📊 Creating AI Agent Trading Cycle Job..." -ForegroundColor Yellow
 
 $aiTradingBody = @{
-    user_id = "1101302170"
+    user_id = $UserId
     watchlist = @("RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK")
     config = @{
         min_confidence = 0.7
@@ -58,7 +59,7 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "`n📈 Creating Pre-Market Analysis Job..." -ForegroundColor Yellow
 
 $preMarketBody = @{
-    user_id = "1101302170"
+    user_id = $UserId
     message = "Provide pre-market analysis for today. Check global cues, SGX NIFTY, US markets overnight performance, and list the top 5 stocks to watch today with entry levels."
     context = @{
         analysis_type = "pre_market"
@@ -92,7 +93,7 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "`n📊 Creating Post-Market Summary Job..." -ForegroundColor Yellow
 
 $postMarketBody = @{
-    user_id = "1101302170"
+    user_id = $UserId
     message = "Provide end of day market summary. Summarize today's performance, key movers, FII/DII data, and outlook for tomorrow."
     context = @{
         analysis_type = "post_market"
@@ -126,7 +127,7 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "`n📋 Creating Weekly Portfolio Review Job..." -ForegroundColor Yellow
 
 $portfolioReviewBody = @{
-    user_id = "1101302170"
+    user_id = $UserId
     message = "Provide a comprehensive weekly portfolio review. Analyze performance, suggest rebalancing if needed, identify underperforming positions, and recommend new opportunities for next week."
     context = @{
         analysis_type = "portfolio_review"

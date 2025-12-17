@@ -104,7 +104,7 @@
 | encryption-key | 2025-12-07 | ✅ Active |
 | firebase-admin-sdk | 2025-12-07 | ✅ Active |
 | gemini-api-key | 2025-12-07 | ✅ Active |
-| user-creds-1101302170 | 2025-12-07 | ✅ Active (Primary User) |
+| user-creds-<DHAN_CLIENT_ID> | 2025-12-07 | ✅ Active (Primary User) |
 | user-creds-user_1764682538160_kyuj8s | 2025-12-08 | ⚠️ Test user |
 | user-creds-user_1765143860975_jr274i | 2025-12-07 | ⚠️ Test user |
 
@@ -114,7 +114,7 @@
 
 | Job | Schedule | Target | Status |
 |-----|----------|--------|--------|
-| trading-signal-trigger | */5 9-15 * * 1-5 (IST) | https://engine-c-429140669077.asia-south1.run.app/api/background-trading/trigger/1101302170 | ✅ ENABLED |
+| trading-signal-trigger | */5 9-15 * * 1-5 (IST) | https://engine-c-429140669077.asia-south1.run.app/api/background-trading/trigger/<DHAN_CLIENT_ID> | ✅ ENABLED |
 | engine-health-check | */10 * * * * | https://engine-c-429140669077.asia-south1.run.app/api/health | ✅ ENABLED |
 
 **Note**: Both jobs correctly point to asia-south1 Engine C!

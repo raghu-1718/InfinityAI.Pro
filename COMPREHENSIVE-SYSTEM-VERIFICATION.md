@@ -298,8 +298,8 @@ All 4 DhanHQ secrets properly configured:
 | **dhan-access-token** | Nov 28, 2025 | v2 | ✅ ACTIVE |
 
 **Credential Values:**
-- Client ID: `1101302170`
-- API Key: `01830809`
+- Client ID: `<DHAN_CLIENT_ID>`
+- API Key: `<DHAN_API_KEY>`
 - Access Token: Updated today (Nov 28, 2025)
 - API Secret: Secured in Secret Manager
 
