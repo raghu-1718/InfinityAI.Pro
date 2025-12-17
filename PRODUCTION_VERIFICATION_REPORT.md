@@ -12,7 +12,7 @@
 |------|--------|---------|
 | **Project ID** | ✅ Active | `after-yesterday-473512-k3` |
 | **Region** | ✅ Set | `us-central1` |
-| **Account** | ✅ Authenticated | `raghuyuvi10@gmail.com` |
+| **Account** | ✅ Authenticated | `<ADMIN_EMAIL>` |
 | **CPU Quota** | ✅ EXCELLENT | **32 CPUs available** (2 used) |
 
 **⚠️ IMPORTANT FINDING**: CPU quota shows **32 CPUs limit** with only **2 in use**!  

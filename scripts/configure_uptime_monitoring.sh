@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_ID="after-yesterday-473512-k3"
 REGION="us-central1"
-NOTIFICATION_CHANNEL_EMAIL="raghu42620@gmail.com"
+NOTIFICATION_CHANNEL_EMAIL="<MONITORING_ALERT_EMAIL>"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║     InfinityAI.Pro - Uptime Monitoring Configuration        ║${NC}"

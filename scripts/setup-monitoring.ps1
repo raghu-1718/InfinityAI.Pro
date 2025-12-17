@@ -10,7 +10,7 @@
 
 $PROJECT_ID = "after-yesterday-473512-k3"
 $REGION = "us-central1"
-$NOTIFICATION_EMAIL = "raghu42620@gmail.com"
+$NOTIFICATION_EMAIL = "<MONITORING_ALERT_EMAIL>"
 
 Write-Host "🔍 Setting up Cloud Monitoring for InfinityAI.Pro..." -ForegroundColor Cyan
 
