@@ -19,15 +19,24 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Run tests
+# Allow optional full tracing when E2E_TRACE=1 is set (captures traces/screenshots on all runs)
+if [ "${E2E_TRACE:-0}" = "1" ]; then
+  echo "E2E_TRACE=1 enabled: Playwright will record full traces and screenshots"
+fi
+
 echo "Running Playwright frontend E2E..."
 set +e
-npm test
+# pass E2E_TRACE to Playwright via env
+E2E_TRACE=${E2E_TRACE:-0} npm test
 RC=$?
 set -e
 
 # Collect results
 if [ $RC -ne 0 ]; then
   echo "Playwright tests failed (exit code $RC). See output folder for artifacts: $OUT_DIR"
+  # copy playwright trace/artifacts if any
+  mkdir -p "$OUT_DIR/artifacts"
+  cp -r playwright-report ./output/frontend/ 2>/dev/null || true
   exit $RC
 fi
 
