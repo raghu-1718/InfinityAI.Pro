@@ -10,6 +10,8 @@ import { Clock, CheckCircle, XCircle, AlertCircle, ChevronRight } from 'lucide-r
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import Link from 'next/link';
 
+type Order = { orderId?: string; tradingSymbol?: string; securityId?: string; transactionType?: string; quantity?: number; price?: number; orderStatus?: string; createTime?: string };
+
 export function RecentOrdersCard() {
   const { data, isLoading, error } = useOrders();
 
@@ -17,7 +19,7 @@ export function RecentOrdersCard() {
     return <RecentOrdersSkeleton />;
   }
 
-  const orders = Array.isArray(data?.data) ? data.data : [];
+  const orders: Order[] = Array.isArray(data?.data) ? data.data : [];
 
   return (
     <Card>
@@ -46,7 +48,7 @@ export function RecentOrdersCard() {
         ) : (
           <ScrollArea className="h-[300px]">
             <div className="space-y-2">
-              {orders.slice(0, 10).map((order: any, idx: number) => (
+              {orders.slice(0, 10).map((order: Order, idx: number) => (
                 <OrderRow key={order.orderId || idx} order={order} />
               ))}
             </div>
@@ -57,8 +59,8 @@ export function RecentOrdersCard() {
   );
 }
 
-function OrderRow({ order }: { order: any }) {
-  const statusConfig: Record<string, { icon: any; color: string; bgColor: string }> = {
+function OrderRow({ order }: { order: Order }) {
+  const statusConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; bgColor: string }> = {
     TRADED: { icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30' },
     PENDING: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
     REJECTED: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30' },
