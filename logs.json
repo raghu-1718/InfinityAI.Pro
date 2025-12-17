@@ -1,9 +1,7 @@
 {
   "moved_to": "artifacts/sensitive/logs.json",
-  "note": "Log export removed from repository root. Original logs are available in artifacts/sensitive for admin review. Ensure you rotate any secrets found in logs and follow retention policy."
-},
-  {
-    "insertId": "69386059000e4314f68627a7",
+  "note": "Log export removed from repository root. Original logs are preserved under artifacts/sensitive. For access, contact project admins and rotate any affected secrets."
+}
     "labels": {
       "instanceId": "0007e26d68e5a67eef7ee9522e0b15c1852e89485d8d35c47b29b759b2db828f9a530ee78cee429269c6f8b40c2594dcf458d9dad0c257688dbd82381be45a3fe4e0b98253ac55b2c97c62c609d9"
     },
