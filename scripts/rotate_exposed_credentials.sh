@@ -46,12 +46,12 @@ echo -e "${BLUE}Phase 1: Identifying Exposed Credentials${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 EXPOSED_CREDS=(
-    "1101302170:dhan-client-id"
-    "fe1942e7:dhan-api-key"
-    "50bc0462-b1aa-489c-9029-fe0cdc68dc27:dhan-api-secret"
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9:dhan-access-token"
-    "a1196f5b:dhan-api-key-alt"
-    "66e16669-1b5e-4db7-9aec-4da4f56a2530:dhan-api-secret-alt"
+    "DHAN_CLIENT_ID_EXPOSED:dhan-client-id"
+    "DHAN_API_KEY_EXPOSED:dhan-api-key"
+    "DHAN_API_SECRET_EXPOSED:dhan-api-secret"
+    "DHAN_ACCESS_TOKEN_EXPOSED:dhan-access-token"
+    "DHAN_API_KEY_ALT_EXPOSED:dhan-api-key-alt"
+    "DHAN_API_SECRET_ALT_EXPOSED:dhan-api-secret-alt"
 )
 
 echo -e "${RED}⚠️  CRITICAL: The following credentials have been exposed in code:${NC}"
