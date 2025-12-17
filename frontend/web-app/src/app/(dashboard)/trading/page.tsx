@@ -16,7 +16,20 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { usePositions, useHoldings, usePlaceOrder, useCalculateRiskScore } from '@/hooks/useApi';
+import { usePositions, useHoldings, usePlaceOrder, useCalculateRiskScore, Holding } from '@/hooks/useApi';
+
+// Minimal Position type for this page
+type Position = {
+  securityId?: string;
+  tradingSymbol?: string;
+  realizedProfit?: number;
+  netQty?: number;
+  averagePrice?: number;
+  productType?: string;
+  ltp?: number;
+  avgCostPrice?: number;
+  totalQty?: number;
+};
 import { useAppStore } from '@/lib/store';
 import { formatCurrency, formatPercent } from '@/lib/format';
 import {
@@ -344,7 +357,7 @@ export default function TradingPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {positions.map((pos: any, idx: number) => (
+                      {positions.map((pos: Position, idx: number) => (
                         <PositionRow key={pos.securityId || idx} position={pos} />
                       ))}
                     </div>
@@ -363,7 +376,7 @@ export default function TradingPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {holdings.map((holding: any, idx: number) => (
+                      {holdings.map((holding: Holding, idx: number) => (
                         <HoldingRow key={holding.securityId || idx} holding={holding} />
                       ))}
                     </div>
@@ -378,7 +391,7 @@ export default function TradingPage() {
   );
 }
 
-function PositionRow({ position }: { position: any }) {
+function PositionRow({ position }: { position: Position }) {
   const pnl = position.realizedProfit || 0;
   const isProfit = pnl >= 0;
 
@@ -419,7 +432,7 @@ function PositionRow({ position }: { position: any }) {
   );
 }
 
-function HoldingRow({ holding }: { holding: any }) {
+function HoldingRow({ holding }: { holding: Holding }) {
   const pnl = (holding.ltp - holding.avgCostPrice) * holding.totalQty;
   const pnlPercent = ((holding.ltp - holding.avgCostPrice) / holding.avgCostPrice) * 100;
   const isProfit = pnl >= 0;
