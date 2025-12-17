@@ -468,13 +468,13 @@ export default function GeminiAIPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Trend Strength</p>
-              <p className="text-2xl font-bold">{((a.trend_strength || 0) * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{(((a.trend_strength ?? 0)) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Sentiment Score</p>
-              <p className="text-2xl font-bold">{((a.sentiment_score || 0) * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{(((a.sentiment_score ?? 0)) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
