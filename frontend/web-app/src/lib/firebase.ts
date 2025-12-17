@@ -3,15 +3,15 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
-// Firebase configuration
+// Firebase configuration (loaded from environment variables - no hardcoded keys)
 const firebaseConfig = {
-  apiKey: "AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k",
-  authDomain: "gen-lang-client-0779271931.firebaseapp.com",
-  projectId: "gen-lang-client-0779271931",
-  storageBucket: "gen-lang-client-0779271931.firebasestorage.app",
-  messagingSenderId: "429140669077",
-  appId: "1:429140669077:web:e071ad7a136c74a3ea219c",
-  measurementId: "G-NY37ZKLPBX"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
 // Initialize Firebase (prevent multiple initializations)
