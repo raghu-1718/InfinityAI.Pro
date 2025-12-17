@@ -167,8 +167,12 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Phase 5: Verification${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-echo -e "${YELLOW}Verifying secrets in GCP Secret Manager...${NC}"
-gcloud secrets list --filter="name:(dhan-*)" --format="table(name,createTime,replication.automatic)"
+if [ "$DRY_RUN" = "true" ]; then
+    echo -e "${YELLOW}[DRY RUN] Skipping GCP Secret Manager listing${NC}"
+else
+    echo -e "${YELLOW}Verifying secrets in GCP Secret Manager...${NC}"
+    gcloud secrets list --filter="name:(dhan-*)" --format="table(name,createTime,replication.automatic)"
+fi
 
 echo -e "\n${YELLOW}Checking for remaining hardcoded credentials...${NC}"
 
