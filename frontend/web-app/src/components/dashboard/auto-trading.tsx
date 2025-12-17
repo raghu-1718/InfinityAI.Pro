@@ -257,10 +257,10 @@ export function AutoTradingCard() {
 
   // Get selected market names for display
   const getSelectedMarketNames = () => {
-    return selectedMarkets
+    const names = selectedMarkets
       .map(id => marketOptions.find(m => m.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
+      .filter((v): v is string => Boolean(v));
+    return names.join(', ');
   };
 
   // Start auto trading - calls backend with full configuration
@@ -419,7 +419,7 @@ export function AutoTradingCard() {
 
         if (signal) {
           const instrumentType = selectedMarkets.length === 1
-            ? marketOptions.find(m => m.id === selectedMarkets[0])?.name
+            ? (marketOptions.find(m => m.id === selectedMarkets[0])?.name ?? 'selected instrument')
             : 'selected instruments';
           setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${((signal.confidence ?? 0) * 100).toFixed(0)}% confidence). Executing...`);
 
