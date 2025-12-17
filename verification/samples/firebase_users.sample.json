@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "localId": "<LOCAL_ID>",
+      "email": "user@example.com",
+      "emailVerified": false,
+      "displayName": "<DISPLAY_NAME>",
+      "photoUrl": "https://example.com/avatar.png",
+      "lastSignedInAt": "<TIMESTAMP>",
+      "createdAt": "<TIMESTAMP>",
+      "providerUserInfo": []
+    }
+  ]
+}
