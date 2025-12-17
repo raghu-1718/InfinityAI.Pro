@@ -29,7 +29,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  data?: any;
+  data?: unknown;
 }
 
 interface GeminiChatProps {
@@ -134,12 +134,13 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get response');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Failed to get response');
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${err.message || 'Unknown error'}. Please try again.`,
+        content: `Sorry, I encountered an error: ${msg || 'Unknown error'}. Please try again.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -148,8 +149,9 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
     }
   };
 
-  const formatResponse = (response: any): string => {
+  const formatResponse = (response: unknown): string => {
     if (!response) return 'No response received.';
+    const r = response as any;
 
     // Signal response
     if (response.signal) {
