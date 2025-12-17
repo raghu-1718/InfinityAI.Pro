@@ -103,6 +103,9 @@ type AIResult = {
   recommendation?: { action?: string; confidence?: number; reasoning?: string };
   signal?: Signal;
   analysis?: Analysis;
+  index?: string | number;
+  spot_price?: number | string;
+  outlook?: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | string;
   strategy?: {
     strategy_name?: string;
     strategy_description?: string;
@@ -364,7 +367,7 @@ export default function GeminiAIPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Confidence</p>
-              <p className="text-2xl font-bold">{(s.confidence * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{((s.confidence ?? 0) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
@@ -1056,7 +1059,7 @@ export default function GeminiAIPage() {
                               {result.recommendation.action}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
-                              Confidence: {((result.recommendation.confidence || 0) * 100).toFixed(0)}%
+                              Confidence: {((result.recommendation.confidence ?? 0) * 100).toFixed(0)}%
                             </span>
                           </div>
                           <p className="text-sm">{result.recommendation.reasoning || result.response}</p>

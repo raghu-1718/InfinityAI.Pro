@@ -74,7 +74,7 @@ $services = @(
 Write-Host "`n🔍 Creating uptime checks..." -ForegroundColor Yellow
 foreach ($service in $services) {
     Write-Host "  Creating check for $($service.display)..." -ForegroundColor Gray
-    
+
     gcloud monitoring uptime create $service.name `
         --resource-type=uptime-url `
         --resource-labels="host=$($service.url)" `
@@ -83,7 +83,7 @@ foreach ($service in $services) {
         --timeout=10s `
         --display-name=$service.display `
         --project=$PROJECT_ID 2>&1 | Out-Null
-    
+
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  ✅ $($service.display)" -ForegroundColor Green
     } else {

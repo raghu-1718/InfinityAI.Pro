@@ -394,7 +394,7 @@ function HoldingRow({ holding, signal }: { holding: Holding; signal?: SignalShor
             <span>LTP: {formatCurrency(holding.ltp || 0)}</span>
             {signal && (
               <span className="text-primary">
-                {(signal.confidence * 100).toFixed(0)}% confidence
+                {((signal.confidence ?? 0) * 100).toFixed(0)}% confidence
               </span>
             )}
           </div>

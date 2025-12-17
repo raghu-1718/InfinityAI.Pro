@@ -154,26 +154,26 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
     const r = response as any;
 
     // Signal response
-    if (response.signal) {
-      const s = response.signal;
-      return `## ${response.symbol} Trading Signal
+    if (r.signal) {
+      const s = r.signal;
+      return `## ${r.symbol} Trading Signal
 
 **Action:** ${s.action} ${s.action === 'BUY' ? '🟢' : s.action === 'SELL' ? '🔴' : '🟡'}
-**Confidence:** ${(s.confidence * 100).toFixed(0)}%
+**Confidence:** ${((s.confidence ?? 0) * 100).toFixed(0)}%
 
 ### Entry & Targets
-- **Entry:** ₹${s.entry_price?.toFixed(2) || 'Market'}
-- **Stop Loss:** ₹${s.stop_loss?.toFixed(2) || 'N/A'}
-- **Target 1:** ₹${s.target_1?.toFixed(2) || 'N/A'}
-- **Target 2:** ₹${s.target_2?.toFixed(2) || 'N/A'}
+- **Entry:** ₹${s.entry_price?.toFixed(2) ?? 'Market'}
+- **Stop Loss:** ₹${s.stop_loss?.toFixed(2) ?? 'N/A'}
+- **Target 1:** ₹${s.target_1?.toFixed(2) ?? 'N/A'}
+- **Target 2:** ₹${s.target_2?.toFixed(2) ?? 'N/A'}
 
 ### Risk Assessment
-- **Risk/Reward:** ${s.risk_reward_ratio?.toFixed(2) || 'N/A'}
-- **Risk Level:** ${s.risk_level || 'MEDIUM'}
-- **Timeframe:** ${s.timeframe || 'SWING'}
+- **Risk/Reward:** ${s.risk_reward_ratio?.toFixed(2) ?? 'N/A'}
+- **Risk Level:** ${s.risk_level ?? 'MEDIUM'}
+- **Timeframe:** ${s.timeframe ?? 'SWING'}
 
 ### Reasoning
-${response.reasoning || 'Based on technical and fundamental analysis.'}`;
+${r.reasoning ?? 'Based on technical and fundamental analysis.'}`;
     }
 
     // Market analysis response
@@ -182,7 +182,7 @@ ${response.reasoning || 'Based on technical and fundamental analysis.'}`;
       return `## ${response.symbol} Market Analysis
 
 **Trend:** ${a.trend} ${a.trend === 'BULLISH' ? '📈' : a.trend === 'BEARISH' ? '📉' : '➡️'}
-**Strength:** ${((a.trend_strength || 0) * 100).toFixed(0)}%
+**Strength:** ${(((a.trend_strength ?? 0) ) * 100).toFixed(0)}%
 
 ### Key Levels
 - **Support:** ${a.support_levels?.map((l: number) => `₹${l}`).join(', ') || 'N/A'}
@@ -201,10 +201,10 @@ ${response.recommendation || 'Monitor the stock for entry opportunities.'}`;
     // Options strategy response
     if (response.strategy) {
       const s = response.strategy;
-      return `## ${response.index} Options Strategy
+      return `## ${r.index ?? r.symbol} Options Strategy
 
-**Strategy:** ${s.strategy_name} ${response.outlook === 'BULLISH' ? '📈' : response.outlook === 'BEARISH' ? '📉' : '➡️'}
-**Spot Price:** ₹${response.spot_price}
+**Strategy:** ${s.strategy_name} ${r.outlook === 'BULLISH' ? '📈' : r.outlook === 'BEARISH' ? '📉' : '➡️'}
+**Spot Price:** ₹${r.spot_price ?? 'N/A'}
 
 ### Strategy Details
 ${s.strategy_description || ''}

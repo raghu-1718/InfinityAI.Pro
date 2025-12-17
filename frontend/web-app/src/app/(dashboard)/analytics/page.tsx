@@ -506,7 +506,7 @@ export default function AnalyticsPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-medium">
-                                {(signal.confidence * 100).toFixed(0)}% confidence
+                                {((signal.confidence ?? 0) * 100).toFixed(0)}% confidence
                               </p>
                             </div>
                           </div>

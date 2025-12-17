@@ -421,7 +421,7 @@ export function AutoTradingCard() {
           const instrumentType = selectedMarkets.length === 1
             ? marketOptions.find(m => m.id === selectedMarkets[0])?.name
             : 'selected instruments';
-          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${(signal.confidence * 100).toFixed(0)}% confidence). Executing...`);
+          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${((signal.confidence ?? 0) * 100).toFixed(0)}% confidence). Executing...`);
 
           try {
             // Use real startTrade mutation through Engine A orchestration

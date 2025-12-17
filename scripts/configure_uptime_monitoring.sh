@@ -77,9 +77,9 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 
 for service_name in "${!SERVICES[@]}"; do
     hostname="${SERVICES[$service_name]}"
-    
+
     echo -e "\n${YELLOW}Creating uptime check for ${service_name}...${NC}"
-    
+
     # Create uptime check JSON
     cat > /tmp/uptime-${service_name}.json <<EOF
 {
@@ -115,7 +115,7 @@ EOF
 
     # Create the uptime check
     gcloud monitoring uptime create --config-from-file=/tmp/uptime-${service_name}.json 2>&1 || echo "  (May already exist)"
-    
+
     echo -e "${GREEN}✓ Uptime check created for ${service_name}${NC}"
 done
 

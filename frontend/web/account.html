@@ -403,11 +403,11 @@
 
         async function checkConnection() {
             updateStatus('connecting', 'Connecting to your Dhan account...');
-            
+
             try {
                 // Test connection by calling Engine C health check
                 const healthResponse = await fetch('https://engine-c.infinityai.pro/healthz');
-                
+
                 if (healthResponse.ok) {
                     // Try to fetch account details
                     await fetchAccountDetails();
@@ -424,7 +424,7 @@
             try {
                 // In a real implementation, this would call Engine C to fetch Dhan account details
                 // For now, we'll show the configured client ID
-                
+
                 const accountInfo = {
                     // Placeholder; real client ID is fetched for connected users via the backend
                     clientId: '<DHAN_CLIENT_ID>',
@@ -441,7 +441,7 @@
 
                 displayAccountDetails(accountInfo);
                 updateStatus('connected', 'Successfully connected to your Dhan account');
-                
+
             } catch (error) {
                 updateStatus('disconnected', 'Failed to fetch account details. Market may be closed or token expired.');
                 console.error('Fetch error:', error);
@@ -512,7 +512,7 @@
             const alert = document.getElementById('connectionAlert');
 
             badge.className = `status-badge ${status}`;
-            
+
             switch(status) {
                 case 'connected':
                     badge.textContent = 'Connected ✓';
@@ -536,7 +536,7 @@
         function hideAccountDetails() {
             isConnected = false;
             accountData = null;
-            
+
             document.getElementById('accountDetailsCard').classList.add('hidden');
             document.getElementById('fundsCard').classList.add('hidden');
             document.getElementById('holdingsCard').classList.add('hidden');
