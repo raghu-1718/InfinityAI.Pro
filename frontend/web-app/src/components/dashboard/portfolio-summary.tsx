@@ -175,7 +175,7 @@ export function PortfolioSummary() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Target className="h-3 w-3 text-blue-500" />
-                            <span className="text-muted-foreground">{aiConfidence}</span>
+                            <span className="text-muted-foreground">{typeof aiConfidence === 'number' ? `${((aiConfidence ?? 0) * 100).toFixed(0)}%` : aiConfidence ?? 'N/A'}</span>
                           </div>
                           {daysToExpiry !== null && daysToExpiry !== undefined && (
                             <div className="flex items-center gap-1">

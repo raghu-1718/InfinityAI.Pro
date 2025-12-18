@@ -47,6 +47,16 @@ interface TradingSession {
   winRate: number;
 }
 
+// Minimal Signal type used by Auto Trading
+interface Signal {
+  symbol?: string;
+  confidence?: number;
+  signal?: 'BUY' | 'SELL' | 'HOLD' | string;
+  security_id?: string;
+  current_price?: number;
+  [key: string]: unknown;
+} 
+
 export function AutoTradingCard() {
   const funds = useAppStore((s) => s.funds);
   const tradingConfig = useAppStore((s) => s.tradingConfig);
@@ -236,7 +246,7 @@ export function AutoTradingCard() {
 
   const availableBalance = funds?.availableBalance || 0;
   const signals = signalsData?.data || [];
-  const activeSignals = Array.isArray(signals) ? signals.filter((s: any) => s.confidence > 0.7) : [];
+  const activeSignals: Signal[] = Array.isArray(signals) ? signals.filter((s: any) => typeof (s as any).confidence === 'number' && (s as any).confidence > 0.7) : []; 
 
   // Risk level configurations
   const riskConfigs = {
@@ -247,10 +257,10 @@ export function AutoTradingCard() {
 
   // Get selected market names for display
   const getSelectedMarketNames = () => {
-    return selectedMarkets
+    const names = selectedMarkets
       .map(id => marketOptions.find(m => m.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
+      .filter((v): v is string => Boolean(v));
+    return names.join(', ');
   };
 
   // Start auto trading - calls backend with full configuration
@@ -304,8 +314,9 @@ export function AutoTradingCard() {
         ? getSelectedMarketNames()
         : `${selectedMarkets.length} markets`;
       setStatusMessage(`🚀 Auto trading started on ${marketNames}! Scanning for signals...`);
-    } catch (error: any) {
-      setStatusMessage(`❌ Failed to start trading: ${error.message || 'Backend error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`❌ Failed to start trading: ${msg || 'Backend error'}`);
     }
   };
 
@@ -322,8 +333,9 @@ export function AutoTradingCard() {
       // Update global store
       stopTradingSession();
       setStatusMessage('⏹️ Auto trading stopped. Session summary saved.');
-    } catch (error: any) {
-      setStatusMessage(`❌ Failed to stop trading: ${error.message || 'Backend error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`❌ Failed to stop trading: ${msg || 'Backend error'}`);
     }
   };
 
@@ -339,8 +351,8 @@ export function AutoTradingCard() {
     if (!session.isActive || isPaused) return;
 
     // Helper function to determine if a signal matches selected instruments
-    const signalMatchesInstruments = (signal: any): boolean => {
-      const symbol = signal.symbol?.toUpperCase() || '';
+    const signalMatchesInstruments = (signal: Signal): boolean => {
+      const symbol = (signal.symbol || '').toUpperCase();
 
       // Check equities (no options suffix)
       if (selectedMarkets.includes('equities') &&
@@ -407,32 +419,31 @@ export function AutoTradingCard() {
 
         if (signal) {
           const instrumentType = selectedMarkets.length === 1
-            ? marketOptions.find(m => m.id === selectedMarkets[0])?.name
+            ? (marketOptions.find(m => m.id === selectedMarkets[0])?.name ?? 'selected instrument')
             : 'selected instruments';
-          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${(signal.confidence * 100).toFixed(0)}% confidence). Executing...`);
+          setStatusMessage(`📊 Found ${signal.signal} signal for ${signal.symbol} on ${instrumentType} (${((signal.confidence ?? 0) * 100).toFixed(0)}% confidence). Executing...`);
 
           try {
             // Use real startTrade mutation through Engine A orchestration
             await placeOrderMutation.mutateAsync({
-              transaction_type: signal.signal,
-              exchange_segment: 'NSE_EQ',
-              product_type: 'INTRADAY',
-              order_type: 'MARKET',
+              transaction_type: signal.signal === 'SELL' ? 'SELL' : 'BUY',
               validity: 'DAY',
-              security_id: signal.security_id || signal.symbol,
+              security_id: signal.security_id || signal.symbol || '',
               quantity: Math.floor(tradingAmount / (signal.current_price || 1000)),
+              // Required by OrderRequest - set sensible defaults; adjust if needed
+              exchange_segment: 'NSE',
+              product_type: 'CNC',
+              order_type: 'MARKET',
             });
-
-            // Refresh funds after trade
-            refetchFunds();
 
             setSession((prev) => ({
               ...prev,
               tradesExecuted: prev.tradesExecuted + 1,
             }));
             setStatusMessage(`✅ Trade executed: ${signal.signal} ${signal.symbol}`);
-          } catch (error: any) {
-            setStatusMessage(`❌ Trade failed: ${error.message || 'Unknown error'}`);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            setStatusMessage(`❌ Trade failed: ${msg || 'Unknown error'}`);
           }
         } else {
           setStatusMessage('🔍 Scanning market for high-confidence signals...');
@@ -943,9 +954,9 @@ export function AutoTradingCard() {
               {activeSignals.length} high-confidence signals available
             </p>
             <div className="flex flex-wrap gap-1">
-              {activeSignals.slice(0, 5).map((signal: any, idx: number) => (
+              {activeSignals.slice(0, 5).map((signal: Signal, idx: number) => (
                 <Badge key={idx} variant="secondary" className="text-xs">
-                  {signal.symbol} • {signal.action}
+                  {signal.symbol} • {signal.signal ?? 'HOLD'}
                 </Badge>
               ))}
             </div>

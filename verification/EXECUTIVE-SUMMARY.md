@@ -154,7 +154,7 @@
 | Orders Endpoint | ✅ | No open orders |
 
 **Account Details**:
-- Client ID: 1101302170
+- Client ID: <DHAN_CLIENT_ID>
 - Available Balance: ₹247.18
 - Active Position: NIFTY-Dec2025-25850-PE (75 qty, P/L: -₹2,861.25)
 

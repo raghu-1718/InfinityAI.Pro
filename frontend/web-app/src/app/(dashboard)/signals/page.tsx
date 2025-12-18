@@ -109,7 +109,7 @@ export default function SignalsPage() {
                     <span className="text-sm font-medium capitalize">{name}</span>
                     {status?.weight && (
                       <Badge variant="secondary" className="text-xs">
-                        {(status.weight * 100).toFixed(0)}%
+                        {((status.weight ?? 0) * 100).toFixed(0)}%
                       </Badge>
                     )}
                   </div>

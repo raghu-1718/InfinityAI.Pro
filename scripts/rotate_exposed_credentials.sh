@@ -1,9 +1,9 @@
 #!/bin/bash
 ###############################################################################
 # InfinityAI.Pro - Credential Rotation Script
-# 
+#
 # Purpose: Rotate all exposed Dhan API credentials and other sensitive keys
-# 
+#
 # This script:
 # 1. Identifies all hardcoded credentials in the codebase
 # 2. Generates secure placeholder values
@@ -28,14 +28,25 @@ NC='\033[0m' # No Color
 PROJECT_ID="after-yesterday-473512-k3"
 REGION="us-central1"
 
+# Parse args early to allow dry-run to skip operations that require gcloud
+DRY_RUN=false
+for arg in "$@"; do
+    if [ "$arg" = "--dry-run" ]; then
+        DRY_RUN=true
+    fi
+done
+
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   InfinityAI.Pro - Credential Rotation & Security Cleanup   ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Set GCP project
-echo -e "${YELLOW}Setting GCP project...${NC}"
-gcloud config set project ${PROJECT_ID}
+if [ "$DRY_RUN" = "true" ]; then
+    echo -e "${YELLOW}[DRY RUN] Skipping gcloud project configuration${NC}"
+else
+    echo -e "${YELLOW}Setting GCP project...${NC}"
+    gcloud config set project ${PROJECT_ID}
+fi
 
 ###############################################################################
 # Phase 1: Identify Exposed Credentials
@@ -46,12 +57,12 @@ echo -e "${BLUE}Phase 1: Identifying Exposed Credentials${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 EXPOSED_CREDS=(
-    "1101302170:dhan-client-id"
-    "fe1942e7:dhan-api-key"
-    "50bc0462-b1aa-489c-9029-fe0cdc68dc27:dhan-api-secret"
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9:dhan-access-token"
-    "a1196f5b:dhan-api-key-alt"
-    "66e16669-1b5e-4db7-9aec-4da4f56a2530:dhan-api-secret-alt"
+    "DHAN_CLIENT_ID_EXPOSED:dhan-client-id"
+    "DHAN_API_KEY_EXPOSED:dhan-api-key"
+    "DHAN_API_SECRET_EXPOSED:dhan-api-secret"
+    "DHAN_ACCESS_TOKEN_EXPOSED:dhan-access-token"
+    "DHAN_API_KEY_ALT_EXPOSED:dhan-api-key-alt"
+    "DHAN_API_SECRET_ALT_EXPOSED:dhan-api-secret-alt"
 )
 
 echo -e "${RED}⚠️  CRITICAL: The following credentials have been exposed in code:${NC}"
@@ -90,16 +101,30 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Phase 3: Rotating Secrets in GCP Secret Manager${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
+# Parse arguments
+DRY_RUN=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --dry-run) DRY_RUN=true; shift ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
 # Function to update secret
 update_secret() {
     local secret_name=$1
     local secret_value=$2
-    
+
     echo -e "${YELLOW}Rotating ${secret_name}...${NC}"
-    
+
+    if [ "$DRY_RUN" = "true" ]; then
+        echo -e "${YELLOW}[DRY RUN] Would add new version to ${secret_name} with value: ${secret_value:0:12}...${NC}"
+        return 0
+    fi
+
     # Add new version to existing secret
     echo -n "${secret_value}" | gcloud secrets versions add ${secret_name} --data-file=- 2>&1
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Successfully rotated ${secret_name}${NC}"
         return 0
@@ -153,16 +178,23 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Phase 5: Verification${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-echo -e "${YELLOW}Verifying secrets in GCP Secret Manager...${NC}"
-gcloud secrets list --filter="name:(dhan-*)" --format="table(name,createTime,replication.automatic)"
+if [ "$DRY_RUN" = "true" ]; then
+    echo -e "${YELLOW}[DRY RUN] Skipping GCP Secret Manager listing${NC}"
+else
+    echo -e "${YELLOW}Verifying secrets in GCP Secret Manager...${NC}"
+    gcloud secrets list --filter="name:(dhan-*)" --format="table(name,createTime,replication.automatic)"
+fi
 
 echo -e "\n${YELLOW}Checking for remaining hardcoded credentials...${NC}"
 
 # Search for exposed credential patterns
 FOUND_CREDS=0
 
-if grep -r "1101302170" --exclude-dir={.git,node_modules,reports,*.md,*.json} . 2>/dev/null; then
-    echo -e "${RED}✗ Found hardcoded client ID 1101302170${NC}"
+
+
+# Also check for any 10-digit numeric sequences that may look like Dhan client IDs
+if grep -r -E "\b[0-9]{10}\b" --exclude-dir={.git,node_modules,reports,*.md,*.json} . 2>/dev/null; then
+    echo -e "${YELLOW}⚠️ Potential 10-digit client IDs found in repository; review and mask if they are real.${NC}"
     FOUND_CREDS=1
 fi
 

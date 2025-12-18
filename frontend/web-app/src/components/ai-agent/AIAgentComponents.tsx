@@ -279,7 +279,7 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
               </div>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Confidence</div>
-                <div className="text-xl font-semibold">{signal.confidence}%</div>
+                <div className="text-xl font-semibold">{signal.confidence != null ? `${signal.confidence}%` : 'N/A'}</div>
               </div>
             </div>
 

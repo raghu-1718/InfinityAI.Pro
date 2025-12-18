@@ -3,55 +3,82 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
-// Firebase configuration
+// Firebase configuration (loaded from environment variables - no hardcoded keys)
 const firebaseConfig = {
-  apiKey: "AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k",
-  authDomain: "gen-lang-client-0779271931.firebaseapp.com",
-  projectId: "gen-lang-client-0779271931",
-  storageBucket: "gen-lang-client-0779271931.firebasestorage.app",
-  messagingSenderId: "429140669077",
-  appId: "1:429140669077:web:e071ad7a136c74a3ea219c",
-  measurementId: "G-NY37ZKLPBX"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
-// Initialize Firebase (prevent multiple initializations)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// Initialize Firebase only in the browser (avoid running during Next.js prerender/SSR)
+let app = undefined as ReturnType<typeof initializeApp> | undefined;
+let authClient = null as ReturnType<typeof getAuth> | null;
+let dbClient = null as ReturnType<typeof getFirestore> | null;
 
-// Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+if (typeof window !== 'undefined') {
+  // Only initialize in browser contexts
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  authClient = getAuth(app);
+  dbClient = getFirestore(app);
+}
+
+// Exports: may be null during SSR; callers must handle null (we add guards in this file)
+export const auth = authClient;
+export const db = dbClient;
+export const googleProvider = typeof window !== 'undefined' ? new GoogleAuthProvider() : null;
 
 // ============================================
 // Authentication Functions
 // ============================================
 
 export async function signInWithGoogle() {
+  if (!auth || !googleProvider) {
+    console.warn('signInWithGoogle called before Firebase initialization (SSR or missing config)');
+    return { success: false, error: 'Firebase not initialized' } as const;
+  }
+
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
     // Create or update user profile in Firestore
-    await createOrUpdateUserProfile(user);
+    const profile = await createOrUpdateUserProfile(user);
 
-    return { success: true, user };
+    return { success: true, user, profile } as const;
   } catch (error) {
     console.error('Google sign-in error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' } as const;
   }
 }
 
 export async function logOut() {
+  if (!auth) {
+    console.warn('logOut called before Firebase initialization (SSR or missing config); skipping signOut');
+    return { success: true } as const;
+  }
+
   try {
     await signOut(auth);
-    return { success: true };
+    return { success: true } as const;
   } catch (error) {
     console.error('Sign-out error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' } as const;
   }
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {
+  // If auth is not initialized (SSR), call the callback with null and return a noop
+  if (!auth) {
+    console.warn('onAuthChange registered before Firebase initialization (SSR); invoking callback(null) and returning noop');
+    // Call callback asynchronously to mirror onAuthStateChanged behavior
+    setTimeout(() => callback(null), 0);
+    return () => {};
+  }
+
   return onAuthStateChanged(auth, callback);
 }
 
@@ -83,6 +110,12 @@ export interface UserProfile {
 }
 
 export async function createOrUpdateUserProfile(user: User): Promise<UserProfile | null> {
+  if (!db) {
+    // Running during SSR/prerender — skip Firebase calls
+    console.warn('createOrUpdateUserProfile called during SSR; skipping Firebase operations');
+    return null;
+  }
+
   try {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
@@ -130,6 +163,11 @@ export async function createOrUpdateUserProfile(user: User): Promise<UserProfile
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  if (!db) {
+    console.warn('getUserProfile called during SSR; returning null');
+    return null;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
@@ -145,6 +183,11 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 export async function updateUserSettings(uid: string, settings: Partial<UserProfile['settings']>): Promise<boolean> {
+  if (!db) {
+    console.warn('updateUserSettings called during SSR; skipping');
+    return false;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
@@ -158,6 +201,11 @@ export async function updateUserSettings(uid: string, settings: Partial<UserProf
 }
 
 export async function updateDhanConnection(uid: string, connected: boolean, clientId?: string): Promise<boolean> {
+  if (!db) {
+    console.warn('updateDhanConnection called during SSR; skipping');
+    return false;
+  }
+
   try {
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
@@ -195,6 +243,11 @@ export interface TradeRecord {
 }
 
 export async function saveTradeRecord(trade: Omit<TradeRecord, 'id'>): Promise<string | null> {
+  if (!db) {
+    console.warn('saveTradeRecord called during SSR; skipping');
+    return null;
+  }
+
   try {
     const tradesRef = collection(db, 'trades');
     const newTradeRef = doc(tradesRef);
@@ -212,6 +265,11 @@ export async function saveTradeRecord(trade: Omit<TradeRecord, 'id'>): Promise<s
 }
 
 export async function getUserTrades(userId: string, limit = 50): Promise<TradeRecord[]> {
+  if (!db) {
+    console.warn('getUserTrades called during SSR; returning empty list');
+    return [];
+  }
+
   try {
     const tradesRef = collection(db, 'trades');
     const q = query(tradesRef, where('userId', '==', userId));
@@ -253,6 +311,11 @@ export interface SignalRecord {
 }
 
 export async function saveSignalRecord(signal: Omit<SignalRecord, 'id'>): Promise<string | null> {
+  if (!db) {
+    console.warn('saveSignalRecord called during SSR; skipping');
+    return null;
+  }
+
   try {
     const signalsRef = collection(db, 'signals');
     const newSignalRef = doc(signalsRef);
@@ -270,6 +333,11 @@ export async function saveSignalRecord(signal: Omit<SignalRecord, 'id'>): Promis
 }
 
 export async function getUserSignals(userId: string, limit = 100): Promise<SignalRecord[]> {
+  if (!db) {
+    console.warn('getUserSignals called during SSR; returning empty list');
+    return [];
+  }
+
   try {
     const signalsRef = collection(db, 'signals');
     const q = query(signalsRef, where('userId', '==', userId));

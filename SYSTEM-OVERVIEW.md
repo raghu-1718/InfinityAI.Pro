@@ -105,10 +105,10 @@ All components are configured, deployed, and ready for live trading.
 
 ### 📋 Your Credentials
 ```
-Client ID: 1101302170
-API Key: 01830809
-API Secret: 25bf2488-e6e9-4cf0-a0f3-fac1d26340f0
-Access Token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9... (configured)
+Client ID: <DHAN_CLIENT_ID>
+API Key: <DHAN_API_KEY>
+API Secret: <DHAN_API_SECRET>
+Access Token: <DHAN_ACCESS_TOKEN> (stored in Secret Manager)
 Webhook URL: https://engine-c.infinityai.pro/api/dhan/postback
 ```
 
@@ -327,8 +327,8 @@ User Input → Engine A (AI Prediction) → Engine B (Orchestration) → Engine 
 
 ## 🎉 DEPLOYMENT COMPLETE
 
-**Status:** ✅ ALL SYSTEMS OPERATIONAL  
-**Last Updated:** November 28, 2025  
-**Next Action:** Update access token daily via Settings page  
+**Status:** ✅ ALL SYSTEMS OPERATIONAL
+**Last Updated:** November 28, 2025
+**Next Action:** Update access token daily via Settings page
 
 **READY FOR LIVE TRADING!** 🚀📈💰

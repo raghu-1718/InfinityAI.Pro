@@ -47,3 +47,6 @@ firebase-sa-key.json
 token.txt
 PATH.txt
 settings.txt
+
+# Sensitive artifacts (do not commit)
+artifacts/sensitive/

@@ -26,8 +26,8 @@ Write-Host "📋 Step 3: Required GitHub Secrets" -ForegroundColor Yellow
 Write-Host "Add these secrets to your GitHub repository:"
 Write-Host ""
 Write-Host "FIREBASE_DEPLOY_TOKEN: [from firebase login:ci]" -ForegroundColor Cyan
-Write-Host "GEMINI_API_KEY_PRIMARY: $primaryKey" -ForegroundColor Cyan
-Write-Host "GEMINI_API_KEY_SECONDARY: $secondaryKey" -ForegroundColor Cyan
+if ($primaryKey) { Write-Host "GEMINI_API_KEY_PRIMARY: $($primaryKey.Substring(0,6))... (redacted)" -ForegroundColor Cyan } else { Write-Host "GEMINI_API_KEY_PRIMARY: <not configured>" -ForegroundColor Yellow }
+if ($secondaryKey) { Write-Host "GEMINI_API_KEY_SECONDARY: $($secondaryKey.Substring(0,6))... (redacted)" -ForegroundColor Cyan } else { Write-Host "GEMINI_API_KEY_SECONDARY: <not configured>" -ForegroundColor Yellow }
 Write-Host "GCP_SA_KEY: [Service Account JSON key]" -ForegroundColor Cyan
 Write-Host ""
 

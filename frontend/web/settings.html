@@ -294,7 +294,7 @@
             <div class="info-grid">
                 <div class="info-item">
                     <label>Client ID</label>
-                    <value id="clientIdDisplay">1101302170</value>
+                    <value id="clientIdDisplay">-</value>
                 </div>
                 <div class="info-item">
                     <label>Last Token Update</label>
@@ -310,23 +310,23 @@
         <!-- Update Access Token -->
         <div class="card">
             <h2>🔑 Update Dhan Access Token</h2>
-            
+
             <div class="credentials-info">
                 <h3>📋 Your Current Credentials (Configured)</h3>
                 <ul>
-                    <li><strong>Client ID:</strong> 1101302170 ✓</li>
-                    <li><strong>API Key:</strong> 01830809 ✓</li>
-                    <li><strong>API Secret:</strong> 25bf...40f0 ✓</li>
-                    <li><strong>Webhook:</strong> https://engine-c.infinityai.pro/api/dhan/postback ✓</li>
+                    <li><strong>Client ID:</strong> &lt;DHAN_CLIENT_ID&gt;</li>
+                    <li><strong>API Key:</strong> &lt;DHAN_API_KEY&gt;</li>
+                    <li><strong>API Secret:</strong> &lt;DHAN_API_SECRET&gt;</li>
+                    <li><strong>Webhook:</strong> &lt;ENGINE_C_DHAN_WEBHOOK&gt;</li>
                 </ul>
             </div>
 
             <form id="tokenForm">
                 <div class="form-group">
                     <label for="accessToken">New Access Token</label>
-                    <textarea 
-                        id="accessToken" 
-                        name="accessToken" 
+                    <textarea
+                        id="accessToken"
+                        name="accessToken"
                         placeholder="Paste your new Dhan access token here (JWT format: eyJ...)"
                         required
                     ></textarea>
@@ -408,9 +408,9 @@
         // Update token form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const token = document.getElementById('accessToken').value.trim();
-            
+
             if (!token) {
                 showError('Please enter a valid access token');
                 return;
@@ -439,7 +439,7 @@
                     showSuccess('Access token updated successfully! Your demat account is now connected.');
                     lastUpdate.textContent = 'Just now';
                     document.getElementById('accessToken').value = '';
-                    
+
                     // Update status badge
                     const statusBadge = document.getElementById('statusBadge');
                     statusBadge.textContent = 'Connected';
@@ -463,7 +463,7 @@
             try {
                 // Test Engine C connection
                 const response = await fetch('https://engine-c.infinityai.pro/healthz');
-                
+
                 if (response.ok) {
                     showSuccess('Connection test successful! All engines are operational.');
                 } else {
@@ -484,7 +484,7 @@
                 const updateDate = new Date(savedUpdate);
                 const now = new Date();
                 const hoursDiff = Math.floor((now - updateDate) / (1000 * 60 * 60));
-                
+
                 if (hoursDiff < 1) {
                     lastUpdate.textContent = 'Just now';
                 } else if (hoursDiff < 24) {
@@ -496,7 +496,7 @@
                 // Update expiry warning
                 const hoursRemaining = 24 - hoursDiff;
                 if (hoursRemaining < 3) {
-                    document.getElementById('tokenExpiry').innerHTML = 
+                    document.getElementById('tokenExpiry').innerHTML =
                         `<span style="color: #ef4444">${hoursRemaining}h remaining ⚠️</span>`;
                 }
             }

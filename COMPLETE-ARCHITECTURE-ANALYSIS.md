@@ -82,7 +82,7 @@
 **Random Forest (rf_price)**
 - **Type**: Ensemble Learning (Bagging)
 - **Purpose**: Stable, reliable price predictions
-- **How It Works**: 
+- **How It Works**:
   - Creates multiple decision trees
   - Each tree votes on the prediction
   - Final prediction = average of all votes
@@ -208,7 +208,7 @@ lgb_model = joblib.load('models/lgb_model.pkl')
 async def predict(request: PredictionRequest):
     # 1. Preprocess input data
     features = preprocess_data(request.data)
-    
+
     # 2. Select model
     if request.model == "xgb_price":
         prediction = xgb_model.predict(features)
@@ -216,10 +216,10 @@ async def predict(request: PredictionRequest):
         prediction = rf_model.predict(features)
     else:
         prediction = lgb_model.predict(features)
-    
+
     # 3. Generate signal (BUY/SELL/HOLD)
     signal = generate_signal(prediction, features)
-    
+
     return {
         "predicted_price": prediction,
         "signal_type": signal,
@@ -285,7 +285,7 @@ from dhanhq import dhanhq
 
 # Initialize client
 dhan = dhanhq(
-    client_id=os.getenv("DHAN_CLIENT_ID"),      # 1101302170
+    client_id=os.getenv("DHAN_CLIENT_ID"),      # <DHAN_CLIENT_ID>
     access_token=os.getenv("DHAN_ACCESS_TOKEN")  # JWT token
 )
 ```
@@ -298,9 +298,9 @@ dhan = dhanhq(
 - **Order Status**: Check if orders executed
 
 **Credentials (Secret Manager):**
-- `dhan-client-id`: 1101302170
-- `dhan-api-key`: 01830809
-- `dhan-api-secret`: 25bf2488-e6e9-4cf0-a0f3-fac1d26340f0
+- `dhan-client-id`: <DHAN_CLIENT_ID>
+- `dhan-api-key`: <DHAN_API_KEY>
+- `dhan-api-secret`: <DHAN_API_SECRET>
 - `dhan-access-token`: Updated daily (expires every 24h)
 
 #### 2. **Orchestration Logic**
@@ -400,7 +400,7 @@ async def orchestrate(req: OrchestrateRequest):
     # STEP 1: Get live market data from DhanHQ
     dhan = get_dhan_client()
     live_quote = dhan.get_quote(req.symbol, "NSE_EQ")
-    
+
     # STEP 2: Call Engine A for AI prediction
     async with httpx.AsyncClient() as client:
         engine_a_url = os.getenv("ENGINE_A_URL")
@@ -408,13 +408,13 @@ async def orchestrate(req: OrchestrateRequest):
             f"{engine_a_url}/api/predict",
             json={
                 "symbol": req.symbol,
-                "data": [live_quote.open, live_quote.high, 
+                "data": [live_quote.open, live_quote.high,
                          live_quote.low, live_quote.close],
                 "model": "xgb_price"
             }
         )
         prediction = prediction_response.json()
-    
+
     # STEP 3: Make decision based on prediction + risk rules
     if prediction["confidence"] > 75 and prediction["signal_type"] == "BUY":
         # STEP 4: Send to Engine C for execution
@@ -522,7 +522,7 @@ response = requests.post(
         "Content-Type": "application/json"
     },
     json={
-        "dhanClientId": "1101302170",
+        "dhanClientId": "<DHAN_CLIENT_ID>",
         "transactionType": "BUY",  # or "SELL"
         "exchangeSegment": "NSE_EQ",
         "productType": "INTRADAY",  # or "DELIVERY"
@@ -644,10 +644,10 @@ backend/engine-execution/
 async def place_order(order: OrderRequest):
     # STEP 1: Validate order parameters
     validate_order(order)
-    
+
     # STEP 2: Get security ID for symbol
     security_id = get_security_id(order.symbol, order.exchange)
-    
+
     # STEP 3: Call DhanHQ API
     dhan = get_dhan_client()
     response = dhan.place_order(
@@ -659,10 +659,10 @@ async def place_order(order: OrderRequest):
         security_id=security_id,
         price=order.price if order.order_type == "LIMIT" else 0
     )
-    
+
     # STEP 4: Log the order
     log_order(response)
-    
+
     return {
         "order_id": response["orderId"],
         "status": response["orderStatus"],
@@ -674,13 +674,13 @@ async def place_order(order: OrderRequest):
 async def handle_webhook(data: dict):
     # STEP 1: Verify webhook signature (security)
     verify_dhan_signature(data)
-    
+
     # STEP 2: Update order in database
     update_order_status(data["orderId"], data["orderStatus"])
-    
+
     # STEP 3: Notify user via WebSocket/Email
     notify_user(data)
-    
+
     return {"status": "processed"}
 ```
 
@@ -821,8 +821,8 @@ async function testOrchestration() {
 }
 ```
 
-**File Size:** 6.14 KB  
-**Load Time:** ~200ms  
+**File Size:** 6.14 KB
+**Load Time:** ~200ms
 **Dependencies:** None (pure HTML/CSS/JS)
 
 #### 2. **settings.html - Credential Management**
@@ -862,14 +862,14 @@ async function testOrchestration() {
 async function updateToken(event) {
     event.preventDefault();
     const newToken = document.getElementById('newToken').value;
-    
+
     // Call backend to update Secret Manager
     const response = await fetch('https://engine-b.infinityai.pro/dhan/update-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: newToken })
     });
-    
+
     if (response.ok) {
         alert('✅ Token updated successfully!');
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
@@ -886,7 +886,7 @@ async function testConnection() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbol: 'NIFTY', exchange: 'NSE_EQ' })
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             alert(`✅ Connected! NIFTY LTP: ₹${data.ltp}`);
@@ -905,7 +905,7 @@ async function testConnection() {
 - Copy-paste new token into settings page
 - System automatically updates Secret Manager
 
-**File Size:** 15.94 KB  
+**File Size:** 15.94 KB
 **Security Features:**
 - Tokens masked in UI
 - HTTPS only (SSL enforced)
@@ -926,7 +926,7 @@ async function testConnection() {
 
 2. **Account Details Card:**
    ```
-   Client ID: 1101302170
+   Client ID: <DHAN_CLIENT_ID>
    Account Name: Raghu (fetched from DhanHQ)
    Account Status: Active
    Last Updated: 10:30:15 AM
@@ -1016,8 +1016,8 @@ async function fetchPositions() {
 }
 ```
 
-**File Size:** 18.69 KB  
-**Created:** Nov 28, 2025  
+**File Size:** 18.69 KB
+**Created:** Nov 28, 2025
 **Status:** ✅ Deployed to Firebase
 
 ---
@@ -1048,18 +1048,18 @@ async function fetchPositions() {
 exports.analyzePortfolio = functions.https.onRequest(async (req, res) => {
     // 1. Fetch user's holdings from Firestore
     const holdings = await getHoldingsFromFirestore(req.body.userId);
-    
+
     // 2. Calculate portfolio metrics
     const totalValue = calculatePortfolioValue(holdings);
     const diversification = calculateDiversification(holdings);
     const risk = calculateRisk(holdings);
-    
+
     // 3. Get AI suggestions from Engine A
     const suggestions = await fetch('https://engine-a.infinityai.pro/api/analyze-portfolio', {
         method: 'POST',
         body: JSON.stringify({ holdings })
     });
-    
+
     // 4. Return analysis
     res.json({
         total_value: totalValue,
@@ -1092,17 +1092,17 @@ module.exports = {
     ENGINE_A_URL: 'https://engine-a.infinityai.pro',
     ENGINE_B_URL: 'https://engine-b.infinityai.pro',
     ENGINE_C_URL: 'https://engine-c.infinityai.pro',
-    
+
     // DhanHQ settings
     DHAN_API_URL: 'https://api.dhan.co',
-    
+
     // Firestore collections
     COLLECTIONS: {
         USERS: 'users',
         TRADES: 'trades',
         PREDICTIONS: 'predictions'
     },
-    
+
     // API keys (from environment variables)
     GEMINI_API_KEY: process.env.GEMINI_API_KEY
 };
@@ -1142,16 +1142,16 @@ exports.getAiSignals = getAiSignals.getAiSignals;
 ```javascript
 exports.startTrading = functions.https.onRequest(async (req, res) => {
     const { symbols, strategy } = req.body;  // e.g., ["NIFTY", "RELIANCE"], "intraday"
-    
+
     const results = [];
-    
+
     for (const symbol of symbols) {
         // 1. Get AI prediction from Engine A
         const prediction = await fetch(`${ENGINE_A_URL}/api/predict`, {
             method: 'POST',
             body: JSON.stringify({ symbol, model: 'xgb_price' })
         });
-        
+
         // 2. If confident BUY signal
         if (prediction.signal_type === 'BUY' && prediction.confidence > 80) {
             // 3. Execute trade via Engine B orchestration
@@ -1159,7 +1159,7 @@ exports.startTrading = functions.https.onRequest(async (req, res) => {
                 method: 'POST',
                 body: JSON.stringify({ symbol, qty: 1, strategy })
             });
-            
+
             results.push({
                 symbol,
                 action: 'EXECUTED',
@@ -1173,7 +1173,7 @@ exports.startTrading = functions.https.onRequest(async (req, res) => {
             });
         }
     }
-    
+
     res.json({ results });
 });
 ```
@@ -1204,23 +1204,23 @@ const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 exports.storeCredentials = functions.https.onRequest(async (req, res) => {
     const { client_id, api_key, api_secret, access_token } = req.body;
-    
+
     const client = new SecretManagerServiceClient();
-    
+
     // Store each credential as a secret
     await client.createSecret({
         parent: 'projects/after-yesterday-473512-k3',
         secretId: 'dhan-client-id',
         secret: { replication: { automatic: {} } }
     });
-    
+
     await client.addSecretVersion({
         parent: 'projects/after-yesterday-473512-k3/secrets/dhan-client-id',
         payload: { data: Buffer.from(client_id) }
     });
-    
+
     // Repeat for other credentials...
-    
+
     res.json({ success: true, message: 'Credentials stored securely' });
 });
 ```
@@ -1237,22 +1237,22 @@ exports.storeCredentials = functions.https.onRequest(async (req, res) => {
 ```javascript
 exports.getAiSignals = functions.https.onRequest(async (req, res) => {
     const { symbols } = req.body;  // e.g., ["NIFTY", "RELIANCE", "TCS"]
-    
+
     const signals = [];
-    
+
     for (const symbol of symbols) {
         // Get prediction from Engine A
         const prediction = await fetch(`${ENGINE_A_URL}/api/predict`, {
             method: 'POST',
             body: JSON.stringify({ symbol, model: 'xgb_price' })
         });
-        
+
         // Get Gemini sentiment
         const sentiment = await fetch(`${ENGINE_A_URL}/api/sentiment`, {
             method: 'POST',
             body: JSON.stringify({ text: `${symbol} stock market analysis` })
         });
-        
+
         signals.push({
             symbol,
             signal: prediction.signal_type,  // BUY/SELL/HOLD
@@ -1262,7 +1262,7 @@ exports.getAiSignals = functions.https.onRequest(async (req, res) => {
             timestamp: new Date().toISOString()
         });
     }
-    
+
     res.json({ signals });
 });
 ```
@@ -1293,11 +1293,11 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 exports.getGeminiAnalysis = functions.https.onRequest(async (req, res) => {
     const { symbol, news_articles } = req.body;
-    
+
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
+
     // Create prompt
     const prompt = `
     Analyze the following news articles about ${symbol} and provide:
@@ -1305,15 +1305,15 @@ exports.getGeminiAnalysis = functions.https.onRequest(async (req, res) => {
     2. Key events affecting the stock
     3. Short-term price prediction (1 week)
     4. Trading recommendation (Buy/Sell/Hold)
-    
+
     News articles:
     ${news_articles.map(a => a.title).join('\n')}
     `;
-    
+
     // Generate analysis
     const result = await model.generateContent(prompt);
     const analysis = result.response.text();
-    
+
     res.json({
         symbol,
         analysis,
@@ -1347,10 +1347,10 @@ const { PredictionServiceClient } = require('@google-cloud/aiplatform');
 
 exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
     const { symbol, technical_data } = req.body;
-    
+
     const client = new PredictionServiceClient();
     const endpoint = `projects/after-yesterday-473512-k3/locations/us-central1/endpoints/vertex-ai-trading-model`;
-    
+
     // Call Vertex AI model
     const [response] = await client.predict({
         endpoint,
@@ -1358,7 +1358,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
             { symbol, ...technical_data }
         ]
     });
-    
+
     res.json({
         symbol,
         prediction: response.predictions[0],
@@ -1383,7 +1383,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
 ```
 1️⃣ USER ACTION: Opens dashboard, clicks "Test Full Flow"
    📱 Frontend: index.html
-   
+
 2️⃣ JAVASCRIPT EXECUTES:
    function testOrchestration() {
        fetch('https://engine-b.infinityai.pro/orchestrate', {
@@ -1391,27 +1391,27 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
            body: JSON.stringify({ symbol: 'RELIANCE', qty: 1, strategy: 'intraday' })
        });
    }
-   
+
 3️⃣ REQUEST REACHES: Engine B (Orchestrator)
    🎭 Engine B receives: { symbol: "RELIANCE", qty: 1, strategy: "intraday" }
-   
+
 4️⃣ ENGINE B: Fetches live data from DhanHQ
    📊 DhanHQ API Call: GET /marketfeed/quotes
    Response: { symbol: "RELIANCE", ltp: 2850.50, volume: 1500000 }
-   
+
 5️⃣ ENGINE B: Calls Engine A for AI prediction
    🧠 POST https://engine-a.infinityai.pro/api/predict
    Body: { symbol: "RELIANCE", data: [2840, 2850, 2855, 2850, 2850.50], model: "xgb_price" }
-   
+
 6️⃣ ENGINE A: Processes through ML models
    🤖 Random Forest: ₹2865 (BUY, 82% confidence)
    🤖 XGBoost: ₹2870 (STRONG BUY, 87% confidence)
    🤖 LightGBM: ₹2860 (BUY, 83% confidence)
-   
+
 7️⃣ ENGINE A: Gemini AI sentiment analysis
    🧠 Gemini analyzes: "RELIANCE reports strong Q3 earnings"
    Sentiment: POSITIVE (score: 0.85)
-   
+
 8️⃣ ENGINE A: Returns aggregated prediction to Engine B
    Response: {
        symbol: "RELIANCE",
@@ -1420,13 +1420,13 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
        confidence: 85,
        sentiment: "POSITIVE"
    }
-   
+
 9️⃣ ENGINE B: Decision logic
    if (confidence > 75 && signal_type == "BUY" && sentiment == "POSITIVE") {
        // Execute trade
    }
    ✅ All conditions met!
-   
+
 🔟 ENGINE B: Calls Engine C to place order
    ⚡ POST https://engine-c.infinityai.pro/api/dhan/place-order
    Body: {
@@ -1436,16 +1436,16 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
        order_type: "MARKET",
        quantity: 1
    }
-   
+
 1️⃣1️⃣ ENGINE C: Places order via DhanHQ API
    📡 POST https://api.dhan.co/v2/orders
    Headers: { "access-token": "eyJ0..." }
-   Body: { dhanClientId: "1101302170", transactionType: "BUY", ... }
-   
+   Body: { dhanClientId: "<DHAN_CLIENT_ID>", transactionType: "BUY", ... }
+
 1️⃣2️⃣ DHANHQ: Processes order on NSE
    🏦 Order sent to National Stock Exchange
    Order matched with seller at ₹2850.50
-   
+
 1️⃣3️⃣ DHANHQ: Sends webhook to Engine C
    📬 POST https://engine-c.infinityai.pro/api/dhan/postback
    Body: {
@@ -1454,11 +1454,11 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
        filledQty: 1,
        price: 2850.50
    }
-   
+
 1️⃣4️⃣ ENGINE C: Processes webhook
    ✅ Order COMPLETE
    Updates internal database
-   
+
 1️⃣5️⃣ ENGINE C: Returns confirmation to Engine B
    Response: {
        order_id: "123456789",
@@ -1467,7 +1467,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
        quantity: 1,
        price: 2850.50
    }
-   
+
 1️⃣6️⃣ ENGINE B: Returns final result to Frontend
    Response: {
        symbol: "RELIANCE",
@@ -1478,7 +1478,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
        status: "COMPLETE",
        message: "Order executed successfully"
    }
-   
+
 1️⃣7️⃣ FRONTEND: Displays result to user
    📱 Modal popup: "✅ Bought 1 RELIANCE @ ₹2850.50"
    Order ID: 123456789
@@ -1592,5 +1592,5 @@ git push origin feature/3-engine-architecture
 
 ---
 
-**Report Generated:** November 28, 2025  
+**Report Generated:** November 28, 2025
 **Next Review:** After Engine B fix and domain setup

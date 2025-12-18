@@ -62,12 +62,12 @@ The app's Firebase config in `frontend/web-app/src/lib/firebase.ts`:
 
 ```typescript
 const firebaseConfig = {
-  apiKey: "AIzaSyD-9AkKUYvpjOcmqYPxV-OdqYCftPtUeXs",
+  apiKey: "<YOUR_FIREBASE_API_KEY_HERE>",
   authDomain: "after-yesterday-473512-k3.firebaseapp.com",
   projectId: "after-yesterday-473512-k3",
   storageBucket: "after-yesterday-473512-k3.appspot.com",
   messagingSenderId: "573866363639",
-  appId: "1:573866363639:web:..."
+  appId: "<YOUR_FIREBASE_APP_ID_HERE>"
 };
 ```
 

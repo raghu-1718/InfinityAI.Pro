@@ -776,7 +776,19 @@ def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
     client_id = os.getenv("DHAN_CLIENT_ID")
     access_token = os.getenv("DHAN_ACCESS_TOKEN")
 
-    # Fallback to Secret Manager
+    # Apply a fast guard when admin env vars are present (avoid reading secret values unnecessarily)
+    try:
+        from backend.shared.utils.validators import assert_no_placeholder
+        if client_id:
+            assert_no_placeholder("DHAN_CLIENT_ID", client_id)
+        if access_token:
+            assert_no_placeholder("DHAN_ACCESS_TOKEN", access_token)
+    except SystemExit:
+        raise
+    except Exception as e:
+        logger.debug(f"Placeholder guard could not be applied: {e}")
+
+    # Fallback to Secret Manager when required
     if not client_id:
         client_id = get_secret("dhan-client-id")
     if not access_token:

@@ -29,7 +29,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  data?: any;
+  data?: unknown;
 }
 
 interface GeminiChatProps {
@@ -134,12 +134,13 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get response');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Failed to get response');
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${err.message || 'Unknown error'}. Please try again.`,
+        content: `Sorry, I encountered an error: ${msg || 'Unknown error'}. Please try again.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -148,39 +149,40 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
     }
   };
 
-  const formatResponse = (response: any): string => {
+  const formatResponse = (response: unknown): string => {
     if (!response) return 'No response received.';
+    const r = response as any;
 
     // Signal response
-    if (response.signal) {
-      const s = response.signal;
-      return `## ${response.symbol} Trading Signal
+    if (r.signal) {
+      const s = r.signal;
+      return `## ${r.symbol} Trading Signal
 
 **Action:** ${s.action} ${s.action === 'BUY' ? '🟢' : s.action === 'SELL' ? '🔴' : '🟡'}
-**Confidence:** ${(s.confidence * 100).toFixed(0)}%
+**Confidence:** ${((s.confidence ?? 0) * 100).toFixed(0)}%
 
 ### Entry & Targets
-- **Entry:** ₹${s.entry_price?.toFixed(2) || 'Market'}
-- **Stop Loss:** ₹${s.stop_loss?.toFixed(2) || 'N/A'}
-- **Target 1:** ₹${s.target_1?.toFixed(2) || 'N/A'}
-- **Target 2:** ₹${s.target_2?.toFixed(2) || 'N/A'}
+- **Entry:** ₹${s.entry_price?.toFixed(2) ?? 'Market'}
+- **Stop Loss:** ₹${s.stop_loss?.toFixed(2) ?? 'N/A'}
+- **Target 1:** ₹${s.target_1?.toFixed(2) ?? 'N/A'}
+- **Target 2:** ₹${s.target_2?.toFixed(2) ?? 'N/A'}
 
 ### Risk Assessment
-- **Risk/Reward:** ${s.risk_reward_ratio?.toFixed(2) || 'N/A'}
-- **Risk Level:** ${s.risk_level || 'MEDIUM'}
-- **Timeframe:** ${s.timeframe || 'SWING'}
+- **Risk/Reward:** ${s.risk_reward_ratio?.toFixed(2) ?? 'N/A'}
+- **Risk Level:** ${s.risk_level ?? 'MEDIUM'}
+- **Timeframe:** ${s.timeframe ?? 'SWING'}
 
 ### Reasoning
-${response.reasoning || 'Based on technical and fundamental analysis.'}`;
+${r.reasoning ?? 'Based on technical and fundamental analysis.'}`;
     }
 
     // Market analysis response
-    if (response.analysis) {
-      const a = response.analysis;
-      return `## ${response.symbol} Market Analysis
+    if (r?.analysis) {
+      const a = r.analysis;
+      return `## ${r.symbol ?? 'Unknown'} Market Analysis
 
-**Trend:** ${a.trend} ${a.trend === 'BULLISH' ? '📈' : a.trend === 'BEARISH' ? '📉' : '➡️'}
-**Strength:** ${((a.trend_strength || 0) * 100).toFixed(0)}%
+**Trend:** ${a.trend ?? 'NEUTRAL'} ${a.trend === 'BULLISH' ? '📈' : a.trend === 'BEARISH' ? '📉' : '➡️'}
+**Strength:** ${(((a.trend_strength ?? 0) ) * 100).toFixed(0)}%
 
 ### Key Levels
 - **Support:** ${a.support_levels?.map((l: number) => `₹${l}`).join(', ') || 'N/A'}
@@ -193,16 +195,16 @@ ${a.key_indicators ? Object.entries(a.key_indicators).map(([k, v]) => `- **${k.t
 ${a.volume_analysis || 'N/A'}
 
 ### Recommendation
-${response.recommendation || 'Monitor the stock for entry opportunities.'}`;
+${r.recommendation ?? 'Monitor the stock for entry opportunities.'}`;
     }
 
     // Options strategy response
-    if (response.strategy) {
-      const s = response.strategy;
-      return `## ${response.index} Options Strategy
+    if (r?.strategy) {
+      const s = r.strategy;
+      return `## ${r.index ?? r.symbol ?? 'Unknown'} Options Strategy
 
-**Strategy:** ${s.strategy_name} ${response.outlook === 'BULLISH' ? '📈' : response.outlook === 'BEARISH' ? '📉' : '➡️'}
-**Spot Price:** ₹${response.spot_price}
+**Strategy:** ${s.strategy_name ?? 'Strategy'} ${r.outlook === 'BULLISH' ? '📈' : r.outlook === 'BEARISH' ? '📉' : '➡️'}
+**Spot Price:** ₹${r.spot_price ?? 'N/A'}
 
 ### Strategy Details
 ${s.strategy_description || ''}
@@ -221,23 +223,23 @@ ${s.legs?.map((leg: any, i: number) => `
     }
 
     // Risk analysis response
-    if (response.risk_analysis) {
+    if (r?.risk_analysis) {
       return `## Portfolio Risk Analysis
 
-**Account Value:** ₹${response.account_value?.toLocaleString()}
-**Positions:** ${response.positions_count}
+**Account Value:** ₹${r.account_value?.toLocaleString() ?? 'N/A'}
+**Positions:** ${r.positions_count ?? 'N/A'}
 
 ### Risk Assessment
-${JSON.stringify(response.risk_analysis, null, 2)}`;
+${JSON.stringify(r.risk_analysis ?? {}, null, 2)}`;
     }
 
     // Generic response
-    if (response.response || response.answer || response.message) {
-      return response.response || response.answer || response.message;
+    if (r?.response || r?.answer || r?.message) {
+      return r.response || r.answer || r.message || 'No message';
     }
 
     // Fallback
-    return typeof response === 'string' ? response : JSON.stringify(response, null, 2);
+    return typeof r === 'string' ? r : JSON.stringify(r, null, 2);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -26,7 +26,8 @@ if ($LASTEXITCODE -eq 0) {
         --allow-unauthenticated `
         --memory "1Gi" `
         --cpu "1" `
-        --set-env-vars "PROJECT_ID=$projectId,GEMINI_API_KEY_PRIMARY=AIzaSyCkg8QKAT3vvbTU9_1qBqB1G7ZL0oQ-Ebs" `
+        --set-env-vars "PROJECT_ID=$projectId" `
+        --set-secrets "GEMINI_API_KEY_PRIMARY=gemini-api-key:latest" `
         --project=$projectId
 
     if ($LASTEXITCODE -eq 0) {

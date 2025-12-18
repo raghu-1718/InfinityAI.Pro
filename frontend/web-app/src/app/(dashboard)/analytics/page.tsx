@@ -506,7 +506,7 @@ export default function AnalyticsPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-medium">
-                                {(signal.confidence * 100).toFixed(0)}% confidence
+                                {((signal.confidence ?? 0) * 100).toFixed(0)}% confidence
                               </p>
                             </div>
                           </div>
@@ -514,15 +514,15 @@ export default function AnalyticsPage() {
                             <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                               <div className="p-2 bg-muted rounded">
                                 <p className="text-muted-foreground">Technical</p>
-                                <p className="font-medium">{(signal.analysis.technical_score * 100).toFixed(0)}%</p>
+                                <p className="font-medium">{((signal.analysis.technical_score ?? 0) * 100).toFixed(0)}%</p>
                               </div>
                               <div className="p-2 bg-muted rounded">
                                 <p className="text-muted-foreground">Sentiment</p>
-                                <p className="font-medium">{(signal.analysis.sentiment_score * 100).toFixed(0)}%</p>
+                                <p className="font-medium">{((signal.analysis.sentiment_score ?? 0) * 100).toFixed(0)}%</p>
                               </div>
                               <div className="p-2 bg-muted rounded">
                                 <p className="text-muted-foreground">ML Score</p>
-                                <p className="font-medium">{(signal.analysis.ml_prediction * 100).toFixed(0)}%</p>
+                                <p className="font-medium">{((signal.analysis.ml_prediction ?? 0) * 100).toFixed(0)}%</p>
                               </div>
                             </div>
                           )}
@@ -664,7 +664,7 @@ export default function AnalyticsPage() {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {(marketPrediction.confidence * 100).toFixed(0)}% confidence
+                        {((marketPrediction.confidence ?? 0) * 100).toFixed(0)}% confidence
                       </p>
                     </div>
                     <div className="space-y-2 text-sm">
@@ -744,7 +744,7 @@ export default function AnalyticsPage() {
                                   {idea.action}
                                 </Badge>
                                 <Badge variant="outline" className="text-xs">
-                                  {(idea.confidence * 100).toFixed(0)}%
+                                  {((idea.confidence ?? 0) * 100).toFixed(0)}%
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground mt-1">{idea.rationale}</p>
@@ -765,7 +765,7 @@ export default function AnalyticsPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-lg font-bold text-green-600">
-                                +{(idea.expected_return * 100).toFixed(1)}%
+                                +{((idea.expected_return ?? 0) * 100).toFixed(1)}%
                               </p>
                               <p className="text-xs text-muted-foreground">Expected</p>
                             </div>
@@ -1086,7 +1086,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Confidence</p>
-                        <p className="font-medium">{(varData.confidence * 100).toFixed(0)}%</p>
+                        <p className="font-medium">{((varData.confidence ?? 0) * 100).toFixed(0)}%</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Sample Size</p>

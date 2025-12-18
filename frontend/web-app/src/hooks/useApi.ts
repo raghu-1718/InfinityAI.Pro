@@ -6,6 +6,17 @@ import { useAppStore } from '@/lib/store';
 import { useEffect, useCallback } from 'react';
 import { getUserId } from '@/lib/user';
 
+// Lightweight types for holdings/positions used by hooks (avoid explicit `any`)
+export type Holding = {
+  tradingSymbol?: string;
+  securityId?: string;
+  avgCostPrice?: number;
+  totalQty?: number;
+  ltp?: number;
+  [key: string]: unknown;
+};
+
+
 // Engine Health Hooks
 export function useEngineHealth() {
   const updateEngineStatus = useAppStore((s) => s.updateEngineStatus);
@@ -397,10 +408,10 @@ export function useRiskMetrics(returns: number[]) {
 }
 
 // VaR Hook
-export function useVaR(returns: number[], confidence = 0.95, method = 'historical') {
+export function useVaR(returns: number[], confidence = 0.95, method: 'historical' | 'parametric' | 'cornish-fisher' = 'historical') {
   return useQuery({
     queryKey: ['risk', 'var', returns.length, confidence, method],
-    queryFn: () => engineA.calculateVaR({ returns, confidence, method: method as any }),
+    queryFn: () => engineA.calculateVaR({ returns, confidence, method }),
     enabled: returns.length > 0,
     staleTime: 60000,
   });
@@ -543,9 +554,9 @@ export function useCalculateRiskScore() {
 }
 
 // Portfolio Analysis Hook - Analyze user's holdings with AI
-export function usePortfolioAnalysis(holdings: any[], enabled = true) {
+export function usePortfolioAnalysis(holdings: Holding[], enabled = true) {
   return useQuery({
-    queryKey: ['portfolio', 'analysis', holdings.map((h: any) => h.tradingSymbol || h.securityId).join(',')],
+    queryKey: ['portfolio', 'analysis', holdings.map((h) => (h.tradingSymbol as string) || (h.securityId as string)).join(',')],
     queryFn: () => engineB.analyzePortfolio(holdings),
     enabled: enabled && holdings.length > 0,
     staleTime: 300000, // 5 minutes
@@ -553,7 +564,7 @@ export function usePortfolioAnalysis(holdings: any[], enabled = true) {
 }
 
 // Holding-specific AI recommendation
-export function useHoldingRecommendation(symbol: string, holding: any, enabled = true) {
+export function useHoldingRecommendation(symbol: string, holding: Holding | Record<string, unknown>, enabled = true) {
   return useQuery({
     queryKey: ['holding', 'recommendation', symbol],
     queryFn: () => engineB.getHoldingRecommendation(symbol, holding),
@@ -578,7 +589,7 @@ export function usePortfolioSignals() {
 }
 
 // Portfolio Optimization Hook
-export function usePortfolioOptimization(holdings: any[], riskTolerance: 'low' | 'medium' | 'high' = 'medium') {
+export function usePortfolioOptimization(holdings: Holding[], riskTolerance: 'low' | 'medium' | 'high' = 'medium') {
   return useQuery({
     queryKey: ['portfolio', 'optimize', riskTolerance, holdings.length],
     queryFn: () => engineB.optimizePortfolio(holdings, riskTolerance),
@@ -686,25 +697,25 @@ export function useAllPositionsAnalysis(enabled = true) {
 
   // Transform Dhan positions to PositionAnalysisRequest format
   // Note: Dhan API uses camelCase with 'drv' prefix for derivative fields
-  const positionDataList: PositionAnalysisRequest[] = positions.map((p: any) => ({
-    symbol: p.tradingSymbol?.split('-')[0] || p.securityId,
-    trading_symbol: p.tradingSymbol || '',
-    security_id: p.securityId || '',
-    position_type: (p.netQty || 0) > 0 ? 'LONG' : 'SHORT',
-    exchange_segment: p.exchangeSegment || 'NSE_EQ',
-    product_type: p.productType || 'CNC',
-    buy_avg: p.buyAvg || 0,
-    cost_price: p.costPrice || p.buyAvg || 0,
-    buy_qty: p.buyQty || 0,
-    sell_qty: p.sellQty || 0,
-    net_qty: p.netQty || p.buyQty - (p.sellQty || 0),
-    realized_profit: p.realizedProfit || 0,
-    unrealized_profit: p.unrealizedProfit || 0,
+  const positionDataList: PositionAnalysisRequest[] = positions.map((p: Record<string, unknown>) => ({
+    symbol: (p.tradingSymbol as string | undefined)?.split('-')[0] || (p.securityId as string | undefined) || '',
+    trading_symbol: (p.tradingSymbol as string) || '',
+    security_id: (p.securityId as string) || '',
+    position_type: ((p.netQty as number) || 0) > 0 ? 'LONG' : 'SHORT',
+    exchange_segment: (p.exchangeSegment as string) || 'NSE_EQ',
+    product_type: (p.productType as string) || 'CNC',
+    buy_avg: (p.buyAvg as number) || 0,
+    cost_price: (p.costPrice as number) || (p.buyAvg as number) || 0,
+    buy_qty: (p.buyQty as number) || 0,
+    sell_qty: (p.sellQty as number) || 0,
+    net_qty: (p.netQty as number) || ((p.buyQty as number) || 0) - ((p.sellQty as number) || 0),
+    realized_profit: (p.realizedProfit as number) || 0,
+    unrealized_profit: (p.unrealizedProfit as number) || 0,
     // Dhan uses drvExpiryDate, drvOptionType, drvStrikePrice for derivatives
-    expiry_date: p.drvExpiryDate || p.expiryDate,
-    option_type: p.drvOptionType === 'PUT' ? 'PUT' : p.drvOptionType === 'CALL' ? 'CALL' : p.optionType,
-    strike_price: p.drvStrikePrice || p.strikePrice,
-    current_price: p.dayClosePrice || p.lastTradedPrice,
+    expiry_date: (p.drvExpiryDate as string) || (p.expiryDate as string) || undefined,
+    option_type: (p.drvOptionType as string) === 'PUT' ? 'PUT' : (p.drvOptionType as string) === 'CALL' ? 'CALL' : (p.optionType as string | undefined),
+    strike_price: (p.drvStrikePrice as number) || (p.strikePrice as number) || undefined,
+    current_price: (p.dayClosePrice as number) || (p.lastTradedPrice as number) || undefined,
   }));
 
   return useQuery<PositionAnalysisResponse[]>({

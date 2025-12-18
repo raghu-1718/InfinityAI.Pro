@@ -5,7 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFunds, useHoldings, usePositions, usePortfolioSignals } from '@/hooks/useApi';
+import { useFunds, useHoldings, usePositions, usePortfolioSignals, Holding } from '@/hooks/useApi';
+
+// Local types
+type SignalShort = { symbol?: string; signal?: 'BUY' | 'SELL' | 'HOLD' | string; confidence?: number };
+type Position = { securityId?: string; tradingSymbol?: string; realizedProfit?: number; netQty?: number; averagePrice?: number };
+type PieEntry = { name: string; value: number };
+
 import { useAppStore } from '@/lib/store';
 import { formatCurrency, formatPercent, formatCompact } from '@/lib/format';
 import { PositionAnalysisSection } from '@/components/dashboard/position-analysis';
@@ -53,11 +59,11 @@ export default function PortfolioPage() {
 
   // Calculate portfolio metrics
   const totalInvested = holdings.reduce(
-    (sum: number, h: any) => sum + (h.avgCostPrice || 0) * (h.totalQty || 0),
+    (sum: number, h: Holding) => sum + (h.avgCostPrice || 0) * (h.totalQty || 0),
     0
   );
   const totalCurrentValue = holdings.reduce(
-    (sum: number, h: any) => sum + (h.ltp || h.avgCostPrice || 0) * (h.totalQty || 0),
+    (sum: number, h: Holding) => sum + (h.ltp || h.avgCostPrice || 0) * (h.totalQty || 0),
     0
   );
   const totalPnL = totalCurrentValue - totalInvested;
@@ -66,7 +72,7 @@ export default function PortfolioPage() {
   // Helper to get signal for a holding
   const getSignalForHolding = (symbol: string) => {
     if (!Array.isArray(holdingSignals)) return null;
-    return holdingSignals.find((s: any) => s.symbol === symbol);
+    return holdingSignals.find((s: SignalShort) => s.symbol === symbol);
   };
 
   // Refresh all data
@@ -78,7 +84,7 @@ export default function PortfolioPage() {
   };
 
   // Prepare pie chart data
-  const pieData = holdings.slice(0, 6).map((h: any, i: number) => ({
+  const pieData = holdings.slice(0, 6).map((h: Holding, i: number) => ({
     name: h.tradingSymbol || h.securityId || `Stock ${i + 1}`,
     value: (h.ltp || h.avgCostPrice || 0) * (h.totalQty || 1),
   }));
@@ -188,8 +194,8 @@ export default function PortfolioPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {holdings.map((holding: any, idx: number) => {
-                        const symbol = holding.tradingSymbol || holding.securityId;
+                      {holdings.map((holding: Holding, idx: number) => {
+                        const symbol = holding.tradingSymbol || holding.securityId || '';
                         const signal = getSignalForHolding(symbol);
                         return (
                           <HoldingRow
@@ -230,7 +236,7 @@ export default function PortfolioPage() {
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {pieData.map((entry: any, index: number) => (
+                            {pieData.map((entry: PieEntry, index: number) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
@@ -279,7 +285,7 @@ export default function PortfolioPage() {
                     </p>
                   ) : (
                     <div className="space-y-2">
-                      {positions.slice(0, 5).map((pos: any, idx: number) => (
+                      {positions.slice(0, 5).map((pos: Position, idx: number) => (
                         <PositionRow key={pos.securityId || idx} position={pos} />
                       ))}
                     </div>
@@ -311,7 +317,7 @@ function SummaryCard({
 }: {
   title: string;
   value: number;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bgColor: string;
   isLoading: boolean;
@@ -349,7 +355,7 @@ function SummaryCard({
   );
 }
 
-function HoldingRow({ holding, signal }: { holding: any; signal?: any }) {
+function HoldingRow({ holding, signal }: { holding: Holding; signal?: SignalShort }) {
   const invested = (holding.avgCostPrice || 0) * (holding.totalQty || 0);
   const current = (holding.ltp || holding.avgCostPrice || 0) * (holding.totalQty || 0);
   const pnl = current - invested;
@@ -388,7 +394,7 @@ function HoldingRow({ holding, signal }: { holding: any; signal?: any }) {
             <span>LTP: {formatCurrency(holding.ltp || 0)}</span>
             {signal && (
               <span className="text-primary">
-                {(signal.confidence * 100).toFixed(0)}% confidence
+                {((signal.confidence ?? 0) * 100).toFixed(0)}% confidence
               </span>
             )}
           </div>
@@ -412,7 +418,7 @@ function HoldingRow({ holding, signal }: { holding: any; signal?: any }) {
   );
 }
 
-function PositionRow({ position }: { position: any }) {
+function PositionRow({ position }: { position: Position }) {
   const pnl = position.realizedProfit || 0;
   const isProfit = pnl >= 0;
 

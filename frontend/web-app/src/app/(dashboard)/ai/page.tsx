@@ -60,12 +60,73 @@ const popularStocks = [
   { symbol: 'LT', name: 'Larsen & Toubro' },
 ];
 
+// --- Types for AI results (narrowed to avoid `any`) ---
+type Signal = {
+  action?: 'BUY' | 'SELL' | 'HOLD';
+  confidence?: number;
+  entry_price?: number;
+  stop_loss?: number;
+  target?: number;
+  timeframe?: string;
+  risk_level?: string;
+  target_1?: number;
+  target_2?: number;
+  target_3?: number;
+  risk_reward_ratio?: number;
+};
+
+type Analysis = {
+  trend?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  trend_strength?: number;
+  sentiment_score?: number;
+  key_indicators?: { rsi?: number };
+  support_levels?: number[];
+  resistance_levels?: number[];
+  volume_analysis?: string;
+  sector_outlook?: string;
+  global_cues?: string;
+};
+
+type StrategyLeg = {
+  type?: string;
+  option_type?: string;
+  strike_price?: number | string;
+  expiry_date?: string;
+  entry_price?: number;
+  quantity?: number;
+  total_premium?: number;
+};
+
+type AIResult = {
+  symbol?: string;
+  model?: string;
+  recommendation?: { action?: string; confidence?: number; reasoning?: string; summary?: string };
+  signal?: Signal;
+  analysis?: Analysis;
+  index?: string | number;
+  spot_price?: number | string;
+  outlook?: 'BULLISH' | 'BEARISH' | 'NEUTRAL' | string;
+  strategy?: {
+    strategy_name?: string;
+    strategy_description?: string;
+    legs?: StrategyLeg[];
+    max_profit?: number;
+    max_loss?: number;
+    breakeven_point?: number;
+  };
+  reasoning?: string;
+  key_factors?: string[];
+  response?: string;
+};
+
+type AgentStatus = { status?: string; model?: string; region?: string };
+
 export default function GeminiAIPage() {
   const [activeTab, setActiveTab] = useState('signal');
   const [symbol, setSymbol] = useState('RELIANCE');
   const [currentPrice, setCurrentPrice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Options strategy state
@@ -76,7 +137,7 @@ export default function GeminiAIPage() {
   const [riskAppetite, setRiskAppetite] = useState<'LOW' | 'MODERATE' | 'HIGH'>('MODERATE');
 
   // AI Agent state
-  const [agentStatus, setAgentStatus] = useState<any>(null);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [agentMessages, setAgentMessages] = useState<Array<{role: string; content: string; timestamp: Date}>>([]);
   const [agentInput, setAgentInput] = useState('');
   const [isAgentLoading, setIsAgentLoading] = useState(false);
@@ -149,10 +210,11 @@ export default function GeminiAIPage() {
           timestamp: new Date()
         }]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       setAgentMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Error: ${err.message || 'Connection failed'}`,
+        content: `Error: ${message || 'Connection failed'}`,
         timestamp: new Date()
       }]);
     } finally {
@@ -171,8 +233,9 @@ export default function GeminiAIPage() {
         current_price: parseFloat(currentPrice) || undefined,
       });
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get AI analysis');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to get AI analysis');
     } finally {
       setIsLoading(false);
     }
@@ -185,8 +248,9 @@ export default function GeminiAIPage() {
     try {
       const response = await engineC.getRealtimeSignal(currentUserId, symbol, 'intraday');
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get AI signal');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to get AI signal');
     } finally {
       setIsLoading(false);
     }
@@ -207,8 +271,9 @@ export default function GeminiAIPage() {
         // Stop - just disable locally (Cloud Scheduler handles actual cycles)
         setAutoTradingEnabled(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to toggle auto trading');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to toggle auto trading');
     }
   };
 
@@ -222,8 +287,9 @@ export default function GeminiAIPage() {
         model_type: 'stock_analyst',
       });
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get signal');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to get signal');
     } finally {
       setIsLoading(false);
     }
@@ -238,8 +304,9 @@ export default function GeminiAIPage() {
         current_price: parseFloat(currentPrice) || 0,
       });
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get analysis');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to get analysis');
     } finally {
       setIsLoading(false);
     }
@@ -257,8 +324,9 @@ export default function GeminiAIPage() {
         risk_appetite: riskAppetite,
       });
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to get options strategy');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to get options strategy');
     } finally {
       setIsLoading(false);
     }
@@ -299,7 +367,7 @@ export default function GeminiAIPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Confidence</p>
-              <p className="text-2xl font-bold">{(s.confidence * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{((s.confidence ?? 0) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
@@ -400,13 +468,13 @@ export default function GeminiAIPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Trend Strength</p>
-              <p className="text-2xl font-bold">{((a.trend_strength || 0) * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{(((a.trend_strength ?? 0)) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground">Sentiment Score</p>
-              <p className="text-2xl font-bold">{((a.sentiment_score || 0) * 100).toFixed(0)}%</p>
+              <p className="text-2xl font-bold">{(((a.sentiment_score ?? 0)) * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
           <Card>
@@ -482,7 +550,7 @@ export default function GeminiAIPage() {
               <Zap className="h-5 w-5 text-primary mt-0.5" />
               <div>
                 <p className="font-medium">Recommendation</p>
-                <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                <p className="text-sm text-muted-foreground">{result.recommendation?.reasoning ?? result.recommendation?.summary ?? JSON.stringify(result.recommendation)}</p>
               </div>
             </div>
           </CardContent>
@@ -522,7 +590,7 @@ export default function GeminiAIPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {s.legs?.map((leg: any, i: number) => (
+              {s.legs?.map((leg: StrategyLeg, i: number) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
                     <Badge variant={leg.type === 'BUY' ? 'default' : 'destructive'}>
@@ -907,7 +975,7 @@ export default function GeminiAIPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Market Outlook</Label>
-                      <Select value={outlook} onValueChange={(v) => setOutlook(v as any)}>
+                      <Select value={outlook} onValueChange={(v) => setOutlook(v as 'BULLISH' | 'BEARISH' | 'NEUTRAL')}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -920,7 +988,7 @@ export default function GeminiAIPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Risk Appetite</Label>
-                      <Select value={riskAppetite} onValueChange={(v) => setRiskAppetite(v as any)}>
+                      <Select value={riskAppetite} onValueChange={(v) => setRiskAppetite(v as 'LOW' | 'MODERATE' | 'HIGH')}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -991,7 +1059,7 @@ export default function GeminiAIPage() {
                               {result.recommendation.action}
                             </Badge>
                             <span className="text-sm text-muted-foreground">
-                              Confidence: {((result.recommendation.confidence || 0) * 100).toFixed(0)}%
+                              Confidence: {((result.recommendation.confidence ?? 0) * 100).toFixed(0)}%
                             </span>
                           </div>
                           <p className="text-sm">{result.recommendation.reasoning || result.response}</p>
