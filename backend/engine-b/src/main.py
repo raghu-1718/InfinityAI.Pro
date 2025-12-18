@@ -719,8 +719,29 @@ class MarketDataEngine:
     def _init_dhan_client(self):
         """Initialize DhanHQ client with GCP secrets"""
         try:
-            client_id = os.getenv("DHAN_CLIENT_ID") or get_secret("dhan-client-id")
-            access_token = os.getenv("DHAN_ACCESS_TOKEN") or get_secret("dhan-access-token")
+            # Prefer environment-injected secrets (fast check for placeholders) before falling back to Secret Manager
+            client_id = os.getenv("DHAN_CLIENT_ID")
+            access_token = os.getenv("DHAN_ACCESS_TOKEN")
+
+            # Fail-fast on obvious placeholder values if admin env vars are present
+            try:
+                from backend.shared.utils.validators import assert_no_placeholder
+                if client_id:
+                    assert_no_placeholder("DHAN_CLIENT_ID", client_id)
+                if access_token:
+                    assert_no_placeholder("DHAN_ACCESS_TOKEN", access_token)
+            except SystemExit:
+                # Re-raise to allow process to exit with a clear failure (captured in logs)
+                raise
+            except Exception as e:
+                # Non-fatal if import fails in very constrained test environments
+                logger.debug(f"Placeholder guard could not be applied: {e}")
+
+            # Fallback to Secret Manager when required
+            if not client_id:
+                client_id = get_secret("dhan-client-id")
+            if not access_token:
+                access_token = get_secret("dhan-access-token")
 
             if client_id and access_token and client_id != "":
                 self.dhan = dhanhq(client_id, access_token)
