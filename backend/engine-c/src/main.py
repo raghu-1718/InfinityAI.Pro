@@ -1,3 +1,20 @@
+# Explicit CORS preflight handler for coupon verification endpoint
+from fastapi.responses import JSONResponse
+from fastapi import Response, FastAPI, Request
+
+# Ensure FastAPI app is defined before route usage
+app = FastAPI()
+
+# Robust explicit OPTIONS handler for CORS preflight
+@app.route("/api/auth/coupon/verify", methods=["OPTIONS"])
+async def options_coupon_verify(request: Request):
+    response = Response(status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = request.headers.get("Access-Control-Request-Headers", "*")
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    return response
 import os
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -26,17 +43,34 @@ except Exception as e:
     logger_init.warning(f"⚠️ Firestore client not initialized: {e}")
 
 # ML Libraries for Execution Optimization
-import numpy as np
-import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-import statsmodels.api as sm
-import joblib
+
+# Optional ML/Stats imports (wrap in try/except)
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+try:
+    from sklearn.linear_model import LinearRegression
+    from sklearn.preprocessing import StandardScaler
+except ImportError:
+    LinearRegression = None
+    StandardScaler = None
+try:
+    import statsmodels.api as sm
+except ImportError:
+    sm = None
+try:
+    import joblib
+except ImportError:
+    joblib = None
 
 # Performance optimization imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared'))
 try:
-    from performance import (
+    from backend.shared.performance import (
         get_cache_manager, cache_response,
         ConnectionPoolManager, get_aiohttp_session,
         get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
@@ -45,6 +79,16 @@ try:
     HAS_PERFORMANCE_MODULE = True
 except ImportError as e:
     HAS_PERFORMANCE_MODULE = False
+    get_cache_manager = None
+    cache_response = None
+    ConnectionPoolManager = None
+    get_aiohttp_session = None
+    get_rate_limiter = None
+    adaptive_rate_limit = None
+    RateLimitConfig = None
+    get_health_monitor = None
+    with_circuit_breaker = None
+    CircuitBreakerConfig = None
     print(f"⚠️ Performance module not available: {e}")
 
 # Lazy import for User Credentials Management (using GCP Secret Manager)
@@ -270,6 +314,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
+    "*"
 ]
 
 # Add CORS middleware FIRST (added last so it executes first in FastAPI)
@@ -669,7 +714,7 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "after-yesterday-473512-k3")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
         # Strip any trailing whitespace/newlines from the secret
@@ -1181,25 +1226,45 @@ async def place_order(order: OrderRequest):
     try:
         dhan_client = get_dhan_client()
 
-        response = dhan_client.place_order(
-            transaction_type=order.transaction_type,
-            exchange_segment=order.exchange_segment,
-            product_type=order.product_type,
-            order_type=order.order_type,
-            validity=order.validity,
-            security_id=order.security_id,
-            quantity=order.quantity,
-            price=order.price,
-            trigger_price=order.trigger_price,
-            disclosed_quantity=order.disclosed_quantity,
-            after_market_order=order.after_market_order,
-            amo_time=order.amo_time,
-            bo_profit_value=order.bo_profit_value,
-            bo_stop_loss_value=order.bo_stop_loss_value,
-            drv_expiry_date=order.drv_expiry_date,
-            drv_options_type=order.drv_options_type,
-            drv_strike_price=order.drv_strike_price
-        )
+        # Build kwargs dynamically, only include non-None and relevant fields
+        order_kwargs = {
+            "transaction_type": order.transaction_type,
+            "exchange_segment": order.exchange_segment,
+            "product_type": order.product_type,
+            "order_type": order.order_type,
+            "validity": order.validity,
+            "security_id": order.security_id,
+            "quantity": order.quantity,
+        }
+        # Only include price if not None and not MARKET order
+        if order.price is not None and order.order_type != "MARKET":
+            order_kwargs["price"] = order.price
+        # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
+        if order.trigger_price is not None and order.order_type in ["STOPLOSS", "STOPLIMIT", "STOPMARKET"]:
+            order_kwargs["trigger_price"] = order.trigger_price
+        if order.disclosed_quantity:
+            order_kwargs["disclosed_quantity"] = order.disclosed_quantity
+        if order.after_market_order:
+            order_kwargs["after_market_order"] = order.after_market_order
+        if order.amo_time and order.after_market_order:
+            order_kwargs["amo_time"] = order.amo_time
+
+        # Bracket order fields (only for BO/CO types)
+        if order.product_type in ["BO", "CO"]:
+            if order.bo_profit_value:
+                order_kwargs["bo_profit_value"] = order.bo_profit_value
+            if order.bo_stop_loss_value:
+                order_kwargs["bo_stop_loss_value"] = order.bo_stop_loss_value
+
+        # Derivative fields (only for F&O)
+        if order.drv_expiry_date:
+            order_kwargs["drv_expiry_date"] = order.drv_expiry_date
+        if order.drv_options_type:
+            order_kwargs["drv_options_type"] = order.drv_options_type
+        if order.drv_strike_price:
+            order_kwargs["drv_strike_price"] = order.drv_strike_price
+
+        response = dhan_client.place_order(**order_kwargs)
 
         # Check response status
         if isinstance(response, dict):
