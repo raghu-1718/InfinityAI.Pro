@@ -86,8 +86,6 @@ InfinityAI.Pro/
 ├── extensions/
 │   └── firestore-multimodal-genai.env
 ├── frontend/
-│   ├── dashboard_ui_refinement_updated.py
-│   ├── dashboard_ui_refinement.py
 │   ├── web/
 │   └── web-app/
 ├── infra/
@@ -103,4 +101,7 @@ InfinityAI.Pro/
 │   └── ...
 ├── tests/
 ├── tools/
+│   └── ui/
+│       ├── dashboard_ui_refinement.py
+│       └── dashboard_ui_refinement_updated.py
 └── verification/
