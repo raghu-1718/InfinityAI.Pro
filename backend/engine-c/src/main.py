@@ -5,6 +5,22 @@ from fastapi import Response, FastAPI, Request
 # Ensure FastAPI app is defined before route usage
 app = FastAPI()
 
+# --- Simple Health Check Endpoint (no GCP, always up) ---
+@app.get("/healthz")
+async def healthz():
+    return {
+        "service": "InfinityAI.Pro Engine C",
+        "status": "ok",
+        "version": "3.8-cloudrun-healthz",
+        "gcp": "not required for healthz"
+    }
+
+# --- Robust Startup Error Logging ---
+import traceback
+def log_startup_error(e, context="startup"):
+    print(f"[ERROR] {context}: {e}")
+    print(traceback.format_exc())
+
 # Robust explicit OPTIONS handler for CORS preflight
 @app.route("/api/auth/coupon/verify", methods=["OPTIONS"])
 async def options_coupon_verify(request: Request):
@@ -41,6 +57,7 @@ except Exception as e:
     _firestore_db = None
     logger_init = logging.getLogger("firestore_init")
     logger_init.warning(f"⚠️ Firestore client not initialized: {e}")
+    log_startup_error(e, context="Firestore client init")
 
 # ML Libraries for Execution Optimization
 
@@ -90,6 +107,7 @@ except ImportError as e:
     with_circuit_breaker = None
     CircuitBreakerConfig = None
     print(f"⚠️ Performance module not available: {e}")
+    log_startup_error(e, context="Performance module import")
 
 # Lazy import for User Credentials Management (using GCP Secret Manager)
 SecretManagerCredentials = None
@@ -229,52 +247,70 @@ app = FastAPI(
 # ==============================================================================
 # STARTUP EVENT - Initialize Performance Components & Default Coupons
 # ==============================================================================
+
+import asyncio
+from contextlib import suppress
+
 @app.on_event("startup")
 async def startup_event():
-    """Initialize performance components and default coupons on startup"""
-    # Initialize performance module
+    """Initialize performance components and default coupons on startup (robust, non-blocking)"""
+    # Helper for timeouts
+    async def with_timeout(coro, timeout=10, context="task"):
+        try:
+            return await asyncio.wait_for(coro, timeout=timeout)
+        except Exception as e:
+            logger.warning(f"Startup {context} failed or timed out: {e}")
+            return None
+
+    # Initialize performance module (robust)
     if HAS_PERFORMANCE_MODULE:
         try:
-            # Initialize connection pool
-            await ConnectionPoolManager.initialize()
+            await with_timeout(ConnectionPoolManager.initialize(), 10, "ConnectionPoolManager.initialize")
             logger.info("✅ Connection pool initialized")
+        except Exception as e:
+            logger.warning(f"Connection pool init failed: {e}")
 
-            # Initialize caches
+        try:
             cache = get_cache_manager("engine_c", max_size=5000, default_ttl=30.0)
-            await cache.initialize()
+            await with_timeout(cache.initialize(), 10, "cache.initialize")
             logger.info("✅ Cache manager initialized")
+        except Exception as e:
+            logger.warning(f"Cache manager init failed: {e}")
 
-            # Initialize health monitor
+        try:
             monitor = get_health_monitor()
 
-            # Register health checks for dependencies
             async def check_engine_b():
-                session = await get_aiohttp_session()
-                async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                    if resp.status != 200:
-                        raise Exception(f"Engine B unhealthy: {resp.status}")
+                try:
+                    session = await get_aiohttp_session()
+                    async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status != 200:
+                            raise Exception(f"Engine B unhealthy: {resp.status}")
+                except Exception as e:
+                    logger.warning(f"Engine B health check failed: {e}")
 
             async def check_engine_a():
-                session = await get_aiohttp_session()
-                async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                    if resp.status != 200:
-                        raise Exception(f"Engine A unhealthy: {resp.status}")
+                try:
+                    session = await get_aiohttp_session()
+                    async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status != 200:
+                            raise Exception(f"Engine A unhealthy: {resp.status}")
+                except Exception as e:
+                    logger.warning(f"Engine A health check failed: {e}")
 
             monitor.register_service("engine_b", check_engine_b, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
             monitor.register_service("engine_a", check_engine_a, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
 
-            # Start background health monitoring
-            await monitor.start_monitoring(interval=30.0)
+            await with_timeout(monitor.start_monitoring(interval=30.0), 10, "monitor.start_monitoring")
             logger.info("✅ Health monitoring started")
-
         except Exception as e:
-            logger.warning(f"Performance module initialization warning: {e}")
+            logger.warning(f"Performance monitor init failed: {e}")
 
-    # Initialize coupons
+    # Initialize coupons (robust)
     try:
         manager = get_coupon_auth_manager()
         if manager:
-            await manager.initialize_default_coupons()
+            await with_timeout(manager.initialize_default_coupons(), 10, "initialize_default_coupons")
             logger.info("✅ Default coupons initialized")
     except Exception as e:
         logger.warning(f"Failed to initialize default coupons: {e}")
@@ -1236,9 +1272,11 @@ async def place_order(order: OrderRequest):
             "security_id": order.security_id,
             "quantity": order.quantity,
         }
-        # Only include price if not None and not MARKET order
-        if order.price is not None and order.order_type != "MARKET":
+        # Always include price for DhanHQ SDK, default to 0 for MARKET orders
+        if order.price is not None:
             order_kwargs["price"] = order.price
+        elif order.order_type == "MARKET":
+            order_kwargs["price"] = 0
         # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
         if order.trigger_price is not None and order.order_type in ["STOPLOSS", "STOPLIMIT", "STOPMARKET"]:
             order_kwargs["trigger_price"] = order.trigger_price
@@ -3231,4 +3269,6 @@ async def auth_status():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    import os
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
