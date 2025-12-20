@@ -69,6 +69,10 @@ def get_coupon_auth_manager():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+"""
+ARCHIVED: See backend/engine-c for canonical implementation.
+This file is deprecated and retained for historical reference only.
+"""
 # Engine B URL for AI signals
 ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-573866363639.us-central1.run.app")
 

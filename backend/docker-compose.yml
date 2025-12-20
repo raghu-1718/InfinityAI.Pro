@@ -9,7 +9,6 @@ services:
       - ./.env
     environment:
       - ENGINE_B_URL=http://engine-analytics:8000
-      - ENGINE_C_URL=http://engine-execution:8000
     volumes:
       - ./engine-core/src:/app/src
 
@@ -29,4 +28,5 @@ services:
       - ./.env
     volumes:
       - ./engine-execution/src:/app/src
+
 

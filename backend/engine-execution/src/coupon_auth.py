@@ -81,6 +81,7 @@ class CouponAuthManager:
         valid_days: int = 365,
         features: List[str] = None
     ) -> Dict[str, Any]:
+        """
         """Create a new coupon code"""
         code_hash = self._hash_code(code)
 
