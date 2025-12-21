@@ -1,7 +1,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/infinity-ai-5ec7c/infinityai-engine-b:latest', '-f', 'backend/engines/engine-b/Dockerfile', '.']
+  args: ['build', '-t', 'gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest', '-f', 'backend/engine-b/Dockerfile', '.']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/infinity-ai-5ec7c/infinityai-engine-b:latest']
+  args: ['push', 'gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest']
 images:
-- 'gcr.io/infinity-ai-5ec7c/infinityai-engine-b:latest'
+- 'gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest'

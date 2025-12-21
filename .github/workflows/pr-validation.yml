@@ -12,7 +12,7 @@ on:
     paths:
       - 'backend/**'
       - 'frontend/web-app/**'
-      - 'frontend/web/functions/**'
+      - 'frontend/functions/**'
 
 env:
   NODE_VERSION: '20'
@@ -52,9 +52,9 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-mfvaq54jjq-uc.a.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-mfvaq54jjq-uc.a.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-mfvaq54jjq-uc.a.run.app
 
   # ============================================
   # Validate Firebase Functions (Gemini/Vertex AI)
@@ -72,18 +72,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: frontend/web/functions/package-lock.json
+          cache-dependency-path: frontend/functions/package-lock.json
 
       - name: Install Dependencies
-        working-directory: frontend/web/functions
+        working-directory: frontend/functions
         run: npm ci
 
       - name: Type Check
-        working-directory: frontend/web/functions
+        working-directory: frontend/functions
         run: npx tsc --noEmit || true
 
       - name: Build Functions
-        working-directory: frontend/web/functions
+        working-directory: frontend/functions
         run: npm run build || npx tsc
 
   # ============================================

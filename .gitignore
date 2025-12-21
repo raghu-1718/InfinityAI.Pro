@@ -1,5 +1,9 @@
 # Node
 node_modules/
+frontend/web-app/node_modules/
+frontend/functions/node_modules/
+frontend/web-app/.next/
+frontend/web-app/out/
 
 # Python
 __pycache__/
@@ -11,19 +15,24 @@ __pycache__/
 .env.*
 *.env
 **/*.env
+backend/.env
+backend/gcp_config.env
+frontend/web-app/.env
+frontend/web/firebaseConfig.js
 dhan_credentials_secure.json
 dhan_token.txt
 *_token.txt
 engines/**/jwt-secret-key.txt
 engines/**/temp_api_key.txt
+
+# Firebase
 .firebase/
-backend/.env
-backend/gcp_config.env
-frontend/web/firebaseConfig.js
+firebase-debug.log
 
 # Logs & reports
 logs/
 *.log
+startup.log
 reports/*.json
 
 # Build artifacts
@@ -31,25 +40,27 @@ build/
 dist/
 coverage/
 
-# Frontend build outputs
-# Keep source but ignore build artifacts
-frontend/web/build/
+# Tools & Collections
+infra/collected/
+*.zip
+*.tar.gz
+
+# Documentation & Trees
+*_tree.txt
+*_structure.txt
+repo_root.txt
 
 # OS/IDE
 .DS_Store
 .idea/
 .vscode/
+.idx/
 
 # Misc
 *.db
 *.sqlite3
-dhan_credentials_secure.json
-**/dhan_credentials*.json
-node_modules
 firebase-sa-key.json
 token.txt
 PATH.txt
 settings.txt
-
-# Sensitive artifacts (do not commit)
 artifacts/sensitive/

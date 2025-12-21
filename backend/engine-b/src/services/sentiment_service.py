@@ -1,6 +1,5 @@
-import logging, math
+import logging
 from typing import List, Dict
-from datetime import datetime
 
 logger = logging.getLogger("sentiment_service")
 
@@ -11,41 +10,70 @@ try:
 except Exception:
     _TRANSFORMERS_AVAILABLE = False
 
+
+# ---- Singleton cache (important) ----
+_TOKENIZER = None
+_MODEL = None
+
+
 class SentimentService:
     def __init__(self, enabled: bool = False):
         self.enabled = enabled and _TRANSFORMERS_AVAILABLE
         self.device = "cpu"
-        if self.enabled:
+
+        global _TOKENIZER, _MODEL
+
+        if self.enabled and (_TOKENIZER is None or _MODEL is None):
             try:
-                self.tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
-                self.model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
-                self.model.eval()
-                logger.info("FinBERT sentiment loaded")
+                _TOKENIZER = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+                _MODEL = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
+                _MODEL.eval()
+                logger.info("✅ FinBERT sentiment loaded (singleton)")
             except Exception as e:
                 logger.warning(f"FinBERT load failed: {e}; using rule-based fallback")
                 self.enabled = False
 
+        self.tokenizer = _TOKENIZER
+        self.model = _MODEL
+
     def score_news(self, articles: List[Dict]) -> float:
         if not articles:
             return 0.0
-        if self.enabled:
+
+        articles = articles[:10]  # hard cap for safety
+
+        if self.enabled and self.model and self.tokenizer:
             try:
-                texts = [a.get("title","")[:256] for a in articles[:8]]
-                import numpy as np, torch
+                texts = [
+                    (a.get("title", "") + " " + a.get("description", ""))[:256]
+                    for a in articles
+                ]
+
                 with torch.no_grad():
-                    enc = self.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+                    enc = self.tokenizer(
+                        texts,
+                        padding=True,
+                        truncation=True,
+                        return_tensors="pt"
+                    )
                     logits = self.model(**enc).logits
                     probs = torch.softmax(logits, dim=-1).cpu().numpy()
-                pos = probs[:,2].mean()
-                neg = probs[:,0].mean()
+
+                pos = probs[:, 2].mean()
+                neg = probs[:, 0].mean()
                 return float(pos - neg)
+
             except Exception as e:
-                logger.warning(f"Transformer scoring error: {e}")
-        POS = ["beat","surge","rally","profit","upgrade","growth","gain","record"]
-        NEG = ["miss","fall","loss","downgrade","fraud","raid","ban","default"]
+                logger.warning(f"Transformer sentiment error: {e}")
+
+        # ---- Rule-based fallback ----
+        POS = {"beat", "surge", "rally", "profit", "upgrade", "growth", "gain", "record"}
+        NEG = {"miss", "fall", "loss", "downgrade", "fraud", "raid", "ban", "default"}
+
         score = 0
-        for a in articles[:10]:
-            t = (a.get("title","") + " " + a.get("description","")).lower()
-            score += sum(1 for w in POS if w in t)
-            score -= sum(1 for w in NEG if w in t)
-        return max(-1.0, min(1.0, score/10.0))
+        for a in articles:
+            t = (a.get("title", "") + " " + a.get("description", "")).lower()
+            score += sum(w in t for w in POS)
+            score -= sum(w in t for w in NEG)
+
+        return max(-1.0, min(1.0, score / 10.0))

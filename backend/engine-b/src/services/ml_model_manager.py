@@ -1,79 +1,88 @@
 """
 InfinityAI.Pro - ML Model Manager Service
-Handles model lifecycle: training, inference, versioning
+
+⚠️ ROLE CLARITY:
+This module is intended for:
+- Offline / batch training
+- Research & experimentation
+- Admin-triggered retraining
+- Model persistence & versioning
+
+It is NOT used in the real-time trading signal path.
 """
 
 import os
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
+
 import joblib
 import numpy as np
-import pandas as pd
 
-# ML Libraries
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+
 import xgboost as xgb
 import lightgbm as lgb
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ml_model_manager")
+
 
 class MLModelManager:
     """
-    Centralized ML model management
-    Handles training, inference, persistence, and versioning
+    Centralized offline ML model manager.
+    Handles training, inference, persistence, and metadata.
     """
+
+    SUPPORTED_MODELS = ("random_forest", "xgboost", "lightgbm")
 
     def __init__(self, model_dir: str = "./models"):
         self.model_dir = model_dir
-        self.models = {}
-        self.scalers = {}
-        self.metadata = {}
+        self.models: Dict[str, Any] = {}
+        self.scalers: Dict[str, StandardScaler] = {}
+        self.metadata: Dict[str, Dict[str, Any]] = {}
 
-        # Create model directory if not exists
-        os.makedirs(model_dir, exist_ok=True)
-
-        # Initialize default models
+        os.makedirs(self.model_dir, exist_ok=True)
         self._initialize_models()
 
-    def _initialize_models(self):
-        """Initialize or load existing models"""
-        logger.info("Initializing ML models...")
+    # ------------------------------------------------------------------
+    # Initialization
+    # ------------------------------------------------------------------
 
-        # Try to load existing models
-        for model_name in ['random_forest', 'xgboost', 'lightgbm']:
-            model_path = os.path.join(self.model_dir, f"{model_name}.joblib")
-            if os.path.exists(model_path):
+    def _initialize_models(self):
+        logger.info("🔄 Initializing MLModelManager...")
+
+        for model_name in self.SUPPORTED_MODELS:
+            path = os.path.join(self.model_dir, f"{model_name}.joblib")
+            if os.path.exists(path):
                 try:
-                    self.models[model_name] = joblib.load(model_path)
+                    self.models[model_name] = joblib.load(path)
                     logger.info(f"✅ Loaded model: {model_name}")
                 except Exception as e:
-                    logger.warning(f"⚠️ Failed to load {model_name}: {e}")
+                    logger.warning(f"⚠️ Failed loading {model_name}: {e}")
                     self._create_default_model(model_name)
             else:
                 self._create_default_model(model_name)
 
-        # Initialize scaler
         scaler_path = os.path.join(self.model_dir, "scaler.joblib")
-        if os.path.exists(scaler_path):
-            self.scalers['standard'] = joblib.load(scaler_path)
-        else:
-            self.scalers['standard'] = StandardScaler()
+        self.scalers["standard"] = (
+            joblib.load(scaler_path)
+            if os.path.exists(scaler_path)
+            else StandardScaler()
+        )
 
     def _create_default_model(self, model_name: str):
-        """Create default untrained model"""
-        if model_name == 'random_forest':
-            self.models[model_name] = RandomForestClassifier(
+        if model_name == "random_forest":
+            model = RandomForestClassifier(
                 n_estimators=100,
                 max_depth=10,
                 min_samples_split=5,
                 random_state=42,
                 n_jobs=-1
             )
-        elif model_name == 'xgboost':
-            self.models[model_name] = xgb.XGBClassifier(
+        elif model_name == "xgboost":
+            model = xgb.XGBClassifier(
                 n_estimators=100,
                 max_depth=6,
                 learning_rate=0.1,
@@ -82,8 +91,8 @@ class MLModelManager:
                 random_state=42,
                 n_jobs=-1
             )
-        elif model_name == 'lightgbm':
-            self.models[model_name] = lgb.LGBMClassifier(
+        elif model_name == "lightgbm":
+            model = lgb.LGBMClassifier(
                 n_estimators=100,
                 max_depth=6,
                 learning_rate=0.1,
@@ -92,8 +101,16 @@ class MLModelManager:
                 random_state=42,
                 n_jobs=-1
             )
+        else:
+            raise ValueError(f"Unsupported model: {model_name}")
 
-        logger.info(f"Created default model: {model_name}")
+        self.models[model_name] = model
+        self.metadata[model_name] = {"initialized_at": datetime.utcnow().isoformat()}
+        logger.info(f"🆕 Created default model: {model_name}")
+
+    # ------------------------------------------------------------------
+    # Training
+    # ------------------------------------------------------------------
 
     def train_models(
         self,
@@ -101,130 +118,68 @@ class MLModelManager:
         y: np.ndarray,
         model_names: Optional[List[str]] = None
     ) -> Dict[str, Any]:
-        """
-        Train specified models on provided data
 
-        Args:
-            X: Feature matrix (n_samples, n_features)
-            y: Target labels (n_samples,)
-            model_names: List of models to train (default: all)
+        if X is None or y is None or len(X) == 0:
+            raise ValueError("Empty training data")
 
-        Returns:
-            Dictionary with training results
-        """
-        if model_names is None:
-            model_names = list(self.models.keys())
-
+        model_names = model_names or list(self.models.keys())
         results = {}
 
-        # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
 
-        # Scale features
-        scaler = self.scalers['standard']
+        scaler = self.scalers["standard"]
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
 
-        # Train each model
-        for model_name in model_names:
-            if model_name not in self.models:
-                logger.warning(f"Model {model_name} not found")
+        for name in model_names:
+            model = self.models.get(name)
+            if not model:
                 continue
 
             try:
-                logger.info(f"Training {model_name}...")
-                model = self.models[model_name]
-
-                # Train
+                logger.info(f"🎓 Training {name}...")
                 model.fit(X_train_scaled, y_train)
 
-                # Evaluate
-                train_score = model.score(X_train_scaled, y_train)
-                test_score = model.score(X_test_scaled, y_test)
+                train_acc = float(model.score(X_train_scaled, y_train))
+                test_acc = float(model.score(X_test_scaled, y_test))
 
-                results[model_name] = {
-                    "train_accuracy": float(train_score),
-                    "test_accuracy": float(test_score),
-                    "trained_at": datetime.utcnow().isoformat()
+                self.metadata[name] = {
+                    "trained_at": datetime.utcnow().isoformat(),
+                    "train_accuracy": train_acc,
+                    "test_accuracy": test_acc,
+                    "samples": int(len(X))
                 }
 
-                # Save model
-                self.save_model(model_name)
-
-                logger.info(f"✅ {model_name} - Train: {train_score:.3f}, Test: {test_score:.3f}")
+                self.save_model(name)
+                results[name] = self.metadata[name]
 
             except Exception as e:
-                logger.error(f"❌ Training failed for {model_name}: {e}")
-                results[model_name] = {"error": str(e)}
+                logger.error(f"❌ Training failed for {name}: {e}")
+                results[name] = {"error": str(e)}
 
-        # Save scaler
         self.save_scaler()
-
         return results
 
-    def predict(
-        self,
-        X: np.ndarray,
-        model_name: str = 'xgboost'
-    ) -> np.ndarray:
-        """
-        Generate predictions using specified model
+    # ------------------------------------------------------------------
+    # Inference
+    # ------------------------------------------------------------------
 
-        Args:
-            X: Feature matrix (n_samples, n_features)
-            model_name: Model to use for prediction
+    def predict(self, X: np.ndarray, model_name: str = "xgboost") -> np.ndarray:
+        self._validate_input(X, model_name)
+        X_scaled = self.scalers["standard"].transform(X)
+        return self.models[model_name].predict(X_scaled)
 
-        Returns:
-            Predictions array
-        """
-        if model_name not in self.models:
-            raise ValueError(f"Model {model_name} not found")
+    def predict_proba(self, X: np.ndarray, model_name: str = "xgboost") -> np.ndarray:
+        self._validate_input(X, model_name)
 
         model = self.models[model_name]
-        scaler = self.scalers['standard']
+        if not hasattr(model, "predict_proba"):
+            raise ValueError(f"{model_name} does not support predict_proba")
 
-        # Scale features
-        X_scaled = scaler.transform(X)
-
-        # Predict
-        predictions = model.predict(X_scaled)
-
-        return predictions
-
-    def predict_proba(
-        self,
-        X: np.ndarray,
-        model_name: str = 'xgboost'
-    ) -> np.ndarray:
-        """
-        Generate prediction probabilities
-
-        Args:
-            X: Feature matrix (n_samples, n_features)
-            model_name: Model to use for prediction
-
-        Returns:
-            Probability predictions array
-        """
-        if model_name not in self.models:
-            raise ValueError(f"Model {model_name} not found")
-
-        model = self.models[model_name]
-
-        if not hasattr(model, 'predict_proba'):
-            raise ValueError(f"Model {model_name} does not support probability predictions")
-
-        scaler = self.scalers['standard']
-
-        # Scale features
-        X_scaled = scaler.transform(X)
-
-        # Predict probabilities
-        probas = model.predict_proba(X_scaled)
-
-        return probas
+        X_scaled = self.scalers["standard"].transform(X)
+        return model.predict_proba(X_scaled)
 
     def ensemble_predict(
         self,
@@ -232,73 +187,61 @@ class MLModelManager:
         model_names: Optional[List[str]] = None,
         weights: Optional[List[float]] = None
     ) -> np.ndarray:
-        """
-        Ensemble prediction using multiple models with weighted voting
 
-        Args:
-            X: Feature matrix
-            model_names: Models to use (default: all)
-            weights: Weights for each model (default: equal weights)
+        model_names = model_names or list(self.models.keys())
+        weights = weights or [1.0] * len(model_names)
 
-        Returns:
-            Ensemble predictions
-        """
-        if model_names is None:
-            model_names = ['random_forest', 'xgboost', 'lightgbm']
+        if len(model_names) != len(weights):
+            raise ValueError("Model names and weights length mismatch")
 
-        if weights is None:
-            weights = [1.0 / len(model_names)] * len(model_names)
+        weights = np.array(weights, dtype=float)
+        weights = weights / weights.sum()  # normalize
 
-        # Get predictions from each model
-        predictions = []
-        for model_name in model_names:
+        probas = []
+        for name in model_names:
             try:
-                pred = self.predict_proba(X, model_name)
-                predictions.append(pred)
+                probas.append(self.predict_proba(X, name))
             except Exception as e:
-                logger.warning(f"Skipping {model_name}: {e}")
+                logger.warning(f"Skipping {name}: {e}")
 
-        if not predictions:
-            raise ValueError("No valid predictions from ensemble models")
+        if not probas:
+            raise ValueError("No valid predictions in ensemble")
 
-        # Weighted average
-        ensemble_proba = np.average(predictions, axis=0, weights=weights[:len(predictions)])
+        ensemble = np.average(probas, axis=0, weights=weights[:len(probas)])
+        return np.argmax(ensemble, axis=1)
 
-        # Convert to class predictions
-        ensemble_pred = np.argmax(ensemble_proba, axis=1)
-
-        return ensemble_pred
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
 
     def save_model(self, model_name: str):
-        """Save model to disk"""
-        if model_name not in self.models:
-            raise ValueError(f"Model {model_name} not found")
-
-        model_path = os.path.join(self.model_dir, f"{model_name}.joblib")
-        joblib.dump(self.models[model_name], model_path)
-        logger.info(f"💾 Saved model: {model_name}")
+        joblib.dump(self.models[model_name], os.path.join(self.model_dir, f"{model_name}.joblib"))
 
     def save_scaler(self):
-        """Save scaler to disk"""
-        scaler_path = os.path.join(self.model_dir, "scaler.joblib")
-        joblib.dump(self.scalers['standard'], scaler_path)
-        logger.info("💾 Saved scaler")
+        joblib.dump(self.scalers["standard"], os.path.join(self.model_dir, "scaler.joblib"))
+
+    # ------------------------------------------------------------------
+    # Utilities
+    # ------------------------------------------------------------------
+
+    def _validate_input(self, X: np.ndarray, model_name: str):
+        if model_name not in self.models:
+            raise ValueError(f"Model {model_name} not found")
+        if X is None or X.size == 0:
+            raise ValueError("Empty feature array")
 
     def get_model_info(self) -> Dict[str, Any]:
-        """Get information about loaded models"""
-        info = {
-            "models": {},
-            "model_dir": self.model_dir
+        return {
+            "model_dir": self.model_dir,
+            "models": {
+                name: {
+                    "type": type(model).__name__,
+                    "metadata": self.metadata.get(name, {})
+                }
+                for name, model in self.models.items()
+            }
         }
 
-        for name, model in self.models.items():
-            info["models"][name] = {
-                "type": type(model).__name__,
-                "n_features": getattr(model, 'n_features_in_', 'unknown')
-            }
 
-        return info
-
-
-# Global instance
+# Singleton (offline usage only)
 model_manager = MLModelManager()

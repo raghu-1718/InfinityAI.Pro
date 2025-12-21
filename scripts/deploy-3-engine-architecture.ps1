@@ -20,9 +20,9 @@ param(
 Write-Host "🚀 InfinityAI.Pro - 3-Engine Architecture Deployment" -ForegroundColor Cyan
 Write-Host "=" * 80
 
-$PROJECT_ID = "infinity-ai-5ec7c"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $REGION = "us-central1"
-$ENGINES = @("engine-a", "engine-b", "engine-c-execution")
+$ENGINES = @("engine-a", "engine-b", "engine-c")
 
 # Check current CPU quota
 Write-Host "`n🔍 Checking CPU quota..." -ForegroundColor Yellow
@@ -62,7 +62,7 @@ $config = if ($ProductionMode) {
             maxInstances = 5
             timeout = 300
         }
-        "engine-c-execution" = @{
+        "engine-c" = @{
             memory = "512Mi"  # Increased for WebSocket support
             cpu = 1
             minInstances = 1  # Always-on for WebSocket connections
@@ -88,7 +88,7 @@ $config = if ($ProductionMode) {
             maxInstances = 5
             timeout = 300
         }
-        "engine-c-execution" = @{
+        "engine-c" = @{
             memory = "512Mi"
             cpu = 1
             minInstances = 0  # On-demand (WebSocket may disconnect)
@@ -102,35 +102,36 @@ $config = if ($ProductionMode) {
 Write-Host "`n🔧 Deploying Engines..." -ForegroundColor Cyan
 foreach ($engine in $ENGINES) {
     Write-Host "`n📦 Deploying $engine..." -ForegroundColor Yellow
-    
+
     $engineConfig = $config[$engine]
     $enginePath = "backend/$engine"
-    
+
     if (-not (Test-Path $enginePath)) {
         Write-Host "❌ Engine directory not found: $enginePath" -ForegroundColor Red
         continue
     }
-    
-    Set-Location $enginePath
-    
+
+    Push-Location $enginePath
+
     # Build container (skip if flag set)
     if (-not $SkipBuild) {
         Write-Host "  🏗️  Building container..." -ForegroundColor Gray
         $buildResult = gcloud builds submit --tag "gcr.io/$PROJECT_ID/infinityai-$engine" --project=$PROJECT_ID 2>&1
-        
+
         if ($LASTEXITCODE -ne 0) {
             Write-Host "  ❌ Build failed for $engine" -ForegroundColor Red
             Write-Host $buildResult
-            Set-Location $PSScriptRoot
+            Write-Host $buildResult
+            Pop-Location
             continue
         }
         Write-Host "  ✅ Build complete" -ForegroundColor Green
     }
-    
+
     # Deploy to Cloud Run
     Write-Host "  🚀 Deploying to Cloud Run..." -ForegroundColor Gray
     $deployArgs = @(
-        "run", "deploy", "infinityai-$engine",
+        "run", "deploy", "$engine",
         "--image", "gcr.io/$PROJECT_ID/infinityai-$engine",
         "--region", $REGION,
         "--project", $PROJECT_ID,
@@ -143,35 +144,35 @@ foreach ($engine in $ENGINES) {
         "--timeout", "$($engineConfig.timeout)s",
         "--set-env-vars", "GOOGLE_CLOUD_PROJECT=$PROJECT_ID"
     )
-    
+
     # Add Engine C specific configurations
-    if ($engine -eq "engine-c-execution") {
+    if ($engine -eq "engine-c") {
         $deployArgs += "--set-env-vars"
         $deployArgs += "ENABLE_WEBSOCKET=true,ENABLE_CHATBOT=true,ENABLE_HEALTH_ORCHESTRATOR=true"
     }
-    
+
     $deployResult = & gcloud @deployArgs 2>&1
-    
+
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  ✅ $engine deployed successfully" -ForegroundColor Green
     } else {
         Write-Host "  ❌ Deployment failed for $engine" -ForegroundColor Red
         Write-Host $deployResult
     }
-    
-    Set-Location $PSScriptRoot
+
+    Pop-Location
 }
 
 # Deploy Frontend
 Write-Host "`n🌐 Deploying Frontend..." -ForegroundColor Cyan
-Set-Location "frontend/web"
+Push-Location "frontend/web-app"
 
 if (-not $SkipBuild) {
     Write-Host "  📦 Building frontend..." -ForegroundColor Gray
     npm run build
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ❌ Frontend build failed" -ForegroundColor Red
-        Set-Location $PSScriptRoot
+        Pop-Location
         exit 1
     }
 }
@@ -185,17 +186,30 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "  ❌ Frontend deployment failed" -ForegroundColor Red
 }
 
-Set-Location $PSScriptRoot
+Pop-Location
 
 # Health check
 Write-Host "`n🏥 Running Health Checks..." -ForegroundColor Cyan
 Start-Sleep -Seconds 10  # Wait for services to stabilize
 
 $healthChecks = @{
-    "Engine A (Analytics)" = "https://infinityai-engine-a-573866363639.us-central1.run.app/health"
-    "Engine B (Core)" = "https://infinityai-engine-b-573866363639.us-central1.run.app/health"
-    "Engine C (Execution)" = "https://infinityai-engine-c-execution-26140490557.us-central1.run.app/health"
     "Frontend" = "https://infinityai.pro"
+}
+
+# Dynamically fetch Cloud Run URLs
+foreach ($engine in $ENGINES) {
+    try {
+        $serviceName = "infinityai-$engine"
+        $url = gcloud run services describe $serviceName --project=$PROJECT_ID --region=$REGION --format="value(status.url)" 2>$null
+        if ($url) {
+            $healthChecks["$engine"] = "$url/health"
+            Write-Host "  found URL for ${engine}: $url" -ForegroundColor Gray
+        } else {
+            Write-Host "  ⚠️ Could not find URL for $serviceName" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "  ⚠️ Error fetching URL for ${engine}: $_" -ForegroundColor Yellow
+    }
 }
 
 foreach ($service in $healthChecks.Keys) {
@@ -203,12 +217,12 @@ foreach ($service in $healthChecks.Keys) {
     try {
         $response = Invoke-WebRequest -Uri $url -TimeoutSec 10 -UseBasicParsing
         if ($response.StatusCode -eq 200) {
-            Write-Host "  ✅ $service: OK" -ForegroundColor Green
+            Write-Host "  ✅ ${service}: OK ($url)" -ForegroundColor Green
         } else {
-            Write-Host "  ⚠️  $service: HTTP $($response.StatusCode)" -ForegroundColor Yellow
+            Write-Host "  ⚠️  ${service}: HTTP $($response.StatusCode) ($url)" -ForegroundColor Yellow
         }
     } catch {
-        Write-Host "  ❌ $service: Failed - $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  ❌ ${service}: Failed - $($_.Exception.Message) ($url)" -ForegroundColor Red
     }
 }
 

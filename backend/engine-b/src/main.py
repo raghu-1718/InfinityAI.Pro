@@ -54,14 +54,14 @@ except ImportError:
 try:
     from transformers import pipeline
     HAS_TRANSFORMERS = True
-except ImportError:
+except Exception:
     HAS_TRANSFORMERS = False
 
 try:
     import nltk
     from nltk.sentiment import SentimentIntensityAnalyzer
     HAS_NLTK = True
-except ImportError:
+except Exception:
     HAS_NLTK = False
 
 # Google Cloud Integrations (Official SDKs)
@@ -1411,14 +1411,62 @@ async def healthz():
             "enhanced_trading_ai": ENHANCED_TRADING_AI is not None
         },
         "enhanced_features": {
-            "indian_market_knowledge": HAS_ENHANCED_TRADING_AI,
-            "sebi_2025_compliance": HAS_ENHANCED_TRADING_AI,
-            "smart_entry_exit": HAS_ENHANCED_TRADING_AI,
-            "position_sizing": HAS_ENHANCED_TRADING_AI,
-            "risk_management": HAS_ENHANCED_TRADING_AI
-        },
+    "indian_market_knowledge": HAS_MARKET_KNOWLEDGE,
+    "sebi_2025_compliance": HAS_MARKET_KNOWLEDGE,
+    "smart_entry_exit": HAS_ENHANCED_TRADING_AI,
+    "position_sizing": HAS_MARKET_KNOWLEDGE,
+    "risk_management": HAS_MARKET_KNOWLEDGE
+},
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@app.get("/health/knowledge", tags=["health"])
+async def health_knowledge():
+    if not HAS_MARKET_KNOWLEDGE or MARKET_KNOWLEDGE is None:
+        return {
+            "status": "unhealthy",
+            "component": "market_knowledge",
+            "error": "Market knowledge module not loaded"
+        }
+
+    try:
+        nifty_lot = MARKET_KNOWLEDGE.get_lot_size("NIFTY")
+        banknifty_lot = MARKET_KNOWLEDGE.get_lot_size("BANKNIFTY")
+
+        greeks_sample = MARKET_KNOWLEDGE.options_math.calculate_greeks(
+            spot_price=20000,
+            strike_price=20100,
+            days_to_expiry=5,
+            iv=0.15,
+            option_type="CALL"
+        )
+
+        session = MARKET_KNOWLEDGE.analyzer.get_trading_session()
+
+        return {
+            "status": "healthy",
+            "component": "market_knowledge",
+            "version": MARKET_KNOWLEDGE.version,
+            "last_updated": MARKET_KNOWLEDGE.last_updated,
+            "checks": {
+                "sebi_rules_loaded": True,
+                "lot_sizes": {
+                    "NIFTY": nifty_lot,
+                    "BANKNIFTY": banknifty_lot
+                },
+                "greeks_engine": greeks_sample,
+                "trading_session": session.get("session"),
+                "is_trading": session.get("is_trading", False)
+            }
+        }
+    except Exception as e:
+        logger.exception("Knowledge health check failed")
+        return {
+            "status": "unhealthy",
+            "component": "market_knowledge",
+            "error": str(e)
+        }
+
 
 @app.get("/")
 async def root():

@@ -1,39 +1,73 @@
 # =====================================================================
 # InfinityAI.Pro - Engine B (AI/ML Signal Generation)
-# ML: XGBoost, LightGBM, CatBoost, Transformers, NLTK
+# Production-grade Cloud Run image
 # =====================================================================
+
 FROM python:3.11-slim
 
-# Install system dependencies for ML libraries
+# --------------------------------------------------
+# System dependencies (ML runtime)
+# --------------------------------------------------
 RUN apt-get update && apt-get install -y \
     build-essential \
     libgomp1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# --------------------------------------------------
+# Environment
+# --------------------------------------------------
+ENV PYTHONUNBUFFERED=1 \
+    PORT=8080 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY ./requirements.txt /app/
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# --------------------------------------------------
+# Python dependencies (cached layer)
+# --------------------------------------------------
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Download NLTK data
-RUN python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('punkt_tab', quiet=True); nltk.download('stopwords', quiet=True); nltk.download('vader_lexicon', quiet=True)" || true
+# --------------------------------------------------
+# NLTK assets (explicit + resilient)
+# --------------------------------------------------
+RUN python - <<EOF
+import nltk
+for pkg in ["punkt", "punkt_tab", "stopwords", "vader_lexicon"]:
+    try:
+        nltk.download(pkg, quiet=True)
+    except Exception as e:
+        print(f"NLTK download failed for {pkg}: {e}")
+EOF
 
-# Copy application code
-COPY ./src /app/src
+# --------------------------------------------------
+# Application source
+# --------------------------------------------------
+COPY src /app/src
 
-# Create models directory for ML model persistence
+# --------------------------------------------------
+# Runtime directories
+# --------------------------------------------------
 RUN mkdir -p /app/models
 
-# Environment variables
-ENV PORT=8080
-ENV PYTHONUNBUFFERED=1
+# --------------------------------------------------
+# Non-root user (Cloud Run best practice)
+# --------------------------------------------------
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
-# Expose port
+# --------------------------------------------------
+# Expose & health
+# --------------------------------------------------
 EXPOSE 8080
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+  CMD curl -f http://localhost:8080/health || exit 1
 
-# Run application
+# --------------------------------------------------
+# Start service
+# --------------------------------------------------
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -55,7 +55,7 @@ interface Signal {
   security_id?: string;
   current_price?: number;
   [key: string]: unknown;
-} 
+}
 
 export function AutoTradingCard() {
   const funds = useAppStore((s) => s.funds);
@@ -95,6 +95,7 @@ export function AutoTradingCard() {
 
   // Market/Instrument selection state - sync with store
   const [selectedMarkets, setSelectedMarkets] = useState<TradingInstrument[]>(tradingConfig.selectedInstruments);
+  const [showConfig, setShowConfig] = useState(false);
 
   // Load settings from backend on mount
   useEffect(() => {
@@ -246,7 +247,7 @@ export function AutoTradingCard() {
 
   const availableBalance = funds?.availableBalance || 0;
   const signals = signalsData?.data || [];
-  const activeSignals: Signal[] = Array.isArray(signals) ? signals.filter((s: any) => typeof (s as any).confidence === 'number' && (s as any).confidence > 0.7) : []; 
+  const activeSignals: Signal[] = Array.isArray(signals) ? signals.filter((s: any) => typeof (s as any).confidence === 'number' && (s as any).confidence > 0.7) : [];
 
   // Risk level configurations
   const riskConfigs = {
@@ -525,7 +526,7 @@ export function AutoTradingCard() {
           {statusMessage}
         </div>
 
-        {/* Trading Amount */}
+        {/* Trading Amount - Always Visible */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label htmlFor="amount" className="text-sm font-medium">
@@ -570,7 +571,7 @@ export function AutoTradingCard() {
           />
         </div>
 
-        {/* Risk Level */}
+        {/* Risk Level - Always Visible */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Risk Level</Label>
           <Select
@@ -607,254 +608,268 @@ export function AutoTradingCard() {
           </p>
         </div>
 
-        {/* Market/Instrument Selection */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Trading Instruments</Label>
-            <Badge variant="outline" className="text-xs">
-              {selectedMarkets.length} selected
-            </Badge>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {marketOptions.map((market) => {
-              const isSelected = selectedMarkets.includes(market.id);
-              return (
-                <button
-                  key={market.id}
-                  type="button"
-                  onClick={() => !session.isActive && toggleMarket(market.id)}
-                  disabled={session.isActive}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border text-left transition-all",
-                    "hover:border-primary/50 hover:bg-muted/50",
-                    isSelected
-                      ? "border-primary bg-primary/10 ring-1 ring-primary/20"
-                      : "border-border",
-                    session.isActive && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <span className="text-lg">{market.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      "text-xs font-medium truncate",
-                      isSelected ? "text-primary" : "text-foreground"
-                    )}>
-                      {market.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {market.description}
-                    </p>
-                  </div>
-                  {isSelected && (
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {selectedMarkets.length === 0 && (
-            <p className="text-xs text-red-500 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              Please select at least one instrument to trade
-            </p>
-          )}
+        {/* Configuration Toggle */}
+        <div className="flex justify-end">
+           <Button variant="ghost" size="sm" onClick={() => setShowConfig(!showConfig)} className="text-xs">
+             <Settings2 className="mr-2 h-3 w-3" />
+             {showConfig ? 'Hide Configuration' : 'Configure Strategy'}
+           </Button>
         </div>
 
-        {/* Advanced Settings */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs">Stop Loss %</Label>
-            <div className="flex items-center gap-2">
-              <Slider
-                value={[stopLossPercent]}
-                onValueChange={([v]) => setStopLossPercent(v)}
-                min={0.5}
-                max={5}
-                step={0.5}
-                disabled={session.isActive}
-                className="flex-1"
-              />
-              <span className="text-sm font-medium w-10">{stopLossPercent}%</span>
+        {/* Collapsible Configuration */}
+        {showConfig && (
+          <div className="space-y-6 pt-4 border-t animate-in fade-in slide-in-from-top-2">
+            {/* Market/Instrument Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Trading Instruments</Label>
+                <Badge variant="outline" className="text-xs">
+                  {selectedMarkets.length} selected
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {marketOptions.map((market) => {
+                  const isSelected = selectedMarkets.includes(market.id);
+                  return (
+                    <button
+                      key={market.id}
+                      type="button"
+                      onClick={() => !session.isActive && toggleMarket(market.id)}
+                      disabled={session.isActive}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border text-left transition-all",
+                        "hover:border-primary/50 hover:bg-muted/50",
+                        isSelected
+                          ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                          : "border-border",
+                        session.isActive && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      <span className="text-lg">{market.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-xs font-medium truncate",
+                          isSelected ? "text-primary" : "text-foreground"
+                        )}>
+                          {market.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate hidden sm:block">
+                          {market.description}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedMarkets.length === 0 && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Please select at least one instrument to trade
+                </p>
+              )}
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">Take Profit %</Label>
-            <div className="flex items-center gap-2">
-              <Slider
-                value={[takeProfitPercent]}
-                onValueChange={([v]) => setTakeProfitPercent(v)}
-                min={1}
-                max={10}
-                step={0.5}
-                disabled={session.isActive}
-                className="flex-1"
-              />
-              <span className="text-sm font-medium w-10">{takeProfitPercent}%</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label className="text-xs">Max Trades per Day</Label>
-          <div className="flex items-center gap-2">
-            <Slider
-              value={[maxTradesPerDay]}
-              onValueChange={([v]) => setMaxTradesPerDay(v)}
-              min={1}
-              max={50}
-              step={1}
-              disabled={session.isActive}
-              className="flex-1"
-            />
-            <span className="text-sm font-medium w-10">{maxTradesPerDay}</span>
-          </div>
-        </div>
-
-        {/* Toggles */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="ai-signals" className="text-sm">Use AI Signals</Label>
-            </div>
-            <Switch
-              id="ai-signals"
-              checked={useAISignals}
-              onCheckedChange={setUseAISignals}
-              disabled={session.isActive}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="rebalance" className="text-sm">Auto Rebalance</Label>
-            </div>
-            <Switch
-              id="rebalance"
-              checked={autoRebalance}
-              onCheckedChange={setAutoRebalance}
-              disabled={session.isActive}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="trailing-sl" className="text-sm">Trailing Stop Loss</Label>
-            </div>
-            <Switch
-              id="trailing-sl"
-              checked={trailingStopLoss}
-              onCheckedChange={setTrailingStopLoss}
-              disabled={session.isActive}
-            />
-          </div>
-        </div>
-
-        {/* Extended Risk Settings */}
-        <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4 text-muted-foreground" />
-            <Label className="text-sm font-medium">Advanced Risk Settings</Label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Min Capital (₹)</Label>
-              <Input
-                type="number"
-                value={minCapital}
-                onChange={(e) => setMinCapital(Number(e.target.value))}
-                disabled={session.isActive}
-                min={1000}
-                step={1000}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Max Capital (₹)</Label>
-              <Input
-                type="number"
-                value={maxCapital}
-                onChange={(e) => setMaxCapital(Number(e.target.value))}
-                disabled={session.isActive}
-                min={1000}
-                step={1000}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Max Risk per Trade (%)</Label>
-              <div className="flex items-center gap-2">
-                <Slider
-                  value={[maxRiskPerTrade * 100]}
-                  onValueChange={([v]) => setMaxRiskPerTrade(v / 100)}
-                  min={0.5}
-                  max={10}
-                  step={0.5}
-                  disabled={session.isActive}
-                  className="flex-1"
-                />
-                <span className="text-sm font-medium w-12">{(maxRiskPerTrade * 100).toFixed(1)}%</span>
+            {/* Advanced Settings Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Stop Loss %</Label>
+                <div className="flex items-center gap-2">
+                  <Slider
+                    value={[stopLossPercent]}
+                    onValueChange={([v]) => setStopLossPercent(v)}
+                    min={0.5}
+                    max={5}
+                    step={0.5}
+                    disabled={session.isActive}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-10">{stopLossPercent}%</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Take Profit %</Label>
+                <div className="flex items-center gap-2">
+                  <Slider
+                    value={[takeProfitPercent]}
+                    onValueChange={([v]) => setTakeProfitPercent(v)}
+                    min={1}
+                    max={10}
+                    step={0.5}
+                    disabled={session.isActive}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-10">{takeProfitPercent}%</span>
+                </div>
               </div>
             </div>
+
             <div className="space-y-2">
-              <Label className="text-xs">Min AI Confidence (%)</Label>
+              <Label className="text-xs">Max Trades per Day</Label>
               <div className="flex items-center gap-2">
                 <Slider
-                  value={[minConfidence * 100]}
-                  onValueChange={([v]) => setMinConfidence(v / 100)}
-                  min={50}
-                  max={99}
+                  value={[maxTradesPerDay]}
+                  onValueChange={([v]) => setMaxTradesPerDay(v)}
+                  min={1}
+                  max={50}
                   step={1}
                   disabled={session.isActive}
                   className="flex-1"
                 />
-                <span className="text-sm font-medium w-12">{(minConfidence * 100).toFixed(0)}%</span>
+                <span className="text-sm font-medium w-10">{maxTradesPerDay}</span>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs">Position Sizing Method</Label>
-            <Select
-              value={positionSizingMethod}
-              onValueChange={setPositionSizingMethod}
-              disabled={session.isActive}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed">Fixed Amount</SelectItem>
-                <SelectItem value="percentage">Percentage of Capital</SelectItem>
-                <SelectItem value="kelly">Kelly Criterion</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            {/* Toggles */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="ai-signals" className="text-sm">Use AI Signals</Label>
+                </div>
+                <Switch
+                  id="ai-signals"
+                  checked={useAISignals}
+                  onCheckedChange={setUseAISignals}
+                  disabled={session.isActive}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="rebalance" className="text-sm">Auto Rebalance</Label>
+                </div>
+                <Switch
+                  id="rebalance"
+                  checked={autoRebalance}
+                  onCheckedChange={setAutoRebalance}
+                  disabled={session.isActive}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="trailing-sl" className="text-sm">Trailing Stop Loss</Label>
+                </div>
+                <Switch
+                  id="trailing-sl"
+                  checked={trailingStopLoss}
+                  onCheckedChange={setTrailingStopLoss}
+                  disabled={session.isActive}
+                />
+              </div>
+            </div>
 
-        {/* Save Settings Button */}
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={saveSettingsToBackend}
-            variant="outline"
-            className="flex-1"
-            disabled={session.isActive || settingsLoading}
-          >
-            {settingsLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-            )}
-            {settingsSaved ? 'Settings Saved!' : 'Save Settings to Cloud'}
-          </Button>
-          {settingsSaved && (
-            <Badge variant="default" className="bg-green-500">
-              ✓ Saved
-            </Badge>
-          )}
-        </div>
+            {/* Extended Risk Settings */}
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Advanced Risk Settings</Label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs">Min Capital (₹)</Label>
+                  <Input
+                    type="number"
+                    value={minCapital}
+                    onChange={(e) => setMinCapital(Number(e.target.value))}
+                    disabled={session.isActive}
+                    min={1000}
+                    step={1000}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Max Capital (₹)</Label>
+                  <Input
+                    type="number"
+                    value={maxCapital}
+                    onChange={(e) => setMaxCapital(Number(e.target.value))}
+                    disabled={session.isActive}
+                    min={1000}
+                    step={1000}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs">Max Risk per Trade (%)</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      value={[maxRiskPerTrade * 100]}
+                      onValueChange={([v]) => setMaxRiskPerTrade(v / 100)}
+                      min={0.5}
+                      max={10}
+                      step={0.5}
+                      disabled={session.isActive}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-medium w-12">{(maxRiskPerTrade * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Min AI Confidence (%)</Label>
+                <div className="flex items-center gap-2">
+                  <Slider
+                    value={[minConfidence * 100]}
+                    onValueChange={([v]) => setMinConfidence(v / 100)}
+                    min={50}
+                    max={99}
+                    step={1}
+                    disabled={session.isActive}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-12">{(minConfidence * 100).toFixed(0)}%</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Position Sizing Method</Label>
+                <Select
+                  value={positionSizingMethod}
+                  onValueChange={setPositionSizingMethod}
+                  disabled={session.isActive}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    <SelectItem value="percentage">Percentage of Capital</SelectItem>
+                    <SelectItem value="kelly">Kelly Criterion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Save Settings Button - Inside collapsible */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={saveSettingsToBackend}
+                variant="outline"
+                className="flex-1"
+                disabled={session.isActive || settingsLoading}
+              >
+                {settingsLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                )}
+                {settingsSaved ? 'Settings Saved!' : 'Save Settings to Cloud'}
+              </Button>
+              {settingsSaved && (
+                <Badge variant="default" className="bg-green-500">
+                  ✓ Saved
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         <Separator />
 
@@ -875,29 +890,29 @@ export function AutoTradingCard() {
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-2xl font-bold">{session.tradesExecuted}</p>
-              <p className="text-xs text-muted-foreground">Trades</p>
-            </div>
-            <div className={cn(
-              "p-3 rounded-lg",
-              session.totalPnL >= 0
-                ? "bg-green-50 dark:bg-green-900/20"
-                : "bg-red-50 dark:bg-red-900/20"
-            )}>
-              <p className={cn(
-                "text-2xl font-bold",
-                session.totalPnL >= 0 ? "text-green-600" : "text-red-600"
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-2xl font-bold">{session.tradesExecuted}</p>
+                <p className="text-xs text-muted-foreground">Trades</p>
+              </div>
+              <div className={cn(
+                "p-3 rounded-lg",
+                session.totalPnL >= 0
+                  ? "bg-green-50 dark:bg-green-900/20"
+                  : "bg-red-50 dark:bg-red-900/20"
               )}>
-                {session.totalPnL >= 0 ? '+' : ''}{formatCurrency(session.totalPnL)}
-              </p>
-              <p className="text-xs text-muted-foreground">P&L</p>
+                <p className={cn(
+                  "text-2xl font-bold",
+                  session.totalPnL >= 0 ? "text-green-600" : "text-red-600"
+                )}>
+                  {session.totalPnL >= 0 ? '+' : ''}{formatCurrency(session.totalPnL)}
+                </p>
+                <p className="text-xs text-muted-foreground">P&L</p>
+              </div>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-2xl font-bold">{session.winRate.toFixed(0)}%</p>
+                <p className="text-xs text-muted-foreground">Win Rate</p>
+              </div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-2xl font-bold">{session.winRate.toFixed(0)}%</p>
-              <p className="text-xs text-muted-foreground">Win Rate</p>
-            </div>
-          </div>
           </>
         )}
 
