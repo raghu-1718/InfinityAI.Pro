@@ -14,6 +14,14 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
+// Debug: Log config version (Check this in browser console)
+if (typeof window !== 'undefined') {
+  console.log('[InfinityAI] Firebase Init v20251222-02 - Checking Keys:', {
+    hasApiKey: !!firebaseConfig.apiKey,
+    projectId: firebaseConfig.projectId
+  });
+}
+
 // Initialize Firebase only in the browser (avoid running during Next.js prerender/SSR)
 let app = undefined as ReturnType<typeof initializeApp> | undefined;
 let authClient = null as ReturnType<typeof getAuth> | null;
