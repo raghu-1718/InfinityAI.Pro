@@ -44,6 +44,7 @@ coverage/
 infra/collected/
 *.zip
 *.tar.gz
+archive/
 
 # Documentation & Trees
 *_tree.txt
