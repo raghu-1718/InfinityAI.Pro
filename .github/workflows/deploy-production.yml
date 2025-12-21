@@ -12,32 +12,32 @@ on:
   workflow_dispatch:
     inputs:
       deploy_all:
-        description: 'Force deploy all services'
+        description: "Force deploy all services"
         required: false
         default: false
         type: boolean
       deploy_engine_a:
-        description: 'Deploy Engine A'
+        description: "Deploy Engine A"
         required: false
         default: false
         type: boolean
       deploy_engine_b:
-        description: 'Deploy Engine B'
+        description: "Deploy Engine B"
         required: false
         default: false
         type: boolean
       deploy_engine_c:
-        description: 'Deploy Engine C'
+        description: "Deploy Engine C"
         required: false
         default: false
         type: boolean
       deploy_frontend:
-        description: 'Deploy Frontend'
+        description: "Deploy Frontend"
         required: false
         default: false
         type: boolean
       deploy_functions:
-        description: 'Deploy Firebase Functions'
+        description: "Deploy Firebase Functions"
         required: false
         default: false
         type: boolean
@@ -333,8 +333,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/web-app/package-lock.json
 
       - name: Install Dependencies
@@ -348,7 +348,12 @@ jobs:
           NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-mfvaq54jjq-uc.a.run.app
           NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-mfvaq54jjq-uc.a.run.app
           NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-mfvaq54jjq-uc.a.run.app
+          NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: gen-lang-client-0779271931.firebaseapp.com
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: gen-lang-client-0779271931
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: gen-lang-client-0779271931.firebasestorage.app
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: 429140669077
+          NEXT_PUBLIC_FIREBASE_APP_ID: 1:429140669077:web:e071ad7a136c74a3ea219c
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -386,8 +391,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: frontend/functions/package-lock.json
 
       - name: Install Firebase CLI
@@ -430,7 +435,14 @@ jobs:
   verify-deployment:
     name: ✅ Verify Deployment
     runs-on: ubuntu-latest
-    needs: [deploy-engine-a, deploy-engine-b, deploy-engine-c, deploy-frontend, deploy-functions]
+    needs:
+      [
+        deploy-engine-a,
+        deploy-engine-b,
+        deploy-engine-c,
+        deploy-frontend,
+        deploy-functions,
+      ]
     if: always() && (needs.deploy-engine-a.result == 'success' || needs.deploy-engine-b.result == 'success' || needs.deploy-engine-c.result == 'success' || needs.deploy-frontend.result == 'success' || needs.deploy-functions.result == 'success')
 
     steps:
@@ -504,7 +516,14 @@ jobs:
   notify-failure:
     name: 🚨 Notify on Failure
     runs-on: ubuntu-latest
-    needs: [deploy-engine-a, deploy-engine-b, deploy-engine-c, deploy-frontend, deploy-functions]
+    needs:
+      [
+        deploy-engine-a,
+        deploy-engine-b,
+        deploy-engine-c,
+        deploy-frontend,
+        deploy-functions,
+      ]
     if: failure()
     steps:
       - name: Create Failure Summary

@@ -10,12 +10,12 @@ on:
       - main
       - develop
     paths:
-      - 'backend/**'
-      - 'frontend/web-app/**'
-      - 'frontend/functions/**'
+      - "backend/**"
+      - "frontend/web-app/**"
+      - "frontend/functions/**"
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
 
 jobs:
   # ============================================
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/web-app/package-lock.json
 
       - name: Install Dependencies
@@ -55,6 +55,12 @@ jobs:
           NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-mfvaq54jjq-uc.a.run.app
           NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-mfvaq54jjq-uc.a.run.app
           NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-mfvaq54jjq-uc.a.run.app
+          NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: gen-lang-client-0779271931.firebaseapp.com
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: gen-lang-client-0779271931
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: gen-lang-client-0779271931.firebasestorage.app
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: 429140669077
+          NEXT_PUBLIC_FIREBASE_APP_ID: 1:429140669077:web:e071ad7a136c74a3ea219c
 
   # ============================================
   # Validate Firebase Functions (Gemini/Vertex AI)
@@ -71,7 +77,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/functions/package-lock.json
 
       - name: Install Dependencies
@@ -100,7 +106,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Dependencies
         working-directory: backend/engine-a
@@ -138,7 +144,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Dependencies
         working-directory: backend/engine-b
@@ -170,7 +176,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Dependencies
         working-directory: backend/engine-c
