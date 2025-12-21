@@ -2,14 +2,6 @@
   "projects": {
     "default": "gen-lang-client-0779271931"
   },
-  "targets": {
-    "gen-lang-client-0779271931": {
-      "hosting": {
-        "main": [
-          "gen-lang-client-0779271931"
-        ]
-      }
-    }
-  },
+  "targets": {},
   "etags": {}
 }

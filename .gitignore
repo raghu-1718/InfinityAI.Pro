@@ -17,6 +17,9 @@ dhan_token.txt
 engines/**/jwt-secret-key.txt
 engines/**/temp_api_key.txt
 .firebase/
+backend/.env
+backend/gcp_config.env
+frontend/web/firebaseConfig.js
 
 # Logs & reports
 logs/
