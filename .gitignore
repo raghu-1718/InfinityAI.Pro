@@ -51,11 +51,15 @@ archive/
 *_structure.txt
 repo_root.txt
 
-# OS/IDE
+# OS/IDE & Tools
 .DS_Store
 .idea/
 .vscode/
 .idx/
+.devcontainer/
+.gemini/
+.continue/
+.copilot/
 
 # Misc
 *.db
