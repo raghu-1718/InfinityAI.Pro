@@ -1,5 +1,0 @@
-62d3792948df37794042853fb772c5f1030efbfb 2025-12-02 06:09:21 +0530 refactor: Align directory names with engine naming convention
-5a1317a2c53451db7abf3d40085d04c09d9c3adb 2025-12-02 05:05:25 +0530 refactor: Consolidate main.py and main_minimal.py - eliminate minimal
-e01de1352cf18b538d875ca0ed70210ce8b0d576 2025-12-02 04:51:42 +0530 feat: Remove demo/fake values - use REAL data sources
-1bddf599c4f018270d73270e064a87150a9aa84a 2025-12-02 04:06:01 +0530 feat: Complete Vertex AI/GenAI integration with real-time market data v3.7.7
-acee2fc05fafe5877a44d089929fb6a28ed665d9 2025-12-02 02:32:14 +0530 Fix Gemini AI with Vertex AI mode and Agent Analysis endpoint

@@ -45,6 +45,7 @@ infra/collected/
 *.zip
 *.tar.gz
 archive/
+artifacts/
 
 # Documentation & Trees
 *_tree.txt
@@ -68,4 +69,3 @@ firebase-sa-key.json
 token.txt
 PATH.txt
 settings.txt
-artifacts/sensitive/
