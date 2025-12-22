@@ -1,6 +1,6 @@
 # InfinityAI.Pro - Comprehensive End-to-End Audit Report
 **Generated:** November 26, 2025  
-**Project:** after-yesterday-473512-k3  
+**Project:** gen-lang-client-0779271931  
 **Branch:** feature/3-engine-architecture  
 
 ---
@@ -172,7 +172,7 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ### 3.1 infinityai-engine-a
 - [x] **Check 75:** Service deployed
 - [x] **Check 76:** Status: RUNNING (revision 00011-zsj)
-- [x] **Check 77:** URL: https://infinityai-engine-a-573866363639.us-central1.run.app
+- [x] **Check 77:** URL: https://infinityai-engine-a-429140669077.us-central1.run.app
 - [x] **Check 78:** Memory: 512Mi
 - [x] **Check 79:** CPU: 1
 - [x] **Check 80:** Min instances: 1
@@ -185,7 +185,7 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ### 3.2 infinityai-engine-b
 - [x] **Check 86:** Service deployed
 - [x] **Check 87:** Status: RUNNING (revision 00007-w94)
-- [x] **Check 88:** URL: https://infinityai-engine-b-573866363639.us-central1.run.app
+- [x] **Check 88:** URL: https://infinityai-engine-b-429140669077.us-central1.run.app
 - [x] **Check 89:** Memory: 1Gi
 - [x] **Check 90:** CPU: 2
 - [x] **Check 91:** Min instances: 1
@@ -198,7 +198,7 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ### 3.3 infinityai-engine-c-execution
 - [x] **Check 97:** Service deployed
 - [x] **Check 98:** Status: RUNNING (revision 00008-tng)
-- [x] **Check 99:** URL: https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+- [x] **Check 99:** URL: https://infinityai-engine-c-execution-429140669077.us-central1.run.app
 - [x] **Check 100:** Memory: 512Mi
 - [x] **Check 101:** CPU: 1
 - [x] **Check 102:** Min instances: 1
@@ -217,7 +217,7 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ## 4. Container Images & Builds
 
 ### 4.1 Google Container Registry (GCR)
-- [x] **Check 110:** GCR repository exists: `gcr.io/after-yesterday-473512-k3`
+- [x] **Check 110:** GCR repository exists: `gcr.io/gen-lang-client-0779271931`
 - [x] **Check 111:** infinityai-engine-a:v2 (latest, includes google-generativeai)
 - [x] **Check 112:** infinityai-engine-b:v5 (latest, all dependencies)
 - [x] **Check 113:** infinityai-engine-c-execution:v-final (deployed)
@@ -279,8 +279,8 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ## 6. Frontend Application
 
 ### 6.1 Firebase Hosting
-- [x] **Check 150:** Firebase project configured: after-yesterday-473512-k3
-- [x] **Check 151:** Hosting deployed: https://after-yesterday-473512-k3.web.app
+- [x] **Check 150:** Firebase project configured: gen-lang-client-0779271931
+- [x] **Check 151:** Hosting deployed: https://gen-lang-client-0779271931.web.app
 - [x] **Check 152:** HTTP 200 response
 - [x] **Check 153:** HTML renders correctly
 - [x] **Check 154:** All engine URLs referenced
@@ -408,10 +408,10 @@ This document contains a comprehensive audit of the InfinityAI.Pro trading platf
 ## 10. Custom Domains & URLs
 
 ### 10.1 Current URLs
-- [x] **Check 226:** Engine A: infinityai-engine-a-573866363639.us-central1.run.app
-- [x] **Check 227:** Engine B: infinityai-engine-b-573866363639.us-central1.run.app
-- [x] **Check 228:** Engine C: infinityai-engine-c-execution-573866363639.us-central1.run.app
-- [x] **Check 229:** Frontend: after-yesterday-473512-k3.web.app
+- [x] **Check 226:** Engine A: infinityai-engine-a-429140669077.us-central1.run.app
+- [x] **Check 227:** Engine B: infinityai-engine-b-429140669077.us-central1.run.app
+- [x] **Check 228:** Engine C: infinityai-engine-c-execution-429140669077.us-central1.run.app
+- [x] **Check 229:** Frontend: gen-lang-client-0779271931.web.app
 - [x] **Check 230:** All URLs accessible via HTTPS
 
 ### 10.2 Custom Domains

@@ -2,7 +2,7 @@
 # This script performs 300+ verification checks across all systems
 
 param(
-    [string]$ProjectId = "after-yesterday-473512-k3",
+    [string]$ProjectId = "gen-lang-client-0779271931",
     [string]$Region = "us-central1"
 )
 
@@ -228,9 +228,9 @@ try {
 Write-Host "[5/15] API ENDPOINTS & ROUTES" -ForegroundColor Cyan -BackgroundColor DarkCyan
 
 $endpoints = @(
-    @{Engine="Engine A"; URL="https://infinityai-engine-a-573866363639.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/orchestrate", "/dhan/subscribe-live-data")},
-    @{Engine="Engine B"; URL="https://infinityai-engine-b-573866363639.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/api/predict", "/api/ai-signals", "/api/gemini/analyze")},
-    @{Engine="Engine C"; URL="https://infinityai-engine-c-execution-573866363639.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/api/dhan/place-order")}
+    @{Engine="Engine A"; URL="https://infinityai-engine-a-429140669077.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/orchestrate", "/dhan/subscribe-live-data")},
+    @{Engine="Engine B"; URL="https://infinityai-engine-b-429140669077.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/api/predict", "/api/ai-signals", "/api/gemini/analyze")},
+    @{Engine="Engine C"; URL="https://infinityai-engine-c-execution-429140669077.us-central1.run.app"; Endpoints=@("/", "/healthz", "/docs", "/api/dhan/place-order")}
 )
 
 foreach ($ep in $endpoints) {
@@ -281,7 +281,7 @@ if (Test-Path "frontend\web\index.html") {
 
 # Firebase hosting status
 try {
-    $frontendUrl = "https://after-yesterday-473512-k3.web.app"
+    $frontendUrl = "https://gen-lang-client-0779271931.web.app"
     $response = Invoke-WebRequest -Uri $frontendUrl -TimeoutSec 10
     Add-AuditCheck "Frontend" "Firebase Hosting" $(if ($response.StatusCode -eq 200) {"✅"} else {"❌"}) "HTTP $($response.StatusCode)" "Deploy to Firebase"
 } catch {
@@ -424,10 +424,10 @@ try {
 
 # Verify URLs are accessible
 $urls = @{
-    "Frontend" = "https://after-yesterday-473512-k3.web.app"
-    "Engine A" = "https://infinityai-engine-a-573866363639.us-central1.run.app"
-    "Engine B" = "https://infinityai-engine-b-573866363639.us-central1.run.app"
-    "Engine C" = "https://infinityai-engine-c-execution-573866363639.us-central1.run.app"
+    "Frontend" = "https://gen-lang-client-0779271931.web.app"
+    "Engine A" = "https://infinityai-engine-a-429140669077.us-central1.run.app"
+    "Engine B" = "https://infinityai-engine-b-429140669077.us-central1.run.app"
+    "Engine C" = "https://infinityai-engine-c-execution-429140669077.us-central1.run.app"
 }
 
 foreach ($urlKey in $urls.Keys) {

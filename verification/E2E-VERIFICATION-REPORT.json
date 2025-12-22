@@ -3,7 +3,7 @@
     "title": "InfinityAI.Pro End-to-End Verification Report",
     "generated_at": "2025-12-02T04:30:00Z",
     "environment": "PRODUCTION",
-    "project_id": "after-yesterday-473512-k3",
+    "project_id": "gen-lang-client-0779271931",
     "region": "us-central1",
     "version": "3.7.7-vertexai"
   },
@@ -28,7 +28,7 @@
       "status": "PASS",
       "service": "engine-a-orchestrator",
       "version": "3.7-google-integrations",
-      "url": "https://engine-a-573866363639.us-central1.run.app",
+      "url": "https://engine-a-429140669077.us-central1.run.app",
       "health": "healthy",
       "integrations": {
         "genai": true,
@@ -42,7 +42,7 @@
       "status": "PASS",
       "service": "engine-b-ai-ml-prod",
       "version": "3.7.7-vertexai",
-      "url": "https://engine-b-573866363639.us-central1.run.app",
+      "url": "https://engine-b-429140669077.us-central1.run.app",
       "health": "healthy",
       "ml_models": {
         "xgboost": true,
@@ -65,7 +65,7 @@
       "status": "PASS",
       "service": "engine-c-execution",
       "version": "3.5-enhanced-execution",
-      "url": "https://engine-c-573866363639.us-central1.run.app",
+      "url": "https://engine-c-429140669077.us-central1.run.app",
       "health": "healthy",
       "broker": "DhanHQ",
       "dhan_connected": true,
@@ -80,7 +80,7 @@
     },
     "firebase": {
       "status": "PASS",
-      "project": "after-yesterday-473512-k3",
+      "project": "gen-lang-client-0779271931",
       "firestore_type": "FIRESTORE_NATIVE",
       "realtime_updates": true,
       "location": "us-central1"
@@ -311,7 +311,7 @@
     }
   },
   "infrastructure": {
-    "gcp_project": "after-yesterday-473512-k3",
+    "gcp_project": "gen-lang-client-0779271931",
     "region": "us-central1",
     "cloud_run_services": 3,
     "firestore_database": "(default)",

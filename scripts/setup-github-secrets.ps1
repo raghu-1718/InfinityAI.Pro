@@ -11,7 +11,7 @@
 #
 # 2. GCP_SERVICE_ACCOUNT
 #    Format: SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com
-#    Example: github-actions@after-yesterday-473512-k3.iam.gserviceaccount.com
+#    Example: github-actions@gen-lang-client-0779271931.iam.gserviceaccount.com
 #
 # 3. FIREBASE_SERVICE_ACCOUNT
 #    JSON key file for Firebase deployment

@@ -4,7 +4,7 @@
 
 set -e
 
-PROJECT_ID="after-yesterday-473512-k3"
+PROJECT_ID="gen-lang-client-0779271931"
 REGION="us-central1"
 SERVICE_NAME="engine-d-chatbot-prod"
 

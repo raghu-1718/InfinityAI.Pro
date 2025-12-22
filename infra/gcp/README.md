@@ -19,13 +19,13 @@ gcp/
 ### Services Deployed
 
 1. **Engine Core** (engine-a): Market data ingestion
-   - URL: https://infinityai-engine-core-{hash}.a.run.app
+   - URL: https://engine-a-429140669077.us-central1.run.app
 
 2. **Engine Analytics** (engine-b): ML/AI signals
-   - URL: https://infinityai-engine-analytics-{hash}.a.run.app
+   - URL: https://engine-b-429140669077.us-central1.run.app
 
 3. **Engine Execution** (engine-c): Trade execution + WebSocket
-   - URL: https://infinityai-engine-execution-{hash}.a.run.app
+   - URL: https://engine-c-429140669077.us-central1.run.app
 
 4. **Frontend** (React): User dashboard
    - URL: https://infinityai.pro
@@ -34,7 +34,7 @@ gcp/
 
 ```bash
 # 1. Set GCP project
-gcloud config set project after-yesterday-473512-k3
+gcloud config set project gen-lang-client-0779271931
 
 # 2. Initialize Terraform
 cd infra/gcp
@@ -66,9 +66,9 @@ All services expose `/health` endpoint monitored by CI/CD and `verification/suit
 
 ```bash
 # Check all services
-curl https://infinityai-engine-core-{hash}.a.run.app/health
-curl https://infinityai-engine-analytics-{hash}.a.run.app/health
-curl https://infinityai-engine-execution-{hash}.a.run.app/health
+curl https://engine-a-429140669077.us-central1.run.app/health
+curl https://engine-b-429140669077.us-central1.run.app/health
+curl https://engine-c-429140669077.us-central1.run.app/health
 ```
 
 ### Troubleshooting

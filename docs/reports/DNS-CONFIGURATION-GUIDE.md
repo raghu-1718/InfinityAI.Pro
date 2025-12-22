@@ -11,9 +11,9 @@
 ### ✅ What's Working
 - All 3 Cloud Run services are deployed and operational
 - Services accessible via Cloud Run URLs:
-  - `infinityai-engine-a-573866363639.us-central1.run.app`
-  - `infinityai-engine-b-573866363639.us-central1.run.app`
-  - `infinityai-engine-c-execution-573866363639.us-central1.run.app`
+  - `infinityai-engine-a-429140669077.us-central1.run.app`
+  - `infinityai-engine-b-429140669077.us-central1.run.app`
+  - `infinityai-engine-c-execution-429140669077.us-central1.run.app`
 - Frontend deployed to Firebase Hosting
 - Domain mappings created in GCP Cloud Run
 
@@ -48,10 +48,10 @@ When you create a domain mapping in Google Cloud Run:
 
 Frontend is currently configured to use:
 ```
-https://infinityai-engine-a-573866363639.us-central1.run.app
-https://infinityai-engine-b-573866363639.us-central1.run.app
-https://infinityai-engine-c-execution-573866363639.us-central1.run.app
-https://after-yesterday-473512-k3.web.app
+https://infinityai-engine-a-429140669077.us-central1.run.app
+https://infinityai-engine-b-429140669077.us-central1.run.app
+https://infinityai-engine-c-execution-429140669077.us-central1.run.app
+https://gen-lang-client-0779271931.web.app
 ```
 
 These URLs work right now and your application is accessible.
@@ -74,25 +74,25 @@ Run these commands to get the exact DNS records GCP requires:
 # For Engine A
 gcloud beta run domain-mappings describe engine-a.infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3 `
+  --project=gen-lang-client-0779271931 `
   --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)"
 
 # For Engine B
 gcloud beta run domain-mappings describe engine-b.infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3 `
+  --project=gen-lang-client-0779271931 `
   --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)"
 
 # For Engine C
 gcloud beta run domain-mappings describe engine-c.infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3 `
+  --project=gen-lang-client-0779271931 `
   --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)"
 
 # For main domain (if mapped)
 gcloud beta run domain-mappings describe infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3 `
+  --project=gen-lang-client-0779271931 `
   --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)"
 ```
 
@@ -165,7 +165,7 @@ nslookup engine-c.infinityai.pro 8.8.8.8
 # Check domain mapping status
 gcloud beta run domain-mappings describe engine-a.infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 ```
 
 Look for `status.conditions[0].status: True` which means it's ready.
@@ -179,14 +179,14 @@ cd C:\workspace\InfinityAI.Pro
 
 # Update URLs in frontend
 $content = Get-Content "frontend/web/index.html" -Raw
-$content = $content -replace 'https://infinityai-engine-a-573866363639\.us-central1\.run\.app', 'https://engine-a.infinityai.pro'
-$content = $content -replace 'https://infinityai-engine-b-573866363639\.us-central1\.run\.app', 'https://engine-b.infinityai.pro'
-$content = $content -replace 'https://infinityai-engine-c-execution-573866363639\.us-central1\.run\.app', 'https://engine-c.infinityai.pro'
+$content = $content -replace 'https://infinityai-engine-a-429140669077\.us-central1\.run\.app', 'https://engine-a.infinityai.pro'
+$content = $content -replace 'https://infinityai-engine-b-429140669077\.us-central1\.run\.app', 'https://engine-b.infinityai.pro'
+$content = $content -replace 'https://infinityai-engine-c-execution-429140669077\.us-central1\.run\.app', 'https://engine-c.infinityai.pro'
 Set-Content "frontend/web/index.html" -Value $content -NoNewline
 
 # Deploy
 cd frontend/web
-firebase deploy --only hosting --project after-yesterday-473512-k3
+firebase deploy --only hosting --project gen-lang-client-0779271931
 
 # Commit
 cd ../..
@@ -209,13 +209,13 @@ git push origin feature/3-engine-architecture
 
 2. **Verify domain ownership in GCP:**
    ```powershell
-   gcloud domains list-user-verified --project=after-yesterday-473512-k3
+   gcloud domains list-user-verified --project=gen-lang-client-0779271931
    ```
    infinityai.pro should be listed
 
 3. **Check Cloud Run domain mapping status:**
    ```powershell
-   gcloud beta run domain-mappings list --region=us-central1 --project=after-yesterday-473512-k3
+   gcloud beta run domain-mappings list --region=us-central1 --project=gen-lang-client-0779271931
    ```
    Look for "Ready: True"
 
@@ -252,10 +252,10 @@ git push origin feature/3-engine-architecture
 
 ### Working URLs (Use These Now)
 ```
-Engine A: https://infinityai-engine-a-573866363639.us-central1.run.app/docs
-Engine B: https://infinityai-engine-b-573866363639.us-central1.run.app/docs
-Engine C: https://infinityai-engine-c-execution-573866363639.us-central1.run.app/docs
-Frontend: https://after-yesterday-473512-k3.web.app
+Engine A: https://infinityai-engine-a-429140669077.us-central1.run.app/docs
+Engine B: https://infinityai-engine-b-429140669077.us-central1.run.app/docs
+Engine C: https://infinityai-engine-c-execution-429140669077.us-central1.run.app/docs
+Frontend: https://gen-lang-client-0779271931.web.app
 ```
 
 ### Target URLs (After DNS Configuration)

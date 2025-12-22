@@ -255,14 +255,14 @@ curl -X POST http://localhost:8080/api/v1/signal/batch \
 ### Build Docker Image
 ```bash
 cd backend/engine-core
-docker build -t gcr.io/after-yesterday-473512-k3/engine-core:ml-v3 .
-docker push gcr.io/after-yesterday-473512-k3/engine-core:ml-v3
+docker build -t gcr.io/gen-lang-client-0779271931/engine-core:ml-v3 .
+docker push gcr.io/gen-lang-client-0779271931/engine-core:ml-v3
 ```
 
 ### Deploy to Cloud Run
 ```bash
 gcloud run deploy engine-core \
-  --image=gcr.io/after-yesterday-473512-k3/engine-core:ml-v3 \
+  --image=gcr.io/gen-lang-client-0779271931/engine-core:ml-v3 \
   --platform=managed \
   --region=us-central1 \
   --memory=4Gi \

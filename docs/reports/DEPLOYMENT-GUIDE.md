@@ -36,7 +36,7 @@
 
 ## 📋 Prerequisites
 
-1. **GCP Project**: `after-yesterday-473512-k3`
+1. **GCP Project**: `gen-lang-client-0779271931`
 2. **Dhan Account**: Active DhanHQ trading account
 3. **Dhan OAuth App**: Register at [Dhan Developer Portal](https://api.dhan.co)
 4. **Domain**: `infinityai.pro` (DNS configured via Namecheap → Google domains)
@@ -65,10 +65,10 @@ chmod +x scripts/cleanup-legacy-gcp-resources.sh
 
 ```bash
 # Check no legacy services remain
-gcloud run services list --region=us-central1 --project=after-yesterday-473512-k3
+gcloud run services list --region=us-central1 --project=gen-lang-client-0779271931
 
 # Check no Angel secrets remain
-gcloud secrets list --project=after-yesterday-473512-k3 --filter="name:angel-*"
+gcloud secrets list --project=gen-lang-client-0779271931 --filter="name:angel-*"
 ```
 
 ---
@@ -96,7 +96,7 @@ chmod +x scripts/setup-dhan-secrets.sh
 **Option B: Manual Setup**
 
 ```bash
-PROJECT_ID="after-yesterday-473512-k3"
+PROJECT_ID="gen-lang-client-0779271931"
 
 # Create secrets
 echo -n "YOUR_DHAN_CLIENT_ID" | gcloud secrets create dhan-client-id \
@@ -115,7 +115,7 @@ echo -n "https://infinityai.pro/api/auth/dhan/callback" | gcloud secrets create 
 ### 2.3 Grant Service Account Access
 
 ```bash
-SERVICE_ACCOUNT="after-yesterday-473512-k3@appspot.gserviceaccount.com"
+SERVICE_ACCOUNT="gen-lang-client-0779271931@appspot.gserviceaccount.com"
 
 for secret in dhan-client-id dhan-api-secret dhan-access-token dhan-redirect-uri; do
   gcloud secrets add-iam-policy-binding $secret \
@@ -132,7 +132,7 @@ done
 ### 3.1 Set Environment Variables
 
 ```bash
-export PROJECT_ID="after-yesterday-473512-k3"
+export PROJECT_ID="gen-lang-client-0779271931"
 export REGION="us-central1"
 export REPO="gcr.io/${PROJECT_ID}"
 ```

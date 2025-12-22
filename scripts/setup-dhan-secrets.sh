@@ -3,13 +3,13 @@
 # InfinityAI.Pro - Dhan OAuth Secret Configuration Script
 # =====================================================================
 # Purpose: Set up DhanHQ OAuth credentials in Google Secret Manager
-# Project: after-yesterday-473512-k3
+# Project: gen-lang-client-0779271931
 # Date: November 28, 2025
 # =====================================================================
 
 set -e
 
-PROJECT_ID="after-yesterday-473512-k3"
+PROJECT_ID="gen-lang-client-0779271931"
 
 echo "🔐 InfinityAI.Pro - Dhan OAuth Secret Setup"
 echo "Project: $PROJECT_ID"

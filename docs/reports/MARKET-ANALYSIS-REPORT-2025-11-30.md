@@ -14,7 +14,7 @@
 | **Service** | InfinityAI.Pro Engine A (Orchestration & Risk Management) |
 | **Status** | ✅ READY |
 | **Version** | 3.1-ml |
-| **URL** | https://infinityai-engine-a-573866363639.us-central1.run.app |
+| **URL** | https://infinityai-engine-a-429140669077.us-central1.run.app |
 | **ML Features** | Risk Scoring, Position Sizing, VaR Calculation, Sharpe Ratio |
 
 ### Engine B - AI/ML Signal Generation
@@ -23,7 +23,7 @@
 | **Service** | InfinityAI.Pro Engine B (AI/ML Signal Generation) |
 | **Status** | ✅ READY |
 | **Version** | ai-ml-3.1-gradient-boost |
-| **URL** | https://infinityai-engine-b-573866363639.us-central1.run.app |
+| **URL** | https://infinityai-engine-b-429140669077.us-central1.run.app |
 | **ML Models** | XGBoost, LightGBM, Random Forest, NLTK Sentiment |
 | **Frameworks** | XGBoost ✓, LightGBM ✓, Random Forest ✓, Transformers ✓, NLTK Sentiment ✓ |
 
@@ -33,7 +33,7 @@
 | **Service** | InfinityAI.Pro Engine C (Trade Execution & Order Optimization) |
 | **Status** | ✅ READY |
 | **Version** | 3.1-ml |
-| **URL** | https://infinityai-engine-c-execution-573866363639.us-central1.run.app |
+| **URL** | https://infinityai-engine-c-execution-429140669077.us-central1.run.app |
 | **ML Features** | Slippage Prediction, Order Timing, TWAP/VWAP Splitting |
 
 ---
@@ -284,9 +284,9 @@ Based on the InfinityAI engine analysis capabilities, here's the market context:
 
 | Engine | Production URL |
 |--------|----------------|
-| **Engine A** | `https://infinityai-engine-a-573866363639.us-central1.run.app` |
-| **Engine B** | `https://infinityai-engine-b-573866363639.us-central1.run.app` |
-| **Engine C** | `https://infinityai-engine-c-execution-573866363639.us-central1.run.app` |
+| **Engine A** | `https://infinityai-engine-a-429140669077.us-central1.run.app` |
+| **Engine B** | `https://infinityai-engine-b-429140669077.us-central1.run.app` |
+| **Engine C** | `https://infinityai-engine-c-execution-429140669077.us-central1.run.app` |
 
 ---
 

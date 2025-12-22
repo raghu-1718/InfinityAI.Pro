@@ -34,14 +34,8 @@ RUN pip install --upgrade pip && \
 # --------------------------------------------------
 # NLTK assets (explicit + resilient)
 # --------------------------------------------------
-RUN python - <<EOF
-import nltk
-for pkg in ["punkt", "punkt_tab", "stopwords", "vader_lexicon"]:
-    try:
-        nltk.download(pkg, quiet=True)
-    except Exception as e:
-        print(f"NLTK download failed for {pkg}: {e}")
-EOF
+COPY src/download_nltk.py /app/src/download_nltk.py
+RUN python /app/src/download_nltk.py && rm /app/src/download_nltk.py
 
 # --------------------------------------------------
 # Application source
@@ -65,7 +59,7 @@ USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # --------------------------------------------------
 # Start service

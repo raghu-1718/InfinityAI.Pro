@@ -8,7 +8,7 @@
     Run this after initial deployment to enable production monitoring
 #>
 
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $REGION = "us-central1"
 $NOTIFICATION_EMAIL = "<MONITORING_ALERT_EMAIL>"
 

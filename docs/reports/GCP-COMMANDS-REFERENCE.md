@@ -8,7 +8,7 @@
 
 ```bash
 # Set active project
-gcloud config set project after-yesterday-473512-k3
+gcloud config set project gen-lang-client-0779271931
 
 # Set default region
 gcloud config set run/region us-central1
@@ -71,7 +71,7 @@ gcloud secrets describe dhan-client-id
 
 # Grant access to service account
 gcloud secrets add-iam-policy-binding dhan-client-id \
-  --member="serviceAccount:after-yesterday-473512-k3@appspot.gserviceaccount.com" \
+  --member="serviceAccount:gen-lang-client-0779271931@appspot.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 ```
 
@@ -93,7 +93,7 @@ gcloud secrets versions access 1 --secret="dhan-client-id"
 
 ```bash
 # Set variables
-export PROJECT_ID="after-yesterday-473512-k3"
+export PROJECT_ID="gen-lang-client-0779271931"
 export REGION="us-central1"
 export SERVICE_NAME="engine-analytics"
 export IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
@@ -239,7 +239,7 @@ gcloud run services update engine-core \
 
 # Grant service account permission to invoke
 gcloud run services add-iam-policy-binding engine-core \
-  --member="serviceAccount:after-yesterday-473512-k3@appspot.gserviceaccount.com" \
+  --member="serviceAccount:gen-lang-client-0779271931@appspot.gserviceaccount.com" \
   --role="roles/run.invoker" \
   --region=us-central1
 
@@ -259,7 +259,7 @@ gcloud iam service-accounts create infinityai-runner \
 
 # Grant secret access
 gcloud secrets add-iam-policy-binding dhan-client-id \
-  --member="serviceAccount:infinityai-runner@after-yesterday-473512-k3.iam.gserviceaccount.com" \
+  --member="serviceAccount:infinityai-runner@gen-lang-client-0779271931.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 ```
 
@@ -337,16 +337,16 @@ curl -X POST https://infinityai.pro/api/v1/trade/start \
 
 ```bash
 # Engine A
-GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
+GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
 ENGINE_B_URL=https://engine-core-<hash>.run.app
 ENGINE_C_URL=https://engine-execution-<hash>.run.app
 DHAN_REDIRECT_URI=https://infinityai.pro/api/auth/dhan/callback
 
 # Engine B
-GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
+GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
 
 # Engine C
-GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
+GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
 ```
 
 ### Secrets (via Secret Manager)
@@ -366,7 +366,7 @@ DHAN_REDIRECT_URI=dhan-redirect-uri:latest
 #!/bin/bash
 # Complete deployment script
 
-export PROJECT_ID="after-yesterday-473512-k3"
+export PROJECT_ID="gen-lang-client-0779271931"
 export REGION="us-central1"
 
 # Deploy Engine A
@@ -429,5 +429,5 @@ echo "Engine C: ${ENGINE_C_URL}"
 ---
 
 **Last Updated**: November 28, 2025
-**Project**: after-yesterday-473512-k3
+**Project**: gen-lang-client-0779271931
 **Region**: us-central1

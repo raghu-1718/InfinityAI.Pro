@@ -10,7 +10,7 @@ $DOMAIN = "infinityai.pro"
 $WWW_DOMAIN = "www.infinityai.pro"
 $SERVICE_NAME = "infinityai-frontend"
 $REGION = "us-central1"
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $DNS_ZONE = "infinityai-pro-zone"
 
 # Step 1: Check Domain Verification

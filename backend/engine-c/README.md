@@ -42,7 +42,7 @@ engine-execution/
 # Development (.env)
 PORT=8002
 DEBUG=true
-FIRESTORE_PROJECT=after-yesterday-473512-k3
+FIRESTORE_PROJECT=gen-lang-client-0779271931
 DHAN_CLIENT_ID=your-client-id
 DHAN_CLIENT_SECRET=your-client-secret
 DHAN_REDIRECT_URI=http://localhost:8002/api/dhan/callback
@@ -54,7 +54,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 # Production (from Secret Manager)
 DHAN_CLIENT_ID=<from Secret Manager>
 DHAN_CLIENT_SECRET=<from Secret Manager>
-DHAN_REDIRECT_URI=https://infinityai-engine-execution-{hash}.a.run.app/api/dhan/callback
+DHAN_REDIRECT_URI=https://engine-c.infinityai.pro/api/dhan/callback
 ```
 
 ### API Endpoints
@@ -97,11 +97,11 @@ pytest tests/
 ### Cloud Run Deployment
 
 ```bash
-gcloud run deploy engine-execution \
+gcloud run deploy engine-c \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars="DHAN_CLIENT_ID=projects/after-yesterday-473512-k3/secrets/dhan-client-id/versions/latest"
+  --set-env-vars="DHAN_CLIENT_ID=projects/gen-lang-client-0779271931/secrets/dhan-client-id/versions/latest"
 ```
 
 ### Dhan OAuth Flow

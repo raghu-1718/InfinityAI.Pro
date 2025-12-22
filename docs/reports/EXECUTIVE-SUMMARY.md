@@ -27,27 +27,27 @@
 
 ### 1. Backend Architecture (3 Engines)
 - **Engine A (Analytics + Orchestration):** ✅ RUNNING
-  - URL: https://infinityai-engine-a-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-a-429140669077.us-central1.run.app
   - Revision: 00011-zsj
   - Resources: 512Mi RAM, 1 CPU
   - **API Status:** 200 OK on /docs
   
 - **Engine B (AI/ML Intelligence):** ✅ RUNNING
-  - URL: https://infinityai-engine-b-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-b-429140669077.us-central1.run.app
   - Revision: 00007-w94
   - Resources: 1Gi RAM, 2 CPUs
   - **API Status:** 200 OK on /docs
   - ML Models: RF, XGB, LGB loaded
   
 - **Engine C (DhanHQ Execution):** ✅ RUNNING
-  - URL: https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-c-execution-429140669077.us-central1.run.app
   - Revision: 00008-tng
   - Resources: 512Mi RAM, 1 CPU
   - **API Status:** 200 OK on /docs
 
 ### 2. Frontend
 - **Firebase Hosting:** ✅ LIVE
-  - URL: https://after-yesterday-473512-k3.web.app
+  - URL: https://gen-lang-client-0779271931.web.app
   - **HTTP Status:** 200 OK
   - Engine URLs configured correctly
   - Interactive testing interface working

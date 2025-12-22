@@ -168,7 +168,7 @@ async def test_enhanced_genai_client():
         # Initialize client
         print("\n🔧 Initializing EnhancedGenAIClient...")
         client = EnhancedGenAIClient(
-            project_id="after-yesterday-473512-k3",
+            project_id="gen-lang-client-0779271931",
             model_id="gemini-2.0-flash"
         )
         print_result("Client Created", f"Project: {client.project_id}", True)

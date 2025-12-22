@@ -12,7 +12,7 @@ This happens because the domain hosting the app is not in Firebase's list of aut
 ## Fix: Add Authorized Domains in Firebase Console
 
 ### Step 1: Open Firebase Console
-Go to: https://console.firebase.google.com/project/after-yesterday-473512-k3/authentication/settings
+Go to: https://console.firebase.google.com/project/gen-lang-client-0779271931/authentication/settings
 
 ### Step 2: Navigate to Authorized Domains
 1. Click on **Authentication** in the left sidebar
@@ -25,8 +25,8 @@ Add the following domains (click "Add domain" for each):
 | Domain | Purpose |
 |--------|---------|
 | `localhost` | Local development |
-| `after-yesterday-473512-k3.web.app` | Firebase Hosting default domain |
-| `after-yesterday-473512-k3.firebaseapp.com` | Firebase alternative domain |
+| `gen-lang-client-0779271931.web.app` | Firebase Hosting default domain |
+| `gen-lang-client-0779271931.firebaseapp.com` | Firebase alternative domain |
 | `infinityai.pro` | Custom production domain |
 | `www.infinityai.pro` | WWW subdomain |
 | `dashboard.infinityai.pro` | Dashboard subdomain (if used) |
@@ -49,11 +49,11 @@ If you're using a custom domain, you also need to update OAuth consent screen:
 1. Go to: https://console.cloud.google.com/apis/credentials/oauthclient
 2. Select your OAuth 2.0 Client
 3. Under **Authorized redirect URIs**, add:
-   - `https://after-yesterday-473512-k3.firebaseapp.com/__/auth/handler`
+   - `https://gen-lang-client-0779271931.firebaseapp.com/__/auth/handler`
    - `https://infinityai.pro/__/auth/handler`
 4. Under **Authorized JavaScript origins**, add:
    - `https://infinityai.pro`
-   - `https://after-yesterday-473512-k3.web.app`
+   - `https://gen-lang-client-0779271931.web.app`
    - `http://localhost:3000` (for development)
 
 ## Current Firebase Configuration
@@ -63,10 +63,10 @@ The app's Firebase config in `frontend/web-app/src/lib/firebase.ts`:
 ```typescript
 const firebaseConfig = {
   apiKey: "<YOUR_FIREBASE_API_KEY_HERE>",
-  authDomain: "after-yesterday-473512-k3.firebaseapp.com",
-  projectId: "after-yesterday-473512-k3",
-  storageBucket: "after-yesterday-473512-k3.appspot.com",
-  messagingSenderId: "573866363639",
+  authDomain: "gen-lang-client-0779271931.firebaseapp.com",
+  projectId: "gen-lang-client-0779271931",
+  storageBucket: "gen-lang-client-0779271931.appspot.com",
+  messagingSenderId: "429140669077",
   appId: "<YOUR_FIREBASE_APP_ID_HERE>"
 };
 ```

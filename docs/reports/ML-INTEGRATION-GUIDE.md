@@ -237,7 +237,7 @@ python -m spacy download en_core_web_sm
 ### 3. Environment Variables
 
 ```bash
-export GOOGLE_CLOUD_PROJECT="after-yesterday-473512-k3"
+export GOOGLE_CLOUD_PROJECT="gen-lang-client-0779271931"
 export DHAN_CLIENT_ID="<from_secret_manager>"
 export DHAN_ACCESS_TOKEN="<from_secret_manager>"
 ```
@@ -365,14 +365,14 @@ ensemble_pred = model_manager.ensemble_predict(
 cd backend/engine-core
 
 # Build image (includes all ML dependencies)
-docker build -t gcr.io/after-yesterday-473512-k3/engine-core:ml-v3 .
+docker build -t gcr.io/gen-lang-client-0779271931/engine-core:ml-v3 .
 
 # Push to GCR
-docker push gcr.io/after-yesterday-473512-k3/engine-core:ml-v3
+docker push gcr.io/gen-lang-client-0779271931/engine-core:ml-v3
 
 # Deploy to Cloud Run (requires 2GB+ memory for ML models)
 gcloud run deploy engine-core \
-  --image=gcr.io/after-yesterday-473512-k3/engine-core:ml-v3 \
+  --image=gcr.io/gen-lang-client-0779271931/engine-core:ml-v3 \
   --platform=managed \
   --region=us-central1 \
   --memory=4Gi \

@@ -16,13 +16,9 @@ This directory contains Firestore security rules, indexes, and storage configura
 
 ```bash
 # Deploy Firestore rules
-firebase deploy --only firestore:rules --project=after-yesterday-473512-k3
-
-# Deploy Firestore indexes
-firebase deploy --only firestore:indexes --project=after-yesterday-473512-k3
-
-# Deploy Storage rules
-firebase deploy --only storage --project=after-yesterday-473512-k3
+firebase deploy --only firestore:rules --project=gen-lang-client-0779271931
+firebase deploy --only firestore:indexes --project=gen-lang-client-0779271931
+firebase deploy --only storage --project=gen-lang-client-0779271931
 ```
 
 ### Environment-Specific Configs

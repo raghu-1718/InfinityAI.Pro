@@ -1,7 +1,7 @@
 {
   "functions": [
     {
-      "source": "frontend/web/functions",
+      "source": "frontend/functions",
       "codebase": "default",
       "runtime": "nodejs20"
     }

@@ -55,7 +55,7 @@ echo "   API docs: http://localhost:8080/docs"
 echo ""
 
 # Set environment variables
-export GOOGLE_CLOUD_PROJECT="after-yesterday-473512-k3"
+export GOOGLE_CLOUD_PROJECT="gen-lang-client-0779271931"
 export DHAN_CLIENT_ID="test-client-id"
 export DHAN_ACCESS_TOKEN="test-access-token"
 

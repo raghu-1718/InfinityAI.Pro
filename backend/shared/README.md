@@ -134,7 +134,7 @@ Global settings loaded from environment variables or `.env` file:
 from backend.shared.config import get_settings
 
 settings = get_settings()
-print(settings.firestore_project)  # after-yesterday-473512-k3
+print(settings.firestore_project)  # gen-lang-client-0779271931
 print(settings.debug)  # False in production
 print(settings.cors_origins)  # Parsed from env
 ```

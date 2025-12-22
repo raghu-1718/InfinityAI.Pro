@@ -10,7 +10,7 @@
 ### 1️⃣ GCP Configuration
 | Item | Status | Details |
 |------|--------|---------|
-| **Project ID** | ✅ Active | `after-yesterday-473512-k3` |
+| **Project ID** | ✅ Active | `gen-lang-client-0779271931` |
 | **Region** | ✅ Set | `us-central1` |
 | **Account** | ✅ Authenticated | `<ADMIN_EMAIL>` |
 | **CPU Quota** | ✅ EXCELLENT | **32 CPUs available** (2 used) |
@@ -22,18 +22,18 @@ This means we have **30 CPUs available** - MORE than enough for production deplo
 | Item | Status | Details |
 |------|--------|---------|
 | **Active Project** | ✅ Configured | `infinity-ai-5ec7c` (default) |
-| **GCP Project** | ⚠️ MISMATCH | Firebase uses `infinity-ai-5ec7c` but gcloud uses `after-yesterday-473512-k3` |
+| **GCP Project** | ⚠️ MISMATCH | Firebase uses `infinity-ai-5ec7c` but gcloud uses `gen-lang-client-0779271931` |
 | **CLI Authenticated** | ✅ Ready | Firebase CLI operational |
 
 **🚨 CRITICAL**: There are **TWO different GCP projects**:
 - **Firebase/Old**: `infinity-ai-5ec7c`
-- **Current GCP**: `after-yesterday-473512-k3`
+- **Current GCP**: `gen-lang-client-0779271931`
 
 ### 3️⃣ Cloud Run Services Status
 | Service | Expected | Found | Status |
 |---------|----------|-------|--------|
-| Engine A (Analytics) | ✅ | ✅ Exists | `infinityai-engine-a-573866363639.us-central1.run.app` |
-| Engine B (Core) | ✅ | ✅ Exists | `infinityai-engine-b-573866363639.us-central1.run.app` |
+| Engine A (Analytics) | ✅ | ✅ Exists | `infinityai-engine-a-429140669077.us-central1.run.app` |
+| Engine B (Core) | ✅ | ✅ Exists | `infinityai-engine-b-429140669077.us-central1.run.app` |
 | Engine C (Execution) | ✅ | ✅ Exists | `infinityai-engine-c-execution-26140490557.us-central1.run.app` |
 | Engine D (Deprecated) | ❌ | ✅ Not Found | Successfully removed ✓ |
 
@@ -63,19 +63,19 @@ This means we have **30 CPUs available** - MORE than enough for production deplo
 
 ### Issue 1: Dual Project Configuration
 **Problem**: Two GCP projects in use:
-- gcloud CLI → `after-yesterday-473512-k3` (32 CPU quota, 2 used)
+- gcloud CLI → `gen-lang-client-0779271931` (32 CPU quota, 2 used)
 - Firebase → `infinity-ai-5ec7c` (legacy project)
 
 **Impact**:
-- Cloud Run services deployed to `after-yesterday-473512-k3`
+- Cloud Run services deployed to `gen-lang-client-0779271931`
 - Firebase Hosting/Functions in `infinity-ai-5ec7c`
 - Frontend may have connection issues due to project mismatch
 
 **Solutions**:
 ```powershell
-# Option 1: Migrate everything to after-yesterday-473512-k3 (RECOMMENDED)
-firebase use after-yesterday-473512-k3
-firebase projects:addalias after-yesterday-473512-k3 default
+# Option 1: Migrate everything to gen-lang-client-0779271931 (RECOMMENDED)
+firebase use gen-lang-client-0779271931
+firebase projects:addalias gen-lang-client-0779271931 default
 
 # Option 2: Switch gcloud to infinity-ai-5ec7c
 gcloud config set project infinity-ai-5ec7c
@@ -133,7 +133,7 @@ This means:
 ```powershell
 # Check which project has your data/services
 gcloud firestore databases list --project=infinity-ai-5ec7c
-gcloud firestore databases list --project=after-yesterday-473512-k3
+gcloud firestore databases list --project=gen-lang-client-0779271931
 
 # Choose the project with your data and unify
 ```

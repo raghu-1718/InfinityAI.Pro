@@ -32,7 +32,7 @@ https://infinityai.pro/auth/dhan/callback
 ```
 **OR (if using Firebase directly)**
 ```
-https://after-yesterday-473512-k3.web.app/auth/dhan/callback
+https://gen-lang-client-0779271931.web.app/auth/dhan/callback
 ```
 **Purpose:** OAuth callback after successful authentication
 
@@ -62,21 +62,21 @@ cd C:\workspace\InfinityAI.Pro
 # Set Client ID
 gcloud secrets create DHAN_CLIENT_ID `
   --replication-policy=automatic `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 
 echo "YOUR_CLIENT_ID_HERE" | gcloud secrets versions add DHAN_CLIENT_ID `
   --data-file=- `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 
 # Update API Key (already exists)
 echo "YOUR_API_KEY_HERE" | gcloud secrets versions add dhan-api-key `
   --data-file=- `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 
 # Update API Secret (already exists)
 echo "YOUR_API_SECRET_HERE" | gcloud secrets versions add dhan-api-secret `
   --data-file=- `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 ```
 
 ---
@@ -97,7 +97,7 @@ echo "YOUR_API_SECRET_HERE" | gcloud secrets versions add dhan-api-secret `
 # Update access token manually
 echo "YOUR_NEW_ACCESS_TOKEN" | gcloud secrets versions add DHAN_ACCESS_TOKEN `
   --data-file=- `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 ```
 
 ---

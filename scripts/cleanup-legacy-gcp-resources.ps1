@@ -2,13 +2,13 @@
 # InfinityAI.Pro - GCP Legacy Resource Cleanup Script (PowerShell)
 # =====================================================================
 # Purpose: Delete all Angel/TOTP components and legacy duplicate engines
-# Project: after-yesterday-473512-k3
+# Project: gen-lang-client-0779271931
 # Date: November 28, 2025
 # =====================================================================
 
 $ErrorActionPreference = "Stop"
 
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $REGION = "us-central1"
 
 Write-Host "🧹 Starting GCP Resource Cleanup for InfinityAI.Pro" -ForegroundColor Cyan

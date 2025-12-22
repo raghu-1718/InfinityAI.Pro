@@ -9,7 +9,7 @@
     .\grant-firebase-secret-access.ps1
 #>
 
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $SECRET_NAME = "firebase-service-account"
 $REGION = "us-central1"
 

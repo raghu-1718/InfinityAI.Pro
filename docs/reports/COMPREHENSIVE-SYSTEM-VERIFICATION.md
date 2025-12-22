@@ -234,11 +234,11 @@ InfinityAI.Pro/
 
 ### Firebase Hosting ✅
 
-**Project:** after-yesterday-473512-k3
-**Project ID:** 573866363639
+**Project:** gen-lang-client-0779271931
+**Project ID:** 429140669077
 **Status:** 🟢 OPERATIONAL
 
-**Current URL:** https://after-yesterday-473512-k3.web.app
+**Current URL:** https://gen-lang-client-0779271931.web.app
 **Status Code:** 200 OK
 
 ### Deployed Pages Verification
@@ -254,8 +254,8 @@ InfinityAI.Pro/
 ### Firebase Configuration
 
 **Current Sites:**
-- Site ID: `after-yesterday-473512-k3`
-- Default URL: https://after-yesterday-473512-k3.web.app
+- Site ID: `gen-lang-client-0779271931`
+- Default URL: https://gen-lang-client-0779271931.web.app
 - App ID: Not set
 
 **Custom Domain Status:** ❌ NOT CONFIGURED
@@ -459,7 +459,7 @@ POST https://engine-b.infinityai.pro/orchestrate
 ### Current Status ❌
 
 **Target Domain:** infinityai.pro
-**Current URL:** https://after-yesterday-473512-k3.web.app
+**Current URL:** https://gen-lang-client-0779271931.web.app
 **Custom Domain:** NOT CONFIGURED
 
 ### Configuration Steps Required
@@ -468,7 +468,7 @@ POST https://engine-b.infinityai.pro/orchestrate
 
 ```bash
 # Navigate to Firebase Console
-# https://console.firebase.google.com/project/after-yesterday-473512-k3/hosting
+# https://console.firebase.google.com/project/gen-lang-client-0779271931/hosting
 
 # Or use CLI (if domain is verified)
 firebase hosting:channel:deploy production --only infinityai-pro
@@ -497,7 +497,7 @@ infinityai.pro → 151.101.65.195
 
 **CNAME Record (for www):**
 ```
-www.infinityai.pro → after-yesterday-473512-k3.web.app
+www.infinityai.pro → gen-lang-client-0779271931.web.app
 ```
 
 #### Step 4: SSL Certificate
@@ -586,8 +586,8 @@ gcloud logging read 'resource.type=cloud_run_revision AND resource.labels.servic
 
 # Redeploy if needed
 cd backend/engine-core
-gcloud builds submit --tag=gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest
-gcloud run deploy infinityai-engine-b --image=gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest
+gcloud builds submit --tag=gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest
+gcloud run deploy infinityai-engine-b --image=gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest
 ```
 
 ### Warnings
@@ -754,9 +754,9 @@ git push origin feature/3-engine-architecture
 ## 🔗 QUICK ACCESS LINKS
 
 ### Frontend
-- **Dashboard:** https://after-yesterday-473512-k3.web.app
-- **Settings:** https://after-yesterday-473512-k3.web.app/settings.html
-- **Account:** https://after-yesterday-473512-k3.web.app/account.html
+- **Dashboard:** https://gen-lang-client-0779271931.web.app
+- **Settings:** https://gen-lang-client-0779271931.web.app/settings.html
+- **Account:** https://gen-lang-client-0779271931.web.app/account.html
 
 ### Engines
 - **Engine A (Analytics):** https://engine-a.infinityai.pro
@@ -764,13 +764,13 @@ git push origin feature/3-engine-architecture
 - **Engine C (Execution):** https://engine-c.infinityai.pro
 
 ### GCP Console
-- **Cloud Run:** https://console.cloud.google.com/run?project=after-yesterday-473512-k3
-- **Secret Manager:** https://console.cloud.google.com/security/secret-manager?project=after-yesterday-473512-k3
-- **Logs:** https://console.cloud.google.com/logs?project=after-yesterday-473512-k3
+- **Cloud Run:** https://console.cloud.google.com/run?project=gen-lang-client-0779271931
+- **Secret Manager:** https://console.cloud.google.com/security/secret-manager?project=gen-lang-client-0779271931
+- **Logs:** https://console.cloud.google.com/logs?project=gen-lang-client-0779271931
 
 ### Firebase Console
-- **Hosting:** https://console.firebase.google.com/project/after-yesterday-473512-k3/hosting
-- **Firestore:** https://console.firebase.google.com/project/after-yesterday-473512-k3/firestore
+- **Hosting:** https://console.firebase.google.com/project/gen-lang-client-0779271931/hosting
+- **Firestore:** https://console.firebase.google.com/project/gen-lang-client-0779271931/firestore
 
 ### GitHub
 - **Repository:** https://github.com/raghu-1718/InfinityAI.Pro

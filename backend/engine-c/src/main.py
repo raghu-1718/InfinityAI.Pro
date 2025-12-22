@@ -1,36 +1,12 @@
-# Explicit CORS preflight handler for coupon verification endpoint
+# Explicit CORS preflight handler imports
 from fastapi.responses import JSONResponse
 from fastapi import Response, FastAPI, Request
-
-# Ensure FastAPI app is defined before route usage
-app = FastAPI()
-
-# --- Simple Health Check Endpoint (no GCP, always up) ---
-@app.get("/healthz")
-async def healthz():
-    return {
-        "service": "InfinityAI.Pro Engine C",
-        "status": "ok",
-        "version": "3.8-cloudrun-healthz",
-        "gcp": "not required for healthz"
-    }
-
-# --- Robust Startup Error Logging ---
 import traceback
+
+# Error logger
 def log_startup_error(e, context="startup"):
     print(f"[ERROR] {context}: {e}")
     print(traceback.format_exc())
-
-# Robust explicit OPTIONS handler for CORS preflight
-@app.route("/api/auth/coupon/verify", methods=["OPTIONS"])
-async def options_coupon_verify(request: Request):
-    response = Response(status_code=200)
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = request.headers.get("Access-Control-Request-Headers", "*")
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Max-Age"] = "86400"
-    return response
 import os
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -179,6 +155,30 @@ app = FastAPI(
     description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
     version="3.8-performance-optimized"
 )
+
+# --- Health Checks ---
+@app.get("/health")
+@app.get("/healthz")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "broker": "DhanHQ",
+        "version": "3.8-performance-optimized",
+        "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+# Robust explicit OPTIONS handler for CORS preflight (Restored)
+@app.api_route("/api/auth/coupon/verify", methods=["OPTIONS"])
+async def options_coupon_verify(request: Request):
+    response = Response(status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = request.headers.get("Access-Control-Request-Headers", "*")
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    return response
 
 
 # ==============================================================================
@@ -907,31 +907,7 @@ async def get_user_account_details(user_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch account: {str(e)}")
 
 # --- Health & Root ---
-@app.get("/healthz")
-@app.get("/health")
-@app.get("/api/health")
-async def healthz():
-    # Get performance stats if available
-    performance_stats = {}
-    if HAS_PERFORMANCE_MODULE:
-        try:
-            cache = get_cache_manager("engine_c")
-            performance_stats["cache"] = await cache.stats()
-        except:
-            performance_stats["cache"] = {"status": "error"}
-        try:
-            performance_stats["connections"] = ConnectionPoolManager.get_stats()
-        except:
-            performance_stats["connections"] = {"status": "error"}
-        try:
-            monitor = get_health_monitor()
-            performance_stats["health"] = await monitor.get_status()
-        except:
-            performance_stats["health"] = {"status": "error"}
 
-        "performance": performance_stats if performance_stats else "modules_not_loaded",
-        "timestamp": datetime.utcnow().isoformat()
-    }
 
 @app.get("/api/performance/stats")
 async def get_performance_stats():

@@ -62,7 +62,7 @@ Workflows automatically trigger on:
 
 All secrets must be configured in GitHub repository settings under **Settings > Secrets and variables > Actions**:
 
-- `GCP_PROJECT_ID`: `after-yesterday-473512-k3`
+- `GCP_PROJECT_ID`: `gen-lang-client-0779271931`
 - `GCP_SERVICE_ACCOUNT_KEY`: JSON key for Cloud Build and Cloud Run deployment
 - `DHAN_CLIENT_ID`, `DHAN_CLIENT_SECRET`: Dhan broker OAuth credentials
 - `GEMINI_API_KEY`: Google Gemini API key
@@ -75,12 +75,12 @@ All secrets must be configured in GitHub repository settings under **Settings > 
 ```bash
 # Authenticate with GCP
 gcloud auth login
-gcloud config set project after-yesterday-473512-k3
+gcloud config set project gen-lang-client-0779271931
 
-# Build and push Engine Core
-docker build -t gcr.io/after-yesterday-473512-k3/engine-core:latest backend/engine-core/
-docker push gcr.io/after-yesterday-473512-k3/engine-core:latest
-gcloud run deploy engine-core --image gcr.io/after-yesterday-473512-k3/engine-core:latest --region us-central1
+# Build and push Engine B (example)
+docker build -t gcr.io/gen-lang-client-0779271931/engine-b:latest backend/engine-b/
+docker push gcr.io/gen-lang-client-0779271931/engine-b:latest
+gcloud run deploy engine-b --image gcr.io/gen-lang-client-0779271931/engine-b:latest --region us-central1
 
 # Repeat for engine-analytics and engine-execution
 ```

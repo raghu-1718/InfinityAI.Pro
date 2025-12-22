@@ -18,7 +18,7 @@ import os
 
 class FirebaseService:
     def __init__(self):
-        self.project_id = "after-yesterday-473512-k3"
+        self.project_id = "gen-lang-client-0779271931"
         self.secret_name = "firebase-service-account"
         self.db = None
         self.app = None
@@ -222,7 +222,7 @@ async def verify_token(token: str):
 # deploy-with-firebase.sh
 
 SERVICE_NAME="engine-d-orchestration-prod"
-IMAGE="gcr.io/after-yesterday-473512-k3/engine-d:latest"
+IMAGE="gcr.io/gen-lang-client-0779271931/engine-d:latest"
 REGION="us-central1"
 
 gcloud run deploy $SERVICE_NAME \
@@ -242,7 +242,7 @@ gcloud run deploy $SERVICE_NAME \
 # deploy-with-firebase.ps1
 
 $SERVICE_NAME = "engine-d-orchestration-prod"
-$IMAGE = "gcr.io/after-yesterday-473512-k3/engine-d:latest"
+$IMAGE = "gcr.io/gen-lang-client-0779271931/engine-d:latest"
 $REGION = "us-central1"
 
 gcloud run deploy $SERVICE_NAME `
@@ -262,14 +262,14 @@ gcloud run deploy $SERVICE_NAME `
 **Bash/Linux:**
 ```bash
 gcloud run deploy engine-d-orchestration-prod \
-  --image=gcr.io/after-yesterday-473512-k3/engine-d:latest \
+  --image=gcr.io/gen-lang-client-0779271931/engine-d:latest \
   --region=us-central1 \
   --set-secrets=/secrets/firebase-sa.json=firebase-service-account:latest
 ```
 
 **PowerShell:**
 ```powershell
-gcloud run deploy engine-d-orchestration-prod --image=gcr.io/after-yesterday-473512-k3/engine-d:latest --region=us-central1 --set-secrets=/secrets/firebase-sa.json=firebase-service-account:latest
+gcloud run deploy engine-d-orchestration-prod --image=gcr.io/gen-lang-client-0779271931/engine-d:latest --region=us-central1 --set-secrets=/secrets/firebase-sa.json=firebase-service-account:latest
 ```
 
 ## Dockerfile Example with Firebase

@@ -33,7 +33,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $REGION = "us-central1"
 
 Write-Host "`n🚀 InfinityAI.Pro Deployment Script`n" -ForegroundColor Cyan
@@ -47,9 +47,9 @@ if ($UseCustomDomains) {
     $ENGINE_C_URL = "https://engine-c.infinityai.pro"
 } else {
     Write-Host "Using CLOUD RUN URLs (works immediately)" -ForegroundColor Yellow
-    $ENGINE_A_URL = "https://infinityai-engine-a-573866363639.us-central1.run.app"
-    $ENGINE_B_URL = "https://infinityai-engine-b-573866363639.us-central1.run.app"
-    $ENGINE_C_URL = "https://infinityai-engine-c-execution-573866363639.us-central1.run.app"
+    $ENGINE_A_URL = "https://infinityai-engine-a-429140669077.us-central1.run.app"
+    $ENGINE_B_URL = "https://infinityai-engine-b-429140669077.us-central1.run.app"
+    $ENGINE_C_URL = "https://infinityai-engine-c-execution-429140669077.us-central1.run.app"
 }
 
 Write-Host "`nEngine URLs:" -ForegroundColor Cyan
@@ -65,9 +65,9 @@ $frontendPath = "frontend/web/index.html"
 $content = Get-Content $frontendPath -Raw
 
 # Replace with chosen URLs
-$content = $content -replace 'https://infinityai-engine-a-573866363639\.us-central1\.run\.app', $ENGINE_A_URL
-$content = $content -replace 'https://infinityai-engine-b-573866363639\.us-central1\.run\.app', $ENGINE_B_URL
-$content = $content -replace 'https://infinityai-engine-c-execution-573866363639\.us-central1\.run\.app', $ENGINE_C_URL
+$content = $content -replace 'https://infinityai-engine-a-429140669077\.us-central1\.run\.app', $ENGINE_A_URL
+$content = $content -replace 'https://infinityai-engine-b-429140669077\.us-central1\.run\.app', $ENGINE_B_URL
+$content = $content -replace 'https://infinityai-engine-c-execution-429140669077\.us-central1\.run\.app', $ENGINE_C_URL
 $content = $content -replace 'https://engine-a\.infinityai\.pro', $ENGINE_A_URL
 $content = $content -replace 'https://engine-b\.infinityai\.pro', $ENGINE_B_URL
 $content = $content -replace 'https://engine-c\.infinityai\.pro', $ENGINE_C_URL
@@ -209,7 +209,7 @@ $services = @{
     "Engine A" = "$ENGINE_A_URL/docs"
     "Engine B" = "$ENGINE_B_URL/docs"
     "Engine C" = "$ENGINE_C_URL/docs"
-    "Frontend" = "https://after-yesterday-473512-k3.web.app"
+    "Frontend" = "https://gen-lang-client-0779271931.web.app"
 }
 
 foreach ($name in $services.Keys) {
@@ -255,7 +255,7 @@ if ($UseCustomDomains) {
     Write-Host "  3. Verify domain mappings show 'Ready: True' in GCP`n" -ForegroundColor White
 } else {
     Write-Host "✅ Application is accessible now at:" -ForegroundColor Green
-    Write-Host "  Frontend: https://after-yesterday-473512-k3.web.app" -ForegroundColor Cyan
+    Write-Host "  Frontend: https://gen-lang-client-0779271931.web.app" -ForegroundColor Cyan
     Write-Host "  Engine A: $ENGINE_A_URL/docs" -ForegroundColor Cyan
     Write-Host "  Engine B: $ENGINE_B_URL/docs" -ForegroundColor Cyan
     Write-Host "  Engine C: $ENGINE_C_URL/docs`n" -ForegroundColor Cyan

@@ -1,10 +1,10 @@
 # InfinityAI.Pro - GCP Deployment Verification Script
 # Run this script on your Windows machine with gcloud CLI authenticated
-# Project: after-yesterday-473512-k3
+# Project: gen-lang-client-0779271931
 # Region: us-central1
 
 param(
-    [string]$ProjectId = "after-yesterday-473512-k3",
+    [string]$ProjectId = "gen-lang-client-0779271931",
     [string]$Region = "us-central1",
     [string]$ArtifactRepo = "infinityai-repo"
 )

@@ -9,7 +9,7 @@ Set-Location "engines\engine-b"
 Write-Host "📦 Building Engine B with Gemini support..." -ForegroundColor Yellow
 
 # Build the container image
-$projectId = "after-yesterday-473512-k3"
+$projectId = "gen-lang-client-0779271931"
 $imageName = "infinityai-engine-b"
 $region = "us-central1"
 

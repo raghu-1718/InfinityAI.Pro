@@ -2,7 +2,7 @@
 ## InfinityAI.Pro Platform - Complete Infrastructure Audit
 
 **Date:** November 28, 2025  
-**Project:** after-yesterday-473512-k3  
+**Project:** gen-lang-client-0779271931  
 **Domain:** infinityai.pro  
 **Status:** ✅ FULLY OPERATIONAL
 
@@ -93,8 +93,8 @@ InfinityAI.Pro/
 ## 2. GCP Project Configuration
 
 ### Project Information
-- **Project ID:** after-yesterday-473512-k3
-- **Project Number:** 573866363639
+- **Project ID:** gen-lang-client-0779271931
+- **Project Number:** 429140669077
 - **Project Name:** My First Project
 - **Created:** 2025-09-28
 - **Lifecycle State:** ACTIVE
@@ -136,9 +136,9 @@ InfinityAI.Pro/
   - CPU: 1
   - Min Instances: 1
 - **Environment Variables:**
-  - GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
-  - ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app
-  - ENGINE_C_URL=https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+  - GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
+  - ENGINE_B_URL=https://infinityai-engine-b-429140669077.us-central1.run.app
+  - ENGINE_C_URL=https://infinityai-engine-c-execution-429140669077.us-central1.run.app
 - **Secrets:**
   - DHAN_API_KEY (from Secret Manager)
 - **Custom Domain:** engine-a.infinityai.pro
@@ -152,9 +152,9 @@ InfinityAI.Pro/
   - CPU: 2
   - Min Instances: 1
 - **Environment Variables:**
-  - GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
-  - ENGINE_A_URL=https://infinityai-engine-a-573866363639.us-central1.run.app
-  - ENGINE_C_URL=https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+  - GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
+  - ENGINE_A_URL=https://infinityai-engine-a-429140669077.us-central1.run.app
+  - ENGINE_C_URL=https://infinityai-engine-c-execution-429140669077.us-central1.run.app
 - **Custom Domain:** engine-b.infinityai.pro
 - **Status:** ✅ Operational
 
@@ -166,9 +166,9 @@ InfinityAI.Pro/
   - CPU: 1
   - Min Instances: 1
 - **Environment Variables:**
-  - GOOGLE_CLOUD_PROJECT=after-yesterday-473512-k3
-  - ENGINE_A_URL=https://infinityai-engine-a-573866363639.us-central1.run.app
-  - ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app
+  - GOOGLE_CLOUD_PROJECT=gen-lang-client-0779271931
+  - ENGINE_A_URL=https://infinityai-engine-a-429140669077.us-central1.run.app
+  - ENGINE_B_URL=https://infinityai-engine-b-429140669077.us-central1.run.app
   - ENABLE_WEBSOCKET=true
   - ENABLE_CHATBOT=true
 - **Secrets:**
@@ -186,13 +186,13 @@ InfinityAI.Pro/
 ## 4. Container Registry
 
 ### Active Images
-- ✅ gcr.io/after-yesterday-473512-k3/infinityai-engine-a:latest
-- ✅ gcr.io/after-yesterday-473512-k3/infinityai-engine-b:latest
-- ✅ gcr.io/after-yesterday-473512-k3/infinityai-engine-c-execution:latest
+- ✅ gcr.io/gen-lang-client-0779271931/infinityai-engine-a:latest
+- ✅ gcr.io/gen-lang-client-0779271931/infinityai-engine-b:latest
+- ✅ gcr.io/gen-lang-client-0779271931/infinityai-engine-c-execution:latest
 
 ### Legacy Images (Deprecated)
-- ⚠️ gcr.io/after-yesterday-473512-k3/infinityai-engine-c-angel (obsolete)
-- ⚠️ gcr.io/after-yesterday-473512-k3/infinityai-engine-d (obsolete)
+- ⚠️ gcr.io/gen-lang-client-0779271931/infinityai-engine-c-angel (obsolete)
+- ⚠️ gcr.io/gen-lang-client-0779271931/infinityai-engine-d (obsolete)
 
 **Note:** Legacy images can be removed to save storage costs.
 
@@ -201,13 +201,13 @@ InfinityAI.Pro/
 ## 5. Firebase Services
 
 ### Configuration Issue Detected ⚠️
-- **Expected Project:** after-yesterday-473512-k3
+- **Expected Project:** gen-lang-client-0779271931
 - **Configured in .firebaserc:** infinity-ai-5ec7c
 - **Impact:** Firebase Hosting is currently deployed to wrong project
-- **Recommended Action:** Update .firebaserc to use after-yesterday-473512-k3
+- **Recommended Action:** Update .firebaserc to use gen-lang-client-0779271931
 
 ### Firebase Hosting
-- **Current URL:** https://after-yesterday-473512-k3.web.app
+- **Current URL:** https://gen-lang-client-0779271931.web.app
 - **Custom Domain:** infinityai.pro (mapped)
 - **Status:** ✅ Deployed and accessible
 - **Content:** Frontend with custom domain URLs
@@ -307,19 +307,19 @@ Type: A, Host: @, Value: 151.101.1.195
 
 ### Service Accounts (4 Active)
 1. **App Engine Default SA**
-   - Email: after-yesterday-473512-k3@appspot.gserviceaccount.com
+   - Email: gen-lang-client-0779271931@appspot.gserviceaccount.com
    - Purpose: App Engine services
 
 2. **Default Compute SA**
-   - Email: 573866363639-compute@developer.gserviceaccount.com
+   - Email: 429140669077-compute@developer.gserviceaccount.com
    - Purpose: Compute Engine instances
 
 3. **GitHub Deploy SA**
-   - Email: github-deployer@after-yesterday-473512-k3.iam.gserviceaccount.com
+   - Email: github-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com
    - Purpose: CI/CD deployments from GitHub Actions
 
 4. **InfinityAI Pro SA**
-   - Email: infinityai-pro@after-yesterday-473512-k3.iam.gserviceaccount.com
+   - Email: infinityai-pro@gen-lang-client-0779271931.iam.gserviceaccount.com
    - Purpose: Application-specific operations
 
 ### Security Posture
@@ -519,7 +519,7 @@ None detected.
 ### Warnings (2)
 1. **Firebase Project Mismatch**
    - `.firebaserc` points to `infinity-ai-5ec7c`
-   - Should be `after-yesterday-473512-k3`
+   - Should be `gen-lang-client-0779271931`
    - Impact: Potential deployment confusion
    - Fix: Update `.firebaserc` with correct project ID
 
@@ -548,12 +548,12 @@ None detected.
 - **Engine C API:** https://engine-c.infinityai.pro/docs (HTTP 200)
 
 ### Direct Cloud Run URLs (Backup)
-- Engine A: https://infinityai-engine-a-573866363639.us-central1.run.app
-- Engine B: https://infinityai-engine-b-573866363639.us-central1.run.app
-- Engine C: https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+- Engine A: https://infinityai-engine-a-429140669077.us-central1.run.app
+- Engine B: https://infinityai-engine-b-429140669077.us-central1.run.app
+- Engine C: https://infinityai-engine-c-execution-429140669077.us-central1.run.app
 
 ### Firebase Hosting
-- https://after-yesterday-473512-k3.web.app
+- https://gen-lang-client-0779271931.web.app
 
 ---
 

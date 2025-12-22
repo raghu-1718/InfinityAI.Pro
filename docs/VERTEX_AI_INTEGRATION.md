@@ -21,7 +21,7 @@
 
 #### Key Methods:
 ```python
-client = EnhancedGenAIClient(project_id="after-yesterday-473512-k3")
+client = EnhancedGenAIClient(project_id="gen-lang-client-0779271931")
 recommendation = await client.generate_trading_signal("RELIANCE")
 summary = await client.get_market_summary()
 signal = await client.quick_signal("NIFTY")
@@ -106,7 +106,7 @@ yfinance>=0.2.40         # Market data
 
 ### Environment Variables:
 ```
-GCP_PROJECT_ID=after-yesterday-473512-k3
+GCP_PROJECT_ID=gen-lang-client-0779271931
 ENABLE_VERTEX_AI=true
 GEMINI_MODEL=gemini-2.0-flash
 ```

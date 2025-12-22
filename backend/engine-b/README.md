@@ -36,13 +36,8 @@ engine-core/
 # Development (.env)
 PORT=8000
 DEBUG=true
-FIRESTORE_PROJECT=after-yesterday-473512-k3
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-JWT_SECRET_KEY=dev-key-change-in-production
-
-# Production (loaded from Secret Manager)
-FIRESTORE_PROJECT=after-yesterday-473512-k3
-CORS_ORIGINS=https://infinityai.pro
+FIRESTORE_PROJECT=gen-lang-client-0779271931
+CORS_ORIGINS=https://gen-lang-client-0779271931.web.app/
 JWT_SECRET_KEY=<from Secret Manager>
 ```
 
@@ -78,10 +73,11 @@ pytest tests/
 
 ```bash
 # Build and deploy
-gcloud run deploy engine-core \
+# Build and deploy
+gcloud run deploy engine-b \
   --source . \
   --region us-central1 \
-  --set-env-vars="FIRESTORE_PROJECT=after-yesterday-473512-k3"
+  --set-env-vars="FIRESTORE_PROJECT=gen-lang-client-0779271931"
 ```
 
 ### Integration Points

@@ -25,7 +25,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_ID="after-yesterday-473512-k3"
+PROJECT_ID="gen-lang-client-0779271931"
 REGION="us-central1"
 
 # Parse args early to allow dry-run to skip operations that require gcloud

@@ -37,7 +37,7 @@ gcloud run services update engine-c --min-instances=1 --region=us-central1
 # Test latency after update
 1..5 | ForEach-Object {
   $start = Get-Date
-  Invoke-RestMethod "https://engine-b-573866363639.us-central1.run.app/health"
+  Invoke-RestMethod "https://engine-b-429140669077.us-central1.run.app/health"
   ((Get-Date) - $start).TotalMilliseconds
 }
 # Expected: <200ms after warm-up
@@ -58,7 +58,7 @@ gcloud run services update engine-c --min-instances=1 --region=us-central1
 ```powershell
 # Enable PITR for Firestore
 gcloud firestore databases update --database="(default)" \
-  --project=after-yesterday-473512-k3 \
+  --project=gen-lang-client-0779271931 \
   --enable-pitr
 ```
 
@@ -67,7 +67,7 @@ gcloud firestore databases update --database="(default)" \
 **Verification**:
 ```powershell
 gcloud firestore databases describe --database="(default)" \
-  --project=after-yesterday-473512-k3 \
+  --project=gen-lang-client-0779271931 \
   --format="value(pointInTimeRecoveryEnablement)"
 # Expected: POINT_IN_TIME_RECOVERY_ENABLED
 ```
@@ -164,7 +164,7 @@ After implementing remediations, run these verification tests:
 # Test cold start elimination
 for ($i=0; $i -lt 10; $i++) {
     $start = Get-Date
-    Invoke-RestMethod "https://engine-b-573866363639.us-central1.run.app/health" -TimeoutSec 10
+    Invoke-RestMethod "https://engine-b-429140669077.us-central1.run.app/health" -TimeoutSec 10
     $latency = ((Get-Date) - $start).TotalMilliseconds
     Write-Host "Request $i`: $([math]::Round($latency))ms"
 }

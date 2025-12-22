@@ -6,7 +6,7 @@ from ..core.utils import setup_logger
 log = setup_logger("AISignal")
 
 # Engine B URL for real ML signal validation
-ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-573866363639.us-central1.run.app")
+ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
 
 
 class AISignalModel:

@@ -10,7 +10,7 @@
 .PARAMETER Region
   Region for Cloud Run / Vertex AI queries. Defaults to us-central1.
 .EXAMPLE
-  ./scripts/Generate-System-Report.ps1 -Project after-yesterday-473512-k3 -Region us-central1
+  ./scripts/Generate-System-Report.ps1 -Project gen-lang-client-0779271931 -Region us-central1
 #>
 param(
   [string]$Project,

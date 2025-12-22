@@ -315,16 +315,16 @@ if (Test-Path ".\backend") {
 # Copy this to .env and fill in your actual values
 
 # Google Cloud Project
-GCP_PROJECT_ID=after-yesterday-473512-k3
+GCP_PROJECT_ID=gen-lang-client-0779271931
 GCP_REGION=us-central1
 
 # Firebase Project
 FIREBASE_PROJECT_ID=infinity-ai-5ec7c
 
 # Engine URLs (Canonical Cloud Run service URLs)
-ENGINE_A_URL=https://infinityai-engine-a-573866363639.us-central1.run.app
-ENGINE_B_URL=https://infinityai-engine-b-573866363639.us-central1.run.app
-ENGINE_C_URL=https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+ENGINE_A_URL=https://infinityai-engine-a-429140669077.us-central1.run.app
+ENGINE_B_URL=https://infinityai-engine-b-429140669077.us-central1.run.app
+ENGINE_C_URL=https://infinityai-engine-c-execution-429140669077.us-central1.run.app
 # ENGINE_D_URL merged into ENGINE_C_URLhttps://infinityai-engine-c-execution-26140490557.us-central1.run.app
 
 # Secrets (use Secret Manager in production)
@@ -385,7 +385,7 @@ Write-Host "3. Set your Firebase project:" -ForegroundColor Yellow
 Write-Host "   firebase use infinity-ai-5ec7c" -ForegroundColor White
 Write-Host ""
 Write-Host "4. Set your GCP project:" -ForegroundColor Yellow
-Write-Host "   gcloud config set project after-yesterday-473512-k3" -ForegroundColor White
+Write-Host "   gcloud config set project gen-lang-client-0779271931" -ForegroundColor White
 Write-Host ""
 Write-Host "5. Test Firebase secret access:" -ForegroundColor Yellow
 Write-Host "   gcloud secrets versions access latest --secret=firebase-service-account" -ForegroundColor White

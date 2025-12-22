@@ -240,15 +240,15 @@ async def predict(request: PredictionRequest):
 ```bash
 # Build Docker image
 cd backend/engine-analytics
-gcloud builds submit --tag=gcr.io/after-yesterday-473512-k3/infinityai-engine-a
+gcloud builds submit --tag=gcr.io/gen-lang-client-0779271931/infinityai-engine-a
 
 # Deploy to Cloud Run
 gcloud run deploy infinityai-engine-a \
-  --image=gcr.io/after-yesterday-473512-k3/infinityai-engine-a \
+  --image=gcr.io/gen-lang-client-0779271931/infinityai-engine-a \
   --region=us-central1 \
   --memory=512Mi \
   --cpu=1 \
-  --set-env-vars="GEMINI_API_KEY=projects/573866363639/secrets/gemini-api-key"
+  --set-env-vars="GEMINI_API_KEY=projects/429140669077/secrets/gemini-api-key"
 ```
 
 **Current Status:** ✅ **100% OPERATIONAL**
@@ -477,15 +477,15 @@ async def orchestrate(...):
 ```bash
 # Build with DhanHQ credentials
 cd backend/engine-core
-gcloud builds submit --tag=gcr.io/after-yesterday-473512-k3/infinityai-engine-b
+gcloud builds submit --tag=gcr.io/gen-lang-client-0779271931/infinityai-engine-b
 
 # Deploy with secrets
 gcloud run deploy infinityai-engine-b \
-  --image=gcr.io/after-yesterday-473512-k3/infinityai-engine-b \
+  --image=gcr.io/gen-lang-client-0779271931/infinityai-engine-b \
   --region=us-central1 \
   --memory=512Mi \
-  --set-env-vars="DHAN_CLIENT_ID=projects/573866363639/secrets/dhan-client-id,\
-                  DHAN_ACCESS_TOKEN=projects/573866363639/secrets/dhan-access-token,\
+  --set-env-vars="DHAN_CLIENT_ID=projects/429140669077/secrets/dhan-client-id,\
+                  DHAN_ACCESS_TOKEN=projects/429140669077/secrets/dhan-access-token,\
                   ENGINE_A_URL=https://engine-a.infinityai.pro,\
                   ENGINE_C_URL=https://engine-c.infinityai.pro"
 ```
@@ -697,17 +697,17 @@ async def handle_webhook(data: dict):
 ```bash
 # Build
 cd backend/engine-execution
-gcloud builds submit --tag=gcr.io/after-yesterday-473512-k3/infinityai-engine-c-execution
+gcloud builds submit --tag=gcr.io/gen-lang-client-0779271931/infinityai-engine-c-execution
 
 # Deploy with DhanHQ credentials
 gcloud run deploy infinityai-engine-c-execution \
-  --image=gcr.io/after-yesterday-473512-k3/infinityai-engine-c-execution \
+  --image=gcr.io/gen-lang-client-0779271931/infinityai-engine-c-execution \
   --region=us-central1 \
   --memory=512Mi \
-  --set-env-vars="DHAN_CLIENT_ID=projects/573866363639/secrets/dhan-client-id,\
-                  DHAN_ACCESS_TOKEN=projects/573866363639/secrets/dhan-access-token,\
-                  DHAN_API_KEY=projects/573866363639/secrets/dhan-api-key,\
-                  DHAN_API_SECRET=projects/573866363639/secrets/dhan-api-secret"
+  --set-env-vars="DHAN_CLIENT_ID=projects/429140669077/secrets/dhan-client-id,\
+                  DHAN_ACCESS_TOKEN=projects/429140669077/secrets/dhan-access-token,\
+                  DHAN_API_KEY=projects/429140669077/secrets/dhan-api-key,\
+                  DHAN_API_SECRET=projects/429140669077/secrets/dhan-api-secret"
 ```
 
 **Current Status:** ✅ **100% OPERATIONAL**
@@ -1073,7 +1073,7 @@ exports.analyzePortfolio = functions.https.onRequest(async (req, res) => {
 **Called From Frontend:**
 ```javascript
 // When user clicks "Analyze Portfolio" button
-const analysis = await fetch('https://us-central1-after-yesterday-473512-k3.cloudfunctions.net/analyzePortfolio', {
+const analysis = await fetch('https://us-central1-gen-lang-client-0779271931.cloudfunctions.net/analyzePortfolio', {
     method: 'POST',
     body: JSON.stringify({ userId: 'user123' })
 });
@@ -1181,7 +1181,7 @@ exports.startTrading = functions.https.onRequest(async (req, res) => {
 **Called From Frontend:**
 ```javascript
 // When user clicks "Start Auto Trading" button
-const response = await fetch('https://us-central1-after-yesterday-473512-k3.cloudfunctions.net/startTrading', {
+const response = await fetch('https://us-central1-gen-lang-client-0779271931.cloudfunctions.net/startTrading', {
     method: 'POST',
     body: JSON.stringify({
         symbols: ['NIFTY', 'RELIANCE', 'TCS'],
@@ -1209,13 +1209,13 @@ exports.storeCredentials = functions.https.onRequest(async (req, res) => {
 
     // Store each credential as a secret
     await client.createSecret({
-        parent: 'projects/after-yesterday-473512-k3',
+        parent: 'projects/gen-lang-client-0779271931',
         secretId: 'dhan-client-id',
         secret: { replication: { automatic: {} } }
     });
 
     await client.addSecretVersion({
-        parent: 'projects/after-yesterday-473512-k3/secrets/dhan-client-id',
+        parent: 'projects/gen-lang-client-0779271931/secrets/dhan-client-id',
         payload: { data: Buffer.from(client_id) }
     });
 
@@ -1271,7 +1271,7 @@ exports.getAiSignals = functions.https.onRequest(async (req, res) => {
 ```javascript
 // Auto-refresh signals every 5 minutes
 setInterval(async () => {
-    const signals = await fetch('https://us-central1-after-yesterday-473512-k3.cloudfunctions.net/getAiSignals', {
+    const signals = await fetch('https://us-central1-gen-lang-client-0779271931.cloudfunctions.net/getAiSignals', {
         method: 'POST',
         body: JSON.stringify({ symbols: ['NIFTY', 'RELIANCE', 'TCS'] })
     });
@@ -1325,7 +1325,7 @@ exports.getGeminiAnalysis = functions.https.onRequest(async (req, res) => {
 **Called From Frontend:**
 ```javascript
 // When user clicks "Get AI Analysis" button
-const analysis = await fetch('https://us-central1-after-yesterday-473512-k3.cloudfunctions.net/getGeminiAnalysis', {
+const analysis = await fetch('https://us-central1-gen-lang-client-0779271931.cloudfunctions.net/getGeminiAnalysis', {
     method: 'POST',
     body: JSON.stringify({
         symbol: 'RELIANCE',
@@ -1349,7 +1349,7 @@ exports.getVertexAiAnalysis = functions.https.onRequest(async (req, res) => {
     const { symbol, technical_data } = req.body;
 
     const client = new PredictionServiceClient();
-    const endpoint = `projects/after-yesterday-473512-k3/locations/us-central1/endpoints/vertex-ai-trading-model`;
+    const endpoint = `projects/gen-lang-client-0779271931/locations/us-central1/endpoints/vertex-ai-trading-model`;
 
     // Call Vertex AI model
     const [response] = await client.predict({
@@ -1550,7 +1550,7 @@ async def orchestrate(...):
   - index.html (6.14 KB)
   - settings.html (15.94 KB)
   - account.html (18.69 KB)
-- Firebase Hosting: https://after-yesterday-473512-k3.web.app
+- Firebase Hosting: https://gen-lang-client-0779271931.web.app
 - Response time: ~200ms
 
 ### Firebase Functions: ⚠️ DEPLOYED BUT NEED TESTING

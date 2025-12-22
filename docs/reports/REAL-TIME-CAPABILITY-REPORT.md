@@ -30,7 +30,7 @@ InfinityAI.Pro is a **production-ready, institutional-grade** AI-powered algorit
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Engine A: Orchestration & Risk Management                      │
-│  URL: https://engine-a-573866363639.us-central1.run.app        │
+│  URL: https://engine-a-429140669077.us-central1.run.app        │
 │  Version: v3.7-google-integrations                              │
 │  Status: ✅ HEALTHY                                              │
 │  Response Time: 765ms                                           │
@@ -38,7 +38,7 @@ InfinityAI.Pro is a **production-ready, institutional-grade** AI-powered algorit
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  Engine B: AI/ML Signal Generation                              │
-│  URL: https://engine-b-573866363639.us-central1.run.app        │
+│  URL: https://engine-b-429140669077.us-central1.run.app        │
 │  Version: v4.0-enhanced-trading-ai                              │
 │  Status: ✅ HEALTHY                                              │
 │  Enhanced Trading AI: ✅ ENABLED                                 │
@@ -47,7 +47,7 @@ InfinityAI.Pro is a **production-ready, institutional-grade** AI-powered algorit
 
 ┌─────────────────────────────────────────────────────────────────┐
 │  Engine C: Trade Execution                                      │
-│  URL: https://engine-c-573866363639.us-central1.run.app        │
+│  URL: https://engine-c-429140669077.us-central1.run.app        │
 │  Version: v3.5-enhanced-execution                               │
 │  Status: ✅ HEALTHY                                              │
 │  Broker: DhanHQ                                                 │

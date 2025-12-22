@@ -7,7 +7,7 @@ This document describes how the Firebase service account credentials are securel
 
 ### Secret Details
 - **Secret Name**: `firebase-service-account`
-- **Project**: `after-yesterday-473512-k3` (Project ID: 573866363639)
+- **Project**: `gen-lang-client-0779271931` (Project ID: 429140669077)
 - **Firebase Project**: `infinity-ai-5ec7c`
 - **Service Account Email**: `firebase-adminsdk-fbsvc@infinity-ai-5ec7c.iam.gserviceaccount.com`
 - **Replication**: Automatic (multi-region)
@@ -75,7 +75,7 @@ from google.cloud import secretmanager
 def get_firebase_credentials():
     """Fetch Firebase credentials from Secret Manager"""
     client = secretmanager.SecretManagerServiceClient()
-    name = "projects/573866363639/secrets/firebase-service-account/versions/latest"
+    name = "projects/429140669077/secrets/firebase-service-account/versions/latest"
     
     response = client.access_secret_version(request={"name": name})
     return response.payload.data.decode("UTF-8")

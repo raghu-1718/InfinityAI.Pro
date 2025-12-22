@@ -781,7 +781,7 @@ def execute_paper_trade(
         "exchange": "NSE",
         "timestamp": datetime.now().isoformat(),
         "warning": "PAPER TRADE ONLY - For live trading use: POST /api/dhan/place-order",
-        "live_trading_endpoint": "https://engine-c-573866363639.us-central1.run.app/api/dhan/place-order"
+        "live_trading_endpoint": "https://engine-c-429140669077.us-central1.run.app/api/dhan/place-order"
     }
 
 

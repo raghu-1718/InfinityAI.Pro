@@ -56,19 +56,19 @@ All 10 phases of the comprehensive end-to-end audit have been successfully compl
 
 **Findings:**
 - **Engine A (infinityai-engine-a)**
-  - URL: https://infinityai-engine-a-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-a-429140669077.us-central1.run.app
   - Revision: 00011-zsj
   - Resources: 512Mi RAM, 1 CPU
   - Health: ✅ HTTP 200
 
 - **Engine B (infinityai-engine-b)**
-  - URL: https://infinityai-engine-b-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-b-429140669077.us-central1.run.app
   - Revision: 00007-w94
   - Resources: 1Gi RAM, 2 CPUs
   - Health: ✅ HTTP 200
 
 - **Engine C (infinityai-engine-c-execution)**
-  - URL: https://infinityai-engine-c-execution-573866363639.us-central1.run.app
+  - URL: https://infinityai-engine-c-execution-429140669077.us-central1.run.app
   - Revision: 00008-tng
   - Resources: 512Mi RAM, 1 CPU
   - Health: ✅ HTTP 200
@@ -124,7 +124,7 @@ All 10 phases of the comprehensive end-to-end audit have been successfully compl
 
 **Findings:**
 - ✅ Firebase Hosting: HTTP 200
-- ✅ URL: https://after-yesterday-473512-k3.web.app
+- ✅ URL: https://gen-lang-client-0779271931.web.app
 - ✅ Content-Length: 6,578 bytes
 - ✅ Files present:
   - index.html ✓
@@ -178,7 +178,7 @@ All 10 phases of the comprehensive end-to-end audit have been successfully compl
 
 **Findings:**
 - ✅ Firestore Database: Initialized
-  - Database: projects/after-yesterday-473512-k3/databases/(default)
+  - Database: projects/gen-lang-client-0779271931/databases/(default)
   - Type: FIRESTORE_NATIVE
   - Location: us-central1
 
@@ -199,11 +199,11 @@ All 10 phases of the comprehensive end-to-end audit have been successfully compl
 
 **Findings:**
 - **Service Accounts:** 5 configured
-  1. after-yesterday-473512-k3@appspot.gserviceaccount.com (App Engine default)
-  2. 573866363639-compute@developer.gserviceaccount.com (Compute default)
-  3. github-deployer@after-yesterday-473512-k3.iam.gserviceaccount.com (GitHub Deploy SA)
-  4. infinityai-pro@after-yesterday-473512-k3.iam.gserviceaccount.com (InfinityAI.Pro)
-  5. vertex-express@after-yesterday-473512-k3.iam.gserviceaccount.com (Vertex)
+  1. gen-lang-client-0779271931@appspot.gserviceaccount.com (App Engine default)
+  2. 429140669077-compute@developer.gserviceaccount.com (Compute default)
+  3. github-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com (GitHub Deploy SA)
+  4. infinityai-pro@gen-lang-client-0779271931.iam.gserviceaccount.com (InfinityAI.Pro)
+  5. vertex-express@gen-lang-client-0779271931.iam.gserviceaccount.com (Vertex)
 
 - **Cloud Run IAM Policies:**
   - Engine A: roles/run.invoker → allUsers ✓
@@ -228,10 +228,10 @@ All 10 phases of the comprehensive end-to-end audit have been successfully compl
   5. engine-d.infinityai.pro → infinityai-engine-d (deprecated)
 
 - **Active Service URLs:**
-  - ✅ Engine A: https://infinityai-engine-a-573866363639.us-central1.run.app
-  - ✅ Engine B: https://infinityai-engine-b-573866363639.us-central1.run.app
-  - ✅ Engine C: https://infinityai-engine-c-execution-573866363639.us-central1.run.app
-  - ✅ Frontend: https://after-yesterday-473512-k3.web.app
+  - ✅ Engine A: https://infinityai-engine-a-429140669077.us-central1.run.app
+  - ✅ Engine B: https://infinityai-engine-b-429140669077.us-central1.run.app
+  - ✅ Engine C: https://infinityai-engine-c-execution-429140669077.us-central1.run.app
+  - ✅ Frontend: https://gen-lang-client-0779271931.web.app
 
 **Action Items:**
 - [ ] Test custom domain URLs (engine-a/b/c.infinityai.pro)

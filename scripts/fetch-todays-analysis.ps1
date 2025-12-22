@@ -29,9 +29,9 @@ $results.overview = Get-Json "${BaseUrl}/engine-d/market/overview"
 $results.insights = Get-Json "${BaseUrl}/engine-d/insights"
 
 # Fallback to Engine A/B direct if needed (best effort)
-if (-not $results.chart.ok) { $results.chart_fallback = Get-Json "https://infinityai-engine-a-573866363639.us-central1.run.app/chart/${Symbol}?timeframe=1D" }
-if (-not $results.overview.ok) { $results.overview_fallback = Get-Json "https://infinityai-engine-a-573866363639.us-central1.run.app/market/overview" }
-if (-not $results.insights.ok) { $results.insights_fallback = Get-Json "https://infinityai-engine-b-573866363639.us-central1.run.app/insights" }
+if (-not $results.chart.ok) { $results.chart_fallback = Get-Json "https://infinityai-engine-a-429140669077.us-central1.run.app/chart/${Symbol}?timeframe=1D" }
+if (-not $results.overview.ok) { $results.overview_fallback = Get-Json "https://infinityai-engine-a-429140669077.us-central1.run.app/market/overview" }
+if (-not $results.insights.ok) { $results.insights_fallback = Get-Json "https://infinityai-engine-b-429140669077.us-central1.run.app/insights" }
 
 # Save
 if (-not [System.IO.Path]::IsPathRooted($OutputFile)) { $OutputFile = Join-Path -Path $PSScriptRoot -ChildPath (Split-Path -Path $OutputFile -Leaf) }

@@ -189,7 +189,7 @@ resource "google_artifact_registry_repository" "infinityai" {
 
   labels = {
     environment = var.environment
-    project     = "infinityai-pro"
+    project     = "gen-lang-client-0779271931"
     component   = "engine-b"
   }
 
@@ -279,14 +279,9 @@ resource "google_container_cluster" "infinityai" {
   }
 
   # Master authorized networks (restrict to office/VPN CIDR only)
-  master_authorized_networks_config {
-    cidr_blocks = [
-      {
-        cidr_block   = "203.0.113.0/24" # Example: Replace with your office/VPN CIDR
-        display_name = "Office VPN"
-      }
-    ]
-  }
+  # master_authorized_networks_config {
+  #   cidr_blocks = []
+  # }
 
   # Workload Identity
   workload_identity_config {
@@ -353,7 +348,7 @@ resource "google_container_cluster" "infinityai" {
   # Resource labels
   resource_labels = {
     environment = var.environment
-    project     = "infinityai-pro"
+    project     = "gen-lang-client-0779271931"
     component   = "engine-b"
     cloud       = "gcp"
   }
@@ -661,7 +656,7 @@ resource "google_redis_instance" "infinityai" {
 
   labels = {
     environment = var.environment
-    project     = "infinityai-pro"
+    project     = "gen-lang-client-0779271931"
     component   = "cache"
   }
 

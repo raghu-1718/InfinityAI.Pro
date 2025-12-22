@@ -49,7 +49,7 @@
 
 **Record Type:** CNAME  
 **Host:** www  
-**Value:** after-yesterday-473512-k3.web.app.  
+**Value:** gen-lang-client-0779271931.web.app.  
 **TTL:** Automatic (or 300)
 
 ---
@@ -64,7 +64,7 @@
 Or use CNAME flattening if Namecheap supports it:
 **Record Type:** ALIAS or CNAME  
 **Host:** @  
-**Value:** after-yesterday-473512-k3.web.app.
+**Value:** gen-lang-client-0779271931.web.app.
 
 ---
 
@@ -75,7 +75,7 @@ Or use CNAME flattening if Namecheap supports it:
 | CNAME | engine-a | ghs.googlehosted.com. | Engine A API |
 | CNAME | engine-b | ghs.googlehosted.com. | Engine B API |
 | CNAME | engine-c | ghs.googlehosted.com. | Engine C API |
-| CNAME | www | after-yesterday-473512-k3.web.app. | Frontend |
+| CNAME | www | gen-lang-client-0779271931.web.app. | Frontend |
 | A or ALIAS | @ | 151.101.1.195 | Root domain |
 
 ---
@@ -110,7 +110,7 @@ nslookup engine-c.infinityai.pro 8.8.8.8
 # Check Cloud Run domain mapping status
 gcloud beta run domain-mappings describe engine-a.infinityai.pro `
   --region=us-central1 `
-  --project=after-yesterday-473512-k3 `
+  --project=gen-lang-client-0779271931 `
   --format="get(status.conditions[0].status)"
 
 # Should return: True

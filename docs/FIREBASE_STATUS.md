@@ -4,14 +4,14 @@
 
 ### Secret Manager Setup
 - **Secret Name**: `firebase-service-account`
-- **Project**: `after-yesterday-473512-k3` (573866363639)
+- **Project**: `gen-lang-client-0779271931` (429140669077)
 - **Firebase Project**: `infinity-ai-5ec7c`
 - **Status**: ✅ Created and Active
 - **Date**: October 19, 2025
 
 ### IAM Permissions
 All Cloud Run service accounts have been granted `roles/secretmanager.secretAccessor`:
-- ✅ 573866363639-compute@developer.gserviceaccount.com
+- ✅ 429140669077-compute@developer.gserviceaccount.com
 
 This service account is used by all engines, so all services can access the secret.
 

@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$PROJECT_ID = "after-yesterday-473512-k3"
+$PROJECT_ID = "gen-lang-client-0779271931"
 $REGION = "us-central1"
 $SERVICE_NAME = "engine-b"
 $IMAGE_NAME = "gcr.io/$PROJECT_ID/${SERVICE_NAME}:$Version"

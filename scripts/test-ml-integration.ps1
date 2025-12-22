@@ -54,7 +54,7 @@ Write-Host "   API docs: http://localhost:8080/docs" -ForegroundColor Cyan
 Write-Host ""
 
 # Set environment variables
-$env:GOOGLE_CLOUD_PROJECT = "after-yesterday-473512-k3"
+$env:GOOGLE_CLOUD_PROJECT = "gen-lang-client-0779271931"
 $env:DHAN_CLIENT_ID = "test-client-id"
 $env:DHAN_ACCESS_TOKEN = "test-access-token"
 

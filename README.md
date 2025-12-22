@@ -49,7 +49,7 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 | **Region** | `us-central1` (Unified) |
 | **Markets** | NSE, BSE, NFO, MCX |
 | **Total API Endpoints** | 114+ across 3 engines |
-| **Background Trading** | ✅ Fully Automated |
+| **Background Trading** | ✅ Internal Autonoumous Loop (Engine A) |
 | **Activity Logging** | ✅ Real-time to Firestore |
 
 ---
@@ -89,11 +89,11 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 │   │  │   Manager   │  │   Logging   │  │  Registry   │       │                   │
 │   │  │  9 secrets  │  │   Enabled   │  │  10 repos   │       │                   │
 │   │  └─────────────┘  └─────────────┘  └─────────────┘       │                   │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │                   │
-│   │  │   Cloud     │  │   Cloud     │  │   Cloud     │       │                   │
-│   │  │   Run       │  │   Storage   │  │  Scheduler  │       │                   │
-│   │  │ 16 services │  │  3 buckets  │  │  2 jobs     │       │                   │
-│   │  └─────────────┘  └─────────────┘  └─────────────┘       │                   │
+│   │  ┌─────────────┐  ┌─────────────┐                        │                   │
+│   │  │   Cloud     │  │   Cloud     │                        │                   │
+│   │  │   Run       │  │   Storage   │                        │                   │
+│   │  │ 16 services │  │  3 buckets  │                        │                   │
+│   │  └─────────────┘  └─────────────┘                        │                   │
 │   └─────────────────────────────────────────────────────────┘                   │
 │                                │                                                │
 │   ┌──────────────────────────────────────────────────────────────┐              │
@@ -241,8 +241,8 @@ Stateless execution engine responsible solely for DhanHQ integration, order plac
 - ✅ Order Timing Optimization
 - ✅ TWAP/VWAP Routing
 - ✅ Execution Analytics
-- ❌ **No Autonomous Logic** (Removed)
-- ❌ **No Hidden Background Loops** (Removed)
+- ❌ **No Autonomous Logic** (Pure Worker)
+- ❌ **No Background Loops** (Passive)
 
 
 #### Broker Integration
@@ -330,69 +330,21 @@ Every trade MUST pass the following gates in Engine A before execution:
 
 ---
 
-## 🤖 Background Trading
+## 🤖 Background Trading (Internal Loop)
 
-### Automated Trading System
+### Autonomous Orchestration
 
-Engine C includes a fully automated background trading system that executes trades based on AI signals from Engine B.
+Engine A uses an **internal asyncio-based scheduler** (`AutonomousTrader`) to manage trading loops. It does not rely on external Cloud Scheduler jobs for critical trading logic.
 
 ### How It Works
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKGROUND TRADING FLOW                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌────────────┐    ┌────────────┐    ┌────────────┐            │
-│   │ Cloud      │───►│ Engine C   │───►│ Engine B   │            │
-│   │ Scheduler  │    │ Trigger    │    │ AI Signal  │            │
-│   │ (cron)     │    │            │    │ Generation │            │
-│   └────────────┘    └────────────┘    └────────────┘            │
-│        │                                      │                  │
-│        │                                      ▼                  │
-│        │              ┌─────────────────────────┐                │
-│        │              │   Signal Evaluation     │                │
-│        │              │   • Confidence ≥ 70%    │                │
-│        │              │   • Risk check          │                │
-│        │              │   • Daily limit check   │                │
-│        │              └─────────────────────────┘                │
-│        │                          │                              │
-│        │                          ▼                              │
-│        │              ┌─────────────────────────┐                │
-│        │              │   Order Execution       │                │
-│        │              │   • DhanHQ API          │                │
-│        │              │   • Position sizing     │                │
-│        │              │   • Slippage control    │                │
-│        │              └─────────────────────────┘                │
-│        │                          │                              │
-│        ▼                          ▼                              │
-│   ┌────────────────────────────────────────────┐                │
-│   │              FIRESTORE LOGGING              │                │
-│   │  • Activity logs (users/{uid}/activity)    │                │
-│   │  • Trading state (users/{uid}/trading)     │                │
-│   │  • Performance metrics                      │                │
-│   └────────────────────────────────────────────┘                │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+1. **Startup**: Engine A starts the `AutonomousTrader` loop on lifespan startup.
+2. **Iteration**: Every 1-5 minutes (market dependent).
+3. **Signal**: Request new signal from Engine B.
+4. **Risk**: Validate signal against Risk Gates (VaR, Drawdown, Kelly).
+5. **Execution**: If passed, send Order Command to Engine C.
 
-### Configuration Options
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `max_daily_trades` | 10 | Maximum trades per day |
-| `max_risk_per_trade` | 0.02 (2%) | Maximum risk per trade |
-| `min_confidence` | 0.7 (70%) | Minimum AI confidence |
-| `trading_amount` | 1000 | Base trading amount (INR) |
-| `strategy` | ai-signals | Trading strategy |
-| `instruments` | ["equities"] | Allowed instruments |
-
-### Cloud Scheduler Jobs
-
-| Job | Schedule | Target | Purpose |
-|-----|----------|--------|---------|
-| `trading-signal-trigger` | `*/5 9-15 * * 1-5` | Engine C | Trigger trading signals (every 5 min during market hours) |
-| `engine-health-check` | `*/10 * * * *` | Engine C | Health monitoring (every 10 min) |
+**Note:** Legacy Cloud Scheduler jobs targeting Engine C have been removed.
 
 ---
 
@@ -714,6 +666,11 @@ gcloud config set project gen-lang-client-0779271931
 | `dhan-access-token` | DhanHQ API access token |
 | `user-creds-*` | Per-user DhanHQ credentials |
 | `firebase-admin-sdk` | Firebase admin credentials |
+| `gemini-api-key` | Google Gemini API key |
+| `dhan-client-id` | DhanHQ OAuth client ID |
+| `dhan-access-token` | DhanHQ API access token |
+| `user-creds-*` | Per-user DhanHQ credentials |
+| `firebase-admin-sdk` | Firebase admin credentials |
 | `encryption-key` | Data encryption key |
 
 ---
@@ -723,10 +680,9 @@ gcloud config set project gen-lang-client-0779271931
 ```
 InfinityAI.Pro/
 ├── backend/
-│   ├── engine-core/          # Engine A - Risk Management (v3.7)
-│   ├── engine-analytics/     # Shared analytics
-│   ├── engine-execution/     # Engine C - Trade Execution (v3.7)
-│   ├── strategies/           # Engine B AI strategies
+│   ├── engine-a/             # Engine A - Orchestration & Risk (v3.8)
+│   ├── engine-b/             # Engine B - AI Signal Generation (v4.0)
+│   ├── engine-c/             # Engine C - Trade Execution (v3.8)
 │   └── shared/               # Common utilities
 ├── frontend/
 │   └── web/                  # Next.js 16 Dashboard

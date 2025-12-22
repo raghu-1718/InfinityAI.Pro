@@ -45,7 +45,7 @@ All components are configured, deployed, and ready for live trading.
 ## 🏗️ INFRASTRUCTURE STATUS
 
 ### Google Cloud Platform
-- **Project:** after-yesterday-473512-k3
+- **Project:** gen-lang-client-0779271931
 - **Region:** us-central1
 - **Services:** 3 Cloud Run services + Firebase Hosting
 
@@ -82,7 +82,7 @@ All components are configured, deployed, and ready for live trading.
 - **Webhook:** https://engine-c.infinityai.pro/api/dhan/postback
 
 ### Frontend (✅ DEPLOYED)
-- **URL:** https://after-yesterday-473512-k3.web.app
+- **URL:** https://gen-lang-client-0779271931.web.app
 - **Custom Domain:** infinityai.pro (DNS configured)
 - **Features:**
   - Engine status dashboard
@@ -117,7 +117,7 @@ Webhook URL: https://engine-c.infinityai.pro/api/dhan/postback
 **IMPORTANT:** Access tokens expire daily. Update before 9:00 AM IST.
 
 #### Method 1: Frontend Settings Page (Recommended)
-1. Visit: https://after-yesterday-473512-k3.web.app/settings.html
+1. Visit: https://gen-lang-client-0779271931.web.app/settings.html
 2. Paste your new access token
 3. Click "Update Token"
 4. System automatically updates Secret Manager
@@ -126,7 +126,7 @@ Webhook URL: https://engine-c.infinityai.pro/api/dhan/postback
 ```powershell
 echo "YOUR_NEW_ACCESS_TOKEN" | gcloud secrets versions add dhan-access-token `
   --data-file=- `
-  --project=after-yesterday-473512-k3
+  --project=gen-lang-client-0779271931
 ```
 
 ---
@@ -146,7 +146,7 @@ Invoke-RestMethod -Uri "https://engine-b.infinityai.pro/" -Method Get
 Invoke-RestMethod -Uri "https://engine-c.infinityai.pro/" -Method Get
 
 # Test Frontend
-Invoke-WebRequest -Uri "https://after-yesterday-473512-k3.web.app/"
+Invoke-WebRequest -Uri "https://gen-lang-client-0779271931.web.app/"
 ```
 
 ### Expected Results
@@ -308,20 +308,20 @@ User Input → Engine A (AI Prediction) → Engine B (Orchestration) → Engine 
 ### Frontend Not Loading
 **Solution:**
 1. Clear browser cache
-2. Try direct URL: https://after-yesterday-473512-k3.web.app
+2. Try direct URL: https://gen-lang-client-0779271931.web.app
 3. Wait for DNS propagation (up to 48 hours)
 
 ---
 
 ## 📞 IMPORTANT LINKS
 
-- **Frontend:** https://after-yesterday-473512-k3.web.app
-- **Settings:** https://after-yesterday-473512-k3.web.app/settings.html
+- **Frontend:** https://gen-lang-client-0779271931.web.app
+- **Settings:** https://gen-lang-client-0779271931.web.app/settings.html
 - **Engine A:** https://engine-a.infinityai.pro
 - **Engine B:** https://engine-b.infinityai.pro
 - **Engine C:** https://engine-c.infinityai.pro
 - **Dhan Account:** https://myaccount.dhan.co
-- **GCP Console:** https://console.cloud.google.com/run?project=after-yesterday-473512-k3
+- **GCP Console:** https://console.cloud.google.com/run?project=gen-lang-client-0779271931
 
 ---
 

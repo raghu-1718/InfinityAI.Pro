@@ -9,7 +9,7 @@
 $ErrorActionPreference = "Continue"
 
 $PROJECT_ID = "gen-lang-client-0779271931"
-$LEGACY_PROJECT = "after-yesterday-473512-k3"
+$LEGACY_PROJECT = "gen-lang-client-0779271931"
 $REGION = "us-central1"
 
 Write-Host "╔════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan

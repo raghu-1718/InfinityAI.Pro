@@ -207,7 +207,7 @@ Unrealized:  -₹2,861.25
 
 | Resource | Details |
 |----------|---------|
-| GCP Project | after-yesterday-473512-k3 |
+| GCP Project | gen-lang-client-0779271931 |
 | Region | us-central1 |
 | Cloud Run Services | 3 |
 | Firestore Database | (default) |
