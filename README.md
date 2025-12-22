@@ -66,16 +66,19 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │   ┌────────────────┐    ┌────────────────┐    ┌────────────────┐                │
-│   │   ENGINE A     │◄──►│   ENGINE B     │◄──►│   ENGINE C     │                │
-│   │    v3.7        │    │    v4.0        │    │    v3.7        │                │
-│   │   ~322 MB      │    │   ~1.03 GB     │    │   ~325 MB      │                │
+│   │   ENGINE A     │◄──►│   ENGINE B     │    │   ENGINE C     │                │
+│   │    v3.8        │    │    v4.0        │    │    v3.8        │                │
+│   │   ~325 MB      │    │   ~1.03 GB     │    │   ~300 MB      │                │
 │   │                │    │                │    │                │                │
-│   │ • Risk Mgmt    │    │ • Gemini 2.0   │    │ • DhanHQ API   │                │
-│   │ • VaR/CVaR     │    │ • ML Ensemble  │    │ • OAuth Flow   │                │
-│   │ • Kelly Sizing │    │ • AI Signals   │    │ • Background   │                │
-│   │ • 8 Endpoints  │    │ • 63 Endpoints │    │   Trading      │                │
-│   │                │    │                │    │ • 43+ Endpts   │                │
-│   └────────────────┘    └────────────────┘    └────────────────┘                │
+│   │ • Orchestrator │    │ • Gemini 2.0   │    │ • DhanHQ API   │                │
+│   │ • Risk Gate    │    │ • ML Ensemble  │    │ • OAuth Flow   │                │
+│   │ • Trade Logic  │    │ • AI Signals   │    │ • Execution    │                │
+│   │ • Decision Auth│    │ • 63 Endpoints │    │   Worker       │                │
+│   │ • 8+ Endpoints │    │                │    │ • 35+ Endpts   │                │
+│   └────────────────┘    └────────────────┘    └──────▲─────────┘                │
+│          │                     │                     │                          │
+│          └─────────────────────┼─────────────────────┘                          │
+│                                │                     │                          │
 │          │                     │                     │                          │
 │          └─────────────────────┼─────────────────────┘                          │
 │                                │                                                │
@@ -134,10 +137,11 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 
 ## ⚙️ Engine Specifications
 
-### Engine A - Risk Management & Analytics
-**Version: v3.7-google-integrations** | **Status: ✅ Production** | **Endpoints: 8**
+### Engine A - Orchestration & Risk Management
+**Version: v3.8-central-authority** | **Status: ✅ Production** | **Endpoints: 8+**
 
-Central risk management hub with portfolio analytics and position sizing.
+Central authority for autonomous trading decisions, risk management, and portfolio orchestration.
+Responsible for **fetching signals from Engine B**, **validating risk**, and **ordering Engine C to execute**.
 
 #### Capabilities
 | Feature | Description |
@@ -226,29 +230,20 @@ GET  /api/v1/market/pulse            - Real-time market pulse
 
 ---
 
-### Engine C - Trade Execution & Broker Integration
-**Version: v3.7-performance-optimized** | **Status: ✅ Production** | **Endpoints: 43+**
+### Engine C - Trade Execution Worker
+**Version: v3.8-pure-execution** | **Status: ✅ Production** | **Endpoints: 35+**
 
-Handles DhanHQ integration with OAuth 2.0, credential management via GCP Secret Manager, intelligent trade execution, **and fully automated background trading**.
+Stateless execution engine responsible solely for DhanHQ integration, order placement, and credential management.
+**Logic Restriction:** Cannot initiate trades independently. Must receive explicit commands from Engine A.
 
-#### ML Capabilities
+#### Execution Features
 - ✅ Slippage Prediction
 - ✅ Order Timing Optimization
-- ✅ TWAP Splitting
-- ✅ VWAP Splitting
+- ✅ TWAP/VWAP Routing
 - ✅ Execution Analytics
+- ❌ **No Autonomous Logic** (Removed)
+- ❌ **No Hidden Background Loops** (Removed)
 
-#### Background Trading (NEW)
-| Feature | Specification |
-|---------|---------------|
-| **Status** | ✅ Fully Operational |
-| **Mode** | Autonomous AI-Driven |
-| **Strategy** | AI Signals (Engine B Integration) |
-| **Risk Management** | 2% max per trade |
-| **Daily Limit** | 10 trades max |
-| **Confidence Threshold** | 70% minimum |
-| **Instruments** | Equities |
-| **Activity Logging** | Real-time to Firestore |
 
 #### Broker Integration
 | Feature | Specification |
@@ -292,6 +287,46 @@ POST /api/v1/background-trading/stop/{uid}    - Stop background trading
 POST /api/v1/background-trading/config/{uid}  - Update config
 GET  /api/v1/trading/activity/{uid}           - Activity logs
 ```
+
+---
+
+## 🤖 Governance & Autonomous Flow
+
+### Centralized Authority (Engine A)
+
+The platform enforces a strict **Architectural Authority** model where Engine A is the sole decision-maker.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AUTONOMOUS TRADING FLOW                       │
+│                   Authority: ENGINE A                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   1. SIGNAL       2. DECISION & RISK       3. EXECUTION          │
+│                                                                  │
+│   ┌────────┐      ┌────────────────┐      ┌────────┐             │
+│   │ Engine │      │    Engine A    │      │ Engine │             │
+│   │   B    │─────►│ (Orchestrator) │─────►│   C    │             │
+│   └────────┘      └────────────────┘      └────────┘             │
+│   [Signals]        [Risk Validation]      [Dhan API]             │
+│      ▲                    │                    │                 │
+│      │                    ▼                    ▼                 │
+│   Market Data      ┌─────────────┐      ┌─────────────┐          │
+│                    │ Risk Gates  │      │ Live Market │          │
+│                    │ • Max DD    │      │             │          │
+│                    │ • Position  │      │             │          │
+│                    └─────────────┘      └─────────────┘          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Risk Gates
+Every trade MUST pass the following gates in Engine A before execution:
+1.  **Confidence Gate:** AI Signal Confidence > 75%.
+2.  **Position Gate:** Size calculated by Kelly Criterion / Risk Limit.
+3.  **Risk Gate:** Portfolio VaR and Drawdown checks.
+4.  **Operational Gate:** Market hours and liquidity checks.
+
 
 ---
 

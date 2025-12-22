@@ -21,8 +21,14 @@ from .trading_agents import (
     AgentOrchestrator,
     AgentContext,
     AgentResult,
+    AgentResult,
     create_trading_workflow
 )
+
+try:
+    from .reasoning_engine_client import ReasoningEngineClient
+except ImportError:
+    pass
 
 # Enhanced GenAI with function calling (v3.7.7)
 try:

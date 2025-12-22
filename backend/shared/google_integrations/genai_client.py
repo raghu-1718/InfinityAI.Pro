@@ -59,7 +59,7 @@ class GeminiModel(Enum):
     IMAGEN_4_FAST = "imagen-4.0-fast-generate-001"   # Fast image generation
     IMAGEN_4_STANDARD = "imagen-4.0-generate-001"    # Standard quality
     IMAGEN_4_ULTRA = "imagen-4.0-ultra-generate-001" # Ultra quality
-    IMAGEN_4_ULTRA = "imagen-4.0-ultra-generate"     # Ultra quality
+    IMAGEN_3_FAST = "imagen-3.0-fast"                # High speed image generation
 
     # === VIDEO GENERATION (Veo 3.0) ===
     VEO_3_FAST = "veo-3.0-fast-generate"             # Fast video generation

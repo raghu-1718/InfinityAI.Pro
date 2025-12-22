@@ -461,6 +461,8 @@ class SignalResponse(BaseModel):
     sentiment_score: Optional[float] = None
     data_source: Optional[str] = None
     analysis: Optional[Dict[str, Any]] = None
+    security_id: Optional[str] = None
+    exchange_segment: Optional[str] = None
 
 class TrainingRequest(BaseModel):
     symbol: str
@@ -1656,6 +1658,8 @@ async def generate_signal(req: SignalRequest):
         model_version=MODEL_STORE.version + ("-ml" if ml_used else "-rules"),
         sentiment_score=sentiment_score,
         data_source=data_source,
+        security_id=SYMBOL_MAPPER.get_id(symbol),
+        exchange_segment="NSE_EQ" if symbol not in ["NIFTY", "BANKNIFTY", "FINNIFTY", "CRUDEOIL", "GOLD", "SILVER"] else ("IDX_I" if symbol in ["NIFTY", "BANKNIFTY", "FINNIFTY"] else "MCX_COMM"),
         analysis={
             "rsi": round(rsi, 2) if rsi else None,
             "adx": round(adx, 2) if adx else None,
@@ -3863,6 +3867,42 @@ async def get_finance_ai_status():
         "gemini_model": "gemini-2.0-flash",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# --- Agent Consultation Endpoint ---
+class AgentConsultRequest(BaseModel):
+    query: str
+    symbol: Optional[str] = None
+
+@app.post("/api/v1/agent/consult")
+async def consult_agent(req: AgentConsultRequest):
+    """
+    Direct consultation with the deployed Vertex AI Reasoning Engine (Agent).
+    Target: financial-advisor-21947
+    """
+    try:
+        # Import here to ensure we pick up the latest from __init__
+        from src.google_integrations import ReasoningEngineClient
+             
+        # Initialize client (lazy load to avoid startup tax)
+        agent_client = ReasoningEngineClient()
+        
+        if req.symbol:
+            response = await agent_client.analyze_stock(req.symbol)
+        else:
+            response = await agent_client.query(req.query)
+            
+        return {
+            "status": "success",
+            "agent_id": agent_client.agent_id,
+            "response": response,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except ImportError:
+        raise HTTPException(503, "Reasoning Engine Client not available (check google_integrations)")
+    except Exception as e:
+        logger.error(f"❌ Agent consultation failed: {e}")
+        raise HTTPException(500, f"Agent consultation failed: {str(e)}")
 
 
 if __name__ == "__main__":
