@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from google.cloud import secretmanager
 import httpx
 import uvicorn
+from src.trace_middleware import TraceIDMiddleware
 
 # ML Libraries for Risk & Portfolio Management
 import numpy as np
@@ -98,6 +99,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         return response
 
+app.add_middleware(TraceIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS allowed origins for production

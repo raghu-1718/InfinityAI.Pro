@@ -1,0 +1,28 @@
+ACTIVITY LOG REPORT
+Date: 2025-12-23
+User: raghu-1718 (and system)
+
+SUMMARY:
+- The system is actively logging events.
+- Scheduler is running consistently every ~5 minutes (Heartbeat confirmed).
+- API Calls are being recorded.
+
+RECENT LOGS (UTC Time shown, Local Time +5:30):
+
+TIMESTAMP                 | TYPE                 | DESCRIPTION
+----------------------------------------------------------------------------------------------------
+2025-12-22T10:15:03       | api_call             | N/A
+2025-12-22T10:15:03       | scheduler_run        | N/A
+2025-12-22T10:11:25       | api_call             | N/A
+2025-12-22T10:10:02       | api_call             | N/A
+2025-12-22T10:10:01       | scheduler_run        | N/A
+2025-12-22T10:05:02       | api_call             | N/A
+2025-12-22T10:05:02       | scheduler_run        | N/A
+2025-12-22T10:04:09       | api_call             | N/A
+2025-12-22T10:00:02       | api_call             | N/A
+2025-12-22T10:00:02       | scheduler_run        | N/A
+... (Older logs truncated)
+
+STATUS:
+- Logging: ✅ ACTIVE
+- Dashboard Fix: 🔄 DEPLOYING (Engine B)

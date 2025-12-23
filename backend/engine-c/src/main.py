@@ -23,6 +23,8 @@ from dhanhq import dhanhq
 from google.cloud import secretmanager
 from google.cloud import firestore
 import uvicorn
+import uuid
+from src.activity_logger import ActivityLogger
 
 # Initialize Firestore client globally
 try:
@@ -142,6 +144,11 @@ def get_coupon_auth_manager():
 
 # Lazy loaders for Background/Agent REMOVED - Logic moved to Engine A
 
+# Activity Logger
+activity_logger: Optional[ActivityLogger] = None
+
+# Setup logging
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -191,6 +198,13 @@ from contextlib import suppress
 @app.on_event("startup")
 async def startup_event():
     """Initialize performance components and default coupons on startup (robust, non-blocking)"""
+    global activity_logger
+    try:
+        activity_logger = ActivityLogger()
+        logger.info("✅ Activity Logger initialized")
+    except Exception as e:
+        logger.warning(f"Failed to init Activity Logger: {e}")
+
     # Helper for timeouts
     async def with_timeout(coro, timeout=10, context="task"):
         try:
@@ -299,6 +313,19 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Trace ID Middleware
+class TraceIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        trace_id = request.headers.get("X-Trace-ID") or str(uuid.uuid4())
+        request.state.trace_id = trace_id
+        
+        response = await call_next(request)
+        
+        response.headers["X-Trace-ID"] = trace_id
+        return response
+
+app.add_middleware(TraceIDMiddleware)
 
 # Security Headers Middleware - skip CORS preflight requests
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -1223,6 +1250,23 @@ async def dhan_postback(request: Dict[str, Any]):
 
         # Log the trade event
         logger.info(f"📊 Order Update: {order_id} - {symbol} - {transaction_type} - {status}")
+
+        if activity_logger:
+            # Explicitly log to Firestore activity_logs
+            trace_id = getattr(request, "state", {}).get("trace_id") or request.headers.get("X-Trace-ID")
+            await activity_logger.log_activity(
+                user_id="system", # Or extract from order metadata if available
+                activity_type="TRADE_UPDATE",
+                description=f"Order {order_id} for {symbol} is {status}",
+                metadata={
+                    "order_id": order_id,
+                    "symbol": symbol,
+                    "status": status,
+                    "side": transaction_type
+                },
+                trace_id=trace_id,
+                severity="info" if status != "REJECTED" else "warning"
+            )
 
         # TODO: Store in Firestore for trade history
         # TODO: Update portfolio positions

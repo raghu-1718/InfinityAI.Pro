@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import uuid
 import httpx
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -65,14 +66,17 @@ class AutonomousTrader:
         """Main loop: Signal -> Risk -> Execution"""
         while self.is_active:
             try:
+                # Generate Trace ID for this cycle
+                trace_id = str(uuid.uuid4())
+
                 # 1. Fetch Signals from Engine B
-                signals = await self._fetch_signals()
+                signals = await self._fetch_signals(trace_id)
                 
                 for signal in signals:
                     if not self.is_active: break
                     
                     # 2. Process & Risk Check
-                    await self._process_signal(signal)
+                    await self._process_signal(signal, trace_id)
                 
                 await asyncio.sleep(self.config["poll_interval"])
 
@@ -80,7 +84,7 @@ class AutonomousTrader:
                 logger.error(f"Error in AutonomousTrader loop: {e}")
                 await asyncio.sleep(10) # Backoff on error
 
-    async def _fetch_signals(self) -> List[Dict]:
+    async def _fetch_signals(self, trace_id: Optional[str] = None) -> List[Dict]:
         """Call Engine B to get AI Signals"""
         try:
             # Using the batch signal endpoint verified in Engine B
@@ -90,10 +94,31 @@ class AutonomousTrader:
                 "fast": True
             }
             
-            resp = await self.http_client.post(url, json=payload)
+            headers = {"X-Trace-ID": trace_id} if trace_id else {}
+            resp = await self.http_client.post(url, json=payload, headers=headers)
             if resp.status_code == 200:
-                # Engine B returns list of SignalResponse objects directly for batch
-                return resp.json()
+                data = resp.json()
+                # DEBUG: Log what we got
+                logger.info(f"Engine B Response Type: {type(data)}")
+                if isinstance(data, str):
+                    logger.warning("Engine B returned a String. Attempting double-decode...")
+                    import json
+                    try:
+                        data = json.loads(data)
+                    except Exception as e:
+                        logger.error(f"Double decode failed: {e}")
+                        return []
+                
+                if isinstance(data, list):
+                    return data
+                elif isinstance(data, dict) and "data" in data:
+                    return data["data"]
+                elif isinstance(data, dict):
+                     # Maybe a single signal wrapped?
+                     return [data]
+                
+                logger.error(f"Unexpected data format from Engine B: {type(data)}")
+                return []
             else:
                 logger.warning(f"Engine B Signal Fetch Failed: {resp.status_code} - {resp.text}")
                 return []
@@ -101,7 +126,7 @@ class AutonomousTrader:
             logger.error(f"Signal API Error: {e}")
             return []
 
-    async def _process_signal(self, signal: Dict):
+    async def _process_signal(self, signal: Dict, trace_id: Optional[str] = None):
         """Authorize and Execute a potential trade"""
         symbol = signal.get("symbol")
         confidence = signal.get("confidence", 0)
@@ -141,9 +166,9 @@ class AutonomousTrader:
         # EXECUTION AUTHORITY
         # ---------------------------------------------------------
         logger.info(f"✅ Trade APPROVED: {signal_type} {safe_quantity} {symbol}. Sending to Execution Engine.")
-        await self._execute_trade(symbol, signal_type, safe_quantity, signal)
+        await self._execute_trade(symbol, signal_type, safe_quantity, signal, trace_id)
 
-    async def _execute_trade(self, symbol: str, side: str, qty: int, signal_data: Dict):
+    async def _execute_trade(self, symbol: str, side: str, qty: int, signal_data: Dict, trace_id: Optional[str] = None):
         """Send explicit command to Engine C"""
         try:
             # Mapping schema to Engine C's OrderRequest
@@ -161,8 +186,9 @@ class AutonomousTrader:
                 "price": 0
             }
             
-            url = f"{ENGINE_C_URL}/api/dhan/place-order"
-            resp = await self.http_client.post(url, json=payload)
+            url = f"{ENGINE_C_URL}/api/dhan/place-order" # Correct Endpoint for Engine C
+            headers = {"X-Trace-ID": trace_id} if trace_id else {}
+            resp = await self.http_client.post(url, json=payload, headers=headers)
             
             if resp.status_code == 200:
                 logger.info(f"🎉 Execution Success: {resp.json()}")

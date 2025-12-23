@@ -6,7 +6,7 @@
 ![Version](https://img.shields.io/badge/version-4.0-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-Production-brightgreen?style=for-the-badge)
 ![AI](https://img.shields.io/badge/AI-Gemini%202.0%20Flash-purple?style=for-the-badge)
-![Verified](https://img.shields.io/badge/Verified-December%202025-success?style=for-the-badge)
+![Verified](https://img.shields.io/badge/Verified-December%2024%202025-success?style=for-the-badge)
 
 **🚀 Next-Generation AI Trading for Indian Markets**
 
@@ -51,6 +51,19 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 | **Total API Endpoints** | 114+ across 3 engines |
 | **Background Trading** | ✅ Internal Autonoumous Loop (Engine A) |
 | **Activity Logging** | ✅ Real-time to Firestore |
+| **Frontend UI** | 🖥️ v4.1 Cyberpunk Institutional |
+
+---
+
+## 🖥️ Next-Gen Frontend Experience (v4.1)
+
+The unified dashboard has been completely overhauled with a "Cyberpunk Institutional" aesthetic, designed for high-frequency decision-making.
+
+### Key Features
+- **AI Signal Cards**: Visual representation of Gemini's trading signals with confidence intervals, technical scores, and sentiment analysis.
+- **Live Intelligence Watchlist**: Real-time monitoring of key assets with sub-second signal updates via rapid polling.
+- **Smart Risk Profile**: User-configurable risk gates including "Kill Switch", Max Risk Per Trade, and automated Trailing Stop Loss.
+- **Deep Analysis**: Interactive "Brain Reasoning" tabs to explore the "why" behind every AI decision.
 
 ---
 
@@ -132,6 +145,13 @@ InfinityAI.Pro is a sophisticated, production-grade algorithmic trading platform
 | **Secrets** | GCP Secret Manager | 9 secrets | - | us-central1 |
 | **Functions** | Firebase Functions | 13 functions | - | Gen 2 |
 | **Scheduler** | Cloud Scheduler | 2 jobs | - | asia-south1 |
+
+### Frontend Technology Stack (v4.1)
+- **Framework**: Next.js 16 (App Router)
+- **Styling**: TailwindCSS + Custom "Cyberpunk" Design System
+- **State**: Zustand (Global Store) + TanStack Query (SWR)
+- **Real-time**: Rapid Polling (1s interval) + WebSocket (Planned)
+- **Visualization**: Recharts + Framer Motion
 
 ---
 
@@ -720,6 +740,7 @@ InfinityAI.Pro/
 
 | Date | Change | Details |
 |------|--------|---------|
+| Dec 24, 2025 | Frontend v4.1 | Cyberpunk UI, Signal Cards, Risk Profile, Live Watchlist |
 | Dec 15, 2025 | Engine C v3.7 | Performance optimized, background trading |
 | Dec 15, 2025 | Unified Region | All engines now in us-central1 |
 | Dec 15, 2025 | Activity Logging | Real-time Firestore logging |
@@ -729,7 +750,10 @@ InfinityAI.Pro/
 
 ### Audit Status
 
-✅ **Full GCP Audit Completed** - December 15, 2025
+✅ **Full GCP & Frontend Audit Completed** - December 24, 2025
+- All 16 Cloud Run services verified
+- Frontend Build & Integration Verified
+- Real-time Signal Flow Verified
 - All 16 Cloud Run services verified
 - 10 Artifact Registry repositories audited
 - 9 Secret Manager secrets confirmed
@@ -769,6 +793,6 @@ Copyright © 2025 InfinityAI.Pro. All rights reserved.
 ![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat&logo=next.js&logoColor=white)
 ![DhanHQ](https://img.shields.io/badge/DhanHQ-00C853?style=flat&logo=stockx&logoColor=white)
 
-**Last Updated: December 15, 2025** | **Verified & Audited ✅**
+**Last Updated: December 24, 2025** | **Verified & Audited ✅**
 
 </div>

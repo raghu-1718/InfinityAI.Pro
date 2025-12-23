@@ -349,13 +349,29 @@ class RiskManagement:
 
 class RealTimeAnalyzer:
     @staticmethod
-    def get_trading_session() -> Dict[str, Any]:
+    def get_trading_session(exchange: str = "NSE") -> Dict[str, Any]:
+        """
+        Get trading session status.
+        Supports NSE (Equity) and MCX (Commodity) timings.
+        """
         now = datetime.now(IST) if IST else datetime.now()
         t = now.time()
-
+        
+        # Weekend check
         if now.weekday() >= 5:
+             # MCX is sometimes open on Saturdays? Usually closed safely.
             return {"session": TradingSession.CLOSED.value, "is_trading": False}
 
+        # MCX Logic (Commodities)
+        if exchange.upper() == "MCX":
+            if time(9, 0) <= t < time(23, 30):
+                return {"session": TradingSession.NORMAL.value, "is_trading": True}
+            if time(23, 30) <= t < time(23, 55):
+                return {"session": TradingSession.POST_CLOSE.value, "is_trading": False}
+             # MCX opens at 9:00, closes at 23:30/23:55
+            return {"session": TradingSession.CLOSED.value, "is_trading": False}
+
+        # NSE/BSE Logic (Equity)
         if time(9, 0) <= t < time(9, 15):
             return {"session": TradingSession.PRE_OPEN.value, "is_trading": False}
         if time(9, 15) <= t < time(15, 30):

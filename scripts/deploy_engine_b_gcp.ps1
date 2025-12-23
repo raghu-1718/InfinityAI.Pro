@@ -1,20 +1,20 @@
 #!/usr/bin/env pwsh
 
 param(
-  [Parameter(Mandatory=$false)][string]$ProjectId = "infinity-ai-5ec7c",
-  [Parameter(Mandatory=$false)][string]$Region = "us-central1",
-  [Parameter(Mandatory=$false)][string]$ImageName = "infinityai-engine-b",
-  [Parameter(Mandatory=$false)][string]$Memory = "2Gi",
-  [Parameter(Mandatory=$false)][string]$CPU = "2",
-  [Parameter(Mandatory=$false)][int]$TimeoutSeconds = 120,
-  [Parameter(Mandatory=$false)][int]$Concurrency = 80
+  [Parameter(Mandatory = $false)][string]$ProjectId = "gen-lang-client-0779271931",
+  [Parameter(Mandatory = $false)][string]$Region = "us-central1",
+  [Parameter(Mandatory = $false)][string]$ImageName = "engine-b",
+  [Parameter(Mandatory = $false)][string]$Memory = "2Gi",
+  [Parameter(Mandatory = $false)][string]$CPU = "2",
+  [Parameter(Mandatory = $false)][int]$TimeoutSeconds = 120,
+  [Parameter(Mandatory = $false)][int]$Concurrency = 80
 )
 
 Write-Host "🚀 Deploying Engine B to Cloud Run (optimized resources)" -ForegroundColor Cyan
 
 # Build container
 $root = (Get-Location)
-Set-Location "$root/engines/engine-b"
+Set-Location "$root/backend/engine-b"
 Write-Host "📦 Building container image..." -ForegroundColor Yellow
 
 $tag = "gcr.io/$ProjectId/$ImageName"

@@ -209,6 +209,23 @@ if HAS_ENHANCED_TRADING_AI and GENAI_CLIENT_B:
     except Exception as e:
         logger.warning(f"⚠️ Error initializing Enhanced Trading AI: {e}")
 
+# --- Vertex AI Reasoning Engine Integration ---
+REASONING_ENGINE_CLIENT = None
+try:
+    from src.google_integrations.reasoning_engine_client import ReasoningEngineClient
+    # Agent ID from User Dump: 8753627684120035328 (financial-advisor-21947)
+    REASONING_ENGINE_CLIENT = ReasoningEngineClient(
+        project_id=PROJECT_ID,
+        location="us-central1",
+        agent_id="8753627684120035328"
+    )
+    logger.info("✅ Vertex AI Reasoning Engine Client initialized (financial-advisor-21947)")
+except ImportError:
+    logger.warning("⚠️ ReasoningEngineClient module not found")
+except Exception as e:
+    logger.warning(f"⚠️ Error initializing Reasoning Engine Client: {e}")
+
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine B (Production)",
     description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference and Vertex AI",
@@ -1968,6 +1985,38 @@ async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIAN
 @app.get("/api/v1/models")
 async def list_models():
     """List all available ML models with ensemble weights"""
+    
+    def get_model_status(name):
+        model = MODEL_STORE.get_model(name)
+        if model is None:
+            return 'not_available'
+        
+        # Check if fitted (heuristic)
+        try:
+            if name == 'random_forest':
+                # scikit-learn check
+                if hasattr(model, 'estimators_'):
+                    return 'loaded'
+            elif name == 'xgboost':
+                # XGBoost check
+                if hasattr(model, 'get_booster'):
+                     # This might throw if not fitted on some versions, or return None
+                     return 'loaded'
+            elif name == 'lightgbm':
+                 if hasattr(model, 'booster_'):
+                     return 'loaded'
+            elif name == 'catboost':
+                 if model.is_fitted():
+                     return 'loaded'
+            
+            # If we are here, it might be initialized but not fitted.
+            # However, for the purpose of 'status', 'initialized' is better than crashing.
+            # But the original code was crashing on implicit checks. 
+            # Let's return 'initialized_waiting_for_data' if it exists but maybe not fitted.
+            return 'initialized'
+        except Exception:
+            return 'error'
+
     model_info = {
         'xgboost': {'type': 'gradient_boosting', 'framework': 'xgboost', 'weight': 0.40},
         'lightgbm': {'type': 'gradient_boosting', 'framework': 'lightgbm', 'weight': 0.30},
@@ -1984,7 +2033,7 @@ async def list_models():
                 "type": meta['type'],
                 "framework": meta['framework'],
                 "ensemble_weight": meta['weight'],
-                "status": 'loaded' if MODEL_STORE.get_model(name) else 'not_available'
+                "status": get_model_status(name)
             }
             for name, meta in model_info.items()
         ],
@@ -2848,15 +2897,49 @@ async def generate_enhanced_signal(req: EnhancedSignalRequest):
                 "volume_confirmation": signal.volume_confirmation
             },
             "key_levels": signal.key_levels,
-            "reasoning": signal.reasoning,
-            "version": "infinityai-enhanced-v4.0",
-            "model": "gemini-2.0-flash",
-            "timestamp": signal.timestamp
+            "timestamp": datetime.utcnow().isoformat()
         }
 
     except Exception as e:
         logger.error(f"Error generating enhanced signal: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+class EnhancedSignalRequest(BaseModel):
+    symbol: str
+    timeframe: str = "INTRADAY"
+    user_analysis_type: str = "comprehensive" # Renamed to avoid alias conflict if any
+    use_pro_model: bool = False
+
+@app.post("/api/v1/ai/enhanced-signal")
+async def generate_enhanced_signal(req: EnhancedSignalRequest):
+    """
+    Generate GenAI-powered trading signal using Gemini 2.5 Flash / 3 Pro.
+    Integrates real-time market data with GenAI reasoning.
+    """
+    if not ENHANCED_GENAI_CLIENT:
+         raise HTTPException(status_code=503, detail="Enhanced GenAI Client not initialized")
+
+    try:
+        if req.use_pro_model:
+             # Use Gemini 3 Pro / 2.5 Pro (Advanced)
+             logger.info(f"🧠 Using Advanced Model (Gemini Pro) for {req.symbol}")
+             res = await ENHANCED_GENAI_CLIENT.advanced_analysis_gemini3(
+                 f"Analyze {req.symbol} for {req.timeframe} trading using advanced multi-factor analysis."
+             )
+             return res
+        else:
+            # Use Gemini 2.5 Flash (Standard)
+            logger.info(f"⚡ Using Fast Model (Gemini Flash) for {req.symbol}")
+            res = await ENHANCED_GENAI_CLIENT.generate_trading_signal(
+                symbol=req.symbol, 
+                analysis_type=req.user_analysis_type
+            )
+            return res.to_dict()
+
+    except Exception as e:
+        logger.error(f"❌ Enhanced signal generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/api/v1/ai/market-knowledge")
@@ -2895,6 +2978,28 @@ async def get_market_knowledge_summary():
         }
     except Exception as e:
         logger.error(f"Error fetching market knowledge: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/news")
+async def get_market_news_endpoint(
+    category: str = "markets",
+    symbol: Optional[str] = None,
+    limit: int = 20
+):
+    """
+    Get Real-Time Market News.
+    Supports general categories or symbol-specific news.
+    """
+    try:
+        aggregator = NewsAggregator()
+        if symbol:
+            feed = await aggregator.fetch_symbol_news(symbol, max_articles=limit)
+        else:
+            feed = await aggregator.fetch_all_news([category], max_articles=limit)
+        return feed.to_dict()
+    except Exception as e:
+        logger.error(f"Error fetching news: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

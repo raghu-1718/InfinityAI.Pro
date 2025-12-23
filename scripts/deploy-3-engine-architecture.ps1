@@ -103,7 +103,7 @@ foreach ($engine in $ENGINES) {
     if (-not $SkipBuild) {
         Write-Host "  Building container..." -ForegroundColor Gray
         # Using cmd /c to ensure proper execution of gcloud command if powershell has issues
-        cmd /c "gcloud builds submit --tag gcr.io/$PROJECT_ID/infinityai-$engine --project=$PROJECT_ID"
+        cmd /c "gcloud builds submit --quiet --tag gcr.io/$PROJECT_ID/infinityai-$engine --project=$PROJECT_ID"
         
         if ($LASTEXITCODE -ne 0) {
             Write-Host "  Build failed for $engine" -ForegroundColor Red
@@ -128,7 +128,7 @@ foreach ($engine in $ENGINES) {
     $timeout = $engineConfig.timeout
     $cpu = $engineConfig.cpu
 
-    cmd /c "gcloud run deploy $engine --image gcr.io/$PROJECT_ID/infinityai-$engine --region $REGION --project $PROJECT_ID --platform managed --allow-unauthenticated --memory $mem --cpu $cpu --min-instances $minInst --max-instances $maxInst --timeout ${timeout}s --set-env-vars $envVars"
+    cmd /c "gcloud run deploy $engine --quiet --image gcr.io/$PROJECT_ID/infinityai-$engine --region $REGION --project $PROJECT_ID --platform managed --allow-unauthenticated --memory $mem --cpu $cpu --min-instances $minInst --max-instances $maxInst --timeout ${timeout}s --set-env-vars $envVars"
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  $engine deployed successfully" -ForegroundColor Green
@@ -155,7 +155,7 @@ if (-not $SkipBuild) {
 }
 
 Write-Host "  Deploying to Firebase Hosting..." -ForegroundColor Gray
-cmd /c "firebase deploy --only hosting --project $PROJECT_ID"
+cmd /c "firebase deploy --only hosting --project $PROJECT_ID --token \"$env:FIREBASE_TOKEN\""
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "  Frontend deployed successfully" -ForegroundColor Green

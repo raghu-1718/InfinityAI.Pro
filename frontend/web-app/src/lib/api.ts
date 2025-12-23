@@ -445,6 +445,28 @@ export const engineB = {
     return res.json();
   },
 
+  async getEnhancedSignal(data: {
+    symbol: string;
+    timeframe: string;
+    user_analysis_type?: string;
+    use_pro_model?: boolean;
+  }): Promise<SignalResponse> {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_B}/api/v1/signal`,
+      `${FALLBACK_URLS.ENGINE_B}/api/v1/signal`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: data.symbol,
+          use_gemini: true,
+          _metadata: { timeframe: data.timeframe, type: data.user_analysis_type },
+        }),
+      }
+    );
+    return res.json();
+  },
+
   async getGeminiAnalysis(data: { symbol: string; context?: string }) {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_B}/api/v1/gemini/analyze`,

@@ -135,6 +135,7 @@ __all__ = [
     "AgentContext",
     "AgentResult",
     "create_trading_workflow",
+    "ReasoningEngineClient",
 ]
 
 # Enhanced Data Sources (v3.8 - BSE, Global Markets, Sectors)
