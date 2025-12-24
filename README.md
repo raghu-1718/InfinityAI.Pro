@@ -7,7 +7,7 @@
 ![Status](https://img.shields.io/badge/status-Production-brightgreen?style=for-the-badge)
 ![AI](https://img.shields.io/badge/AI-Gemini%202.0%20Flash-purple?style=for-the-badge)
 
-**🚀 Next-Generation AI Trading Infrastructure for Indian Markets**
+### 🚀 Next-Generation AI Trading Infrastructure for Indian Markets
 
 [Live Platform](https://infinityai.pro) | [Documentation](./docs/) | [Architecture](./docs/ARCHITECTURE.md)
 
@@ -47,28 +47,18 @@ The platform is designed with a **"Security-First, Zero-Trust"** philosophy, ens
 
 ### Three-Engine Distributed Cluster (Unified us-central1)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         INFINITYAI.PRO CLUSTER v4.0                             │
-│                         Region: us-central1 (Unified)                           │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
-│   ┌────────────────┐    ┌────────────────┐    ┌────────────────┐                │
-│   │   ENGINE A     │◄──►│   ENGINE B     │    │   ENGINE C     │                │
-│   │  (Orchestrator)│    │   (AI Analyst) │    │   (Executor)   │                │
-│   │    Python      │    │    Python      │    │    Python      │                │
-│   │    FastAPI     │    │    FastAPI     │    │    FastAPI     │                │
-│   │   Risk Gate    │    │ Gemini 2.0     │    │   Dhan API     │                │
-│   └─────────────┬──┘    └────────────────┘    └────────▲───────┘                │
-│                 │                                      │                        │
-│                 └───────────────COMMAND────────────────┘                        │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Engine A<br>Orchestrator] <--> B[Engine B<br>AI Analyst]
+    A <--> C[Engine C<br>Executor]
+    C <--> Dhan[DhanHQ API]
+    Frontend <--> A
+    Frontend <--> C
 ```
 
 ### Infrastructure Specs
 | Component | Technology | Version | Role |
-|-----------|------------|---------|------|
+| :--- | :--- | :--- | :--- |
 | **Frontend** | Next.js 16 | v4.1 | UI/UX Control Surface |
 | **Engine A** | Cloud Run | v3.8 | Orchestration & Risk |
 | **Engine B** | Cloud Run | v4.0 | AI Signal Generation |
