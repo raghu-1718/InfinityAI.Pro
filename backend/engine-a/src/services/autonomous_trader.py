@@ -38,9 +38,39 @@ class AutonomousTrader:
             "poll_interval": 10,  # seconds
             "max_risk_per_trade": 0.02, # 2%
             "capital": 100000.0, # Virtual capital for sizing
-            "stop_loss_pct": 0.02
+            "stop_loss_pct": 0.02,
+            "risk_mode": "conservative",
+            "asset_class": "equities",
+            "user_id": None
         }
         logger.info("✅ AutonomousTrader initialized in Engine A")
+
+    def configure_session(self, config: Dict[str, Any]):
+        """
+        Configure the trading session with immutable parameters.
+        Must be called before starting the loop.
+        """
+        logger.info(f"⚙️ Configuring AutonomousTrader Session: {config}")
+        # Merge config, overriding defaults
+        self.config.update(config)
+        
+        # Adjust risk params based on mode
+        mode = self.config.get("risk_mode", "conservative")
+        if mode == "aggressive":
+            self.config["max_risk_per_trade"] = 0.05
+            self.config["stop_loss_pct"] = 0.05
+            self.config["min_confidence"] = 0.60
+        elif mode == "moderate":
+            self.config["max_risk_per_trade"] = 0.03
+            self.config["stop_loss_pct"] = 0.03
+            self.config["min_confidence"] = 0.70
+        else: # conservative
+            self.config["max_risk_per_trade"] = 0.015
+            self.config["stop_loss_pct"] = 0.015
+            self.config["min_confidence"] = 0.80
+            
+        logger.info(f"✅ Session Configured: {self.config}")
+
 
     @staticmethod
     def validate_signal_freshness(signal: Dict[str, Any]) -> bool:
@@ -133,10 +163,21 @@ class AutonomousTrader:
     async def _fetch_signals(self, trace_id: Optional[str] = None) -> List[Dict]:
         """Call Engine B to get AI Signals"""
         try:
+            # Select symbols based on Asset Class configuration
+            asset_class = self.config.get("asset_class", "equities")
+            
+            if asset_class == "commodities":
+                symbols = ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]
+            elif asset_class == "fno":
+                # For F&O, we track indices. Execution logic must handle option selection.
+                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
+            else: # equities
+                symbols = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "ITC", "LT", "AXISBANK", "WIPRO"]
+
             # Using the batch signal endpoint verified in Engine B
             url = f"{ENGINE_B_URL}/api/v1/signals/batch" 
             payload = {
-                "symbols": ["NIFTY", "BANKNIFTY", "RELIANCE", "HDFCBANK", "INFY", "TCS"], # Default watchlist
+                "symbols": symbols, 
                 "fast": True
             }
             
@@ -229,6 +270,11 @@ class AutonomousTrader:
             sec_id = signal_data.get("security_id", "0")
             segment = signal_data.get("exchange_segment", "NSE_EQ")
             
+            # Asset Class Override if needed
+            asset_class = self.config.get("asset_class", "equities")
+            if asset_class == "commodities" and segment == "NSE_EQ":
+                 segment = "MCX_COMM" # Enforce MCX for commodities if Engine B missed it
+            
             payload = {
                 "transaction_type": side.upper(), # BUY/SELL
                 "exchange_segment": segment, 
@@ -236,6 +282,7 @@ class AutonomousTrader:
                 "order_type": "MARKET",
                 "validity": "DAY",
                 "security_id": sec_id,
+
                 "quantity": qty,
                 "price": 0
             }

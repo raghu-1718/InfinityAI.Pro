@@ -1,5 +1,7 @@
 // API Client for InfinityAI.Pro 3-Engine Architecture
 
+import { getUserId } from '@/lib/user';
+
 // Direct Cloud Run URLs (subdomains require Cloud Run domain mapping which isn't set up)
 const API_CONFIG = {
   ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app',
@@ -246,8 +248,69 @@ export interface PositionAnalysisResponse {
   timestamp: string;
 }
 
+
+export interface SystemStateResponse {
+  system_status: string; // NORMAL, DEGRADED, KILL_SWITCH
+  dhan_connected: boolean;
+  trader_identity: string | null;
+  engine_active: boolean;
+  timestamp: string;
+}
+
+
 // Engine A - Orchestration & Risk Management
 export const engineA = {
+  // Get Unified System State
+  getSystemState: async () => {
+    const userId = getUserId();
+    const headers: Record<string, string> = {};
+    if (userId) {
+      headers['X-User-ID'] = userId;
+    }
+    
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/system/state`,
+      `${FALLBACK_URLS.ENGINE_A}/api/system/state`,
+      { headers }
+    );
+    return res.json() as Promise<SystemStateResponse>;
+  },
+
+  // Start Trading Session (Immutable Configuration)
+  startSession: async (config: { capital: number; risk_mode: string; asset_class: string; user_id: string }) => {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/trading/session/start`,
+      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/start`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      }
+    );
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to start session');
+    }
+    return res.json();
+  },
+
+  // Stop Trading Session (Kill Switch)
+  stopSession: async () => {
+    const res = await fetchWithFallback(
+      `${API_CONFIG.ENGINE_A}/api/trading/session/stop`,
+      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/stop`,
+      {
+        method: 'POST',
+      }
+    );
+    if (!res.ok) {
+        throw new Error('Failed to stop session');
+    }
+    return res.json();
+  },
+
+
+
   async health(): Promise<EngineHealth> {
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_A}/health`,

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
 import { useUserAccount } from '@/hooks/useApi';
+import { engineA } from '@/lib/api';
 
 const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app';
 
@@ -40,40 +41,29 @@ export default function TradingPage() {
         return;
     }
 
+    // Logic: If NOT running, user should go to /start page to configure parameters.
+    if (!isEngineRunning) {
+        window.location.href = "/start";
+        return;
+    }
+
+    // If RUNNING, user wants to STOP.
     setIsLoading(true);
     try {
-      const action = isEngineRunning ? 'STOP' : 'START';
-      const endpoint = `${ENGINE_A_URL}/api/trading/control`; // Endpoint we will ensure exists
+      await engineA.stopSession(); // Use API client
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userProfile.clientId, // pass client ID
-          action: action,
-          capital: parseFloat(tradingCapital),
-          strategy: 'AI_AGGRESSIVE' // Default or selectable
-        })
-      });
+      // Verification: Check state after stop
+      const state = await engineA.getSystemState();
       
-      const data = await response.json();
-      
-      if (data.success || response.ok) { // Adjust based on actual backend response
-         setIsEngineRunning(!isEngineRunning);
-         toast.success(`Engine ${action === 'START' ? 'Started' : 'Stopped'}`, {
-           description: action === 'START' ? 'AI is now monitoring markets.' : 'Trading halted.'
-         });
+      if (!state.engine_active) {
+         setIsEngineRunning(false);
+         toast.success("Engine Stopped", { description: "Trading halted." });
       } else {
-        throw new Error(data.message || 'Operation failed');
+         throw new Error("Engine reported active state after stop command.");
       }
 
     } catch (error: any) {
-      toast.error('Engine Control Failed', { description: error.message });
-      // Fallback for demo if backend not ready (remove in prod)
-      if (process.env.NODE_ENV === 'development') {
-         setIsEngineRunning(!isEngineRunning); // Optimistic toggle for UI testing
-         toast.info("Dev Mode: Toggled state locally");
-      }
+      toast.error('Stop Failed', { description: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -84,19 +74,19 @@ export default function TradingPage() {
       setIsKillSwitchActive(checked);
       
       if (checked) {
-          // If turning ON kill switch, also stop engine
+          // If turning ON kill switch, halt everything
           setIsEngineRunning(false);
-          toast.warning("KILL SWITCH ACTIVATED", { description: "All trading halted immediately." });
+          toast.warning("KILL SWITCH ACTIVATED", { description: "Sending emergency stop command..." });
           
-          // Call backend to hard stop
           try {
-             await fetch(`${ENGINE_A_URL}/api/trading/kill-switch`, {
-                 method: 'POST',
-                 body: JSON.stringify({ user_id: userProfile?.clientId, active: true })
-             });
-          } catch(e) { console.error(e); }
+             await engineA.stopSession();
+             setIsEngineRunning(false); // Force state update
+          } catch(e) { 
+              console.error(e);
+              toast.error("Kill Switch Error", { description: "Check console / connection." });
+          }
       } else {
-          toast.info("Kill Switch Deactivated", { description: "You can now start the engine." });
+          toast.info("Kill Switch Deactivated", { description: "You can now launch the engine." });
       }
   };
 

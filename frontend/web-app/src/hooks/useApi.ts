@@ -57,8 +57,21 @@ export function useEngineHealth() {
     }
   }, [query.data, updateEngineStatus]);
 
+
   return query;
 }
+
+// System State Hook (Unified Status)
+export function useSystemState() {
+  return useQuery({
+    queryKey: ['system', 'state'],
+    queryFn: () => engineA.getSystemState(),
+    refetchInterval: 10000, // 10 seconds polling for responsiveness
+    staleTime: 5000,
+    retry: 2,
+  });
+}
+
 
 // User Profile Hook - Fetches user's Dhan credentials status
 export function useUserProfile() {

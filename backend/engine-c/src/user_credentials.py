@@ -28,10 +28,14 @@ def get_encryption_key() -> bytes:
     except Exception as e:
         logger.warning(f"Could not get encryption key from Secret Manager: {e}")
         # Fallback to environment variable or generate one
-        key = os.getenv("USER_CREDENTIALS_KEY")
+        # Fallback to environment variable or generate one
+        key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
         if key:
-            return base64.urlsafe_b64decode(key)
+            return base64.urlsafe_b64decode(key) if len(key) > 64 else key.encode() # Handle hex or base64 
+            
         # Generate a consistent key based on project ID (for development only)
+        # WARNING: This is not secure for production if key is not set!
+        logger.warning("⚠️ Using insecure derived key! Set ENCRYPTION_KEY env var.")
         return base64.urlsafe_b64encode(hashlib.sha256(project_id.encode()).digest())
 
 

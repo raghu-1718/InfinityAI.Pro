@@ -38,7 +38,7 @@ The platform is designed with a **"Security-First, Zero-Trust"** philosophy, ens
 
 ### 🧠 Autonomous AI Core
 *   **Engine A (The Brain)**: Central Orchestrator responsible for Risk Management (VaR, CVaR, Kelly Criterion) and final trading decisions.
-*   **Engine B (The Analyst)**: Dedicated AI cluster running Gemini 2.0 Flash and ML models to generate high-confidence trading signals.
+*   **Engine B (The Analyst)**: Dedicated AI cluster running **Gemini 2.0 Flash** and asset-specific strategies (Momentum for Equities, Volatility for F&O, Trend for Commodities) to generate high-confidence signals.
 *   **Engine C (The Hand)**: Stateless execution worker that interfaces with Broker APIs (DhanHQ) via secure OAuth 2.0 flow.
 
 ---

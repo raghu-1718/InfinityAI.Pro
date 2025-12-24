@@ -96,27 +96,20 @@ def get_credentials_manager():
     global SecretManagerCredentials, _credentials_manager
     if _credentials_manager is None:
         try:
-            # Try to use GCP Secret Manager (preferred)
+            # PREFER Firestore (UserCredentialsManager) to match Frontend Function behavior
+            # The Frontend 'submitDhanCredentialsV2' writes to Firestore 'dhan_credentials'.
+            # We must read from there.
             try:
-                from src.secret_manager_credentials import SecretManagerCredentials as SMC, get_secret_manager_credentials as gsmc
+                from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
             except ImportError:
-                from secret_manager_credentials import SecretManagerCredentials as SMC, get_secret_manager_credentials as gsmc
-            SecretManagerCredentials = SMC
-            _credentials_manager = gsmc()
-            logger.info("✅ Using GCP Secret Manager for credentials storage")
+                from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
+            _credentials_manager = gcm()
+            logger.info("✅ Using Firestore for credentials storage (Primary Vault)")
+
+            # Cloud Secret Manager available as fallback/admin if needed, but not for user-creds flow currently
         except Exception as e:
-            logger.warning(f"GCP Secret Manager not available, falling back to Firestore: {e}")
-            # Fallback to Firestore-based storage
-            try:
-                try:
-                    from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
-                except ImportError:
-                    from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
-                _credentials_manager = gcm()
-                logger.info("✅ Using Firestore for credentials storage (fallback)")
-            except Exception as e2:
-                logger.error(f"Failed to initialize any credentials manager: {e2}")
-                return None
+            logger.error(f"Failed to initialize credentials manager: {e}")
+            return None
     return _credentials_manager
 
 
@@ -600,6 +593,7 @@ class SlippageRequest(BaseModel):
     volatility: float = 0.02
     spread: float = 0.001
 
+
 class DhanPostbackRequest(BaseModel):
     orderId: str
     orderStatus: str
@@ -609,6 +603,54 @@ class DhanPostbackRequest(BaseModel):
     quantity: Optional[int] = 0
     executionTime: Optional[str] = None
     exchangeTime: Optional[str] = None
+
+
+class SystemStatusResponse(BaseModel):
+    status: str  # NORMAL, GRADED, SYSTEM_FAILURE, MAINTENANCE
+    dhan_connected: bool
+    account_name: Optional[str] = None
+    client_id: Optional[str] = None
+    timestamp: str
+
+
+@app.get("/api/system/status", response_model=SystemStatusResponse)
+async def get_system_status(user_id: Optional[str] = Header(None, alias="X-User-ID")):
+    """
+    Authoritative Single Source of Truth for System Status.
+    Checks:
+    1. Engine Health
+    2. Dhan Connectivity (if user_id provided)
+    """
+    status = "NORMAL"
+    dhan_connected = False
+    account_name = None
+    client_id = None
+    
+    # Check Dhan Connection if User ID is present
+    if user_id:
+        try:
+            manager = get_credentials_manager()
+            creds = await manager.get_user_credentials(user_id)
+            if creds and creds.get("connection_status") == "connected":
+                dhan_connected = True
+                # Get Client ID as the Account Name identity
+                # In future we can fetch real name if Dhan API supports it
+                # creds structure: {'credentials': {'client_id': '...', ...}} or flat
+                c_data = creds.get("credentials", creds)
+                client_id = c_data.get("client_id")
+                account_name = f"Trader ({client_id})" if client_id else "Trader"
+        except Exception as e:
+            logger.error(f"Error checking Dhan status for {user_id}: {e}")
+            status = "DEGRADED"
+
+    return SystemStatusResponse(
+        status=status,
+        dhan_connected=dhan_connected,
+        account_name=account_name,
+        client_id=client_id,
+        timestamp=datetime.utcnow().isoformat()
+    )
+
 
 
 # Dhan Credentials Models

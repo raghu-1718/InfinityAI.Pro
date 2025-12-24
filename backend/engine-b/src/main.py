@@ -1572,105 +1572,79 @@ async def generate_signal(req: SignalRequest):
 
     latest = df_features.iloc[-1]
 
-    # Initialize scoring
-    score = 0
-    reasons = []
+    # Feature extraction already done above
 
-    # RSI Analysis
-    rsi = latest.get('RSI_14')
-    if rsi is not None:
-        if rsi < 30:
-            score += 2
-            reasons.append("RSI Oversold")
-        elif rsi > 70:
-            score -= 2
-            reasons.append("RSI Overbought")
+    # 1. Determine Asset Class & Strategy
+    symbol_upper = symbol.upper()
+    
+    if symbol_upper in ["NIFTY", "BANKNIFTY", "FINNIFTY"]:
+        analysis_result = _analyze_fno(latest, current_price, df_features)
+        asset_class = "FNO"
+        exchange_segment = "IDX_I"
+    elif symbol_upper in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER", "GOLDM", "SILVERM"]:
+        analysis_result = _analyze_commodity(latest, current_price, df_features)
+        asset_class = "COMMODITY" 
+        exchange_segment = "MCX_COMM"
+    else:
+        analysis_result = _analyze_equity(latest, current_price, df_features)
+        asset_class = "EQUITY"
+        exchange_segment = "NSE_EQ"
 
-    # EMA Trend
-    ema_50 = latest.get('EMA_50')
-    if ema_50 is not None:
-        if current_price > ema_50:
-            score += 1
-            reasons.append("Above EMA 50")
-        else:
-            score -= 1
-            reasons.append("Below EMA 50")
-
-    # MACD
-    macd = latest.get('MACD_12_26_9')
-    macd_signal = latest.get('MACDs_12_26_9')
-    if macd is not None and macd_signal is not None:
-        if macd > macd_signal:
-            score += 1
-            reasons.append("MACD Bullish")
-        else:
-            score -= 1
-            reasons.append("MACD Bearish")
-
-    # ADX Trend Strength
-    adx = latest.get('ADX_14')
-    if adx is not None and adx > 25:
-        score = int(score * 1.5)
-        reasons.append(f"Strong Trend (ADX: {adx:.1f})")
-
-    # Sentiment Analysis (if headlines provided)
-    sentiment_score = None
-    if req.news_headlines:
-        sentiment_score = SENTIMENT_ANALYZER.aggregate_headlines(req.news_headlines)
-        if sentiment_score > 0.3:
-            score += 2
-            reasons.append(f"Positive Sentiment ({sentiment_score:.2f})")
-        elif sentiment_score < -0.3:
-            score -= 2
-            reasons.append(f"Negative Sentiment ({sentiment_score:.2f})")
-
-    # ML Model Enhancement (if trained) - Using Weighted Ensemble
+    score = analysis_result["score"]
+    reasons = analysis_result["reasons"]
+    signal = analysis_result["signal"]
+    
+    # 2. ML Model Enhancement (Common across all assets if trained)
     ml_used = False
-    ensemble_detail = None
     if symbol in MODEL_STORE.trained_symbols:
         try:
+            # Prepare features for ML
             feature_cols = [c for c in MARKET_ENGINE.get_feature_columns() if c in df_features.columns]
             X = df_features[feature_cols].iloc[-1:].values
             X_scaled = MODEL_STORE.scalers['standard'].transform(X)
 
-            # Use weighted ensemble prediction
-            ml_class, ml_confidence, ensemble_detail = MODEL_STORE.weighted_ensemble_predict(X_scaled)
+            # Ensemble Prediction
+            ml_class, ml_confidence, _ = MODEL_STORE.weighted_ensemble_predict(X_scaled)
 
+            # ML Influence on Score
             if ml_class == 2:  # BUY
                 score += 3
-                reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} confidence)")
+                reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} conf)")
+                # If ML is very confident, it can override weak technical signals
+                if ml_confidence > 0.85 and signal == "HOLD":
+                     signal = "BUY" 
             elif ml_class == 0:  # SELL
                 score -= 3
-                reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} confidence)")
-            else:  # HOLD
-                reasons.append(f"ML Ensemble: HOLD ({ml_confidence:.1%} confidence)")
+                reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} conf)")
+                if ml_confidence > 0.85 and signal == "HOLD":
+                     signal = "SELL"
+            else:
+                reasons.append(f"ML Ensemble: HOLD ({ml_confidence:.1%} conf)")
 
             ml_used = True
         except Exception as e:
             logger.warning(f"ML inference failed: {e}")
 
-    # Determine final signal
+    # 3. Final Signal Determination (with ML adjustment)
+    # Re-evaluate signal based on final score if ML changed it
     if score >= 3:
         signal = "BUY"
     elif score <= -3:
         signal = "SELL"
-    else:
-        signal = "HOLD"
-
-    # Calculate confidence
+    
+    # 4. Confidence & Targets
     confidence = min(95, max(30, 50 + abs(score) * 8))
-
-    # Risk calculations
+    
     atr = latest.get('ATRr_14', current_price * 0.02)
     stop_loss, target = RISK_ENGINE.get_stop_loss_target(current_price, atr, signal)
 
-    # Predicted price
+    # Predicted price check
     if signal == "BUY":
         predicted_price = round(current_price * 1.02, 2)
     elif signal == "SELL":
         predicted_price = round(current_price * 0.98, 2)
     else:
-        predicted_price = round(current_price, 2)
+        predicted_price = current_price
 
     return SignalResponse(
         symbol=symbol,
@@ -1685,15 +1659,111 @@ async def generate_signal(req: SignalRequest):
         sentiment_score=sentiment_score,
         data_source=data_source,
         security_id=SYMBOL_MAPPER.get_id(symbol),
-        exchange_segment="NSE_EQ" if symbol not in ["NIFTY", "BANKNIFTY", "FINNIFTY", "CRUDEOIL", "GOLD", "SILVER"] else ("IDX_I" if symbol in ["NIFTY", "BANKNIFTY", "FINNIFTY"] else "MCX_COMM"),
+        exchange_segment=exchange_segment,
         analysis={
-            "rsi": round(rsi, 2) if rsi else None,
-            "adx": round(adx, 2) if adx else None,
+            "rsi": round(latest.get('RSI_14', 0), 2),
+            "adx": round(latest.get('ADX_14', 0), 2),
             "trend": "Bullish" if score > 0 else "Bearish" if score < 0 else "Neutral",
             "key_factors": reasons,
-            "score": score
+            "score": score,
+            "asset_class": asset_class
         }
     )
+
+# --- Asset-Specific Strategy Helpers ---
+
+def _analyze_equity(latest, price, df):
+    """
+    Equities Strategy: Momentum & Trend
+    Focus: RSI, MACD, EMA Crossovers
+    """
+    score = 0
+    reasons = []
+
+    # RSI (Mean Reversion / Momentum)
+    rsi = latest.get('RSI_14')
+    if rsi:
+        if rsi < 30: score += 2; reasons.append("RSI Oversold")
+        elif rsi > 70: score -= 2; reasons.append("RSI Overbought")
+        elif 50 < rsi < 70: score += 1; reasons.append("RSI Bullish Momentum")
+        elif 30 < rsi < 50: score -= 1; reasons.append("RSI Bearish Momentum")
+
+    # EMA Trend
+    ema_50 = latest.get('EMA_50')
+    if ema_50:
+        if price > ema_50: score += 1; reasons.append("Above EMA 50")
+        else: score -= 1; reasons.append("Below EMA 50")
+
+    # MACD
+    macd = latest.get('MACD_12_26_9')
+    signal = latest.get('MACDs_12_26_9')
+    if macd and signal:
+        if macd > signal: score += 1; reasons.append("MACD Bullish Crossover")
+        else: score -= 1; reasons.append("MACD Bearish Crossover")
+    
+    return {"score": score, "reasons": reasons, "signal": _score_to_signal(score)}
+
+def _analyze_fno(latest, price, df):
+    """
+    Indices (F&O) Strategy: Volatility & Mean Reversion
+    Focus: ADX (Trend Strength), Bollinger Bands (Volatility), VWAP (if avail)
+    """
+    score = 0
+    reasons = []
+    
+    # ADX - Filter Choppy Markets
+    adx = latest.get('ADX_14')
+    if adx and adx < 20:
+        reasons.append("Choppy Market (Low ADX) - Avoiding Trades")
+        return {"score": 0, "reasons": reasons, "signal": "HOLD"}
+    
+    # Fast MA for Scalping nature
+    ema_20 = latest.get('EMA_20', latest.get('EMA_50')) # Fallback to 50 if 20 missing
+    if ema_20:
+        if price > ema_20: score += 1; reasons.append("Above Fast EMA")
+        else: score -= 1; reasons.append("Below Fast EMA")
+
+    # RSI - Sensitive settings for indices
+    rsi = latest.get('RSI_14')
+    if rsi:
+        if rsi > 60: score += 1; reasons.append("High Momentum")
+        elif rsi < 40: score -= 1; reasons.append("Low Momentum")
+
+    return {"score": score, "reasons": reasons, "signal": _score_to_signal(score)}
+
+def _analyze_commodity(latest, price, df):
+    """
+    Commodities Strategy: Pure Trend Following
+    Focus: SuperTrend (conceptually), Breakouts, Strong MACD
+    """
+    score = 0
+    reasons = []
+    
+    # ADX is Critical for Commodities
+    adx = latest.get('ADX_14')
+    if adx and adx > 25:
+        score += 1
+        reasons.append(f"Strong Trend (ADX {adx:.0f})")
+    
+    # MACD Weighting is higher
+    macd = latest.get('MACD_12_26_9')
+    signal = latest.get('MACDs_12_26_9')
+    if macd and signal:
+        if macd > signal: score += 2; reasons.append("MACD Bullish Trend")
+        else: score -= 2; reasons.append("MACD Bearish Trend")
+        
+    # Price vs Long Term MA
+    ema_200 = latest.get('EMA_200', latest.get('EMA_50'))
+    if ema_200:
+        if price > ema_200: score += 1; reasons.append("Long Term Bullish")
+        else: score -= 1; reasons.append("Long Term Bearish")
+
+    return {"score": score, "reasons": reasons, "signal": _score_to_signal(score)}
+
+def _score_to_signal(score):
+    if score >= 3: return "BUY"
+    if score <= -3: return "SELL"
+    return "HOLD"
 
 @app.post("/api/v1/sentiment", response_model=SentimentResponse)
 async def analyze_sentiment(req: SentimentRequest):

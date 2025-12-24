@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Moon, Sun, Bell, RefreshCw, User, LogOut, Settings, Wallet, LogIn, Loader2 } from 'lucide-react';
-import { useFunds, useEngineHealth, useUserProfile } from '@/hooks/useApi';
+
+import { useFunds, useEngineHealth, useUserProfile, useSystemState } from '@/hooks/useApi';
 import { formatCurrency } from '@/lib/format';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCouponAuth } from '@/contexts/DualAuthContext';
@@ -27,6 +28,7 @@ export function Header() {
   const { theme, toggleTheme, funds, engines, userProfile, dematData, clearUserData } = useAppStore();
   const { session, user, logout, isAuthenticated, loading: authLoading } = useCouponAuth();
   const { refetch: refetchEngines, isFetching: isRefreshing } = useEngineHealth();
+  const { data: systemState, refetch: refetchSystem } = useSystemState();
   const { refetch: refetchFunds } = useFunds();
   const { refetch: refetchProfile, isLoading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
@@ -41,6 +43,7 @@ export function Header() {
 
   const handleRefresh = () => {
     refetchEngines();
+    refetchSystem();
     refetchFunds();
     refetchProfile();
   };
@@ -76,11 +79,15 @@ export function Header() {
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
 
   // Check if user is authenticated and Dhan is connected
-  const isDhanConnected = hydrated && (session?.dhanConfigured || userProfile?.isConnected);
+  const isDhanConnected = hydrated && (session?.dhanConfigured || userProfile?.isConnected || systemState?.dhan_connected);
 
   // Get user initials for avatar
   const getUserInitials = () => {
     if (!hydrated) return '?';
+    // If we have a system identity name (e.g. "Trader (12345)"), extract initials
+    if (systemState?.trader_identity && systemState.dhan_connected) {
+        return "TR"; // Trader
+    }
     if (user?.name && typeof user.name === 'string' && user.name.length > 0) {
       return user.name.substring(0, 2).toUpperCase();
     }
@@ -95,6 +102,12 @@ export function Header() {
 
   const getUserName = () => {
     if (!hydrated) return 'Loading...';
+    
+    // PRIORITY 1: Backend System Identity (The "Truth")
+    if (systemState?.dhan_connected && systemState.trader_identity) {
+        return systemState.trader_identity;
+    }
+
     if (user?.name && typeof user.name === 'string') {
       return user.name;
     }
@@ -107,6 +120,7 @@ export function Header() {
     }
     return 'Guest User';
   };
+
 
   const getUserEmail = () => {
     if (!hydrated) return 'Loading...';

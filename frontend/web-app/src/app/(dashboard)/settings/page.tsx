@@ -295,12 +295,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="trading" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-           <TabsTrigger value="trading" className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Risk & Trading</span>
-          </TabsTrigger>
+
+        <Tabs defaultValue="dhan" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="dhan" className="flex items-center gap-2">
             <Wallet className="h-4 w-4" />
             <span className="hidden sm:inline">Dhan Account</span>
@@ -315,61 +312,7 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* --- RISK & TRADING TAB (NEW) --- */}
-        <TabsContent value="trading" className="space-y-6">
-            <div className="flex flex-col lg:flex-row gap-6">
-                {/* Risk Profile Component */}
-                <div className="flex-1">
-                    <RiskProfile 
-                        initialSettings={tradingSettings} 
-                        onSave={handleSaveRiskProfile} 
-                    />
-                </div>
-
-                {/* Additional Strategy Settings */}
-                <div className="flex-1 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Strategy Parameters</CardTitle>
-                            <CardDescription>Fine-tune the AI execution logic.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="take-profit">Take Profit Target (%)</Label>
-                                <Input 
-                                    id="take-profit"
-                                    name="take_profit"
-                                    type="number" 
-                                    value={tradingSettings.take_profit_percent} 
-                                    onChange={(e) => setTradingSettings(p => ({...p, take_profit_percent: parseFloat(e.target.value)}))}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="min-confidence">Min AI Confidence (0.0 - 1.0)</Label>
-                                <Input 
-                                    id="min-confidence"
-                                    name="min_confidence"
-                                    type="number" 
-                                    step="0.05"
-                                    max="1.0"
-                                    value={tradingSettings.min_confidence}
-                                    onChange={(e) => setTradingSettings(p => ({...p, min_confidence: parseFloat(e.target.value)}))}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between py-2">
-                                <Label>Auto-Rebalance Portfolio</Label>
-                                <Switch 
-                                    checked={tradingSettings.auto_rebalance}
-                                    onCheckedChange={(v) => setTradingSettings(p => ({...p, auto_rebalance: v}))}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        </TabsContent>
-
-        {/* --- DHAN ACCOUNT TAB (EXISTING) --- */}
+        {/* --- DHAN ACCOUNT TAB --- */}
         <TabsContent value="dhan" className="space-y-4">
           <Card>
             <CardHeader>
@@ -409,48 +352,6 @@ export default function SettingsPage() {
                                     onClick={() => setShowAccessToken(!showAccessToken)}
                                 >
                                     {showAccessToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="api-key">API Key</Label>
-                            <div className="relative">
-                                <Input 
-                                    id="api-key"
-                                    name="api_key"
-                                    type={showApiSecret ? "text" : "password"}
-                                    value={dhanCredentials.api_key}
-                                    onChange={(e) => setDhanCredentials(prev => ({ ...prev, api_key: e.target.value }))}
-                                    placeholder="Enter API Key"
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                    onClick={() => setShowApiSecret(!showApiSecret)}
-                                >
-                                    {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="api-secret">API Secret (optional)</Label>
-                             <div className="relative">
-                                <Input 
-                                    id="api-secret"
-                                    name="api_secret"
-                                    type={showApiSecret ? "text" : "password"}
-                                    value={dhanCredentials.api_secret}
-                                    onChange={(e) => setDhanCredentials(prev => ({ ...prev, api_secret: e.target.value }))}
-                                    placeholder="Enter API Secret"
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                    onClick={() => setShowApiSecret(!showApiSecret)}
-                                >
-                                    {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
@@ -585,6 +486,7 @@ export default function SettingsPage() {
                 </CardContent>
              </Card>
         </TabsContent>
+
 
       </Tabs>
     </div>

@@ -248,9 +248,102 @@ class PortfolioRiskRequest(BaseModel):
     returns_matrix: List[List[float]]  # rows = time periods, cols = assets
     weights: List[float]
 
+# --- Session Management ---
+from typing import Literal
+
+class SessionConfig(BaseModel):
+    capital: float
+    risk_mode: Literal["conservative", "moderate", "aggressive"]
+    asset_class: Literal["equities", "fno", "commodities"]
+    user_id: str
+
+@app.post("/api/trading/session/start")
+async def start_trading_session(config: SessionConfig):
+    """
+    Immutable Session Start.
+    Configures the engine for the session and locks parameters.
+    """
+    if AUTONOMOUS_TRADER.is_active:
+         raise HTTPException(400, "Trading Session already active. Stop first.")
+
+    # Configure the trader
+    AUTONOMOUS_TRADER.configure_session(config.dict())
+    
+    # Start the loop
+    await AUTONOMOUS_TRADER.start()
+    
+    return {
+        "status": "success",
+        "message": "Trading Session Started",
+        "config": AUTONOMOUS_TRADER.config,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.post("/api/trading/session/stop")
+async def stop_trading_session():
+    """
+    Kill Switch / Session Stop.
+    """
+    await AUTONOMOUS_TRADER.stop()
+    return {
+        "status": "success",
+        "message": "Trading Session Stopped",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+
 class ComprehensiveRiskRequest(BaseModel):
     returns: List[float]
     risk_free_rate: float = 0.05
+
+class SystemStateResponse(BaseModel):
+    system_status: str # NORMAL, DEGRADED, KILL_SWITCH
+    dhan_connected: bool
+    trader_identity: Optional[str] = None
+    engine_active: bool
+    timestamp: str
+
+@app.get("/api/system/state", response_model=SystemStateResponse)
+async def get_system_state(user_id: Optional[str] = Header(None, alias="X-User-ID")):
+    """
+    Unified System State Endpoint (Aggregator).
+    Proxies Engine C for connectivity status.
+    Adds Engine A operational status.
+    """
+    status = "NORMAL"
+    dhan_connected = False
+    trader_identity = "Guest"
+    
+    # 1. Get Status from Engine C (Authority on Connectivity)
+    try:
+        if user_id:
+             async with httpx.AsyncClient() as client:
+                headers = {"X-User-ID": user_id}
+                resp = await client.get(f"{ENGINE_C_URL}/api/system/status", headers=headers, timeout=5.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("dhan_connected"):
+                        dhan_connected = True
+                        trader_identity = data.get("account_name", "Trader")
+                    
+                    if data.get("status") != "NORMAL":
+                         status = "DEGRADED"
+    except Exception as e:
+        logger.warning(f"Failed to fetch Engine C status: {e}")
+        status = "DEGRADED"
+
+    # 2. Check Engine A Status (Kill Switch, etc.)
+    # TODO: Check global kill switch state from Redis/Memory
+    
+    return SystemStateResponse(
+        system_status=status,
+        dhan_connected=dhan_connected,
+        trader_identity=trader_identity,
+        engine_active=AUTONOMOUS_TRADER.is_running,
+        timestamp=datetime.utcnow().isoformat()
+    )
+
 
 # --- Config ---
 # Use Cloud Run URLs for production inter-engine communication (subdomains not mapped)
