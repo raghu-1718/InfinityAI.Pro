@@ -65,11 +65,11 @@ function GreeksDisplay({ greeks }: { greeks: PositionGreeks | null }) {
   if (!greeks) return null;
 
   const items = [
-    { label: 'Delta', value: greeks.delta, format: (v: number) => v.toFixed(4) },
-    { label: 'Gamma', value: greeks.gamma, format: (v: number) => v.toFixed(4) },
-    { label: 'Theta', value: greeks.theta, format: (v: number) => `₹${v.toFixed(2)}` },
-    { label: 'Vega', value: greeks.vega, format: (v: number) => v.toFixed(4) },
-    { label: 'Moneyness', value: greeks.moneyness, format: (v: number) => v.toFixed(2) },
+    { label: 'Delta', value: greeks.delta, format: (v: number) => (v ?? 0).toFixed(4) },
+    { label: 'Gamma', value: greeks.gamma, format: (v: number) => (v ?? 0).toFixed(4) },
+    { label: 'Theta', value: greeks.theta, format: (v: number) => `₹${(v ?? 0).toFixed(2)}` },
+    { label: 'Vega', value: greeks.vega, format: (v: number) => (v ?? 0).toFixed(4) },
+    { label: 'Moneyness', value: greeks.moneyness, format: (v: number) => (v ?? 0).toFixed(2) },
   ];
 
   return (

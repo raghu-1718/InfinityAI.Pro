@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Send, Bot, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, XCircle, Zap } from 'lucide-react';
+import { Loader2, Send, Bot, TrendingUp, TrendingDown, AlertTriangle, XCircle, Zap } from 'lucide-react';
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c.infinityai.pro';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app';
 
 // Types
 interface AgentMessage {
@@ -328,15 +328,15 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div>
                   <div className="text-muted-foreground">Engine B</div>
-                  <div>{signal.reasoning.engine_b}</div>
+                  <div>{signal.reasoning?.engine_b || 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Market</div>
-                  <div>{signal.reasoning.market}</div>
+                  <div>{signal.reasoning?.market || 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">AI Agent</div>
-                  <div>{signal.reasoning.agent}</div>
+                  <div>{signal.reasoning?.agent || 'N/A'}</div>
                 </div>
               </div>
             </div>
@@ -361,6 +361,7 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
 // Automated Trading Control Component
 // =========================================================================
 export function AutomatedTradingControl({ userId }: { userId: string }) {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRun, setLastRun] = useState<any>(null);
@@ -371,6 +372,7 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
     max_daily_trades: 10,
     trading_amount: 1000,
   });
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const runAutomatedCycle = async () => {
     setIsLoading(true);

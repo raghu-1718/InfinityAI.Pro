@@ -1,9 +1,9 @@
-# Master Live Verification Report - 2025-12-24 00:57:56.677503
+# Master Live Verification Report - 2025-12-24 16:18:59.299991
 
 --- Phase 1: Infrastructure & Health ---
 
 ### 📡 Probing A (Orchestrator): GET https://engine-a-mfvaq54jjq-uc.a.run.app/health
-   ✅ HTTP 200 (0.38s)
+   ✅ HTTP 200 (0.51s)
    📄 Response: `{
   "status": "healthy",
   "service": "engine-a-orchestrator",
@@ -24,36 +24,14 @@
     "cloud_storage": true,
     "agent_orchestrator": true
   },
-  "timestamp": "2025-12-23T19:27:55.941262"
+  "timestamp": "2025-12-24T10:48:59.223012"
 }...`
 
 ### 📡 Probing B (Analysis): GET https://engine-b-429140669077.us-central1.run.app/health
-   ✅ HTTP 200 (0.41s)
-   📄 Response: `{
-  "status": "healthy",
-  "service": "engine-b-ai-ml-prod",
-  "version": "4.0-enhanced-trading-ai",
-  "capabilities": {
-    "xgboost": true,
-    "lightgbm": true,
-    "catboost": true,
-    "random_forest": true,
-    "transformers": true,
-    "nltk_sentiment": true,
-    "ta_lib": true,
-    "yfinance": true,
-    "weighted_voting": true
-  },
-  "dhan_connected": true,
-  "google_integrations": {
-    "genai": true,
-    "cloud_logging": true,
-    "cloud_storage": true,
-    "signal_agent": true,
-    "r...`
+   ❌ HTTP 404 - {"detail":"Not Found"}
 
 ### 📡 Probing C (Execution): GET https://engine-c-429140669077.us-central1.run.app/health
-   ✅ HTTP 200 (0.40s)
+   ✅ HTTP 200 (1.54s)
    📄 Response: `{
   "status": "healthy",
   "service": "engine-c-execution",
@@ -66,23 +44,23 @@
     "vwap_splitting",
     "execution_analytics"
   ],
-  "timestamp": "2025-12-23T19:27:56.757478"
+  "timestamp": "2025-12-24T10:49:01.214956"
 }...`
 
 --- Phase 2: AI & Real-Time Data Flow ---
 
 ### 📡 Probing Engine B (News): GET https://engine-b-429140669077.us-central1.run.app/api/v1/news?limit=1
-   ✅ HTTP 200 (1.63s)
+   ✅ HTTP 200 (2.12s)
    📄 Response: `{
   "articles": [
     {
-      "id": "3551cafcd81e",
-      "title": "Groww, Lenskart to enter BSE Large Cap index from January 2026 \u2014 Here's what you need to know",
-      "summary": "New age companies like Groww and Lenskart are set to enter the BSE Large Cap index effective from this date in January 2026. Here's what you need to know about the update and the share price trend of the two stocks.&amp;nbsp;",
-      "url": "https://www.livemint.com/market/stock-market-news/groww-lenskart-to-ent...`
+      "id": "1d0ce2daa017",
+      "title": "ASBL Hosts Bengaluru Realty Meet Highlighting Trends in the Hyderabad Real Estate Market",
+      "summary": "ASBL, one of the top real estate companies in Hyderabad, hosted the Bengaluru Realty Meet, a strategic engagement series designed to help investors understand the evolving Hyderabad vs Bengaluru landscape within the Indian property sector.",
+      "url": "https://economictimes.indiatimes.com/markets/digital-real-estate/re...`
 
 ### 📡 Probing Engine B (AI Signal): POST https://engine-b-429140669077.us-central1.run.app/api/v1/ai/enhanced-signal
-   ✅ HTTP 200 (1.12s)
+   ✅ HTTP 200 (0.59s)
    📄 Response: `{
   "status": "success",
   "symbol": "CRUDEOIL",
@@ -106,33 +84,88 @@
     "session": "closed",
     "fii...`
 
+--- Phase 3: Execution & Credentials Flow ---
+
+### 📡 Probing Engine C (Dhan Verify): POST https://engine-c-429140669077.us-central1.run.app/api/dhan/verify
+   ✅ HTTP 200 (1.23s)
+   📄 Response: `{
+  "success": true,
+  "verified": true,
+  "message": "Verified",
+  "credentials": null,
+  "volume": 100000.0
+}...`
+
+--- Phase 4: Firestore Security Rules ---
+✅ Firestore Connection: OK (Found 0 health records)
+
+--- Phase 5: Level-4 Deep Verification ---
+
+### 📡 Probing Engine C (System Verify): GET https://engine-c-429140669077.us-central1.run.app/api/system/verify
+   ✅ HTTP 200 (4.08s)
+   📄 Response: `{
+  "engineA": "OK",
+  "engineB": "OK",
+  "engineC": "OK",
+  "market_feed": "LIVE",
+  "dhan_token": "CHECKED",
+  "last_price_ts": "2025-12-24T10:49:11.370953",
+  "signal_freshness": "OK",
+  "trace_id": "918bc76ea83c420ea756e0ce48b4dc71"
+}...`
+
+### 📡 Probing Engine C (Protocol Binding): POST https://engine-c-429140669077.us-central1.run.app/api/dhan/verify-deep
+   ✅ HTTP 200 (1.16s)
+   📄 Response: `{
+  "success": true,
+  "verified": true,
+  "message": "Deep Verification Passed: Identity + Funds + Order Scope Verified",
+  "credentials": null,
+  "volume": 100000.0
+}...`
+
+### 📡 Probing Engine C (Dhan Postback): POST https://engine-c-429140669077.us-central1.run.app/api/dhan/postback
+   ✅ HTTP 200 (0.51s)
+   📄 Response: `{
+  "status": "received",
+  "orderId": "POSTBACK_TEST_123"
+}...`
+
+--- Phase 6: Level-6 Deep Verification (Market Truth) ---
+
+### ⏳ Testing Market Data Liveness (Time-Drift)...
+   ⏱️ T1: 2025-12-24T10:49:15.162368
+   ⏱️ T2: 2025-12-24T10:49:20.537820
+   ✅ Time Drift Verified: Market Timestamp Advanced
+   ✅ Trace ID Proven: 0814ff92-798b-4216-a6b3-b235b5f80038
+
 --- Phase 3: Cloud Forensics (Live Logs) ---
 
 ### ⏳ Scanning Cloud Run Logs (Last 5 mins)...
 ✅ PASS
 ```
-TIMESTAMP: 2025-12-23T19:27:57.150072Z
+TIMESTAMP: 2025-12-24T10:49:21.574130Z
 SERVICE_NAME: engine-b
-TEXT_PAYLOAD: 2025-12-23 19:27:57,150 - InfinityAI.NewsIntegration - INFO - NewsAggregator initialized
+TEXT_PAYLOAD: INFO:     169.254.169.126:33362 - "POST /api/v1/signals/batch HTTP/1.1" 200 OK
 STATUS: 
 
-TIMESTAMP: 2025-12-23T19:27:56.757153Z
-SERVICE_NAME: engine-c
-TEXT_PAYLOAD: INFO:     169.254.169.126:16848 - "GET /health HTTP/1.1" 200 OK
-STATUS: 
-
-TIMESTAMP: 2025-12-23T19:27:56.753342Z
+TIMESTAMP: 2025-12-24T10:49:20.531974Z
 SERVICE_NAME: engine-c
 TEXT_PAYLOAD: 
 STATUS: 200
 
-TIMESTAMP: 2025-12-23T19:27:56.351408Z
-SERVICE_NAME: engine-b
-TEXT_PAYLOAD: INFO:     169.254.169.126:47952 - "GET /health HTTP/1.1" 200 OK
+TIMESTAMP: 2025-12-24T10:49:18.372640Z
+SERVICE_NAME: engine-c
+TEXT_PAYLOAD: INFO:src.main:? DhanHQ client created for user 1101302170
 STATUS: 
 
-TIMESTAMP: 2025-12-23T19:27:56.347300Z
-SERVICE_NAME: engine-b
+TIMESTAMP: 2025-12-24T10:49:15.161782Z
+SERVICE_NAME: engine-c
+TEXT_PAYLOAD: INFO:     169.254.169.126:4972 - "GET /api/system/verify HTTP/1.1" 200 OK
+STATUS: 
+
+TIMESTAMP: 2025-12-24T10:49:15.157317Z
+SERVICE_NAME: engine-c
 TEXT_PAYLOAD: 
 STATUS: 200
 ```
@@ -150,6 +183,9 @@ CREATED: 2025-12-07T18:28:24
 
 NAME: dhan-client-id
 CREATED: 2025-12-07T18:28:09
+
+NAME: dhan_creds_dAZqlCeiuCNrgXaAIjRWjy1B9av1
+CREATED: 2025-12-24T09:59:46
 
 NAME: encryption-key
 CREATED: 2025-12-07T18:28:32

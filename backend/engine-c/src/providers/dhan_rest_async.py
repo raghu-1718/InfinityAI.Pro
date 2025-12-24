@@ -186,57 +186,111 @@ class DhanRESTAsync:
         """Get specific order details"""
         return await self._request("GET", f"/orders/{order_id}")
 
-    # =========================================================================
-    # TRADES - Can be cached briefly
-    # =========================================================================
-
-    async def get_trades(self, use_cache: bool = True) -> Dict[str, Any]:
-        """Get executed trades - cacheable for 10 seconds"""
-        return await self._request("GET", "/trades", use_cache=use_cache, cache_ttl=10)
+    async def place_slice_order(self, payload: Dict) -> Dict[str, Any]:
+        """Place a slice order"""
+        return await self._request("POST", "/orders/slicing", payload)
 
     # =========================================================================
-    # POSITIONS - Can be cached briefly
+    # SUPER ORDERS (Baskets/Multi-leg)
     # =========================================================================
 
-    async def get_positions(self, use_cache: bool = True) -> Dict[str, Any]:
-        """Get current positions - cacheable for 5 seconds"""
-        return await self._request("GET", "/positions", use_cache=use_cache, cache_ttl=5)
+    async def place_super_order(self, payload: Dict) -> Dict[str, Any]:
+        """Place a super order"""
+        return await self._request("POST", "/super/orders", payload)
+
+    async def modify_super_order(self, order_id: str, payload: Dict) -> Dict[str, Any]:
+        """Modify a super order"""
+        return await self._request("PUT", f"/super/orders/{order_id}", payload)
+
+    async def cancel_super_order(self, order_id: str, order_leg: str) -> Dict[str, Any]:
+        """Cancel a super order leg (ENTRY_LEG, STOP_LOSS_LEG, TARGET_LEG)"""
+        return await self._request("DELETE", f"/super/orders/{order_id}/{order_leg}")
+
+    async def get_super_orders(self) -> Dict[str, Any]:
+        """Get all super orders"""
+        return await self._request("GET", "/super/orders")
+
+    async def get_super_order_by_id(self, order_id: str) -> Dict[str, Any]:
+        """Get specific super order details (Note: inferred from REST patterns, verify path if standardized)"""
+        # Based on standard REST patterns, usually single resource access is ID based.
+        # However, Dhan documentation for Super Orders mainly lists get_all.
+        # We will assume standard pattern for now or rely on list filtering if explicit ID fetch missing.
+        # Actually per simplified spec, list is primary. We can leave this out if not explicitly in user spec.
+        # User spec includes: /super/orders/{order-id} (PUT) but not GET.
+        # Let's stick strictly to USER_REQUEST provided paths.
+        pass
 
     # =========================================================================
-    # HOLDINGS - Can be cached longer
+    # FOREVER ORDERS (GTT/OCO)
     # =========================================================================
 
-    async def get_holdings(self, use_cache: bool = True) -> Dict[str, Any]:
-        """Get holdings - cacheable for 30 seconds"""
-        return await self._request("GET", "/holdings", use_cache=use_cache, cache_ttl=30)
+    async def place_forever_order(self, payload: Dict) -> Dict[str, Any]:
+        """Place a forever (GTT) order"""
+        return await self._request("POST", "/forever/orders", payload)
+
+    async def modify_forever_order(self, order_id: str, payload: Dict) -> Dict[str, Any]:
+        """Modify a forever order"""
+        return await self._request("PUT", f"/forever/orders/{order_id}", payload)
+
+    async def cancel_forever_order(self, order_id: str) -> Dict[str, Any]:
+        """Cancel a forever order"""
+        return await self._request("DELETE", f"/forever/orders/{order_id}")
+
+    async def get_forever_orders(self) -> Dict[str, Any]:
+        """Get all forever orders"""
+        return await self._request("GET", "/forever/orders")
 
     # =========================================================================
-    # FUND LIMIT - Can be cached briefly
+    # POSITIONS & TRADES EXTENDED
     # =========================================================================
 
-    async def get_fund_limit(self, use_cache: bool = True) -> Dict[str, Any]:
-        """Get fund/margin limits - cacheable for 10 seconds"""
-        return await self._request("GET", "/fundlimit", use_cache=use_cache, cache_ttl=10)
+    async def convert_position(self, payload: Dict) -> Dict[str, Any]:
+        """Convert position (Intraday <-> Delivery)"""
+        return await self._request("POST", "/positions/convert", payload)
+
+    async def get_trade_by_order_id(self, order_id: str) -> Dict[str, Any]:
+        """Get trades associated with an order ID"""
+        return await self._request("GET", f"/trades/{order_id}")
+
+    async def get_trade_history(self, from_date: str, to_date: str, page_number: int = 0) -> Dict[str, Any]:
+        """Get historical trades"""
+        return await self._request("GET", f"/trades/{from_date}/{to_date}/{page_number}")
 
     # =========================================================================
-    # MARKET DATA - Can be cached
+    # IP MANAGEMENT
     # =========================================================================
 
-    async def get_quote(self, security_id: str, exchange_segment: str = "NSE_EQ") -> Dict[str, Any]:
-        """Get market quote for a security"""
-        payload = {
-            "SecurityId": security_id,
-            "ExchangeSegment": exchange_segment
-        }
-        return await self._request("POST", "/marketfeed/ltp", payload)
+    async def get_ip(self) -> Dict[str, Any]:
+        """Get registered IPs"""
+        return await self._request("GET", "/ip/getIP")
 
-    async def get_ohlc(self, security_id: str, exchange_segment: str = "NSE_EQ") -> Dict[str, Any]:
-        """Get OHLC data for a security"""
-        payload = {
-            "SecurityId": security_id,
-            "ExchangeSegment": exchange_segment
-        }
-        return await self._request("POST", "/marketfeed/ohlc", payload)
+    async def set_ip(self, payload: Dict) -> Dict[str, Any]:
+        """Set Primary/Secondary IP"""
+        return await self._request("POST", "/ip/setIP", payload)
+
+    async def modify_ip(self, payload: Dict) -> Dict[str, Any]:
+        """Modify Registered IP"""
+        return await self._request("PUT", "/ip/modifyIP", payload)
+
+    # =========================================================================
+    # EDIS & T-PIN
+    # =========================================================================
+
+    async def generate_edis_form(self, payload: Dict) -> Dict[str, Any]:
+        """Generate EDIS form"""
+        return await self._request("POST", "/edis/form", payload)
+
+    async def generate_bulk_edis_form(self, payload: Dict) -> Dict[str, Any]:
+        """Generate Bulk EDIS form"""
+        return await self._request("POST", "/edis/bulkform", payload)
+
+    async def inquire_edis(self, isin: str) -> Dict[str, Any]:
+        """Check EDIS status for ISIN"""
+        return await self._request("GET", f"/edis/inquire/{isin}")
+
+    async def generate_tpin(self) -> Dict[str, Any]:
+        """Generate T-PIN (sends to mobile)"""
+        return await self._request("GET", "/edis/tpin")
 
     # =========================================================================
     # UTILITY METHODS

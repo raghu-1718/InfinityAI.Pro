@@ -131,6 +131,10 @@ export interface SignalResponse {
     sentiment_score: number;
     ml_prediction: number;
   };
+  market_context: {
+    reasoning?: string;
+    trend?: string;
+  };
   timestamp: string;
 }
 

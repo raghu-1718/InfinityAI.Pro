@@ -40,20 +40,26 @@ service cloud.firestore {
       }
     }
 
-    // Engine health, AI signals, trades — public read, function write
+    // Engine health, AI signals, trades — public read, BACKEND WRITE ONLY (Phase-5 Fix)
     match /engine_health/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;  // Backend service accounts only
     }
 
     match /ai_signals/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;  // Backend service accounts only (Phase-5 Security Fix)
     }
 
     match /trades/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;  // Backend service accounts only (Phase-5 Security Fix)
+    }
+
+    // Activity logs — backend write only
+    match /activity_logs/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;  // Backend service accounts only
     }
   }
 }

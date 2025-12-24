@@ -140,3 +140,42 @@ class DhanProvider:
     async def get_statement(self) -> Dict[str, Any]:
         """Get account statement"""
         return await self._get("/v2/statement")
+
+    # ========================================================================
+    # RISK & ADMIN PROTOCOLS (Level-4/Level-8)
+    # ========================================================================
+
+    async def get_kill_switch_status(self) -> Dict[str, Any]:
+        """Get current Kill Switch status"""
+        return await self._get("/killswitch")
+
+    async def set_kill_switch(self, status: str, confirmed: bool = False) -> Dict[str, Any]:
+        """
+        Activate/Deactivate Kill Switch.
+        
+        CRITICAL SAFETY GATE:
+        This action stops ALL trading for the day. Explicit confirmation is required.
+        """
+        if not confirmed:
+            logger.critical("Kill Switch activation attempted without confirmation!")
+            raise PermissionError("Kill switch requires explicit confirmation (confirmed=True)")
+        
+        logger.critical(f"KILL SWITCH ACTION: {status}")
+        return await self._post(f"/killswitch?killSwitchStatus={status}", {})
+
+    async def calculate_margin(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Calculate margin requirements for a potential trade.
+        Used for pre-trade risk checks.
+        """
+        return await self._post("/margincalculator", payload)
+
+    async def get_ledger(self, from_date: Optional[str] = None, to_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get Transaction Ledger.
+        Useful for capital integrity checks.
+        """
+        path = "/ledger"
+        if from_date and to_date:
+            path += f"?from-date={from_date}&to-date={to_date}"
+        return await self._get(path)

@@ -127,9 +127,10 @@ class CouponAuthManager:
     # Authentication Functions
     # =========================================================================
 
-    async def validate_coupon(self, code: str) -> Dict[str, Any]:
+    async def validate_coupon(self, code: str, link_user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Validate a coupon code and create a session if valid.
+        If link_user_id is provided (e.g. Firebase UID), use it.
 
         Returns:
             success: bool
@@ -193,11 +194,14 @@ class CouponAuthManager:
 
         # Create session
         session_id = self._generate_session_id(code)
-        user_id = self._generate_user_id(code, session_id)
+        
+        # Use provided user ID (Firebase UID) if available, otherwise generate one
+        user_id = link_user_id if link_user_id else self._generate_user_id(code, session_id)
 
         session_data = {
             "session_id": session_id,
             "user_id": user_id,
+            "google_user_id": link_user_id, # explicit field
             "coupon_code_hash": self._hash_code(code),
             "created_at": utcnow(),
             "expires_at": utcnow() + timedelta(days=30),  # Session valid for 30 days
@@ -211,12 +215,17 @@ class CouponAuthManager:
         if self.db:
             # Save session
             self.db.collection(self.sessions_collection).document(session_id).set(session_data)
-            # Increment coupon usage
+            # Increment coupon usage and set used_by
             coupon_ref = self.db.collection(self.coupons_collection).document(code_hash)
-            coupon_ref.update({"current_uses": firestore.Increment(1)})
+            coupon_ref.update({
+                "current_uses": firestore.Increment(1),
+                "used_by": user_id,
+                "used_at": utcnow()
+            })
         else:
             self._memory_sessions[session_id] = session_data
             self._memory_coupons[code_hash]["current_uses"] = current_uses + 1
+            self._memory_coupons[code_hash]["used_by"] = user_id
 
         logger.info(f"✅ Session created for coupon: {code[:4]}**** -> User: {user_id[:16]}...")
 
@@ -405,33 +414,40 @@ class CouponAuthManager:
     # =========================================================================
 
     async def initialize_default_coupons(self):
-        """Create default coupons if none exist"""
-        default_coupons = [
-            {
-                "code": "INFINITY2025",
-                "description": "InfinityAI Pro Launch Coupon",
-                "max_uses": 100,
-                "valid_days": 365
-            },
-            {
-                "code": "RAGHU-ADMIN",
-                "description": "Admin Access Coupon",
-                "max_uses": 0,  # Unlimited
-                "valid_days": 3650  # 10 years
-            },
-            {
-                "code": "DEMO-ACCESS",
-                "description": "Demo Access Coupon",
-                "max_uses": 1000,
-                "valid_days": 30
-            }
+        """Create new family coupons and cleanup old ones"""
+        
+        # 1. Cleanup Legacy Coupons
+        legacy_codes = ["INFINITY2024", "INFINITY2025", "RAGHU-ADMIN", "DEMO-ACCESS"]
+        for code in legacy_codes:
+            code_hash = self._hash_code(code)
+            try:
+                if self.db:
+                     self.db.collection(self.coupons_collection).document(code_hash).delete()
+                elif code_hash in self._memory_coupons:
+                     del self._memory_coupons[code_hash]
+                logger.info(f"🧹 Cleaned up legacy coupon: {code}")
+            except Exception as e:
+                logger.warning(f"Error cleaning up {code}: {e}")
+
+        # 2. Initialize New Family Coupons
+        family_coupons = [
+            "INFAI-FAM-DAD", "INFAI-FAM-MOM", "INFAI-FAM-SAI", "INFAI-FAM-PRI",
+            "INFAI-FAM-HARSHA", "INFAI-FAM-KAVI", "INFAI-FAM-CHOTU", "INFAI-FAM-RAJ",
+            "INFAI-FAM-1718", "INFAI-FAM-0506"
         ]
 
-        for coupon_config in default_coupons:
-            existing = await self.get_coupon(coupon_config["code"])
+        for code in family_coupons:
+            # Check if exists
+            existing = await self.get_coupon(code)
             if not existing:
-                await self.create_coupon(**coupon_config)
-                logger.info(f"Created default coupon: {coupon_config['code'][:4]}****")
+                await self.create_coupon(
+                    code=code,
+                    description="InfinityAI Family Access",
+                    max_uses=1,
+                    valid_days=3650, # 10 years validity
+                    features=["dashboard", "trading", "signals", "ai_analysis", "family_plan"]
+                )
+                logger.info(f"✅ Created family coupon: {code}")
 
 
 # Singleton instance

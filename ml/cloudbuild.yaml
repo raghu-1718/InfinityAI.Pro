@@ -1,0 +1,42 @@
+# Cloud Build Configuration for ML Training Pipeline
+# Automates: Docker build → Train model → Upload to GCS
+
+steps:
+  # Step 1: Build Docker image (explicit Dockerfile path + context)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
+      - '-f'
+      - 'ml/Dockerfile'
+      - 'ml'
+  
+  # Step 2: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+  
+  # Step 3: Run training container
+  - name: 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+    args:
+      - '--dataset=gs://gen-lang-client-0779271931-ml-models/data/ohlcv_latest.csv'
+      - '--model_uri=gs://gen-lang-client-0779271931-ml-models/xgb/model_$BUILD_ID.json'
+    env:
+      - 'PYTHONUNBUFFERED=1'
+
+# Push images to registry
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
+
+# Build options
+options:
+  machineType: 'N1_HIGHCPU_8'  # 8 vCPU for faster training
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout
+timeout: 1800s  # 30 minutes max

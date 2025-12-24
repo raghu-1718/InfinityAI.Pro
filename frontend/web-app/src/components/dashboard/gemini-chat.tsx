@@ -173,7 +173,7 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
 - **Timeframe:** ${s.timeframe ?? 'SWING'}
 
 ### Reasoning
-${r.reasoning ?? 'Based on technical and fundamental analysis.'}`;
+${r?.reasoning ?? 'Based on technical and fundamental analysis.'}`;
     }
 
     // Market analysis response

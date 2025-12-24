@@ -127,21 +127,8 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         {/* Balance Display */}
-        <div className="hidden md:flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
-          <span className="text-xs text-muted-foreground">Balance:</span>
-          {!hydrated || isProfileLoading || authLoading ? (
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          ) : isDhanConnected ? (
-            <span className="font-mono font-semibold text-green-600 dark:text-green-400">
-              {formatCurrency(displayBalance)}
-            </span>
-          ) : (
-            <Link href="/settings" className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline flex items-center gap-1">
-              <Wallet className="h-3 w-3" />
-              Connect Dhan
-            </Link>
-          )}
-        </div>
+        {/* Balance Display (Removed for cleaner look) */}
+        {/* <div className="hidden md:flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5"> ... </div> */}
 
         {/* Refresh Button */}
         <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing}>

@@ -1,6 +1,7 @@
 // Formatting utilities
 
-export function formatCurrency(amount: number, currency = 'INR'): string {
+export function formatCurrency(amount: number | undefined | null, currency = 'INR'): string {
+  if (amount === undefined || amount === null || isNaN(amount)) return '₹0.00';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency,
@@ -9,18 +10,21 @@ export function formatCurrency(amount: number, currency = 'INR'): string {
   }).format(amount);
 }
 
-export function formatNumber(num: number, decimals = 2): string {
+export function formatNumber(num: number | undefined | null, decimals = 2): string {
+  if (num === undefined || num === null || isNaN(num)) return '0';
   return new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(num);
 }
 
-export function formatPercent(value: number, decimals = 2): string {
+export function formatPercent(value: number | undefined | null, decimals = 2): string {
+  if (value === undefined || value === null || isNaN(value)) return '0.00%';
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
 
-export function formatCompact(num: number): string {
+export function formatCompact(num: number | undefined | null): string {
+  if (num === undefined || num === null || isNaN(num)) return '₹0';
   if (num >= 10000000) {
     return `₹${(num / 10000000).toFixed(2)}Cr`;
   }

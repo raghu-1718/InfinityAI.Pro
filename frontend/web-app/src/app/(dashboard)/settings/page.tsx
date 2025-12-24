@@ -45,7 +45,7 @@ import { getUserId, setDhanClientId, clearDhanClientId } from "@/lib/user";
 import { RiskProfile } from "@/components/settings/RiskProfile";
 import { TradingSettings } from "@/lib/api";
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c.infinityai.pro";
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-429140669077.us-central1.run.app";
 
 // ... (Keep existing Interfaces DhanCredentials, DematInfo) ...
 interface DhanCredentials {
@@ -109,6 +109,7 @@ export default function SettingsPage() {
 
   // Trading Settings State
   const [tradingSettings, setTradingSettings] = useState<TradingSettings>({
+      risk_level: 'conservative',
       max_risk_per_trade: 0.02,
       max_trades_per_day: 10,
       stop_loss_percent: 2,
@@ -133,22 +134,151 @@ export default function SettingsPage() {
       });
   };
 
-  // ... (Keep existing Effect for loadingcreds, loadDematInfo, handleSaveCredentials etc.) ...
-  // [OMITTED FOR BREVITY - Assume unchanged helper functions from previous file]
-  // Since I am overwriting the file, I must include the essential parts.
-  // I will include a placeholder for them to keep the file valid and focused on the RiskProfile integration.
-
-  // Re-implementing essential handlers needed for the page to render correctly
+  // Load credentials on mount
   useEffect(() => {
-     // Mock load
-     setIsLoadingCredentials(false);
-     if (userProfile?.isConnected) setConnectionStatus("connected");
-  }, [userProfile]);
+      const loadCredentials = async () => {
+          if (!session?.userId) {
+              setIsLoadingCredentials(false);
+              return;
+          }
 
-  const loadDematInfo = async () => { /* Mock */ };
-  const handleSaveCredentials = async () => { /* Mock */ };
-  const handleVerifyConnection = async () => { /* Mock */ };
-  const handleDisconnect = async () => { /* Mock */ };
+          setIsLoadingCredentials(true);
+          try {
+              const response = await fetch(
+                  `${ENGINE_C_URL}/api/dhan/credentials/${session.userId}`
+              );
+              
+              if (response.ok) {
+                  const data = await response.json();
+                  if (data.success && data.credentials) {
+                      setDhanCredentials({
+                          client_id: data.credentials.client_id || "",
+                          api_key: data.credentials.api_key || "",
+                          api_secret: data.credentials.api_secret || "",
+                          access_token: data.credentials.access_token || "",
+                          is_verified: data.verified
+                      });
+                      setConnectionStatus(data.verified ? "connected" : "disconnected");
+                  }
+              }
+          } catch (error) {
+              console.error("Failed to load credentials:", error);
+          } finally {
+              setIsLoadingCredentials(false);
+          }
+      };
+
+      loadCredentials();
+  }, [session]);
+
+  const loadDematInfo = async () => { 
+      // TODO: Implement demat info loading
+  };
+  
+  const handleSaveCredentials = async () => {
+      if (!session?.userId) {
+          toast.error("Not authenticated");
+          return;
+      }
+
+      if (!dhanCredentials.client_id || !dhanCredentials.access_token) {
+          toast.error("Please fill in all required fields");
+          return;
+      }
+
+      setIsConnecting(true);
+      try {
+          const response = await fetch(`${ENGINE_C_URL}/api/dhan/credentials`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  user_id: session.userId,
+                  client_id: dhanCredentials.client_id,
+                  api_key: dhanCredentials.api_key,
+                  api_secret: dhanCredentials.api_secret,
+                  access_token: dhanCredentials.access_token
+              })
+          });
+
+          const data = await response.json();
+          
+          if (data.success) {
+              setConnectionStatus(data.verified ? "connected" : "error");
+              setDhanCredentials({...dhanCredentials, is_verified: data.verified});
+              toast.success("Credentials saved" + (data.verified ? " and verified!" : ""));
+              persistClientId(dhanCredentials.client_id);
+          } else {
+              throw new Error(data.message || "Save failed");
+          }
+      } catch (error: any) {
+          toast.error(`Save failed: ${error.message}`);
+          setConnectionStatus("error");
+      } finally {
+          setIsConnecting(false);
+      }
+  };
+  
+  const handleVerifyConnection = async () => {
+      if (!session?.userId) {
+          toast.error("Not authenticated");
+          return;
+      }
+
+      setIsVerifying(true);
+      try {
+          const response = await fetch(`${ENGINE_C_URL}/api/dhan/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  user_id: session.userId,
+                  client_id: dhanCredentials.client_id,
+                  api_key: dhanCredentials.api_key,
+                  api_secret: dhanCredentials.api_secret,
+                  access_token: dhanCredentials.access_token
+              })
+          });
+
+          const data = await response.json();
+          setConnectionStatus(data.verified ? "connected" : "error");
+          toast[data.verified ? "success" : "error"](data.message || "Verification complete");
+      } catch (error: any) {
+          toast.error("Verification failed");
+          setConnectionStatus("error");
+      } finally {
+          setIsVerifying(false);
+      }
+  };
+  
+  const handleDisconnect = async () => {
+      if (!session?.userId) return;
+      
+      setIsConnecting(true);
+      try {
+          const response = await fetch(
+              `${ENGINE_C_URL}/api/dhan/credentials/${session.userId}`,
+              { method: 'DELETE' }
+          );
+
+          const data = await response.json();
+          
+          if (data.success) {
+              setConnectionStatus("disconnected");
+              setDhanCredentials({
+                  client_id: "", api_key: "", api_secret: "", 
+                  access_token: "", is_verified: false
+              });
+              clearDhanClientId();
+              toast.success("Disconnected from Dhan");
+          } else {
+              throw new Error(data.message || "Disconnect failed");
+          }
+      } catch (error: any) {
+          toast.error(`Disconnect failed: ${error.message}`);
+      } finally {
+          setIsConnecting(false);
+      }
+  };
+  
   const formatCurrency = (val: number) => `₹${val.toFixed(2)}`;
   
   // Persist client ID helper (Fix for missing function)
@@ -205,16 +335,20 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Take Profit Target (%)</Label>
+                                <Label htmlFor="take-profit">Take Profit Target (%)</Label>
                                 <Input 
+                                    id="take-profit"
+                                    name="take_profit"
                                     type="number" 
                                     value={tradingSettings.take_profit_percent} 
                                     onChange={(e) => setTradingSettings(p => ({...p, take_profit_percent: parseFloat(e.target.value)}))}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Min AI Confidence (0.0 - 1.0)</Label>
+                                <Label htmlFor="min-confidence">Min AI Confidence (0.0 - 1.0)</Label>
                                 <Input 
+                                    id="min-confidence"
+                                    name="min_confidence"
                                     type="number" 
                                     step="0.05"
                                     max="1.0"
@@ -245,8 +379,132 @@ export default function SettingsPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="p-4 bg-muted rounded text-center text-sm text-muted-foreground">
-                    (Dhan credential management form would go here - preserved from existing implementation)
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="client-id">Client ID</Label>
+                            <Input 
+                                id="client-id"
+                                name="client_id"
+                                value={dhanCredentials.client_id}
+                                onChange={(e) => setDhanCredentials({...dhanCredentials, client_id: e.target.value})}
+                                placeholder="Enter Dhan Client ID"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="access-token">Access Token</Label>
+                            <div className="relative">
+                                <Input 
+                                    id="access-token"
+                                    name="access_token"
+                                    type={showAccessToken ? "text" : "password"}
+                                    value={dhanCredentials.access_token}
+                                    onChange={(e) => setDhanCredentials({...dhanCredentials, access_token: e.target.value})}
+                                    placeholder="Enter Access Token"
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowAccessToken(!showAccessToken)}
+                                >
+                                    {showAccessToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="api-key">API Key</Label>
+                            <div className="relative">
+                                <Input 
+                                    id="api-key"
+                                    name="api_key"
+                                    type={showApiSecret ? "text" : "password"}
+                                    value={dhanCredentials.api_key}
+                                    onChange={(e) => setDhanCredentials(prev => ({ ...prev, api_key: e.target.value }))}
+                                    placeholder="Enter API Key"
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowApiSecret(!showApiSecret)}
+                                >
+                                    {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="api-secret">API Secret (optional)</Label>
+                             <div className="relative">
+                                <Input 
+                                    id="api-secret"
+                                    name="api_secret"
+                                    type={showApiSecret ? "text" : "password"}
+                                    value={dhanCredentials.api_secret}
+                                    onChange={(e) => setDhanCredentials(prev => ({ ...prev, api_secret: e.target.value }))}
+                                    placeholder="Enter API Secret"
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowApiSecret(!showApiSecret)}
+                                >
+                                    {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                         <Button onClick={handleSaveCredentials} disabled={isConnecting}>
+                            {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save & Connect
+                        </Button>
+                        {connectionStatus === 'connected' && (
+                            <Button variant="destructive" onClick={handleDisconnect} disabled={isConnecting}>
+                                Disconnect
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <ExternalLink className="w-4 h-4" />
+                            Connection Details (For DhanHQ)
+                        </h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/20 p-4 rounded-lg">
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase text-muted-foreground">Postback URL</Label>
+                                <div className="flex gap-2">
+                                    <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
+                                        https://engine-c.infinityai.pro/api/dhan/postback
+                                    </code>
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
+                                        navigator.clipboard.writeText("https://engine-c.infinityai.pro/api/dhan/postback");
+                                        toast.success("Copied Postback URL");
+                                    }}>
+                                        <CheckCircle className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase text-muted-foreground">Redirect URL</Label>
+                                <div className="flex gap-2">
+                                    <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
+                                        https://infinityai.pro/settings
+                                    </code>
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
+                                        navigator.clipboard.writeText("https://infinityai.pro/settings");
+                                        toast.success("Copied Redirect URL");
+                                    }}>
+                                        <CheckCircle className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <div className="mt-4 flex justify-end">
                     <Button variant="outline"><ExternalLink className="mr-2 h-4 w-4"/> DhanHQ Dashboard</Button>
@@ -255,12 +513,77 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
         
-        {/* Placeholder Tabs */}
+        {/* Notifications Tab */}
         <TabsContent value="notifications">
-             <Card><CardContent className="p-12 text-center text-muted-foreground">Notification Settings Placeholder</CardContent></Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Notification Settings</CardTitle>
+                    <CardDescription>Configure trading alerts and notifications</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                            <Label className="text-base">Signal Notifications</Label>
+                            <p className="text-sm text-muted-foreground">Get notified when AI generates new signals</p>
+                        </div>
+                        <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                            <Label className="text-base">Trade Execution Alerts</Label>
+                            <p className="text-sm text-muted-foreground">Real-time updates on order status</p>
+                        </div>
+                        <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                            <Label className="text-base">Risk Alerts</Label>
+                            <p className="text-sm text-muted-foreground">Warnings when risk limits are approached</p>
+                        </div>
+                        <Switch defaultChecked />
+                    </div>
+                </CardContent>
+             </Card>
         </TabsContent>
-         <TabsContent value="engines">
-             <Card><CardContent className="p-12 text-center text-muted-foreground">Engine Configuration Placeholder</CardContent></Card>
+        <TabsContent value="engines">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Backend Engines Status</CardTitle>
+                    <CardDescription>Monitor AI engines and infrastructure</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                <Label className="text-base">Engine A - Orchestration</Label>
+                            </div>
+                            <span className="text-xs text-green-600 font-medium">Operational</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Risk management & signal validation</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                <Label className="text-base">Engine B - AI/ML Intelligence</Label>
+                            </div>
+                            <span className="text-xs text-green-600 font-medium">Operational</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Signal generation & market analysis</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                <Label className="text-base">Engine C - Execution</Label>
+                            </div>
+                            <span className="text-xs text-green-600 font-medium">Operational</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Order routing & execution optimization</p>
+                    </div>
+                </CardContent>
+             </Card>
         </TabsContent>
 
       </Tabs>

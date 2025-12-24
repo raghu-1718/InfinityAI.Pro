@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sparkles, Activity, Target, Search, Loader2 } from 'lucide-react';
 import { SignalCard } from '@/components/ai/SignalCard';
 import { engineB, SignalResponse } from '@/lib/api';
-import { useToast } from 'sonner';
+import { toast } from 'sonner';
 
 const POPULAR_STOCKS = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'CRUDEOIL', 'GOLDM'];
 
@@ -19,7 +19,6 @@ export default function AIAnalysisPage() {
   const [timeframe, setTimeframe] = useState('INTRADAY');
   const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalResponse | null>(null);
-  const { toast } = useToast();
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -176,7 +175,7 @@ export default function AIAnalysisPage() {
                                 <CardContent className="space-y-4">
                                     <div className="p-4 bg-secondary/50 rounded-lg border border-border">
                                         <p className="leading-relaxed whitespace-pre-wrap">
-                                            {signalData.market_context.reasoning || "No detailed reasoning provided by the model."}
+                                            {signalData.market_context?.reasoning || "No detailed reasoning provided by the model."}
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

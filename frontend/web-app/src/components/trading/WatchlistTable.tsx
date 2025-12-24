@@ -67,7 +67,7 @@ export function WatchlistTable({ items, onExecute, isExecuting }: WatchlistTable
                         variant={item.signal === 'BUY' ? "default" : "destructive"}
                         className={cn("h-7 text-xs", item.signal === 'BUY' ? "bg-chart-1 hover:bg-chart-1/90" : "")}
                         disabled={!!isExecuting}
-                        onClick={() => onExecute(item.symbol, item.signal)}
+                        onClick={() => onExecute(item.symbol, item.signal as 'BUY' | 'SELL')}
                     >
                         {isExecuting === item.symbol ? (
                             <Loader2 className="w-3 h-3 animate-spin mr-1" />

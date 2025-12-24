@@ -52,6 +52,7 @@ export function RiskProfile({ initialSettings, onSave }: RiskProfileProps) {
                 <span className="font-mono text-primary font-bold">{(settings.max_risk_per_trade * 100).toFixed(1)}%</span>
             </div>
             <Slider 
+                aria-label="Max Risk Per Trade Slider"
                 value={[settings.max_risk_per_trade * 100]} 
                 min={0.1} 
                 max={5.0} 
@@ -70,6 +71,7 @@ export function RiskProfile({ initialSettings, onSave }: RiskProfileProps) {
                 <span className="font-mono text-primary font-bold">{settings.max_trades_per_day}</span>
             </div>
             <Slider 
+                aria-label="Max Trades Per Day Slider"
                 value={[settings.max_trades_per_day]} 
                 min={1} 
                 max={20} 
@@ -81,10 +83,11 @@ export function RiskProfile({ initialSettings, onSave }: RiskProfileProps) {
         {/* Trailing Stop Loss */}
         <div className="flex items-center justify-between p-4 border rounded-lg bg-secondary/20">
             <div className="space-y-0.5">
-                <Label className="text-base">Trailing Stop Loss</Label>
+                <Label htmlFor="trailing-stop">Trailing Stop Loss</Label>
                 <p className="text-xs text-muted-foreground">Automatically move SL to break-even after 1% profit.</p>
             </div>
             <Switch 
+                id="trailing-stop"
                 checked={settings.trailing_stop_loss}
                 onCheckedChange={(val) => handleChange('trailing_stop_loss', val)}
             />

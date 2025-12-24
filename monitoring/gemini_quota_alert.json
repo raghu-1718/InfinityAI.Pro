@@ -1,0 +1,26 @@
+{
+  "displayName": "Gemini API Quota Alert",
+  "conditions": [
+    {
+      "displayName": "Gemini API quota > 80%",
+      "conditionThreshold": {
+        "filter": "metric.type=\"serviceruntime.googleapis.com/quota/rate/net_usage\" AND resource.type=\"consumer_quota\" AND metric.label.quota_metric=\"generativelanguage.googleapis.com/generate_content_requests_per_minute_per_project\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0.8,
+        "duration": "60s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "60s",
+            "perSeriesAligner": "ALIGN_MAX"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": [
+    "projects/gen-lang-client-0779271931/notificationChannels/10018032446817284407"
+  ],
+  "alertStrategy": {
+    "autoClose": "86400s"
+  }
+}

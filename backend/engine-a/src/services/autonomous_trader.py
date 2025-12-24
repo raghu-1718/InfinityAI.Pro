@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 import httpx
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 
 from src.services.risk_manager import RiskManager
@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 # Constants
 ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
 ENGINE_C_URL = os.environ.get("ENGINE_C_URL", "https://engine-c-429140669077.us-central1.run.app")
+
+# Data Freshness Enforcement (Phase-5 Security Fix)
+MAX_SIGNAL_AGE = timedelta(minutes=5)  # Reject signals older than 5 minutes
 
 class AutonomousTrader:
     """
@@ -38,6 +41,49 @@ class AutonomousTrader:
             "stop_loss_pct": 0.02
         }
         logger.info("✅ AutonomousTrader initialized in Engine A")
+
+    @staticmethod
+    def validate_signal_freshness(signal: Dict[str, Any]) -> bool:
+        """
+        Validate signal timestamp is not stale.
+        Phase-5 Security Fix: Explicit data freshness enforcement.
+        Returns: True if signal is fresh, False if stale (> MAX_SIGNAL_AGE)
+        """
+        timestamp_str = signal.get("timestamp")
+        if not timestamp_str:
+            logger.warning(f"⚠️ Signal missing timestamp - REJECTED (symbol: {signal.get('symbol', 'UNKNOWN')})")
+            return False
+        
+        try:
+            # Parse signal timestamp (assuming ISO format from Engine B)
+            if isinstance(timestamp_str, str):
+                signal_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            else:
+                signal_timestamp = timestamp_str
+            
+            # Ensure UTC timezone
+            if signal_timestamp.tzinfo is None:
+                signal_timestamp = signal_timestamp.replace(tzinfo=timezone.utc)
+            
+            # Calculate age
+            now = datetime.now(timezone.utc)
+            age = now - signal_timestamp
+            
+            if age > MAX_SIGNAL_AGE:
+                logger.warning(
+                    f"❌ STALE SIGNAL REJECTED: {signal.get('symbol', 'UNKNOWN')} - "
+                    f"Age: {age.total_seconds():.1f}s (max: {MAX_SIGNAL_AGE.total_seconds()}s)"
+                )
+                # Log to activity logger if available
+                return False
+            
+            logger.debug(f"✅ Signal freshness OK: {signal.get('symbol')} (age: {age.total_seconds():.1f}s)")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Timestamp parse error for {signal.get('symbol')}: {e} - REJECTED")
+            return False
+
 
     async def start(self):
         """Start the autonomous trading loop"""
@@ -137,6 +183,14 @@ class AutonomousTrader:
 
         logger.info(f"🔎 Analyzing Signal: {signal_type} {symbol} ({confidence:.1%})")
 
+        # ---------------------------------------------------------
+        # FRESHNESS GATE (PHASE-5 SECURITY FIX) - MANDATORY
+        # ---------------------------------------------------------
+        if not self.validate_signal_freshness(signal):
+            logger.warning(f"⏱️ Signal REJECTED due to staleness: {symbol}")
+            # TODO: Log to activity_logger when available
+            return
+        
         # ---------------------------------------------------------
         # RISK GATE (MANDATORY)
         # ---------------------------------------------------------

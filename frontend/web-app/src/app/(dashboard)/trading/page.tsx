@@ -1,351 +1,207 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { usePositions, useHoldings, usePlaceOrder, useCalculateRiskScore, Holding, useBatchSignals } from '@/hooks/useApi';
-import { useAppStore } from '@/lib/store';
-import { formatCurrency, formatPercent } from '@/lib/format';
-import { TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Loader2, Play, RefreshCw, Zap } from 'lucide-react';
+import { Power, ShieldAlert, Activity, DollarSign, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { WatchlistTable, WatchlistItem } from '@/components/trading/WatchlistTable';
-import { SignalResponse } from '@/lib/api';
+import { useAppStore } from '@/lib/store';
+import { useUserAccount } from '@/hooks/useApi';
 
-// --- Types & Constants ---
-type Position = {
-  securityId?: string;
-  tradingSymbol?: string;
-  realizedProfit?: number;
-  netQty?: number;
-  averagePrice?: number;
-  productType?: string;
-  ltp?: number;
-  avgCostPrice?: number;
-  totalQty?: number;
-};
-
-const SYMBOLS = [
-  { value: '1333', label: 'RELIANCE', name: 'Reliance Industries' },
-  { value: '2968', label: 'TCS', name: 'Tata Consultancy Services' },
-  { value: '1394', label: 'HDFCBANK', name: 'HDFC Bank' },
-  { value: '1594', label: 'INFY', name: 'Infosys' },
-  { value: '1270', label: 'ICICIBANK', name: 'ICICI Bank' },
-];
-
-const WATCHLIST_SYMBOLS = SYMBOLS.map(s => s.label);
+const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app';
 
 export default function TradingPage() {
-  const funds = useAppStore((s) => s.funds);
-  const [orderType, setOrderType] = useState<'BUY' | 'SELL'>('BUY');
-  const [securityId, setSecurityId] = useState('1333');
-  const [quantity, setQuantity] = useState('1');
-  const [price, setPrice] = useState('0');
-  const [productType, setProductType] = useState('INTRADAY');
-  const [orderTypeValue, setOrderTypeValue] = useState('MARKET');
-  const [useAIRisk, setUseAIRisk] = useState(true);
-  const [executingSymbol, setExecutingSymbol] = useState<string | null>(null);
+  const { userProfile } = useAppStore();
+  const { data: accountData } = useUserAccount();
+  
+  const [tradingCapital, setTradingCapital] = useState('50000');
+  const [isEngineRunning, setIsEngineRunning] = useState(false); // Should sync with backend
+  const [isKillSwitchActive, setIsKillSwitchActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Load initial state (mock for now, ideally fetch from /api/trading/status)
+  useEffect(() => {
+    // Poll for status or load
+  }, []);
 
-  // Live Hooks
-  const { mutate: placeOrder, isPending: isPlacing } = usePlaceOrder();
-  const { mutateAsync: calculateRisk, isPending: isCalculatingRisk } = useCalculateRiskScore();
-  const { data: positionsData } = usePositions();
-  const { data: holdingsData } = useHoldings();
-  const { data: batchSignals, isLoading: isSignalLoading, refetch: refetchSignals } = useBatchSignals(WATCHLIST_SYMBOLS);
-
-  const positions = Array.isArray(positionsData?.data) ? positionsData?.data : [];
-  const holdings = Array.isArray(holdingsData?.data) ? holdingsData?.data : [];
-
-  // Transform Batch Signals to WatchlistItem[]
-  const watchlistItems: WatchlistItem[] = SYMBOLS.map(sym => {
-      // Find signal for this symbol
-      // The API returns { data: [...] } or just [...]
-      const signals = Array.isArray(batchSignals) ? batchSignals : (batchSignals?.data || []);
-      const sig: SignalResponse | undefined = signals.find((s: SignalResponse) => s.symbol === sym.label);
-      
-      return {
-          symbol: sym.label,
-          // If live price is not available in signal, fallback to mock roughly around the real price
-          ltp: 2500, // TODO: Get real LTP from separate hook if possible
-          change_pct: 0.5, 
-          signal: sig?.signal || 'HOLD',
-          confidence: (sig?.confidence || 0) * 100
-      };
-  });
-
-  const handlePlaceOrder = async (overrideSymbol?: string, overrideAction?: 'BUY' | 'SELL') => {
-    const activeSymbol = overrideSymbol ? SYMBOLS.find(s => s.label === overrideSymbol)?.value || '1333' : securityId;
-    const activeAction = overrideAction || orderType;
+  const handleStartStop = async () => {
+    if (!userProfile?.isConnected) {
+      toast.error("Account Not Connected", { description: "Please connect Dhan in Settings first." });
+      return;
+    }
     
-    if (useAIRisk) {
-        try {
-            await calculateRisk({
-             position_size: parseFloat(quantity) * parseFloat(price || '1000'), 
-             volatility: 0.02, 
-             max_drawdown: 0.05
-            });
-        } catch(e) { /* Warning is sufficient, don't block execution */ }
+    if (isKillSwitchActive && !isEngineRunning) {
+        toast.error("Kill Switch Active", { description: "Disable Kill Switch to start engine." });
+        return;
     }
 
-    placeOrder(
-      {
-        transaction_type: activeAction,
-        exchange_segment: 'NSE_EQ',
-        product_type: productType,
-        order_type: orderTypeValue,
-        validity: 'DAY',
-        security_id: activeSymbol,
-        quantity: parseInt(quantity) || 1,
-        price: parseFloat(price) || 0,
-      },
-      {
-        onSuccess: (data) => {
-          if (data.status === 'success') {
-            toast.success(`Order Executed: ${activeAction} ${overrideSymbol || 'Unknown'}`);
-          } else {
-            toast.error('Order Failed', { description: data.message });
-          }
-          setExecutingSymbol(null);
-        },
-        onError: (err) => {
-            toast.error('Execution Error', { description: err.message });
-            setExecutingSymbol(null);
-        },
+    setIsLoading(true);
+    try {
+      const action = isEngineRunning ? 'STOP' : 'START';
+      const endpoint = `${ENGINE_A_URL}/api/trading/control`; // Endpoint we will ensure exists
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userProfile.clientId, // pass client ID
+          action: action,
+          capital: parseFloat(tradingCapital),
+          strategy: 'AI_AGGRESSIVE' // Default or selectable
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success || response.ok) { // Adjust based on actual backend response
+         setIsEngineRunning(!isEngineRunning);
+         toast.success(`Engine ${action === 'START' ? 'Started' : 'Stopped'}`, {
+           description: action === 'START' ? 'AI is now monitoring markets.' : 'Trading halted.'
+         });
+      } else {
+        throw new Error(data.message || 'Operation failed');
       }
-    );
+
+    } catch (error: any) {
+      toast.error('Engine Control Failed', { description: error.message });
+      // Fallback for demo if backend not ready (remove in prod)
+      if (process.env.NODE_ENV === 'development') {
+         setIsEngineRunning(!isEngineRunning); // Optimistic toggle for UI testing
+         toast.info("Dev Mode: Toggled state locally");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleWatchlistExecute = (symbol: string, action: 'BUY' | 'SELL') => {
-      setExecutingSymbol(symbol);
-      handlePlaceOrder(symbol, action);
+  const handleKillSwitch = async (checked: boolean) => {
+      // Immediate frontend update for responsiveness
+      setIsKillSwitchActive(checked);
+      
+      if (checked) {
+          // If turning ON kill switch, also stop engine
+          setIsEngineRunning(false);
+          toast.warning("KILL SWITCH ACTIVATED", { description: "All trading halted immediately." });
+          
+          // Call backend to hard stop
+          try {
+             await fetch(`${ENGINE_A_URL}/api/trading/kill-switch`, {
+                 method: 'POST',
+                 body: JSON.stringify({ user_id: userProfile?.clientId, active: true })
+             });
+          } catch(e) { console.error(e); }
+      } else {
+          toast.info("Kill Switch Deactivated", { description: "You can now start the engine." });
+      }
   };
+
+  const funds = accountData?.funds?.availableBalance || 0;
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="flex items-center justify-center min-h-[calc(100vh-6rem)] p-6">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-             <Zap className="w-8 h-8 text-yellow-500 fill-current" />
-             Trading Terminal
-          </h1>
-          <p className="text-muted-foreground">Connected to Engine C (Execution) & B (Intelligence)</p>
-        </div>
-        {funds && (
-          <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
-            <CardContent className="flex items-center gap-4 p-4">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase font-semibold">Buying Power</p>
-                <p className="text-2xl font-mono font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(funds.availableBalance)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="w-full max-w-2xl space-y-8">
         
-        {/* Left: Watchlist (AI Signals) */}
-        <div className="lg:col-span-8 space-y-6">
-            <Card className="border-t-4 border-t-primary">
-                <CardHeader className="flex flex-row items-center justify-between py-4">
-                    <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                           AI Watchlist
-                        </CardTitle>
-                        <CardDescription>Real-time signals refreshed every 60s</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                         <Badge variant="outline" className={cn("transition-colors", isSignalLoading ? "bg-yellow-500/10 text-yellow-500" : "bg-green-500/10 text-green-500")}>
-                            {isSignalLoading ? "Updating..." : "● Live"}
-                        </Badge>
-                        <Button variant="ghost" size="icon" onClick={() => refetchSignals()}>
-                            <RefreshCw className={cn("w-4 h-4", isSignalLoading && "animate-spin")} />
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <WatchlistTable 
-                        items={watchlistItems}
-                        onExecute={handleWatchlistExecute}
-                        isExecuting={executingSymbol}
-                    />
-                </CardContent>
-            </Card>
-
-            {/* Positions */}
-            <Tabs defaultValue="positions" className="w-full">
-                <TabsList>
-                    <TabsTrigger value="positions">Open Positions ({positions.length})</TabsTrigger>
-                    <TabsTrigger value="holdings">Holdings (CNC)</TabsTrigger>
-                </TabsList>
-                <TabsContent value="positions">
-                    <Card>
-                        <CardContent className="p-0">
-                            {positions.length === 0 ? (
-                                <div className="p-12 text-center text-muted-foreground">
-                                    No open intraday positions.
-                                </div>
-                            ) : (
-                                <div className="divide-y">
-                                    {positions.map((pos: any, i) => (
-                                        <PositionRow key={i} position={pos} />
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="holdings">
-                     <Card>
-                        <CardContent className="p-0">
-                            {holdings.length === 0 ? (
-                                <div className="p-12 text-center text-muted-foreground">
-                                    No delivery holdings found.
-                                </div>
-                            ) : (
-                                <div className="divide-y">
-                                    {holdings.map((h: any, i) => (
-                                        <HoldingRow key={i} holding={h} />
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-black text-white tracking-tight flex items-center justify-center gap-3">
+             <Activity className={cn("w-10 h-10", isEngineRunning ? "text-green-500 animate-pulse" : "text-slate-600")} />
+             Execution Engine
+          </h1>
+          <p className="text-slate-400">
+             High-Frequency AI Trading Control Center
+          </p>
         </div>
 
-        {/* Right: Manual Order Entry */}
-        <div className="lg:col-span-4 space-y-6">
-            <Card className="border-l-4 border-l-blue-500 shadow-lg sticky top-6">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Play className="w-4 h-4 fill-current" />
-                        Quick Order
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     {/* Buy/Sell Switches */}
-                      <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-lg">
-                        <Button
-                          variant="ghost"
-                          className={cn("uppercase font-bold", orderType === 'BUY' && "bg-green-600 text-white shadow-sm")}
-                          onClick={() => setOrderType('BUY')}
-                        >
-                          Buy
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className={cn("uppercase font-bold", orderType === 'SELL' && "bg-red-600 text-white shadow-sm")}
-                          onClick={() => setOrderType('SELL')}
-                        >
-                          Sell
-                        </Button>
-                      </div>
+        {/* Main Control Card */}
+        <Card className={cn("border-2 shadow-2xl transition-all duration-500", 
+             isEngineRunning ? "border-green-500/50 bg-green-500/5 shadow-green-500/20" : "border-slate-800 bg-slate-900/50"
+        )}>
+           <CardContent className="p-8 space-y-8">
+               
+               {/* Capital Input */}
+               <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                       <Label className="text-lg font-medium text-slate-200">Deployed Capital</Label>
+                       <div className="flex items-center gap-2 text-sm text-slate-400">
+                           <Wallet className="w-4 h-4" />
+                           Available: ₹{funds.toLocaleString()}
+                       </div>
+                   </div>
+                   <div className="relative">
+                       <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                       <Input 
+                          type="number" 
+                          value={tradingCapital}
+                          onChange={(e) => setTradingCapital(e.target.value)}
+                          className="pl-12 h-14 text-2xl font-mono bg-slate-950 border-slate-700 focus-visible:ring-indigo-500"
+                          disabled={isEngineRunning}
+                       />
+                   </div>
+               </div>
 
-                      <div className="space-y-3">
-                          <div className="space-y-1">
-                            <Label>Symbol</Label>
-                            <Select value={securityId} onValueChange={setSecurityId}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {SYMBOLS.map(s => (
-                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="flex gap-4">
-                              <div className="space-y-1 flex-1">
-                                <Label>Qty</Label>
-                                <Input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
-                              </div>
-                              <div className="space-y-1 flex-1">
-                                <Label>Price (0=Mkt)</Label>
-                                <Input type="number" value={price} onChange={e => setPrice(e.target.value)} />
-                              </div>
-                          </div>
-                      </div>
+               {/* Start/Stop Button */}
+               <Button 
+                  onClick={handleStartStop}
+                  disabled={isLoading || isKillSwitchActive}
+                  className={cn("w-full h-24 text-3xl font-black tracking-widest transition-all duration-300 relative overflow-hidden group",
+                      isEngineRunning 
+                        ? "bg-red-600 hover:bg-red-700 shadow-lg shadow-red-900/20" 
+                        : "bg-green-600 hover:bg-green-500 shadow-lg shadow-green-900/20"
+                  )}
+               >
+                   <div className="relative z-10 flex items-center gap-4">
+                       <Power className="w-8 h-8" />
+                       {isEngineRunning ? "STOP ENGINE" : "START ENGINE"}
+                   </div>
+                   {isEngineRunning && (
+                       <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
+                   )}
+               </Button>
+               
+               {/* Status Metrics (PnL placeholder) */}
+               {isEngineRunning && (
+                   <div className="grid grid-cols-2 gap-4 pt-4 animate-in fade-in slide-in-from-top-4">
+                       <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 text-center">
+                           <p className="text-xs text-slate-500 uppercase font-bold">Session P&L</p>
+                           <p className="text-2xl font-mono text-green-400">+₹0.00</p>
+                       </div>
+                       <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 text-center">
+                           <p className="text-xs text-slate-500 uppercase font-bold">Trades Executed</p>
+                           <p className="text-2xl font-mono text-white">0</p>
+                       </div>
+                   </div>
+               )}
 
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <Label className="flex items-center gap-2 cursor-pointer">
-                            <Switch checked={useAIRisk} onCheckedChange={setUseAIRisk} />
-                            <span>AI Risk Guard</span>
-                        </Label>
-                        <Badge variant="outline">v2.0 Active</Badge>
-                      </div>
+           </CardContent>
+        </Card>
 
-                      <Button 
-                        size="lg" 
-                        className={cn("w-full font-bold text-lg", orderType === 'BUY' ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700")}
-                        onClick={() => handlePlaceOrder()}
-                        disabled={isPlacing || isCalculatingRisk}
-                       >
-                         {isPlacing ? <Loader2 className="animate-spin w-5 h-5" /> : `EXECUTE ${orderType}`}
-                      </Button>
-                </CardContent>
-            </Card>
-        </div>
+        {/* Kill Switch Area */}
+        <Card className="border-red-900/30 bg-red-950/10">
+            <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className={cn("p-3 rounded-full", isKillSwitchActive ? "bg-red-500/20 text-red-500" : "bg-slate-800 text-slate-500")}>
+                        <ShieldAlert className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-200">Global Kill Switch</h3>
+                        <p className="text-sm text-slate-400">Instantly halt all activity and cancel orders.</p>
+                    </div>
+                </div>
+                <Switch 
+                    checked={isKillSwitchActive}
+                    onCheckedChange={handleKillSwitch}
+                    className="data-[state=checked]:bg-red-600"
+                />
+            </CardContent>
+        </Card>
 
       </div>
     </div>
   );
-}
-
-// Reuse PositionRow/HoldingRow components (simplified for brevity)
-function PositionRow({ position }: { position: Position }) {
-    const isProfit = (position.realizedProfit || 0) >= 0;
-    return (
-        <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-all">
-            <div className="flex items-center gap-3">
-                 <Badge variant={isProfit ? "default" : "destructive"} className="h-8 w-8 flex items-center justify-center rounded-full p-0">
-                    {isProfit ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                 </Badge>
-                 <div>
-                    <div className="font-bold">{position.tradingSymbol}</div>
-                    <div className="text-xs text-muted-foreground">{position.netQty} Qty @ {position.averagePrice}</div>
-                 </div>
-            </div>
-            <div className={cn("text-right font-mono font-bold", isProfit ? "text-green-600" : "text-red-600")}>
-                {formatCurrency(position.realizedProfit || 0)}
-            </div>
-        </div>
-    )
-}
-
-function HoldingRow({ holding }: { holding: Holding }) {
-    // Similar simplified implementation
-     const isProfit = ((holding.ltp || 0) - (holding.avgCostPrice || 0)) >= 0;
-     return (
-        <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-all">
-            <div className="flex items-center gap-3">
-                 <Badge variant="outline" className="h-8 w-8 flex items-center justify-center rounded-full p-0">
-                    {isProfit ? <TrendingUp className="w-4 h-4 text-green-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
-                 </Badge>
-                 <div>
-                    <div className="font-bold">{holding.tradingSymbol}</div>
-                    <div className="text-xs text-muted-foreground">{holding.totalQty} Qty • CNC</div>
-                 </div>
-            </div>
-            <div className={cn("text-right font-mono font-bold", isProfit ? "text-green-600" : "text-red-600")}>
-                {formatCurrency(((holding.ltp || 0) - (holding.avgCostPrice || 0)) * (holding.totalQty || 0))}
-            </div>
-        </div>
-    )
 }

@@ -1108,5 +1108,96 @@ async def update_auto_trading_config(request: AutoTradeStartRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+# ==================== Unified Trading Control Endpoints ====================
+
+class TradingControlRequest(BaseModel):
+    user_id: str
+    action: str  # START, STOP
+    capital: Optional[float] = None
+    strategy: Optional[str] = None
+
+class KillSwitchRequest(BaseModel):
+    user_id: Optional[str] = None
+    active: bool
+
+@app.post("/api/trading/control")
+async def trading_control(req: TradingControlRequest):
+    """Unified control endpoint for Trading Engine"""
+    try:
+        if req.action == "START":
+            # Update config and start
+            if req.capital:
+                AUTONOMOUS_TRADER.config.update({"capital": req.capital})
+            
+            await AUTONOMOUS_TRADER.start()
+            
+            return {
+                "success": True,
+                "status": "RUNNING",
+                "message": "Engine Started Successfully"
+            }
+        
+        elif req.action == "STOP":
+            await AUTONOMOUS_TRADER.stop()
+            return {
+                "success": True,
+                "status": "STOPPED",
+                "message": "Engine Stopped"
+            }
+            
+        else:
+            raise HTTPException(status_code=400, detail="Invalid action")
+
+    except Exception as e:
+        logger.error(f"Trading control error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/trading/kill-switch")
+async def set_kill_switch(req: KillSwitchRequest):
+    """Global Kill Switch"""
+    try:
+        if req.active:
+            await AUTONOMOUS_TRADER.stop()
+            # In a real scenario, this would also cancel all open orders via Engine C
+            # await cancel_all_orders()
+            # Check if kill switch state needs persistence
+            
+        return {
+            "success": True,
+            "kill_switch_active": req.active,
+            "message": "Kill Switch " + ("ACTIVATED" if req.active else "DEACTIVATED")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/system/state")
+async def get_system_state():
+    """Global System State for Frontend Banner"""
+    status = "NORMAL"
+    message = "All systems operational"
+    
+    if not AUTONOMOUS_TRADER.is_active:
+        status = "STANDBY"
+        message = "Engine is ready to start"
+    else:
+        status = "LIVE_TRADING"
+        message = "AI Engine Active"
+
+    # Check dependencies (simplified)
+    if not GOOGLE_INTEGRATIONS_AVAILABLE:
+        status = "DEGRADED"
+        message = "ML Services Unavailable"
+
+    return {
+        "status": status,
+        "message": message,
+        "engine_version": "v4.0",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

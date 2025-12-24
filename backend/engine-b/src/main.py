@@ -120,6 +120,16 @@ except ImportError as e:
     MARKET_KNOWLEDGE = None
     logger.warning(f"⚠️ Market Knowledge module not available: {e}")
 
+# --- ML Model Hot-Reload System ---
+try:
+    from src.services.hot_reload import model_hot_reload_loop, get_model_for_inference
+    from src.services.model_registry import MODEL_REGISTRY
+    HAS_HOT_RELOAD = True
+    logger.info("✅ Model hot-reload system loaded")
+except Exception as e:
+    HAS_HOT_RELOAD = False
+    logger.warning(f"⚠️ Model hot-reload not available: {e}")
+
 # --- Google Cloud Integrations ---
 TRADING_LOGGER_B = None
 MODEL_STORAGE_B = None
@@ -1411,7 +1421,6 @@ async def shutdown_event():
     logger.info("✅ Engine B cleanup complete")
 
 @app.get("/healthz")
-@app.get("/health")
 @app.get("/api/health")
 async def healthz():
     return {

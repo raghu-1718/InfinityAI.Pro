@@ -7,14 +7,10 @@ import { useAppStore } from '@/lib/store';
 import {
   LayoutDashboard,
   TrendingUp,
-  BarChart3,
-  Brain,
-  Wallet,
   History,
   Settings,
   ChevronLeft,
   Activity,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,11 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Gemini AI', href: '/ai', icon: Sparkles },
   { name: 'Trading', href: '/trading', icon: TrendingUp },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'AI Signals', href: '/signals', icon: Brain },
-  { name: 'Portfolio', href: '/portfolio', icon: Wallet },
   { name: 'History', href: '/history', icon: History },
 ];
 

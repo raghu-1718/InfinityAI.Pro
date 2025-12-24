@@ -6,12 +6,12 @@ from typing import Dict, List
 from datetime import datetime
 
 from core.utils import utc_now
-from services.data_connector import DataConnector
-from services.feature_pipeline import extract_snapshot_features, BASIC_FEATURES
-from services.sentiment_service import SentimentService
-from services.model_zoo import ModelZoo
-from services.ensemble_service import weighted_ensemble
-from services.strategy_engine import compute_risk_return
+from src.services.data_connector import DataConnector
+from src.services.feature_pipeline import extract_snapshot_features, BASIC_FEATURES
+from src.services.sentiment_service import SentimentService
+from src.services.model_zoo import ModelZoo
+from src.services.ensemble_service import weighted_ensemble
+from src.services.strategy_engine import compute_risk_return
 from models.domain import AISignal
 
 logger = logging.getLogger("engine_b.ai_model_service")

@@ -1,0 +1,27 @@
+
+> web-app@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   Ôû▓ Next.js 16.0.5 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ Ô£ô Compiled successfully in 10.7s
+   Running TypeScript ...
+Failed to compile.
+
+./src/components/trading/WatchlistTable.tsx:70:63
+Type error: Argument of type '"BUY" | "SELL" | "HOLD"' is not assignable to parameter of type '"BUY" | "SELL"'.
+  Type '"HOLD"' is not assignable to type '"BUY" | "SELL"'.
+
+  68 |                         className={cn("h-7 text-xs", item.signal === 'BUY' ? "bg-chart-1 hover:bg-chart-1/90" : "")}
+  69 |                         disabled={!!isExecuting}
+> 70 |                         onClick={() => onExecute(item.symbol, item.signal)}
+     |                                                               ^
+  71 |                     >
+  72 |                         {isExecuting === item.symbol ? (
+  73 |                             <Loader2 className="w-3 h-3 animate-spin mr-1" />
+Next.js build worker exited with code: 1 and signal: null
