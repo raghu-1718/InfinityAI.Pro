@@ -106,7 +106,7 @@ export function useUserProfile() {
           const newProfile = {
             userId,
             clientId: res.client_id,
-            name: `User ${res.client_id}`,
+            name: res.name || res.user_name || `User ${res.client_id}`,
             email: '',
             isConnected: true,
             isVerified: true,
@@ -115,32 +115,50 @@ export function useUserProfile() {
           setUserProfile(newProfile);
           return { ...res, userProfile: newProfile };
         } else {
-          // If there's already a profile from Settings page, don't overwrite it
-          // This prevents race conditions where Settings page set the profile
-          // but this hook runs before the query cache is invalidated
+          // API says not configured. Check if we *think* we are connected.
           if (currentProfile?.isConnected) {
-            console.log('Keeping existing connected profile from Settings');
-            return { ...res, userProfile: currentProfile };
+             // If passing a check, we should trust the API if it successfully returned "configured: false"
+             // But we need to distinguish between "not found/not configured" and "network error".
+             // This block runs if API returned 200 OK but configured=false.
+             
+             // WE MUST DISCONNECT LOCALLY TO MATCH BACKEND
+             console.log('Backend reports not configured. Syncing local state.');
+             setUserProfile({
+                 ...currentProfile,
+                 isConnected: false,
+                 isVerified: false,
+                 clientId: '', 
+             });
+             return { ...res, userProfile: { ...currentProfile, isConnected: false } };
           }
-
           return res;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch user credentials:', error);
-        // On error, keep existing profile if it exists
+        
+        // Only if it's a 404, we treat as "User Not Found" -> Disconnected
+        if (error?.status === 404) {
+             if (currentProfile?.isConnected) {
+                 setUserProfile({
+                     ...currentProfile,
+                     isConnected: false,
+                     isVerified: false
+                 });
+             }
+             return { configured: false, is_verified: false };
+        }
+
+        // For other errors (network), keep existing state to avoid flickering
         if (currentProfile?.isConnected) {
           return { configured: true, is_verified: true, userProfile: currentProfile };
         }
         throw error;
       }
     },
-    refetchInterval: 60000, // 1 minute
+    refetchInterval: 60000, 
     staleTime: 30000,
-    // Don't retry on 404 (user not found)
-    retry: (failureCount, error: unknown) => {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
-        return false;
-      }
+    retry: (failureCount, error: any) => {
+      if (error?.status === 404) return false;
       return failureCount < 2;
     },
   });
@@ -186,7 +204,7 @@ export function useUserAccount() {
           setUserProfile({
             userId: userId,
             clientId: res.user_id || userId,
-            name: `User ${res.user_id || userId}`,
+            name: res.name || res.user_name || `User ${res.user_id || userId}`,
             email: '',
             isConnected: true,
             isVerified: true,

@@ -4,6 +4,7 @@ import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { SystemBanner } from '@/components/layout/system-banner';
+import { GlobalDataPoller } from '@/components/layout/global-data-poller';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -58,6 +59,7 @@ export default function DashboardLayout({
     <ErrorBoundary>
       <div className="flex min-h-screen">
         <Sidebar />
+        <GlobalDataPoller />
         <div className="flex flex-1 flex-col pl-64 transition-all duration-300 data-[sidebar-collapsed=true]:pl-16">
           <SystemBanner />
           <Header />

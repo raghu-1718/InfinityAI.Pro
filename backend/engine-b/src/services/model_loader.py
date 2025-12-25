@@ -10,7 +10,9 @@ from io import BytesIO
 logger = logging.getLogger(__name__)
 
 # Configuration
-BUCKET_NAME = "gen-lang-client-0779271931-ml-models"
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+if not PROJECT_ID: logger.warning("GOOGLE_CLOUD_PROJECT not set - model loading may fail")
+BUCKET_NAME = f"{PROJECT_ID}-ml-models" if PROJECT_ID else "infinity-ai-pro-ml-models"
 MODEL_PREFIX = "xgb/"
 
 

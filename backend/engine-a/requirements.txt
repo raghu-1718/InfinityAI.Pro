@@ -1,46 +1,33 @@
-# =====================================================================
-# InfinityAI.Pro - Engine A (Orchestration & Risk Management)
-# =====================================================================
-
-# Web Framework & API
-fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
-httpx>=0.24.0
+# Core framework
+fastapi==0.122.0
+uvicorn[standard]==0.38.0
 pydantic>=2.0.0
+starlette>=0.36.0
 
-# Broker Integration
-dhanhq==2.0.2
+# Async & HTTP
+httpx==0.28.1
+anyio>=4.3.0
 
-# Cloud & Secrets
-google-cloud-secret-manager>=2.16.0
+# Numerical & risk calculations
+numpy>=1.24.0
+pandas==2.1.4
+scikit-learn==1.4.2
+scipy>=1.12.0
+cvxpy>=1.4.2
 
-# =====================================================================
-# Google Cloud Integrations (New)
-# =====================================================================
-# Official GenAI SDK - replaces raw REST calls
+# Google Cloud
+google-cloud-firestore>=2.14.0
+google-cloud-logging>=3.10.0
+google-cloud-secret-manager==2.20.0
+google-cloud-storage>=2.14.0
+google-auth>=2.28.0
+
+# Gemini
 google-genai>=1.0.0
 
-# Cloud Logging - structured trade signal logging
-google-cloud-logging>=3.10.0
-
-# Cloud Storage - ML model and trading history storage
-google-cloud-storage>=2.14.0
-
-# =====================================================================
-# ML for Risk & Portfolio Optimization
-# =====================================================================
-scikit-learn==1.4.2
-numpy>=1.24.0
-pandas>=2.1.0
-scipy>=1.11.0
-joblib>=1.3.0
-
-# Portfolio Optimization
-cvxpy>=1.4.0
-
-# =====================================================================
 # Utilities
-# =====================================================================
-python-dotenv>=1.0.0
+python-dotenv==1.0.1
+tenacity>=8.2.3
+structlog>=24.1.0
+websockets>=12.0
 aiofiles>=23.2.1
-

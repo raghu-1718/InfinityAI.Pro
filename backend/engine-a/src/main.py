@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 import logging
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Header
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -47,6 +47,12 @@ logger = logging.getLogger(__name__)
 
 # Shared HTTP client for efficient connection reuse
 http_client: Optional[httpx.AsyncClient] = None
+
+# Minimal In-Memory Cache for Market Data
+_MARKET_CACHE = {
+    "vix": 14.5, # Default safe value
+    "last_updated": None
+}
 
 
 @asynccontextmanager
@@ -110,8 +116,8 @@ ALLOWED_ORIGINS = [
     "https://engine-a.infinityai.pro",
     "https://engine-b.infinityai.pro",
     "https://engine-c.infinityai.pro",
-    "https://gen-lang-client-0779271931.web.app",
-    "https://gen-lang-client-0779271931.firebaseapp.com",
+    f"https://{PROJECT_ID}.web.app",
+    f"https://{PROJECT_ID}.firebaseapp.com",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
@@ -144,7 +150,11 @@ AGENT_ORCHESTRATOR = None
 
 if GOOGLE_INTEGRATIONS_AVAILABLE:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not PROJECT_ID:
+            logger.error("❌ GOOGLE_CLOUD_PROJECT environment variable not set")
+            # Fail fast or handle appropriately, but do not use hardcoded ID
+            PROJECT_ID = "infinity-ai-pro-dev" # Optional safe default or simply None
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER = TradingLogger(
@@ -175,8 +185,8 @@ if GOOGLE_INTEGRATIONS_AVAILABLE:
         )
         logger.info("✅ GenAI Client initialized with Gemini 2.5 Flash")
 
-        # Initialize Agent Orchestrator for multi-agent workflows
-        AGENT_ORCHESTRATOR = create_trading_workflow(GENAI_CLIENT)
+        # Initialize Agent Orchestrator with AI Client and Empty Model Dict (Models loaded on demand)
+        AGENT_ORCHESTRATOR = create_trading_workflow(GENAI_CLIENT, {})
         logger.info("✅ Agent Orchestrator initialized with trading workflow")
 
     except Exception as e:
@@ -187,7 +197,10 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+             logger.warning("Using default project ID 'infinity-ai-pro-dev' for secret retrieval")
+             project_id = "infinity-ai-pro-dev"
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
         # Strip any trailing whitespace/newlines from the secret
@@ -257,34 +270,69 @@ class SessionConfig(BaseModel):
     asset_class: Literal["equities", "fno", "commodities"]
     user_id: str
 
+from src.services.session_manager import acquire_session_lock, release_session_lock, SessionExistsError
+from src.services.audit_logger import AuditLogger
+
+audit_logger = AuditLogger()
+
 @app.post("/api/trading/session/start")
 async def start_trading_session(config: SessionConfig):
     """
     Immutable Session Start.
     Configures the engine for the session and locks parameters.
+    Atomic Lock Check.
     """
     if AUTONOMOUS_TRADER.is_active:
          raise HTTPException(400, "Trading Session already active. Stop first.")
 
-    # Configure the trader
-    AUTONOMOUS_TRADER.configure_session(config.dict())
-    
-    # Start the loop
-    await AUTONOMOUS_TRADER.start()
-    
-    return {
-        "status": "success",
-        "message": "Trading Session Started",
-        "config": AUTONOMOUS_TRADER.config,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    try:
+        # Atomic Guard (Phase 5.2)
+        acquire_session_lock(config.user_id)
+        # Log Audit (Phase 5.7)
+        audit_logger.log_session_start(config.user_id, config.dict())
+
+    except SessionExistsError as e:
+        audit_logger.log_event(config.user_id, "SESSION_START_FAILED", {"error": str(e)}, "WARNING")
+        raise HTTPException(409, f"Session Collision: {str(e)}")
+    except Exception as e:
+        logger.error(f"Session Lock Failed: {e}")
+        audit_logger.log_event(config.user_id, "SESSION_START_ERROR", {"error": str(e)}, "ERROR")
+        raise HTTPException(500, "Failed to acquire session lock")
+
+    try:
+        # Configure the trader
+        AUTONOMOUS_TRADER.configure_session(config.dict())
+        
+        # Start the loop
+        await AUTONOMOUS_TRADER.start()
+        
+        return {
+            "status": "success",
+            "message": "Trading Session Started",
+            "config": AUTONOMOUS_TRADER.config,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        # Rollback Lock if start fails
+        release_session_lock(config.user_id)
+        audit_logger.log_event(config.user_id, "SESSION_START_CRITICAL_FAILURE", {"error": str(e)}, "CRITICAL")
+        raise e
 
 @app.post("/api/trading/session/stop")
-async def stop_trading_session():
+async def stop_trading_session(user_id: str = Header(..., alias="X-User-ID")):
     """
     Kill Switch / Session Stop.
+    Idempotent.
     """
     await AUTONOMOUS_TRADER.stop()
+    
+    # Release Lock (Phase 5.6)
+    release_session_lock(user_id)
+    
+    # Audit Log
+    audit_logger.log_session_stop(user_id, "USER_REQUEST")
+    
+    return {"status": "stopped", "user_id": user_id}
     return {
         "status": "success",
         "message": "Trading Session Stopped",
@@ -302,6 +350,8 @@ class SystemStateResponse(BaseModel):
     dhan_connected: bool
     trader_identity: Optional[str] = None
     engine_active: bool
+    optimism_level: str # HIGH, NORMAL, LOW
+    current_vix: float
     timestamp: str
 
 @app.get("/api/system/state", response_model=SystemStateResponse)
@@ -333,16 +383,74 @@ async def get_system_state(user_id: Optional[str] = Header(None, alias="X-User-I
         logger.warning(f"Failed to fetch Engine C status: {e}")
         status = "DEGRADED"
 
-    # 2. Check Engine A Status (Kill Switch, etc.)
-    # TODO: Check global kill switch state from Redis/Memory
+    # 2. Check Engine A Status
+    if not AUTONOMOUS_TRADER.is_active:
+        # If trader is not active, status is effectively STANDBY for A
+        pass 
+        
+    # 3. Optimism & Volatility Logic (Real-Time from Engine B)
+    global _MARKET_CACHE
+    current_time = datetime.utcnow()
     
+    # Check In-Memory Cache (TTL: 60s)
+    if _MARKET_CACHE["last_updated"] and (current_time - _MARKET_CACHE["last_updated"]).total_seconds() < 60:
+        current_vix = _MARKET_CACHE["vix"]
+    else:
+        # Fetch fresh data from Engine B (Optimistic: don't block heavily, short timeout)
+        try:
+            async with httpx.AsyncClient() as client:
+                # Using Engine B's market summary which includes VIX/Volatility analysis
+                # Attempting to get 'pulse' or 'nifty-overview'
+                resp = await client.get(f"{ENGINE_B_URL}/api/v1/market/nifty-overview", timeout=3.0)
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {})
+                    # Try to find VIX in various common fields
+                    current_vix = data.get("india_vix") or data.get("vix") or data.get("volatility", 14.5)
+                    
+                    # Update Cache
+                    _MARKET_CACHE["vix"] = float(current_vix)
+                    _MARKET_CACHE["last_updated"] = current_time
+                    logger.info(f"🔄 Market VIX Updated: {current_vix}")
+                else:
+                    current_vix = _MARKET_CACHE["vix"] # Fallback to last known
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to fetch VIX from Engine B: {e}")
+            current_vix = _MARKET_CACHE["vix"]
+
+    # Calculate Optimism Level
+    optimism_level = "NORMAL"
+    if current_vix < 12.0:
+        optimism_level = "HIGH"
+    elif current_vix > 20.0:
+        optimism_level = "LOW"
+
     return SystemStateResponse(
         system_status=status,
         dhan_connected=dhan_connected,
         trader_identity=trader_identity,
-        engine_active=AUTONOMOUS_TRADER.is_running,
+        engine_active=AUTONOMOUS_TRADER.is_active,
+        optimism_level=optimism_level,
+        current_vix=current_vix,
         timestamp=datetime.utcnow().isoformat()
     )
+
+
+@app.post("/api/trading/kill-switch")
+async def kill_switch():
+    """Immediately stop autonomous trading"""
+    logger.critical("🚨 KILL SWITCH ACTIVATED VIA API")
+    await AUTONOMOUS_TRADER.stop()
+    return {"status": "killed", "message": "Autonomous trading stopped manually"}
+
+
+@app.post("/api/trading/session/start")
+async def start_session(config: Dict[str, Any] = None):
+    """Start autonomous trading session"""
+    if config:
+        AUTONOMOUS_TRADER.configure_session(config)
+    
+    await AUTONOMOUS_TRADER.start()
+    return {"status": "started", "message": "Autonomous trading session started"}
 
 
 # --- Config ---

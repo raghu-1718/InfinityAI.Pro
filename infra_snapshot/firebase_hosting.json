@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "result": {
+    "sites": [
+      {
+        "name": "projects/gen-lang-client-0779271931/sites/gen-lang-client-0779271931",
+        "defaultUrl": "https://gen-lang-client-0779271931.web.app",
+        "type": "DEFAULT_SITE"
+      }
+    ]
+  }
+}

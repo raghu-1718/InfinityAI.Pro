@@ -140,7 +140,10 @@ MARKET_AGENT = None
 
 if HAS_GOOGLE_INTEGRATIONS:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not PROJECT_ID:
+            logger.warning("⚠️ GOOGLE_CLOUD_PROJECT not set. Secrets/GCS may fail.")
+            PROJECT_ID = "infinity-ai-pro-dev" # Component testing default
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER_B = TradingLogger(
@@ -194,7 +197,8 @@ NEWS_AGGREGATOR = None
 
 if HAS_ENHANCED_GENAI:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not PROJECT_ID: logger.warning("GOOGLE_CLOUD_PROJECT not set for Enhanced GenAI")
 
         # Initialize Enhanced GenAI Client with Gemini 2.5 Flash (upgraded from 2.0)
         # Also configure Gemini 3 Pro for advanced analysis
@@ -264,8 +268,8 @@ ALLOWED_ORIGINS = [
     "https://engine-a.infinityai.pro",
     "https://engine-b.infinityai.pro",
     "https://engine-c.infinityai.pro",
-    "https://gen-lang-client-0779271931.web.app",
-    "https://gen-lang-client-0779271931.firebaseapp.com",
+    f"https://{PROJECT_ID}.web.app",
+    f"https://{PROJECT_ID}.firebaseapp.com",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
@@ -323,7 +327,7 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
         # Strip any trailing whitespace/newlines from the secret

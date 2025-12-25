@@ -5,7 +5,12 @@ from typing import Dict, Any, List
 from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 
+from src.safety_limits import MAX_TRADE_CAPITAL, MAX_SESSION_CAPITAL
+
 logger = logging.getLogger(__name__)
+
+class RiskException(Exception):
+    pass
 
 class RiskManager:
     """ML-based risk assessment and portfolio optimization with advanced metrics"""
@@ -19,6 +24,19 @@ class RiskManager:
             "high": 1.0
         }
         logger.info("✅ Risk Manager initialized with advanced metrics")
+
+    def validate_hard_capital_limit(self, order_value: float, current_session_exposure: float = 0.0):
+        """
+        Hard Guard: Prevents catastrophic exposure.
+        Enforced before any API call.
+        """
+        if order_value > MAX_TRADE_CAPITAL:
+            raise RiskException(f"MAX_TRADE_CAPITAL_EXCEEDED: {order_value} > {MAX_TRADE_CAPITAL}")
+
+        if current_session_exposure + order_value > MAX_SESSION_CAPITAL:
+            raise RiskException(f"MAX_SESSION_CAPITAL_EXCEEDED: New Exposure {current_session_exposure + order_value} > {MAX_SESSION_CAPITAL}")
+        
+        return True
 
     def calculate_var(self, returns: np.ndarray, confidence: float = 0.95,
                       method: str = "historical") -> Dict[str, float]:
@@ -251,14 +269,29 @@ class RiskManager:
         sortino_result = self.calculate_sortino_ratio(returns, risk_free_rate)
         drawdown_result = self.calculate_max_drawdown(cumulative)
 
-        return {
-            "sharpe_ratio": self.calculate_sharpe_ratio(returns, risk_free_rate),
-            "sortino_ratio": sortino_result["sortino_ratio"],
-            "var_95": var_result["var"],
-            "cvar_95": cvar_result["cvar"],
-            "max_drawdown_pct": drawdown_result["max_drawdown_pct"],
-            "annualized_return": round(float(np.mean(returns) * 252), 4),
-            "annualized_volatility": round(float(np.std(returns) * np.sqrt(252)), 4),
-            "total_return": round(float(cumulative[-1] - 1) if len(cumulative) > 0 else 0, 4),
-            "samples": len(returns)
-        }
+    def get_optimistic_position_size(self, capital: float, current_price: float, live_volatility: float) -> int:
+        """
+        Refined VAPS Logic:
+        - If vol < target_vol: The market is safe. Scale up (Optimism).
+        - If vol > target_vol: The market is risky. Scale down (Caution).
+        """
+        target_volatility = 0.02  # 2% daily vol target
+        max_leverage = 5.0        # SEBI 2025 Intraday limit
+
+        # 1. Calculate Volatility Ratio
+        # If live_vol is 1% and target is 2%, scalar is 2.0 (Optimistic)
+        vol_scalar = target_volatility / max(live_volatility, 0.005)
+
+        # 2. Apply Risk per trade (e.g., 1% of capital)
+        base_risk_amount = capital * 0.01
+
+        # 3. Adjust for Volatility
+        if current_price <= 0: return 0
+        adjusted_qty = (base_risk_amount * vol_scalar) / current_price
+
+        # 4. Final SEBI Compliance Check (Never exceed 5x leverage)
+        max_allowed_qty = (capital * max_leverage) / current_price
+        final_qty = min(adjusted_qty, max_allowed_qty)
+
+        return int(final_qty)
+

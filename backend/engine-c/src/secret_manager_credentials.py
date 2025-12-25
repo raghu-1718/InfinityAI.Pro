@@ -12,7 +12,10 @@ from google.api_core import exceptions as gcp_exceptions
 
 logger = logging.getLogger(__name__)
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+if not PROJECT_ID:
+    # Fail fast for core credentials module
+    raise ValueError("GOOGLE_CLOUD_PROJECT environment variable must be set")
 
 
 class SecretManagerCredentials:

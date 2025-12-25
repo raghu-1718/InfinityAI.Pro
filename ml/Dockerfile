@@ -5,9 +5,11 @@ FROM python:3.10-slim
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
-    libta-lib0 \
-    libta-lib0-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Build TA-Lib (files removed - relying on features.py fallback)
+# RUN wget ...
 
 # Set working directory
 WORKDIR /app

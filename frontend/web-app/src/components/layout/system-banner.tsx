@@ -19,7 +19,7 @@ const DEFAULT_STATE: SystemState = {
 const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app';
 
 export function SystemBanner() {
-  const [state, setState] = useState<SystemState | null>(null);
+  const [state, setState] = useState<SystemState | null>(DEFAULT_STATE);
 
   useEffect(() => {
     const fetchState = async () => {
@@ -63,7 +63,7 @@ export function SystemBanner() {
     `}>
       {isKillSwitch ? <ShieldAlert className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
       <span>
-        SYSTEM STATUS: {state.status.replace(/_/g, ' ')}
+        SYSTEM STATUS: {(state.status || '').replace(/_/g, ' ')}
         {state.message && <span className="mx-2 opacity-80 font-normal border-l border-white/20 pl-2">{state.message}</span>}
       </span>
     </div>

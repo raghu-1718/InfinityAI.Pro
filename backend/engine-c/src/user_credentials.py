@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 # Get encryption key from Secret Manager or environment
 def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        logger.error("GOOGLE_CLOUD_PROJECT env var missing")
+        return b"insecure_dev_key_fallback" # Prevent crash, but warn
     try:
         # Try to get from Secret Manager first
         client = secretmanager.SecretManagerServiceClient()

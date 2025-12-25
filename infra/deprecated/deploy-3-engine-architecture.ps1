@@ -20,7 +20,14 @@ param(
 Write-Host "InfinityAI.Pro - 3-Engine Architecture Deployment" -ForegroundColor Cyan
 Write-Host "================================================================================"
 
-$PROJECT_ID = "gen-lang-client-0779271931"
+$PROJECT_ID = gcloud config get-value project
+if (-not $PROJECT_ID) {
+    $PROJECT_ID = $env:GOOGLE_CLOUD_PROJECT
+}
+if (-not $PROJECT_ID) {
+    Write-Error "Project ID not set. Run 'gcloud config set project <PROJECT_ID>' or set GOOGLE_CLOUD_PROJECT env var."
+    exit 1
+}
 $REGION = "us-central1"
 $ENGINES = @("engine-a", "engine-b", "engine-c")
 

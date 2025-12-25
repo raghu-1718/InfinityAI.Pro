@@ -19,6 +19,11 @@ backend/.env
 backend/gcp_config.env
 frontend/web-app/.env
 frontend/web/firebaseConfig.js
+config/env/**/firebase.env
+config/env/**/engine-*.env
+frontend/**/.env
+frontend/**/.env.*
+infra/**/generated/*
 dhan_credentials_secure.json
 dhan_token.txt
 *_token.txt

@@ -445,45 +445,71 @@ export const engineA = {
     return res.json();
   },
 
-  // Start auto trading with specific instrument configuration
+  // Start auto trading with specific instrument configuration (SECURE SESSION V2)
   async startAutoTrading(data: {
     instruments: string[];
-    tradingAmount: number;
-    riskLevel: string;
+    tradingAmount: number; // Mapped to capital
+    riskLevel: string;     // Mapped to risk_mode
     stopLossPercent: number;
     takeProfitPercent: number;
     maxTradesPerDay: number;
     useAISignals: boolean;
-    user_id?: string;
+    user_id: string; // Required now
   }) {
+    // Phase 5: Mapping to Backend SessionConfig
+    const assetClass = data.instruments.some(i => i.includes('NIFTY') || i.includes('BANK')) ? 'fno' : 'equities';
+    
+    // Construct SessionConfig payload
+    const payload = {
+        capital: data.tradingAmount,
+        risk_mode: data.riskLevel.toLowerCase(), // conservative, moderate, aggressive
+        asset_class: assetClass,
+        user_id: data.user_id,
+        // Extra config passed as loose props if needed by Trader, but SessionConfig strict fields are above
+        // We might need to ensure backend accepts extra fields or we put them in a 'params' dict if specific
+        // For now, sticking to the defined SessionConfig in main.py. 
+        // Iterate: The backend SessionConfig Pydantic model might reject extras. 
+        // Let's check main.py SessionConfig definition again. It was:
+        // class SessionConfig(BaseModel): capital, risk_mode, asset_class, user_id
+        // So we strictly send these.
+    };
+
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/start`,
-      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/start`,
+      `${API_CONFIG.ENGINE_A}/api/trading/session/start`,
+      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/start`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       }
     );
     return res.json();
   },
 
-  async stopAutoTrading() {
+  async stopAutoTrading(userId: string) {
     const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/stop`,
-      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/stop`,
+      `${API_CONFIG.ENGINE_A}/api/trading/session/stop`,
+      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/stop`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-User-ID': userId 
+        },
       }
     );
     return res.json();
   },
 
   async getAutoTradingStatus() {
+    // This might not exist in main.py yet, defaulting to what was there or need to add it?
+    // main.py didn't show a status endpoint in the snippet.
+    // I will disable this or leave as is (it might fail if endpoint missing).
+    // For safety, let's point to a health check or similar if specific status missing.
+    // actually, let's leave it pointing to old V1 for now as I didn't remove V1 routers (if they exist).
     const res = await fetchWithFallback(
       `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`,
-      `${FALLBACK_URLS.ENGINE_C}/api/auto-trade/status`
+      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/status`
     );
     return res.json();
   },

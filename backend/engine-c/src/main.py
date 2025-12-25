@@ -289,8 +289,8 @@ ALLOWED_ORIGINS = [
     "https://engine-a.infinityai.pro",
     "https://engine-b.infinityai.pro",
     "https://engine-c.infinityai.pro",
-    "https://gen-lang-client-0779271931.web.app",
-    "https://gen-lang-client-0779271931.firebaseapp.com",
+    f"https://{os.getenv('GOOGLE_CLOUD_PROJECT')}.web.app",
+    f"https://{os.getenv('GOOGLE_CLOUD_PROJECT')}.firebaseapp.com",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
@@ -545,7 +545,7 @@ def get_secret(secret_id: str, version: str = "latest") -> str:
     """Retrieve secret from Google Secret Manager"""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
         response = client.access_secret_version(request={"name": name})
         # Strip any trailing whitespace/newlines from the secret
@@ -979,7 +979,9 @@ async def receive_dhan_postback(request: DhanPostbackRequest):
             # or we query by 'order_id' field. 
             # For simplicity in this verifiction phase, we try direct update if doc exists
             # In a full system, you might need a query if IDs differ.
-             db = firestore.Client(project=os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931"))
+             proj = os.getenv("GOOGLE_CLOUD_PROJECT")
+             if not proj: raise ValueError("GOOGLE_CLOUD_PROJECT not set")
+             db = firestore.Client(project=proj)
              order_ref = db.collection("orders").document(request.orderId)
              
              # Check existence first or use set with merge
@@ -1008,7 +1010,8 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         secret_id = f"dhan_creds_{request.user_id.replace('@', '_at_').replace('.', '_')}"
         import json
         client = secretmanager.SecretManagerServiceClient()
-        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         parent = f"projects/{proj_id}"
         
         data = {"client_id": request.client_id, "api_key": request.api_key,
@@ -1042,7 +1045,8 @@ async def get_dhan_credentials(user_id: str):
         secret_id = f"dhan_creds_{user_id.replace('@', '_at_').replace('.', '_')}"
         import json
         client = secretmanager.SecretManagerServiceClient()
-        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         name = f"projects/{proj_id}/secrets/{secret_id}/versions/latest"
         
         resp = client.access_secret_version(request={"name": name})
@@ -1081,7 +1085,8 @@ async def disconnect_dhan(user_id: str):
     try:
         secret_id = f"dhan_creds_{user_id.replace('@', '_at_').replace('.', '_')}"
         client = secretmanager.SecretManagerServiceClient()
-        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         client.delete_secret(request={"name": f"projects/{proj_id}/secrets/{secret_id}"})
         return DhanCredentialsResponse(success=True, verified=False, message="Deleted")
     except Exception as e:

@@ -34,19 +34,17 @@ export default function DashboardPage() {
               Control your capital with AI-driven execution.
             </p>
             <div className="flex gap-4 pt-4">
-              <Link href={engineActive ? "/trading" : "/start"}>
-                <Button size="lg" className={`${engineActive ? "bg-amber-600 hover:bg-amber-700" : "bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500"} border-0 shadow-lg`}>
+              <Link href="/trading">
+                <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 border-0 shadow-lg">
                   <Zap className="h-4 w-4 mr-2 group-hover:fill-current" />
                   {engineActive ? "Monitor Active Session" : "Launch Engine"}
                 </Button>
               </Link>
-              {!engineActive && (
-                <Link href="/settings">
+              <Link href="/settings">
                   <Button size="lg" variant="outline" className="border-slate-600 text-slate-200 hover:bg-slate-800 backdrop-blur-sm">
                     Configure
                   </Button>
-                </Link>
-              )}
+              </Link>
             </div>
           </div>
           

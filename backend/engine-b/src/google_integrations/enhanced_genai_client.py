@@ -243,7 +243,10 @@ class EnhancedGenAIClient:
             model_id: Primary Gemini model (default: gemini-2.5-flash for speed)
             advanced_model_id: Advanced model for complex reasoning (default: gemini-3-pro)
         """
-        self.project_id = project_id or os.getenv("GCP_PROJECT_ID", "gen-lang-client-0779271931")
+        self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not self.project_id:
+             logger.warning("⚠️ GCP_PROJECT_ID not set. Gemini API may fail.")
+             self.project_id = "infinity-ai-pro-dev" # Fallback
         self.location = location
         self.model_id = model_id
         self.advanced_model_id = advanced_model_id

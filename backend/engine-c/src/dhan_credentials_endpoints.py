@@ -28,7 +28,8 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
             import json
             from google.cloud import secretmanager
             client = secretmanager.SecretManagerServiceClient()
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            if not project_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
             parent = f"projects/{project_id}"
             
             # Try to create secret or add version if exists
@@ -110,7 +111,8 @@ async def get_dhan_credentials(user_id: str):
             import json
             from google.cloud import secretmanager
             client = secretmanager.SecretManagerServiceClient()
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            if not project_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
             name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
             
             response = client.access_secret_version(request={"name": name})
@@ -199,7 +201,8 @@ async def disconnect_dhan(user_id: str):
         try:
             from google.cloud import secretmanager
             client = secretmanager.SecretManagerServiceClient()
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            if not project_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
             name = f"projects/{project_id}/secrets/{secret_id}"
             
             # Delete the secret

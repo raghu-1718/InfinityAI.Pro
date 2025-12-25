@@ -183,10 +183,21 @@ class CouponAuthManager:
                 except:
                     pass
 
-        # Check usage limit
+        # Check usage limit (with Idempotency)
         max_uses = coupon.get("max_uses", 1)
         current_uses = coupon.get("current_uses", 0)
-        if max_uses > 0 and current_uses >= max_uses:
+        
+        # Check if this user already used this coupon
+        is_reentry = False
+        if link_user_id:
+            used_by = coupon.get("used_by")
+            # Handle both single string and list of users (future proofing)
+            if isinstance(used_by, list):
+                is_reentry = link_user_id in used_by
+            elif isinstance(used_by, str):
+                is_reentry = used_by == link_user_id
+
+        if max_uses > 0 and current_uses >= max_uses and not is_reentry:
             return {
                 "success": False,
                 "message": "This coupon has reached its usage limit"
@@ -215,17 +226,21 @@ class CouponAuthManager:
         if self.db:
             # Save session
             self.db.collection(self.sessions_collection).document(session_id).set(session_data)
-            # Increment coupon usage and set used_by
-            coupon_ref = self.db.collection(self.coupons_collection).document(code_hash)
-            coupon_ref.update({
-                "current_uses": firestore.Increment(1),
-                "used_by": user_id,
-                "used_at": utcnow()
-            })
+            
+            # Only increment if this is a NEW use
+            if not is_reentry:
+                coupon_ref = self.db.collection(self.coupons_collection).document(code_hash)
+                # If we want to support list of users in future, we'd array_union here
+                coupon_ref.update({
+                    "current_uses": firestore.Increment(1),
+                    "used_by": user_id, 
+                    "used_at": utcnow()
+                })
         else:
             self._memory_sessions[session_id] = session_data
-            self._memory_coupons[code_hash]["current_uses"] = current_uses + 1
-            self._memory_coupons[code_hash]["used_by"] = user_id
+            if not is_reentry:
+                self._memory_coupons[code_hash]["current_uses"] = current_uses + 1
+                self._memory_coupons[code_hash]["used_by"] = user_id
 
         logger.info(f"✅ Session created for coupon: {code[:4]}**** -> User: {user_id[:16]}...")
 

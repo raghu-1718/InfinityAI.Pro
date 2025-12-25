@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User } from 'firebase/auth';
 import { auth, createOrUpdateUserProfile, getUserProfile, UserProfile, signInWithGoogle as firebaseSignInWithGoogle, logOut as firebaseLogOut, onAuthChange } from '@/lib/firebase';
+import { useSessionStore } from '@/hooks/useSessionStore';
 
 // Storage keys
 const DUAL_AUTH_KEY = 'infinityai_dual_auth';
@@ -143,26 +144,19 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       }
     }, 5000);
 
-    // Check for existing dual auth session
-    const storedDualAuth = typeof window !== 'undefined' ? localStorage.getItem(DUAL_AUTH_KEY) : null;
+    // Check session store
+    const sessionStore = useSessionStore.getState();
     let storedCouponData: typeof couponData = null;
 
-    if (storedDualAuth) {
-      try {
-        const parsed = JSON.parse(storedDualAuth);
-        if (parsed.couponVerified && parsed.couponCode) {
-          storedCouponData = {
-            code: parsed.couponCode,
-            features: parsed.features || [],
-            expiresAt: parsed.expiresAt || '',
-            sessionId: parsed.sessionId || '',
-          };
-        }
-      } catch (e) {
-        console.error('Failed to parse dual auth session:', e);
-        localStorage.removeItem(DUAL_AUTH_KEY);
-      }
+    if (sessionStore.isAuthenticated && sessionStore.sessionId) {
+      storedCouponData = {
+        code: 'REDACTED', // We might not store code in sessionStore, but we store features
+        features: sessionStore.features,
+        expiresAt: sessionStore.expiresAt || '',
+        sessionId: sessionStore.sessionId,
+      };
     }
+
 
     // Listen for Firebase auth state changes (safe wrapper handles SSR)
     const unsubscribe = onAuthChange(async (fbUser) => {
@@ -297,6 +291,15 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         setIsCouponVerified(true);
 
         // Store dual auth session
+        const sessionData = {
+            sessionId: data.session_id || '',
+            userId: firebaseUser.uid,
+            features: data.features || [],
+            expiresAt: data.expires_at || '',
+        };
+
+        useSessionStore.getState().setSession(sessionData);
+
         localStorage.setItem(DUAL_AUTH_KEY, JSON.stringify({
           googleUserId: firebaseUser.uid,
           couponCode: couponCode,
@@ -352,6 +355,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       setUserProfile(null);
       setIsCouponVerified(false);
       setCouponData(null);
+      useSessionStore.getState().clearSession();
     } catch (error) {
       console.error('Logout error:', error);
     }
