@@ -1,37 +1,50 @@
 # =====================================================================
 # InfinityAI.Pro - Engine A (Orchestration & Risk Management)
+# Cloud Run Optimized
 # =====================================================================
 
 FROM python:3.11-slim
 
-# System dependencies for numerical optimization (cvxpy solvers)
-RUN apt-get update && apt-get install -y \
+# -----------------------------------------------------
+# System dependencies (Numerical / ML / Optimization)
+# NOTE: libatlas is removed (deprecated in Debian trixie)
+# -----------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
-    libatlas-base-dev \
     libopenblas-dev \
     liblapack-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# -----------------------------------------------------
+# Application setup
+# -----------------------------------------------------
 WORKDIR /app
 
-# Copy dependency manifest first for layer caching
+# Copy dependency manifest first (layer caching)
 COPY requirements.txt .
 
-# Install Python dependencies (locked + reproducible)
+# Upgrade pip + install dependencies
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY src ./src
 
-# Environment
-ENV PORT=8080
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
-ENV NUMBA_CACHE_DIR=/tmp/numba_cache
+# -----------------------------------------------------
+# Runtime environment
+# -----------------------------------------------------
+ENV PORT=8080 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    NUMBA_CACHE_DIR=/tmp/numba_cache
 
 EXPOSE 8080
 
-# Cloud Run best practice: single worker, async I/O
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# -----------------------------------------------------
+# Cloud Run entrypoint
+# Single worker, async I/O (correct for FastAPI)
+# -----------------------------------------------------
+CMD exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT}
+

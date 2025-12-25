@@ -9,6 +9,12 @@ frontend/web-app/out/
 __pycache__/
 .pytest_cache/
 *.pyc
+venv/
+.venv/
+env/
+Lib/
+Scripts/
+Include/
 
 # Environments & secrets
 .env
@@ -71,6 +77,11 @@ repo_root.txt
 *.db
 *.sqlite3
 firebase-sa-key.json
+application_default_credentials.json
+gcloud/application_default_credentials.json
+*.key
+*.p12
+*.pem
 token.txt
 PATH.txt
 settings.txt
