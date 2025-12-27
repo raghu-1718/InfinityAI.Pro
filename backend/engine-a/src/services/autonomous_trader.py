@@ -200,8 +200,11 @@ class AutonomousTrader:
             if asset_class == "commodities":
                 symbols = ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]
             elif asset_class == "fno":
-                # For F&O, we track indices. Execution logic must handle option selection.
                 symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
+            elif asset_class == "multi_asset":
+                # Unified selection across classes
+                symbols = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "CRUDEOIL", "GOLD"]
+                logger.info(f"🌐 Multi-Asset Session: Monitoring {len(symbols)} instruments across segments")
             else: # equities
                 symbols = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "ITC", "LT", "AXISBANK", "WIPRO"]
 
@@ -314,11 +317,19 @@ class AutonomousTrader:
             sec_id = signal_data.get("security_id", "0")
             segment = signal_data.get("exchange_segment", "NSE_EQ")
             
-            # Asset Class Override if needed
+            # Asset Class Override / Intelligent Segment Logic
             asset_class = self.config.get("asset_class", "equities")
-            if asset_class == "commodities" and segment == "NSE_EQ":
-                 segment = "MCX_COMM" 
             
+            # Map symbol prefixes to segments if not provided by signal
+            if segment == "NSE_EQ": # Default or generic
+                if symbol in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]:
+                    segment = "MCX_COMM"
+                elif symbol in ["NIFTY", "BANKNIFTY", "FINNIFTY"]:
+                    segment = "NSE_FNO" # Or just NSE_EQ if tracking index, but usually FNO for trading
+            
+            # Additional safety for commodity specific sessions
+            if asset_class == "commodities" and segment == "NSE_EQ":
+                 segment = "MCX_COMM"            
             payload = {
                 "transaction_type": side.upper(), # BUY/SELL
                 "exchange_segment": segment, 

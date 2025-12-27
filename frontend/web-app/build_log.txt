@@ -1,0 +1,47 @@
+
+> web-app@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ÔÜá `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+ ÔÜá Invalid next.config.ts options detected: 
+ ÔÜá     Unrecognized key(s) in object: 'eslint'
+ ÔÜá See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   Ôû▓ Next.js 16.0.5 (Turbopack)
+   - Environments: .env.production, .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Error: Cannot apply unknown utility class `glass`
+    [at onInvalidCandidate (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:21:1511)]
+    [at Te (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:16:36038)]
+    [at C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:21:355]
+    [at Tr (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:3:1718)]
+    [at _ (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:3:1377)]
+    [at Se (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:21:172)]
+    [at ln (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:38:294)]
+    [at async sn (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\tailwindcss\dist\lib.js:38:631)]
+    [at async Qr (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\@tailwindcss\node\dist\index.js:10:3385)]
+    [at async I (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\@tailwindcss\postcss\dist\index.js:10:3978)]
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./src/app/globals.css
+Error evaluating Node.js code
+CssSyntaxError: tailwindcss: C:\workspace\InfinityAI.Pro\frontend\web-app\src\app\globals.css:1:1: Cannot apply unknown utility class `glass`
+    at Input.error (node_modules/postcss/lib/input.js:135:16) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\node_modules_fe693df6._.js:4651:22]
+    at Root.error (node_modules/postcss/lib/node.js:146:32) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\node_modules_fe693df6._.js:928:38]
+    [at Object.Once (C:\workspace\InfinityAI.Pro\frontend\web-app\node_modules\@tailwindcss\postcss\dist\index.js:10:6912)]
+    at async LazyResult.runAsync (node_modules/postcss/lib/lazy-result.js:293:11) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\node_modules_fe693df6._.js:6206:21]
+    at async transform (turbopack:///[turbopack-node]/transforms/postcss.ts:70:34) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\[root-of-the-server]__51225daf._.js:146:36]
+    at async run (turbopack:///[turbopack-node]/ipc/evaluate.ts:92:23) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\[root-of-the-server]__974941ed._.js:443:31]
+
+Import trace:
+  Client Component Browser:
+    ./src/app/globals.css [Client Component Browser]
+    ./src/app/layout.tsx [Server Component]
+
+
+    at async transform (turbopack:///[turbopack-node]/transforms/postcss.ts:70:34) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\[root-of-the-server]__51225daf._.js:146:36])
+    at async run (turbopack:///[turbopack-node]/ipc/evaluate.ts:92:23) [C:\workspace\InfinityAI.Pro\frontend\web-app\.next\build\chunks\[root-of-the-server]__974941ed._.js:443:31])

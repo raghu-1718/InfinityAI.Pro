@@ -7,21 +7,25 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Trade Audit: Read-Only for Owner
-    match /trade_audit/{doc} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+    // Trade Audit: Read for Owner (Optimized for queries)
+    match /trade_audit/{docId} {
+      allow read: if request.auth != null && 
+                  (resource == null || resource.data.uid == request.auth.uid);
       allow write: if false;
     }
 
     // Trading Sessions: Read-Only for Owner
-    match /trading_sessions/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
-
-      // Session State Subcollection
-      match /state/{doc=**} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        allow write: if false;
+    match /trading_sessions/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Nested state documents
+      match /state/{stateId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Catch-all for subcollections
+      match /{allSubcollections=**} {
+        allow read: if request.auth != null && request.auth.uid == userId;
       }
     }
   }

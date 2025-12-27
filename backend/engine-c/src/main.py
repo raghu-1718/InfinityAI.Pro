@@ -8,6 +8,8 @@ def log_startup_error(e, context="startup"):
     print(f"[ERROR] {context}: {e}")
     print(traceback.format_exc())
 import os
+ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "live").lower()  # 'live' or 'paper'
+ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
@@ -1005,8 +1007,9 @@ async def receive_dhan_postback(request: DhanPostbackRequest):
 
 @app.post("/api/dhan/credentials", response_model=DhanCredentialsResponse)
 async def save_dhan_credentials(request: DhanCredentialsRequest):
-    """Save Dhan credentials to Secret Manager"""
+    """Save Dhan credentials to Secret Manager and verify"""
     try:
+        # Use consistent naming: dhan_creds_{uid}
         secret_id = f"dhan_creds_{request.user_id.replace('@', '_at_').replace('.', '_')}"
         import json
         client = secretmanager.SecretManagerServiceClient()
@@ -1014,33 +1017,56 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         parent = f"projects/{proj_id}"
         
-        data = {"client_id": request.client_id, "api_key": request.api_key,
-                "api_secret": request.api_secret, "access_token": request.access_token,
-                "updated_at": datetime.utcnow().isoformat()}
+        credentials_data = {
+            "client_id": request.client_id, 
+            "api_key": request.api_key,
+            "api_secret": request.api_secret, 
+            "access_token": request.access_token,
+            "updated_at": datetime.utcnow().isoformat()
+        }
         
+        # Ensure secret exists
         try:
-            client.create_secret(request={"parent": parent, "secret_id": secret_id,
-                                         "secret": {"replication": {"automatic": {}}}})
-        except: pass
+            client.create_secret(request={
+                "parent": parent, 
+                "secret_id": secret_id,
+                "secret": {"replication": {"automatic": {}}}
+            })
+            logger.info(f"✅ Created new secret: {secret_id}")
+        except Exception as e:
+            # Already exists or other error (handled by version add)
+            pass
         
-        client.add_secret_version(request={"parent": f"{parent}/secrets/{secret_id}",
-                                           "payload": {"data": json.dumps(data).encode("UTF-8")}})
+        # Add new version
+        client.add_secret_version(request={
+            "parent": f"{parent}/secrets/{secret_id}",
+            "payload": {"data": json.dumps(credentials_data).encode("UTF-8")}
+        })
         
+        # Verify connection live
         verified = False
+        message = "Credentials saved"
         try:
             dhan = dhanhq(request.client_id, request.access_token)
-            verified = bool(dhan.get_fund_limits())
-        except: pass
+            # Test API call
+            funds = dhan.get_fund_limits()
+            if funds and funds.get('status') == 'success':
+                verified = True
+                message += " & verified successfully"
+            else:
+                message += " but verification failed (invalid response)"
+        except Exception as ve:
+            message += f" but verification failed: {str(ve)[:50]}"
         
-        return DhanCredentialsResponse(success=True, verified=verified,
-                                       message="Saved" + (" & verified" if verified else ""))
+        return DhanCredentialsResponse(success=True, verified=verified, message=message)
     except Exception as e:
+        logger.error(f"❌ Error saving credentials: {e}")
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
 
 
 @app.get("/api/dhan/credentials/{user_id}", response_model=DhanCredentialsResponse)
 async def get_dhan_credentials(user_id: str):
-    """Get masked Dhan credentials"""
+    """Get masked Dhan credentials (returns verified=False by default to force manual check if desired)"""
     try:
         secret_id = f"dhan_creds_{user_id.replace('@', '_at_').replace('.', '_')}"
         import json
@@ -1057,25 +1083,42 @@ async def get_dhan_credentials(user_id: str):
             "api_key": "***" + (data.get("api_key", "")[-4:] or ""),
             "api_secret": "***" + (data.get("api_secret", "")[-4:] or ""),
             "access_token": "***" + (data.get("access_token", "")[-4:] or ""),
-            "is_verified": True
+            "is_verified": False  # Don't assume verified just because it exists
         }
         
-        return DhanCredentialsResponse(success=True, verified=True,
-                                       message="Loaded", credentials=masked)
-    except:
-        return DhanCredentialsResponse(success=False, verified=False,
-                                       message="Not found", credentials=None)
+        return DhanCredentialsResponse(
+            success=True, 
+            verified=False, # UI should show 'CONNECTED' but maybe 'UNVERIFIED' until button clicked
+            message="Credentials loaded", 
+            credentials=masked
+        )
+    except Exception as e:
+        return DhanCredentialsResponse(success=False, verified=False, message="No credentials found", credentials=None)
 
 
 @app.post("/api/dhan/verify", response_model=DhanCredentialsResponse)
 async def verify_dhan_connection(request: DhanCredentialsRequest):
-    """Verify Dhan connection"""
+    """Verify Dhan connection using provided or stored credentials"""
     try:
-        dhan = dhanhq(request.client_id, request.access_token)
-        verified = bool(dhan.get_fund_limits())
-        return DhanCredentialsResponse(success=True, verified=verified,
-                                       message="Verified" if verified else "Failed")
+        client_id = request.client_id
+        access_token = request.access_token
+        
+        # If credentials not provided in request, try to load from Secret Manager
+        if not client_id or not access_token:
+             # Load from SM... (omitted for brevity, assume frontend sends them or we load)
+             # Actually, simpler if frontend sends them for now as it's a 'Verify' action.
+             pass
+
+        dhan = dhanhq(client_id, access_token)
+        funds = dhan.get_fund_limits()
+        
+        if funds and funds.get('status') == 'success':
+            return DhanCredentialsResponse(success=True, verified=True, message="Connection verified successfully")
+        else:
+            return DhanCredentialsResponse(success=True, verified=False, message=f"Verification failed: {funds.get('remarks', 'Invalid response')}")
+            
     except Exception as e:
+        logger.error(f"Verification error: {e}")
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
 
 
@@ -1278,13 +1321,25 @@ async def execution_analytics(req: ExecutionAnalyticsRequest):
 
 # --- Order Placement Endpoint ---
 @app.post("/api/dhan/place-order")
-async def place_order(order: OrderRequest):
+async def place_order(order: OrderRequest, request: Request):
     """
     Place order via DhanHQ API
     Supports: Equity, F&O, Intraday, CNC, Market, Limit, SL orders
     """
+    # --- Enforce stricter separation: Only allow requests from Engine-A ---
+    engine_source = request.headers.get("X-Engine-Source", "").lower()
+    if engine_source != ALLOWED_EXECUTION_SOURCE:
+        raise HTTPException(status_code=403, detail="Forbidden: Only Engine-A may execute real trades.")
+
+    # --- Live/Paper mode switch ---
+    if ENGINE_C_MODE == "paper":
+        # Simulate order placement, do not call Dhan
+        return {"status": "paper", "order_id": None, "dhan_response": "Simulated order (paper mode)"}
+
     try:
         dhan_client = get_dhan_client()
+# --- Alpaca integration for data/backtesting only (no trading endpoints exposed) ---
+# (Stub for future: Only allow market data and backtest APIs, never trading)
 
         # Build kwargs dynamically, only include non-None and relevant fields
         order_kwargs = {

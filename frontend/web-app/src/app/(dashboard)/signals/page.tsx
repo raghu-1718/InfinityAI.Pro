@@ -34,13 +34,13 @@ export default function SignalsPage() {
   const [selectedSymbol, setSelectedSymbol] = useState('NIFTY');
   const [customSymbol, setCustomSymbol] = useState('');
 
-  const { data: signalData, isLoading: signalLoading, refetch } = useSignal(selectedSymbol);
-  const { data: geminiData, isLoading: geminiLoading, refetch: refetchGemini } = useGeminiAnalysis(
+  const { data: signalData, isLoading: signalLoading, error: signalError, isError: isSignalError, refetch } = useSignal(selectedSymbol);
+  const { data: geminiData, isLoading: geminiLoading, error: geminiError, isError: isGeminiError, refetch: refetchGemini } = useGeminiAnalysis(
     selectedSymbol,
     'Provide trading analysis with support/resistance levels and market sentiment'
   );
-  const { data: modelStatus, isLoading: modelLoading } = useModelStatus();
-  const { data: batchSignals, isLoading: batchLoading, refetch: refetchBatch } = useBatchSignals(watchlistSymbols);
+  const { data: modelStatus, isLoading: modelLoading, error: modelError, isError: isModelError } = useModelStatus();
+  const { data: batchSignals, isLoading: batchLoading, error: batchError, isError: isBatchError, refetch: refetchBatch } = useBatchSignals(watchlistSymbols);
 
   const handleAnalyze = () => {
     if (customSymbol.trim()) {
@@ -58,6 +58,11 @@ export default function SignalsPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {(isSignalError || isGeminiError || isModelError || isBatchError) && (
+        <div className="bg-red-900 text-red-100 p-3 rounded mb-4 w-full text-center">
+          <strong>Error:</strong> {signalError?.message || geminiError?.message || modelError?.message || batchError?.message || 'Failed to load data.'}
+        </div>
+      )}
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>

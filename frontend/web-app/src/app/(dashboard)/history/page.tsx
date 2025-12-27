@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useOrders } from '@/hooks/useApi';
+import { toast } from 'sonner';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import {
   History,
@@ -53,7 +54,7 @@ interface Order {
 }
 
 export default function HistoryPage() {
-  const { data: ordersData, isLoading, refetch, isFetching } = useOrders();
+  const { data: ordersData, isLoading, error: ordersError, isError: isOrdersError, refetch, isFetching } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -92,6 +93,11 @@ export default function HistoryPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {isOrdersError && (
+        <div className="bg-red-900 text-red-100 p-3 rounded mb-4 w-full text-center">
+          <strong>Error:</strong> {ordersError?.message || 'Failed to load order history.'}
+        </div>
+      )}
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>

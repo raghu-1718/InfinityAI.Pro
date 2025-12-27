@@ -1,34 +1,66 @@
+
+# =====================================================================
+# InfinityAI.Pro - Modern Cloud Build Pipeline (GCP Cloud Build)
+# Builds and deploys Engine A, B, C to Cloud Run using real Dockerfile locations
+# Optionally builds frontend/functions and deploys to Firebase (see comments)
+# =====================================================================
+
+substitutions:
+  _REGION: us-central1  # Set your GCP region here or via trigger
+
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-a', './engines/engine-a']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-b', './engines/engine-b']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution', './engines/engine-c-execution']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-d', './engines/engine-d']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-a']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-b']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-d']
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args: ['run', 'deploy', 'infinityai-engine-a', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-a', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args: ['run', 'deploy', 'infinityai-engine-b', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-b', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated', '--memory=2Gi', '--cpu=2', '--timeout=120', '--concurrency=80']
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args: ['run', 'deploy', 'infinityai-engine-c-execution', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args: ['run', 'deploy', 'infinityai-engine-d', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-d', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+  # Build and push Engine A
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-a', './backend/engine-a']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-a']
+
+  # Build and push Engine B
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-b', './backend/engine-b']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-b']
+
+  # Build and push Engine C
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/infinityai-engine-c', './backend/engine-c']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/infinityai-engine-c']
+
+  # Deploy Engine A
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'infinityai-engine-a', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-a', '--region', '$_REGION', '--platform', 'managed', '--allow-unauthenticated']
+
+  # Deploy Engine B
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'infinityai-engine-b', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-b', '--region', '$_REGION', '--platform', 'managed', '--allow-unauthenticated']
+
+  # Deploy Engine C
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'infinityai-engine-c', '--image', 'gcr.io/$PROJECT_ID/infinityai-engine-c', '--region', '$_REGION', '--platform', 'managed', '--allow-unauthenticated']
+
+  # (Optional) Build and deploy frontend and functions via Firebase CLI
+  # - name: 'gcr.io/cloud-builders/npm'
+  #   dir: 'frontend/web-app'
+  #   args: ['install']
+  # - name: 'gcr.io/cloud-builders/npm'
+  #   dir: 'frontend/web-app'
+  #   args: ['run', 'build']
+  # - name: 'gcr.io/cloud-builders/firebase'
+  #   args: ['deploy', '--only', 'hosting:web-app']
+  # - name: 'gcr.io/cloud-builders/npm'
+  #   dir: 'frontend/functions'
+  #   args: ['install']
+  # - name: 'gcr.io/cloud-builders/npm'
+  #   dir: 'frontend/functions'
+  #   args: ['run', 'build']
+  # - name: 'gcr.io/cloud-builders/firebase'
+  #   args: ['deploy', '--only', 'functions']
+
 images:
-- 'gcr.io/$PROJECT_ID/infinityai-engine-a'
-- 'gcr.io/$PROJECT_ID/infinityai-engine-b'
-- 'gcr.io/$PROJECT_ID/infinityai-engine-c-execution'
-- 'gcr.io/$PROJECT_ID/infinityai-engine-d'
+  - 'gcr.io/$PROJECT_ID/infinityai-engine-a'
+  - 'gcr.io/$PROJECT_ID/infinityai-engine-b'
+  - 'gcr.io/$PROJECT_ID/infinityai-engine-c'

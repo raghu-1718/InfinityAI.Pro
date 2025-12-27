@@ -16,7 +16,7 @@ const DEFAULT_STATE: SystemState = {
   engine_version: 'v4.0'
 };
 
-const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app';
+const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || '';
 
 export function SystemBanner() {
   const [state, setState] = useState<SystemState | null>(DEFAULT_STATE);

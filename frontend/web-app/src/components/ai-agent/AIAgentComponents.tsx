@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Send, Bot, TrendingUp, TrendingDown, AlertTriangle, XCircle, Zap } from 'lucide-react';
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
 
 // Types
 interface AgentMessage {

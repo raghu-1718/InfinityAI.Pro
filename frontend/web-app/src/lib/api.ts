@@ -2,29 +2,25 @@
 
 import { getUserId } from '@/lib/user';
 
-// Direct Cloud Run URLs (subdomains require Cloud Run domain mapping which isn't set up)
+// API URLs must be set via environment variables only (fail-fast enforced)
 const API_CONFIG = {
-  ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || 'https://engine-a-429140669077.us-central1.run.app',
-  ENGINE_B: process.env.NEXT_PUBLIC_ENGINE_B_URL || 'https://engine-b-429140669077.us-central1.run.app',
-  ENGINE_C: process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c-429140669077.us-central1.run.app',
+  ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || '',
+  ENGINE_B: process.env.NEXT_PUBLIC_ENGINE_B_URL || '',
+  ENGINE_C: process.env.NEXT_PUBLIC_ENGINE_C_URL || '',
 };
 
-// Fallback URLs (same as primary since custom domains aren't mapped to Cloud Run)
+// No fallback URLs allowed in production
 const FALLBACK_URLS = {
-  ENGINE_A: 'https://engine-a-429140669077.us-central1.run.app',
-  ENGINE_B: 'https://engine-b-429140669077.us-central1.run.app',
-  ENGINE_C: 'https://engine-c-429140669077.us-central1.run.app',
+  ENGINE_A: '',
+  ENGINE_B: '',
+  ENGINE_C: '',
 };
 
 async function fetchWithFallback(primaryUrl: string, fallbackUrl: string, options?: RequestInit) {
-  try {
-    const response = await fetch(primaryUrl, { ...options, signal: AbortSignal.timeout(8000) });
-    if (response.ok) return response;
-    throw new Error(`HTTP ${response.status}`);
-  } catch {
-    // Try fallback URL with timeout
-    return fetch(fallbackUrl, { ...options, signal: AbortSignal.timeout(15000) });
-  }
+  // Fail-fast: Only use primaryUrl, never fallback to demo/test endpoints
+  const response = await fetch(primaryUrl, { ...options, signal: AbortSignal.timeout(8000) });
+  if (response.ok) return response;
+  throw new Error(`HTTP ${response.status}`);
 }
 
 // Types

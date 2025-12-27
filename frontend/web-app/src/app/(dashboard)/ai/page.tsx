@@ -20,28 +20,23 @@ export default function AIAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [signalData, setSignalData] = useState<SignalResponse | null>(null);
 
-  const handleAnalyze = async () => {
-    setLoading(true);
-    try {
-        // We use the "AI Signal" endpoint from engineB (which calls Gemini 2.5)
-        // In a real app, 'current_price' would be fetched from Dhan/Engine A first
-        const res = await engineB.getEnhancedSignal({
-            symbol: symbol,
-            timeframe: timeframe,
-            user_analysis_type: "comprehensive",
-            use_pro_model: true // Use the smart model
-        });
-        
-        // Transform backend response to UI format if needed, but strict typing helps
-        // The API returns the exact structure SignalCard expects mostly
-        setSignalData(res);
-        toast.success("AI Analysis Complete");
-    } catch (e) {
-        toast.error("Analysis Failed", { description: String(e) });
-    } finally {
-        setLoading(false);
-    }
-  };
+    const handleAnalyze = async () => {
+        setLoading(true);
+        try {
+            const res = await engineB.getEnhancedSignal({
+                symbol: symbol,
+                timeframe: timeframe,
+                user_analysis_type: "comprehensive",
+                use_pro_model: true
+            });
+            setSignalData(res);
+            toast.success("AI Analysis Complete");
+        } catch (e: any) {
+            toast.error("Analysis Failed", { description: e?.message || String(e) });
+        } finally {
+            setLoading(false);
+        }
+    };
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">

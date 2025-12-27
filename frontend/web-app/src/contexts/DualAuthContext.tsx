@@ -91,7 +91,7 @@ interface DualAuthContextType {
 const DualAuthContext = createContext<DualAuthContextType | undefined>(undefined);
 
 // Engine C URL for coupon verification
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || 'https://engine-c.infinityai.pro';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);

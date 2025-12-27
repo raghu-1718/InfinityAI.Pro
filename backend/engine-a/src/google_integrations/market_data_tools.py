@@ -1,6 +1,6 @@
 """
 InfinityAI.Pro - Real-Time Market Data Tools for Gemini Function Calling
-=========================================================================
+=======================================================================
 Provides LIVE Indian stock market data tools that Gemini can call automatically.
 All data is sourced from REAL APIs - NO simulated/demo data.
 
@@ -18,13 +18,10 @@ Features:
 - Economic calendar
 """
 
-import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Union
-from dataclasses import dataclass
-from functools import lru_cache
-import json
+from typing import Dict, Any
+import uuid
 
 logger = logging.getLogger("InfinityAI.MarketDataTools")
 
@@ -47,21 +44,13 @@ except ImportError:
 try:
     from nsepython import (
         nse_optionchain_scrapper,
-        nse_fiidii,
-        nse_get_top_gainers,
-        nse_get_top_losers,
-        nse_get_advances_declines,
-        nse_quote_ltp,
-        nse_get_index_quote,
-        is_market_open,
-        pcr as nse_pcr_func
+        nse_fiidii
     )
     HAS_NSEPYTHON = True
     logger.info("✅ nsepython loaded - LIVE NSE data enabled")
 except ImportError:
     HAS_NSEPYTHON = False
     logger.warning("nsepython not available - some features may use cached data")
-
 
 # =====================================================================
 # MARKET DATA FUNCTIONS FOR GEMINI FUNCTION CALLING
@@ -70,13 +59,6 @@ except ImportError:
 def get_stock_quote(symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
     """
     Get real-time stock quote and key metrics.
-
-    Args:
-        symbol: Stock symbol (e.g., 'RELIANCE', 'TCS', 'NIFTY')
-        exchange: Exchange - 'NSE' or 'BSE'
-
-    Returns:
-        Dict with current price, change, volume, and key metrics
     """
     if not HAS_YFINANCE:
         return {"error": "yfinance not available", "symbol": symbol}
@@ -140,9 +122,6 @@ def get_stock_quote(symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
 def get_nifty_overview() -> Dict[str, Any]:
     """
     Get comprehensive NIFTY 50 index overview with top gainers/losers.
-
-    Returns:
-        Dict with NIFTY status, advances/declines, and market breadth
     """
     if not HAS_YFINANCE:
         return {"error": "yfinance not available"}
@@ -233,13 +212,6 @@ def get_nifty_overview() -> Dict[str, Any]:
 def get_technical_indicators(symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
     """
     Calculate technical indicators for a stock.
-
-    Args:
-        symbol: Stock symbol
-        exchange: Exchange (NSE/BSE)
-
-    Returns:
-        Dict with RSI, MACD, Bollinger Bands, Moving Averages, etc.
     """
     if not HAS_YFINANCE or not HAS_PANDAS:
         return {"error": "Required libraries not available", "symbol": symbol}
@@ -373,22 +345,12 @@ def get_technical_indicators(symbol: str, exchange: str = "NSE") -> Dict[str, An
 def get_market_news(category: str = "indian_markets") -> Dict[str, Any]:
     """
     Get latest market news and sentiment from REAL RSS feeds.
-    Uses NewsAggregator to fetch live news from Economic Times, Moneycontrol, Livemint, etc.
-
-    Args:
-        category: News category - 'indian_markets', 'global', 'economy', 'sector'
-
-    Returns:
-        Dict with live news headlines and sentiment
     """
-    # Import and use the real NewsAggregator
     try:
         from .news_integration import NewsAggregator
         import asyncio
 
         aggregator = NewsAggregator()
-
-        # Run async fetch in sync context
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -423,9 +385,18 @@ def get_market_news(category: str = "indian_markets") -> Dict[str, Any]:
             "market_status": _get_market_status(),
             "timestamp": datetime.now().isoformat()
         }
+    except ImportError:
+        logger.error("news_integration module missing. Live news unavailable.")
+        return {
+            "category": category,
+            "date": datetime.now().strftime("%B %d, %Y"),
+            "source": "UNAVAILABLE",
+            "error": "news_integration module missing",
+            "market_status": _get_market_status(),
+            "timestamp": datetime.now().isoformat()
+        }
     except Exception as e:
         logger.error(f"Error fetching live news: {e}")
-        # Return minimal response indicating live fetch failed
         return {
             "category": category,
             "date": datetime.now().strftime("%B %d, %Y"),
@@ -439,29 +410,16 @@ def get_market_news(category: str = "indian_markets") -> Dict[str, Any]:
 def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dict[str, Any]:
     """
     Get LIVE option chain data from NSE.
-
-    Args:
-        symbol: Index symbol (NIFTY, BANKNIFTY)
-        expiry: 'current' for nearest expiry or specific date
-
-    Returns:
-        Dict with REAL option chain summary, max pain, PCR from NSE
     """
     try:
-        # Use nsepython for REAL NSE option chain data
         if HAS_NSEPYTHON:
             logger.info(f"Fetching LIVE option chain for {symbol} from NSE")
-
-            # Get real option chain from NSE
             oc_data = nse_optionchain_scrapper(symbol.upper())
-
             if oc_data and 'records' in oc_data:
                 records = oc_data['records']
                 spot_price = records.get('underlyingValue', 0)
                 expiry_dates = records.get('expiryDates', [])
                 current_expiry = expiry_dates[0] if expiry_dates else None
-
-                # Process option chain data
                 data = records.get('data', [])
 
                 total_call_oi = 0
@@ -474,13 +432,9 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
 
                 for item in data:
                     strike = item.get('strikePrice', 0)
-
-                    # Call data
                     ce_data = item.get('CE', {})
                     call_oi = ce_data.get('openInterest', 0)
                     call_oi_change = ce_data.get('changeinOpenInterest', 0)
-
-                    # Put data
                     pe_data = item.get('PE', {})
                     put_oi = pe_data.get('openInterest', 0)
                     put_oi_change = pe_data.get('changeinOpenInterest', 0)
@@ -509,12 +463,9 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
 
                 pcr = total_put_oi / total_call_oi if total_call_oi > 0 else 1.0
                 atm_strike = round(spot_price / 100) * 100
-
-                # Lot sizes (updated for 2025)
                 lot_sizes = {"NIFTY": 75, "BANKNIFTY": 35, "FINNIFTY": 40}
                 lot_size = lot_sizes.get(symbol.upper(), 75)
 
-                # Determine market bias from PCR
                 if pcr > 1.2:
                     market_bias = "BULLISH (High Put writing indicates support)"
                 elif pcr < 0.8:
@@ -531,7 +482,7 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
                     "expiry": current_expiry,
                     "all_expiries": expiry_dates[:5],
                     "pcr": round(pcr, 2),
-                    "max_pain": atm_strike,  # Simplified
+                    "max_pain": atm_strike,
                     "max_call_oi_strike": max_call_oi_strike,
                     "max_put_oi_strike": max_put_oi_strike,
                     "total_call_oi": total_call_oi,
@@ -546,7 +497,6 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
                     "timestamp": datetime.now().isoformat()
                 }
 
-        # Fallback to yfinance for spot price only if nsepython fails
         if HAS_YFINANCE:
             logger.warning("nsepython unavailable, using yfinance for spot price only")
             if symbol.upper() in ["NIFTY", "NIFTY50"]:
@@ -581,29 +531,18 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
 def get_fii_dii_activity() -> Dict[str, Any]:
     """
     Get LIVE FII/DII activity data from NSE.
-
-    Returns:
-        Dict with REAL FII/DII buy/sell data from NSE
     """
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     try:
         if HAS_NSEPYTHON:
             logger.info("Fetching LIVE FII/DII data from NSE")
-
-            # Get real FII/DII data from NSE
             fii_dii_data = nse_fiidii()
-
             if fii_dii_data is not None and len(fii_dii_data) > 0:
-                # Parse the DataFrame returned by nse_fiidii
                 latest = fii_dii_data.iloc[0] if hasattr(fii_dii_data, 'iloc') else fii_dii_data[0]
-
-                # Extract FII data
                 fii_buy = float(latest.get('FII_DII_BuyValue', 0) if hasattr(latest, 'get') else 0)
                 fii_sell = float(latest.get('FII_DII_SellValue', 0) if hasattr(latest, 'get') else 0)
                 fii_net = fii_buy - fii_sell
-
-                # Extract DII data (usually in separate columns)
                 dii_buy = float(latest.get('DII_BuyValue', 0) if hasattr(latest, 'get') else 0)
                 dii_sell = float(latest.get('DII_SellValue', 0) if hasattr(latest, 'get') else 0)
                 dii_net = dii_buy - dii_sell
@@ -630,7 +569,6 @@ def get_fii_dii_activity() -> Dict[str, Any]:
                     "timestamp": datetime.now().isoformat()
                 }
 
-        # Return unavailable status if nsepython not working
         return {
             "date": current_date,
             "source": "UNAVAILABLE",
@@ -649,7 +587,6 @@ def get_fii_dii_activity() -> Dict[str, Any]:
 
 
 def _get_fii_dii_interpretation(fii_net: float, dii_net: float) -> str:
-    """Generate interpretation based on FII/DII activity."""
     if fii_net > 0 and dii_net > 0:
         return "Both FIIs and DIIs are buying - Strong bullish signal"
     elif fii_net < 0 and dii_net < 0:
@@ -662,11 +599,10 @@ def _get_fii_dii_interpretation(fii_net: float, dii_net: float) -> str:
 
 
 def _get_market_impact(fii_net: float, dii_net: float) -> str:
-    """Determine market impact based on FII/DII flows."""
     net_flow = fii_net + dii_net
-    if net_flow > 1000:  # > 1000 crores net inflow
+    if net_flow > 1000:
         return "BULLISH - Strong net inflows"
-    elif net_flow < -1000:  # > 1000 crores net outflow
+    elif net_flow < -1000:
         return "BEARISH - Strong net outflows"
     elif abs(net_flow) < 500:
         return "NEUTRAL - Balanced flows"
@@ -679,12 +615,8 @@ def _get_market_impact(fii_net: float, dii_net: float) -> str:
 def get_economic_calendar() -> Dict[str, Any]:
     """
     Get upcoming economic events affecting Indian markets.
-
-    Returns:
-        Dict with upcoming economic events
     """
     today = datetime.now()
-
     events = [
         {
             "date": (today + timedelta(days=1)).strftime("%Y-%m-%d"),
@@ -717,7 +649,6 @@ def get_economic_calendar() -> Dict[str, Any]:
             "expected_impact": "Market sentiment, RBI policy expectations"
         }
     ]
-
     return {
         "upcoming_events": events,
         "next_major_event": events[0] if events else None,
@@ -735,30 +666,12 @@ def execute_paper_trade(
 ) -> Dict[str, Any]:
     """
     Execute a PAPER TRADE for backtesting and strategy validation.
-    This is NOT a real order - use Engine C Dhan integration for live trading.
-
-    Args:
-        symbol: Stock/Index symbol
-        action: BUY or SELL
-        quantity: Number of shares/lots
-        price: Limit price
-        order_type: LIMIT, MARKET, SL, SL-M
-        product_type: INTRADAY, CNC, NRML
-
-    Returns:
-        Paper order confirmation for backtesting purposes
     """
-    import uuid
-
     order_id = str(uuid.uuid4())[:8].upper()
-
-    # Validate inputs
     if action.upper() not in ["BUY", "SELL"]:
         return {"error": "Invalid action. Use BUY or SELL"}
-
     if quantity <= 0:
         return {"error": "Quantity must be positive"}
-
     return {
         "status": "PAPER_ORDER_LOGGED",
         "mode": "BACKTESTING",
@@ -776,27 +689,20 @@ def execute_paper_trade(
         "live_trading_endpoint": "https://engine-c-429140669077.us-central1.run.app/api/dhan/place-order"
     }
 
-
 # =====================================================================
 # HELPER FUNCTIONS
 # =====================================================================
 
 def _get_market_status() -> Dict[str, Any]:
-    """Get current market status (open/closed/pre-market)."""
     now = datetime.now()
     current_time = now.time()
     weekday = now.weekday()
-
-    # Market closed on weekends
     if weekday >= 5:
         return {"status": "CLOSED", "reason": "Weekend", "next_open": "Monday 9:00 AM IST"}
-
-    # Pre-market: 9:00 - 9:15
     pre_market_start = datetime.strptime("09:00", "%H:%M").time()
     market_open = datetime.strptime("09:15", "%H:%M").time()
     market_close = datetime.strptime("15:30", "%H:%M").time()
     post_market_end = datetime.strptime("16:00", "%H:%M").time()
-
     if current_time < pre_market_start:
         return {"status": "CLOSED", "reason": "Before market hours", "opens_at": "9:00 AM IST"}
     elif pre_market_start <= current_time < market_open:
@@ -807,35 +713,6 @@ def _get_market_status() -> Dict[str, Any]:
         return {"status": "POST_MARKET", "note": "After-market session"}
     else:
         return {"status": "CLOSED", "reason": "After market hours", "next_open": "Tomorrow 9:00 AM IST"}
-
-
-def _get_next_expiry(symbol: str) -> str:
-    """Get next expiry date for given symbol."""
-    today = datetime.now()
-
-    # Weekly expiry days
-    expiry_days = {
-        "NIFTY": 3,      # Thursday
-        "BANKNIFTY": 2,  # Wednesday
-        "FINNIFTY": 1,   # Tuesday
-        "MIDCPNIFTY": 0  # Monday
-    }
-
-    symbol_upper = symbol.upper()
-    if symbol_upper in ["NIFTY", "NIFTY50"]:
-        symbol_upper = "NIFTY"
-    elif symbol_upper in ["BANKNIFTY", "NIFTYBANK"]:
-        symbol_upper = "BANKNIFTY"
-
-    target_day = expiry_days.get(symbol_upper, 3)
-
-    days_ahead = target_day - today.weekday()
-    if days_ahead <= 0:
-        days_ahead += 7
-
-    next_expiry = today + timedelta(days=days_ahead)
-    return next_expiry.strftime("%Y-%m-%d")
-
 
 # =====================================================================
 # FUNCTION REGISTRY FOR GEMINI - ALL LIVE DATA SOURCES
@@ -852,7 +729,6 @@ MARKET_DATA_TOOLS = [
     execute_paper_trade
 ]
 
-# Tool descriptions for Gemini - All tools use LIVE data
 TOOL_DESCRIPTIONS = {
     "get_stock_quote": "Get LIVE stock quote, price, and key metrics for any NSE/BSE listed stock or index (via yfinance)",
     "get_nifty_overview": "Get LIVE NIFTY 50 index overview with top gainers, losers, and market breadth (via yfinance + NSE)",
@@ -863,4 +739,3 @@ TOOL_DESCRIPTIONS = {
     "get_economic_calendar": "Get upcoming economic events that may affect Indian markets",
     "execute_paper_trade": "Execute a PAPER TRADE for backtesting (for live trading use Engine C Dhan API)"
 }
-

@@ -1,5 +1,23 @@
 import os
 import sys
+# --- Fail-fast environment variable enforcement ---
+def require_env(var: str) -> str:
+    value = os.getenv(var)
+    if value is None or value.strip() == "":
+        print(f"❌ FATAL: Required environment variable '{var}' is missing or empty.", file=sys.stderr)
+        sys.exit(1)
+    return value
+
+# Enforce required environment variables at startup
+REQUIRED_ENV_VARS = [
+    "GOOGLE_CLOUD_PROJECT",
+    "DHAN_CLIENT_ID",
+    "DHAN_ACCESS_TOKEN",
+    # Add more as needed from .env.example and code usage
+]
+for _var in REQUIRED_ENV_VARS:
+    require_env(_var)
+import sys
 import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional, List
@@ -107,6 +125,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(TraceIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Environment Context
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
 
 # CORS allowed origins for production
 ALLOWED_ORIGINS = [

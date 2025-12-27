@@ -30,7 +30,7 @@ import { useCouponAuth } from "@/contexts/DualAuthContext";
 import { setDhanClientId, clearDhanClientId } from "@/lib/user";
 import { EngineStatusCards } from "@/components/dashboard/engine-status";
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-429140669077.us-central1.run.app";
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
 
 interface DhanCredentials {
   client_id: string;
@@ -118,20 +118,61 @@ export default function SettingsPage() {
 
           const data = await response.json();
           
-          if (data.success) {
-              setConnectionStatus(data.verified ? "connected" : "error");
-              setDhanCredentials({...dhanCredentials, is_verified: data.verified});
-              toast.success("Credentials saved" + (data.verified ? " and verified!" : ""));
-              setDhanClientId(dhanCredentials.client_id);
-          } else {
-              throw new Error(data.message || "Save failed");
-          }
-      } catch (error: any) {
-          toast.error(`Save failed: ${error.message}`);
-          setConnectionStatus("error");
-      } finally {
-          setIsConnecting(false);
+      if (data.success) {
+        const isActuallyVerified = data.verified;
+        setConnectionStatus(isActuallyVerified ? "connected" : "error");
+        setDhanCredentials({...dhanCredentials, is_verified: isActuallyVerified});
+        
+        if (isActuallyVerified) {
+          toast.success("Credentials saved and verified!");
+        } else {
+          toast.warning("Credentials saved but verification failed. Check your token.");
+        }
+        
+        setDhanClientId(dhanCredentials.client_id);
+      } else {
+        throw new Error(data.message || "Save failed");
       }
+    } catch (error: any) {
+      toast.error(`Save failed: ${error.message}`);
+      setConnectionStatus("error");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleVerifyConnection = async () => {
+    if (!session?.userId) return;
+    
+    setIsConnecting(true);
+    try {
+      const response = await fetch(`${ENGINE_C_URL}/api/dhan/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: session.userId,
+          client_id: dhanCredentials.client_id,
+          access_token: dhanCredentials.access_token
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.verified) {
+        setConnectionStatus("connected");
+        setDhanCredentials({...dhanCredentials, is_verified: true});
+        toast.success("Connection verified successfully!");
+      } else {
+        setConnectionStatus("error");
+        setDhanCredentials({...dhanCredentials, is_verified: false});
+        toast.error(`Verification failed: ${data.message}`);
+      }
+    } catch (error: any) {
+      toast.error(`Verification error: ${error.message}`);
+      setConnectionStatus("error");
+    } finally {
+      setIsConnecting(false);
+    }
   };
   
   const handleDisconnect = async () => {
@@ -207,8 +248,21 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
                 <CardTitle>Dhan Connection</CardTitle>
-                <CardDescription>
-                    Status: <span className={connectionStatus === 'connected' ? "text-green-500 font-bold" : "text-red-500 font-bold"}>{connectionStatus.toUpperCase()}</span>
+                <CardDescription className="flex items-center gap-2">
+                    Status: 
+                    <span className={cn(
+                        "px-2 py-0.5 rounded text-xs font-bold uppercase",
+                        connectionStatus === 'connected' ? "bg-green-500/20 text-green-500" : 
+                        connectionStatus === 'error' ? "bg-red-500/20 text-red-500" : 
+                        "bg-slate-500/20 text-slate-400"
+                    )}>
+                        {connectionStatus}
+                    </span>
+                    {connectionStatus === 'connected' && (
+                        <span className="flex items-center gap-1 text-[10px] text-green-400">
+                            <CheckCircle className="w-3 h-3" /> Verified
+                        </span>
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -247,12 +301,16 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4">
+                    <div className="flex flex-wrap gap-4 pt-4">
                          <Button onClick={handleSaveCredentials} disabled={isConnecting}>
                             {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save & Connect
+                            Save Credentials
                         </Button>
-                        {connectionStatus === 'connected' && (
+                        <Button variant="outline" onClick={handleVerifyConnection} disabled={isConnecting || !dhanCredentials.client_id}>
+                            {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Verify Connection
+                        </Button>
+                        {connectionStatus !== 'disconnected' && (
                             <Button variant="destructive" onClick={handleDisconnect} disabled={isConnecting}>
                                 Disconnect
                             </Button>

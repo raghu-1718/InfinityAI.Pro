@@ -118,5 +118,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    background-attachment: fixed;
+    background-size: cover;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-xl bg-black/30 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)];
+  }
+  .glass-card {
+    @apply backdrop-blur-xl bg-black/30 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-xl transition-all duration-300 hover:bg-black/40 hover:border-white/20;
+  }
+  .neon-text {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
   }
 }

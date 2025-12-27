@@ -109,8 +109,9 @@ export function AutoTradingCard() {
   const loadSettingsFromBackend = async (userId: string) => {
     try {
       setSettingsLoading(true);
+      const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
       const response = await fetch(
-        `https://engine-c-429140669077.us-central1.run.app/api/trading-settings/${userId}`
+        `${ENGINE_C_URL}/api/trading-settings/${userId}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -147,8 +148,9 @@ export function AutoTradingCard() {
 
     try {
       setSettingsLoading(true);
+      const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
       const response = await fetch(
-        `https://engine-c-429140669077.us-central1.run.app/api/trading-settings/${userId}`,
+        `${ENGINE_C_URL}/api/trading-settings/${userId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

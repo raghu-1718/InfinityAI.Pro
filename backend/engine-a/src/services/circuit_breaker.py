@@ -11,7 +11,7 @@ _db = None
 def get_db():
     global _db
     if _db is None:
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-pro-dev")
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
         _db = firestore.Client(project=project_id)
     return _db
 
@@ -25,6 +25,7 @@ class CircuitBreaker:
         self.session_pnl = 0.0
         self.is_tripped = False
         self.trip_reason = None
+        self.last_updated = None
         self.db_ref = get_db().collection("trading_sessions").document(uid).collection("state").document("circuit_breaker")
         
         # Load existing state if any (Phase 5 - Persistence Fix)
