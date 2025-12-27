@@ -1,5 +1,6 @@
-import { DhanConnectPrompt } from '@/components/DhanConnectPrompt';
+
 'use client';
+import { DhanConnectPrompt } from '@/components/DhanConnectPrompt';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
