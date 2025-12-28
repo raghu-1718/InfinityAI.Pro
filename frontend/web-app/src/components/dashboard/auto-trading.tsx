@@ -462,8 +462,11 @@ export function AutoTradingCard() {
   // Stop auto trading
   const handleStop = async () => {
     try {
+      // Get user_id from auth context (use dhanClientId or session userId)
+      const userId = user?.dhanClientId || authSession?.userId;
+      if (!userId) throw new Error("User ID not found");
       // Call backend to stop auto-trading
-      await stopAutoTradeMutation.mutateAsync();
+      await stopAutoTradeMutation.mutateAsync(userId);
 
       setSession((prev) => ({
         ...prev,
