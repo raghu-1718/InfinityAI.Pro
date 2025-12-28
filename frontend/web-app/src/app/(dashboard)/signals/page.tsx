@@ -1,17 +1,28 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSignal, useBatchSignals, useGeminiAnalysis, useModelStatus } from '@/hooks/useApi';
-import { useAppStore } from '@/lib/store';
-import { formatPercent, formatRelativeTime } from '@/lib/format';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useSignal,
+  useBatchSignals,
+  useGeminiAnalysis,
+  useModelStatus,
+} from "@/hooks/useApi";
+import { useAppStore } from "@/lib/store";
+import { formatPercent, formatRelativeTime } from "@/lib/format";
 import {
   Brain,
   Sparkles,
@@ -23,24 +34,55 @@ import {
   Zap,
   CheckCircle,
   AlertCircle,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-const watchlistSymbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK'];
+const watchlistSymbols = [
+  "NIFTY",
+  "BANKNIFTY",
+  "RELIANCE",
+  "TCS",
+  "HDFCBANK",
+  "INFY",
+  "ICICIBANK",
+];
 
 export default function SignalsPage() {
   const signals = useAppStore((s) => s.signals);
-  const [selectedSymbol, setSelectedSymbol] = useState('NIFTY');
-  const [customSymbol, setCustomSymbol] = useState('');
+  const [selectedSymbol, setSelectedSymbol] = useState("NIFTY");
+  const [customSymbol, setCustomSymbol] = useState("");
 
-  const { data: signalData, isLoading: signalLoading, error: signalError, isError: isSignalError, refetch } = useSignal(selectedSymbol);
-  const { data: geminiData, isLoading: geminiLoading, error: geminiError, isError: isGeminiError, refetch: refetchGemini } = useGeminiAnalysis(
+  const {
+    data: signalData,
+    isLoading: signalLoading,
+    error: signalError,
+    isError: isSignalError,
+    refetch,
+  } = useSignal(selectedSymbol);
+  const {
+    data: geminiData,
+    isLoading: geminiLoading,
+    error: geminiError,
+    isError: isGeminiError,
+    refetch: refetchGemini,
+  } = useGeminiAnalysis(
     selectedSymbol,
-    'Provide trading analysis with support/resistance levels and market sentiment'
+    "Provide trading analysis with support/resistance levels and market sentiment"
   );
-  const { data: modelStatus, isLoading: modelLoading, error: modelError, isError: isModelError } = useModelStatus();
-  const { data: batchSignals, isLoading: batchLoading, error: batchError, isError: isBatchError, refetch: refetchBatch } = useBatchSignals(watchlistSymbols);
+  const {
+    data: modelStatus,
+    isLoading: modelLoading,
+    error: modelError,
+    isError: isModelError,
+  } = useModelStatus();
+  const {
+    data: batchSignals,
+    isLoading: batchLoading,
+    error: batchError,
+    isError: isBatchError,
+    refetch: refetchBatch,
+  } = useBatchSignals(watchlistSymbols);
 
   const handleAnalyze = () => {
     if (customSymbol.trim()) {
@@ -53,14 +95,19 @@ export default function SignalsPage() {
     refetch();
     refetchGemini();
     refetchBatch();
-    toast.success('Refreshing all signals...');
+    toast.success("Refreshing all signals...");
   };
 
   return (
     <div className="p-6 space-y-6">
       {(isSignalError || isGeminiError || isModelError || isBatchError) && (
         <div className="bg-red-900 text-red-100 p-3 rounded mb-4 w-full text-center">
-          <strong>Error:</strong> {signalError?.message || geminiError?.message || modelError?.message || batchError?.message || 'Failed to load data.'}
+          <strong>Error:</strong>{" "}
+          {signalError?.message ||
+            geminiError?.message ||
+            modelError?.message ||
+            batchError?.message ||
+            "Failed to load data."}
         </div>
       )}
       {/* Page Header */}
@@ -98,27 +145,33 @@ export default function SignalsPage() {
           ) : (
             <div className="flex flex-wrap gap-3">
               {modelStatus?.models ? (
-                Object.entries(modelStatus.models).map(([name, status]: [string, any]) => (
-                  <div
-                    key={name}
-                    className={cn(
-                      'flex items-center gap-2 rounded-lg border px-4 py-2',
-                      status?.loaded ? 'border-green-500/50 bg-green-50 dark:bg-green-900/20' : 'border-yellow-500/50 bg-yellow-50 dark:bg-yellow-900/20'
-                    )}
-                  >
-                    {status?.loaded ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-yellow-500" />
-                    )}
-                    <span className="text-sm font-medium capitalize">{name}</span>
-                    {status?.weight && (
-                      <Badge variant="secondary" className="text-xs">
-                        {((status.weight ?? 0) * 100).toFixed(0)}%
-                      </Badge>
-                    )}
-                  </div>
-                ))
+                Object.entries(modelStatus.models).map(
+                  ([name, status]: [string, any]) => (
+                    <div
+                      key={name}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border px-4 py-2",
+                        status?.loaded
+                          ? "border-green-500/50 bg-green-50 dark:bg-green-900/20"
+                          : "border-yellow-500/50 bg-yellow-50 dark:bg-yellow-900/20"
+                      )}
+                    >
+                      {status?.loaded ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                      )}
+                      <span className="text-sm font-medium capitalize">
+                        {name}
+                      </span>
+                      {status?.weight && (
+                        <Badge variant="secondary" className="text-xs">
+                          {((status.weight ?? 0) * 100).toFixed(0)}%
+                        </Badge>
+                      )}
+                    </div>
+                  )
+                )
               ) : (
                 <div className="flex flex-wrap gap-3">
                   <ModelBadge name="XGBoost" weight={40} />
@@ -147,7 +200,7 @@ export default function SignalsPage() {
                     value={customSymbol}
                     onChange={(e) => setCustomSymbol(e.target.value)}
                     placeholder="Enter symbol (e.g., RELIANCE)"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+                    onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
                   />
                 </div>
                 <div className="flex items-end">
@@ -161,7 +214,7 @@ export default function SignalsPage() {
                 {watchlistSymbols.map((sym) => (
                   <Button
                     key={sym}
-                    variant={selectedSymbol === sym ? 'default' : 'outline'}
+                    variant={selectedSymbol === sym ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedSymbol(sym)}
                   >
@@ -180,7 +233,9 @@ export default function SignalsPage() {
                   Signal Analysis: {selectedSymbol}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => refetch()}>
-                  <RefreshCw className={cn('h-4 w-4', signalLoading && 'animate-spin')} />
+                  <RefreshCw
+                    className={cn("h-4 w-4", signalLoading && "animate-spin")}
+                  />
                 </Button>
               </div>
             </CardHeader>
@@ -193,27 +248,44 @@ export default function SignalsPage() {
               ) : signalData ? (
                 <div className="space-y-4">
                   {/* Main Signal */}
-                  <div className={cn(
-                    'rounded-xl p-6 text-center',
-                    signalData.signal === 'BUY' && 'bg-green-100 dark:bg-green-900/30',
-                    signalData.signal === 'SELL' && 'bg-red-100 dark:bg-red-900/30',
-                    signalData.signal === 'HOLD' && 'bg-gray-100 dark:bg-gray-800'
-                  )}>
+                  <div
+                    className={cn(
+                      "rounded-xl p-6 text-center",
+                      signalData.signal === "BUY" &&
+                        "bg-green-100 dark:bg-green-900/30",
+                      signalData.signal === "SELL" &&
+                        "bg-red-100 dark:bg-red-900/30",
+                      signalData.signal === "HOLD" &&
+                        "bg-gray-100 dark:bg-gray-800"
+                    )}
+                  >
                     <div className="flex items-center justify-center gap-3 mb-2">
-                      {signalData.signal === 'BUY' && <TrendingUp className="h-8 w-8 text-green-600" />}
-                      {signalData.signal === 'SELL' && <TrendingDown className="h-8 w-8 text-red-600" />}
-                      {signalData.signal === 'HOLD' && <Minus className="h-8 w-8 text-gray-600" />}
-                      <span className={cn(
-                        'text-4xl font-bold',
-                        signalData.signal === 'BUY' && 'text-green-700 dark:text-green-400',
-                        signalData.signal === 'SELL' && 'text-red-700 dark:text-red-400',
-                        signalData.signal === 'HOLD' && 'text-gray-700 dark:text-gray-400'
-                      )}>
+                      {signalData.signal === "BUY" && (
+                        <TrendingUp className="h-8 w-8 text-green-600" />
+                      )}
+                      {signalData.signal === "SELL" && (
+                        <TrendingDown className="h-8 w-8 text-red-600" />
+                      )}
+                      {signalData.signal === "HOLD" && (
+                        <Minus className="h-8 w-8 text-gray-600" />
+                      )}
+                      <span
+                        className={cn(
+                          "text-4xl font-bold",
+                          signalData.signal === "BUY" &&
+                            "text-green-700 dark:text-green-400",
+                          signalData.signal === "SELL" &&
+                            "text-red-700 dark:text-red-400",
+                          signalData.signal === "HOLD" &&
+                            "text-gray-700 dark:text-gray-400"
+                        )}
+                      >
                         {signalData.signal}
                       </span>
                     </div>
                     <p className="text-lg font-medium">
-                      Confidence: {formatPercent(signalData.confidence * 100, 0)}
+                      Confidence:{" "}
+                      {formatPercent(signalData.confidence * 100, 0)}
                     </p>
                   </div>
 
@@ -221,21 +293,36 @@ export default function SignalsPage() {
                   {signalData.analysis && (
                     <div className="grid grid-cols-3 gap-4">
                       <div className="rounded-lg border p-4 text-center">
-                        <p className="text-xs text-muted-foreground">Technical</p>
+                        <p className="text-xs text-muted-foreground">
+                          Technical
+                        </p>
                         <p className="text-xl font-bold">
-                          {formatPercent(signalData.analysis.technical_score * 100, 0)}
+                          {formatPercent(
+                            signalData.analysis.technical_score * 100,
+                            0
+                          )}
                         </p>
                       </div>
                       <div className="rounded-lg border p-4 text-center">
-                        <p className="text-xs text-muted-foreground">Sentiment</p>
+                        <p className="text-xs text-muted-foreground">
+                          Sentiment
+                        </p>
                         <p className="text-xl font-bold">
-                          {formatPercent(signalData.analysis.sentiment_score * 100, 0)}
+                          {formatPercent(
+                            signalData.analysis.sentiment_score * 100,
+                            0
+                          )}
                         </p>
                       </div>
                       <div className="rounded-lg border p-4 text-center">
-                        <p className="text-xs text-muted-foreground">ML Prediction</p>
+                        <p className="text-xs text-muted-foreground">
+                          ML Prediction
+                        </p>
                         <p className="text-xl font-bold">
-                          {formatPercent(signalData.analysis.ml_prediction * 100, 0)}
+                          {formatPercent(
+                            signalData.analysis.ml_prediction * 100,
+                            0
+                          )}
                         </p>
                       </div>
                     </div>
@@ -257,8 +344,14 @@ export default function SignalsPage() {
                   <Sparkles className="h-5 w-5 text-purple-500" />
                   Gemini AI Analysis
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => refetchGemini()}>
-                  <RefreshCw className={cn('h-4 w-4', geminiLoading && 'animate-spin')} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchGemini()}
+                >
+                  <RefreshCw
+                    className={cn("h-4 w-4", geminiLoading && "animate-spin")}
+                  />
                 </Button>
               </div>
               <CardDescription>
@@ -276,7 +369,7 @@ export default function SignalsPage() {
               ) : geminiData?.analysis ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <div className="rounded-lg bg-muted p-4 whitespace-pre-wrap text-sm">
-                    {typeof geminiData.analysis === 'string'
+                    {typeof geminiData.analysis === "string"
                       ? geminiData.analysis
                       : JSON.stringify(geminiData.analysis, null, 2)}
                   </div>
@@ -297,42 +390,51 @@ export default function SignalsPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Watchlist Signals</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => refetchBatch()}>
-                  <RefreshCw className={cn('h-4 w-4', batchLoading && 'animate-spin')} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchBatch()}
+                >
+                  <RefreshCw
+                    className={cn("h-4 w-4", batchLoading && "animate-spin")}
+                  />
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-2">
-                  {batchLoading ? (
-                    [...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center justify-between rounded-lg border p-3">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-6 w-16" />
-                      </div>
-                    ))
-                  ) : batchSignals?.signals ? (
-                    Object.entries(batchSignals.signals).map(([symbol, data]: [string, any]) => (
-                      <SignalRow
-                        key={symbol}
-                        symbol={symbol}
-                        signal={data.signal}
-                        confidence={data.confidence}
-                        onClick={() => setSelectedSymbol(symbol)}
-                        isSelected={selectedSymbol === symbol}
-                      />
-                    ))
-                  ) : (
-                    watchlistSymbols.map((sym) => (
-                      <SignalRow
-                        key={sym}
-                        symbol={sym}
-                        onClick={() => setSelectedSymbol(sym)}
-                        isSelected={selectedSymbol === sym}
-                      />
-                    ))
-                  )}
+                  {batchLoading
+                    ? [...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                        >
+                          <Skeleton className="h-5 w-20" />
+                          <Skeleton className="h-6 w-16" />
+                        </div>
+                      ))
+                    : batchSignals?.signals
+                      ? Object.entries(batchSignals.signals).map(
+                          ([symbol, data]: [string, any]) => (
+                            <SignalRow
+                              key={symbol}
+                              symbol={symbol}
+                              signal={data.signal}
+                              confidence={data.confidence}
+                              onClick={() => setSelectedSymbol(symbol)}
+                              isSelected={selectedSymbol === symbol}
+                            />
+                          )
+                        )
+                      : watchlistSymbols.map((sym) => (
+                          <SignalRow
+                            key={sym}
+                            symbol={sym}
+                            onClick={() => setSelectedSymbol(sym)}
+                            isSelected={selectedSymbol === sym}
+                          />
+                        ))}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -342,7 +444,9 @@ export default function SignalsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Recent Signals</CardTitle>
-              <CardDescription>Last {signals.length} signals generated</CardDescription>
+              <CardDescription>
+                Last {signals.length} signals generated
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[250px]">
@@ -382,7 +486,9 @@ function ModelBadge({ name, weight }: { name: string; weight: number }) {
     <div className="flex items-center gap-2 rounded-lg border border-green-500/50 bg-green-50 dark:bg-green-900/20 px-4 py-2">
       <CheckCircle className="h-4 w-4 text-green-500" />
       <span className="text-sm font-medium">{name}</span>
-      <Badge variant="secondary" className="text-xs">{weight}%</Badge>
+      <Badge variant="secondary" className="text-xs">
+        {weight}%
+      </Badge>
     </div>
   );
 }
@@ -403,21 +509,23 @@ function SignalRow({
   return (
     <div
       className={cn(
-        'flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors',
-        isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+        "flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors",
+        isSelected ? "border-primary bg-primary/5" : "hover:bg-muted/50"
       )}
       onClick={onClick}
     >
       <div className="flex items-center gap-2">
-        {signal === 'BUY' && <TrendingUp className="h-4 w-4 text-green-500" />}
-        {signal === 'SELL' && <TrendingDown className="h-4 w-4 text-red-500" />}
-        {(!signal || signal === 'HOLD') && <Minus className="h-4 w-4 text-gray-500" />}
+        {signal === "BUY" && <TrendingUp className="h-4 w-4 text-green-500" />}
+        {signal === "SELL" && <TrendingDown className="h-4 w-4 text-red-500" />}
+        {(!signal || signal === "HOLD") && (
+          <Minus className="h-4 w-4 text-gray-500" />
+        )}
         <span className="font-medium">{symbol}</span>
       </div>
       {signal ? (
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {confidence ? formatPercent(confidence * 100, 0) : ''}
+            {confidence ? formatPercent(confidence * 100, 0) : ""}
           </span>
           <SignalBadge signal={signal} />
         </div>
@@ -429,14 +537,14 @@ function SignalRow({
 }
 
 function SignalBadge({ signal }: { signal: string }) {
-  if (signal === 'BUY') {
+  if (signal === "BUY") {
     return (
       <Badge className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400">
         BUY
       </Badge>
     );
   }
-  if (signal === 'SELL') {
+  if (signal === "SELL") {
     return (
       <Badge className="bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400">
         SELL

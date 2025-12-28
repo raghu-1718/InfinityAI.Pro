@@ -3,20 +3,35 @@
  * Provides UI components for interacting with the Financial Advisor Agent
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Send, Bot, TrendingUp, TrendingDown, AlertTriangle, XCircle, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Loader2,
+  Send,
+  Bot,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  XCircle,
+  Zap,
+} from "lucide-react";
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
 
 // Types
 interface AgentMessage {
-  role: 'user' | 'agent';
+  role: "user" | "agent";
   content: string;
   timestamp: string;
   model?: string;
@@ -50,7 +65,7 @@ interface AgentStatus {
 // =========================================================================
 export function AIAgentChat({ userId }: { userId: string }) {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,7 +76,7 @@ export function AIAgentChat({ userId }: { userId: string }) {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const fetchAgentStatus = async () => {
@@ -70,7 +85,7 @@ export function AIAgentChat({ userId }: { userId: string }) {
       const data = await response.json();
       setAgentStatus(data);
     } catch (error) {
-      console.error('Failed to fetch agent status:', error);
+      console.error("Failed to fetch agent status:", error);
     }
   };
 
@@ -78,24 +93,24 @@ export function AIAgentChat({ userId }: { userId: string }) {
     if (!input.trim() || isLoading) return;
 
     const userMessage: AgentMessage = {
-      role: 'user',
+      role: "user",
       content: input,
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
 
     try {
       const response = await fetch(`${ENGINE_C_URL}/api/agent/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
           message: input,
           context: {
-            risk_profile: 'moderate',
+            risk_profile: "moderate",
           },
         }),
       });
@@ -104,25 +119,31 @@ export function AIAgentChat({ userId }: { userId: string }) {
 
       if (data.success) {
         const agentMessage: AgentMessage = {
-          role: 'agent',
+          role: "agent",
           content: data.response,
           timestamp: data.timestamp,
           model: data.model,
         };
-        setMessages(prev => [...prev, agentMessage]);
+        setMessages((prev) => [...prev, agentMessage]);
       } else {
-        setMessages(prev => [...prev, {
-          role: 'agent',
-          content: `Error: ${data.error || 'Failed to get response'}`,
-          timestamp: new Date().toISOString(),
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "agent",
+            content: `Error: ${data.error || "Failed to get response"}`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, {
-        role: 'agent',
-        content: `Connection error: ${error}`,
-        timestamp: new Date().toISOString(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "agent",
+          content: `Connection error: ${error}`,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -137,8 +158,12 @@ export function AIAgentChat({ userId }: { userId: string }) {
             <CardTitle>Financial Advisor AI</CardTitle>
           </div>
           {agentStatus && (
-            <Badge variant={agentStatus.status === 'operational' ? 'default' : 'destructive'}>
-              {agentStatus.model || 'gemini-2.5-pro'}
+            <Badge
+              variant={
+                agentStatus.status === "operational" ? "default" : "destructive"
+              }
+            >
+              {agentStatus.model || "gemini-2.5-pro"}
             </Badge>
           )}
         </div>
@@ -152,19 +177,22 @@ export function AIAgentChat({ userId }: { userId: string }) {
             <div className="text-center text-muted-foreground py-8">
               <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Start a conversation with your Financial Advisor</p>
-              <p className="text-sm mt-2">Try asking about market outlook, stock analysis, or trading strategies</p>
+              <p className="text-sm mt-2">
+                Try asking about market outlook, stock analysis, or trading
+                strategies
+              </p>
             </div>
           )}
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
                 }`}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -188,12 +216,16 @@ export function AIAgentChat({ userId }: { userId: string }) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyPress={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Ask about markets, stocks, or strategies..."
             disabled={isLoading}
           />
           <Button onClick={sendMessage} disabled={isLoading || !input.trim()}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </CardContent>
@@ -204,7 +236,13 @@ export function AIAgentChat({ userId }: { userId: string }) {
 // =========================================================================
 // Real-Time Signal Component
 // =========================================================================
-export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: string }) {
+export function RealTimeSignal({
+  userId,
+  symbol,
+}: {
+  userId: string;
+  symbol: string;
+}) {
   const [signal, setSignal] = useState<TradeSignal | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,7 +260,7 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
       if (data.success) {
         setSignal(data.signal);
       } else {
-        setError(data.error || 'Failed to get signal');
+        setError(data.error || "Failed to get signal");
       }
     } catch (err) {
       setError(`Connection error: ${err}`);
@@ -239,14 +277,14 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
   }, [fetchSignal]);
 
   const getActionColor = (action: string) => {
-    if (action.includes('BUY')) return 'text-green-500';
-    if (action.includes('SELL')) return 'text-red-500';
-    return 'text-yellow-500';
+    if (action.includes("BUY")) return "text-green-500";
+    if (action.includes("SELL")) return "text-red-500";
+    return "text-yellow-500";
   };
 
   const getActionIcon = (action: string) => {
-    if (action.includes('BUY')) return <TrendingUp className="h-5 w-5" />;
-    if (action.includes('SELL')) return <TrendingDown className="h-5 w-5" />;
+    if (action.includes("BUY")) return <TrendingUp className="h-5 w-5" />;
+    if (action.includes("SELL")) return <TrendingDown className="h-5 w-5" />;
     return <AlertTriangle className="h-5 w-5" />;
   };
 
@@ -258,8 +296,17 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
             <Zap className="h-5 w-5 text-yellow-500" />
             {symbol} Signal
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={fetchSignal} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchSignal}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Refresh"
+            )}
           </Button>
         </div>
       </CardHeader>
@@ -273,23 +320,32 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
           <div className="space-y-4">
             {/* Action and Confidence */}
             <div className="flex items-center justify-between">
-              <div className={`flex items-center gap-2 text-2xl font-bold ${getActionColor(signal.action)}`}>
+              <div
+                className={`flex items-center gap-2 text-2xl font-bold ${getActionColor(signal.action)}`}
+              >
                 {getActionIcon(signal.action)}
                 {signal.action}
               </div>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Confidence</div>
-                <div className="text-xl font-semibold">{signal.confidence != null ? `${signal.confidence}%` : 'N/A'}</div>
+                <div className="text-xl font-semibold">
+                  {signal.confidence != null ? `${signal.confidence}%` : "N/A"}
+                </div>
               </div>
             </div>
 
             {/* Risk Level */}
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Risk Level</span>
-              <Badge variant={
-                signal.risk_level === 'LOW' ? 'default' :
-                signal.risk_level === 'MEDIUM' ? 'secondary' : 'destructive'
-              }>
+              <Badge
+                variant={
+                  signal.risk_level === "LOW"
+                    ? "default"
+                    : signal.risk_level === "MEDIUM"
+                      ? "secondary"
+                      : "destructive"
+                }
+              >
                 {signal.risk_level}
               </Badge>
             </div>
@@ -303,7 +359,9 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
                 </div>
                 <div>
                   <span className="text-muted-foreground">Stop Loss</span>
-                  <div className="font-medium text-red-500">₹{signal.stop_loss}</div>
+                  <div className="font-medium text-red-500">
+                    ₹{signal.stop_loss}
+                  </div>
                 </div>
               </div>
             )}
@@ -314,7 +372,11 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
                 <span className="text-muted-foreground text-sm">Targets</span>
                 <div className="flex gap-2 mt-1">
                   {signal.targets.map((target, idx) => (
-                    <Badge key={idx} variant="outline" className="text-green-500">
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="text-green-500"
+                    >
                       T{idx + 1}: ₹{target}
                     </Badge>
                   ))}
@@ -328,15 +390,15 @@ export function RealTimeSignal({ userId, symbol }: { userId: string; symbol: str
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div>
                   <div className="text-muted-foreground">Engine B</div>
-                  <div>{signal.reasoning?.engine_b || 'N/A'}</div>
+                  <div>{signal.reasoning?.engine_b || "N/A"}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Market</div>
-                  <div>{signal.reasoning?.market || 'N/A'}</div>
+                  <div>{signal.reasoning?.market || "N/A"}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">AI Agent</div>
-                  <div>{signal.reasoning?.agent || 'N/A'}</div>
+                  <div>{signal.reasoning?.agent || "N/A"}</div>
                 </div>
               </div>
             </div>
@@ -365,7 +427,12 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRun, setLastRun] = useState<any>(null);
-  const [watchlist, setWatchlist] = useState(['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']);
+  const [watchlist, setWatchlist] = useState([
+    "RELIANCE",
+    "TCS",
+    "INFY",
+    "HDFCBANK",
+  ]);
   const [config, setConfig] = useState({
     min_confidence: 70,
     max_risk_per_trade: 2,
@@ -378,8 +445,8 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
     setIsLoading(true);
     try {
       const response = await fetch(`${ENGINE_C_URL}/api/agent/auto-trade`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
           watchlist,
@@ -395,7 +462,7 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
       const data = await response.json();
       setLastRun(data);
     } catch (error) {
-      console.error('Automated trading error:', error);
+      console.error("Automated trading error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -409,8 +476,8 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
             <Zap className="h-5 w-5 text-yellow-500" />
             AI Automated Trading
           </CardTitle>
-          <Badge variant={isEnabled ? 'default' : 'secondary'}>
-            {isEnabled ? 'Active' : 'Inactive'}
+          <Badge variant={isEnabled ? "default" : "secondary"}>
+            {isEnabled ? "Active" : "Inactive"}
           </Badge>
         </div>
         <CardDescription>
@@ -433,19 +500,27 @@ export function AutomatedTradingControl({ userId }: { userId: string }) {
         {/* Config */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-muted-foreground">Min Confidence</label>
+            <label className="text-sm text-muted-foreground">
+              Min Confidence
+            </label>
             <div className="font-medium">{config.min_confidence}%</div>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Max Risk/Trade</label>
+            <label className="text-sm text-muted-foreground">
+              Max Risk/Trade
+            </label>
             <div className="font-medium">{config.max_risk_per_trade}%</div>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Max Daily Trades</label>
+            <label className="text-sm text-muted-foreground">
+              Max Daily Trades
+            </label>
             <div className="font-medium">{config.max_daily_trades}</div>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Trading Amount</label>
+            <label className="text-sm text-muted-foreground">
+              Trading Amount
+            </label>
             <div className="font-medium">₹{config.trading_amount}</div>
           </div>
         </div>

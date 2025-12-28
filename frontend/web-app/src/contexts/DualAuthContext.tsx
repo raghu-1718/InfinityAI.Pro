@@ -1,27 +1,45 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { User } from 'firebase/auth';
-import { auth, createOrUpdateUserProfile, getUserProfile, UserProfile, signInWithGoogle as firebaseSignInWithGoogle, logOut as firebaseLogOut, onAuthChange } from '@/lib/firebase';
-import { useSessionStore } from '@/hooks/useSessionStore';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
+import { User } from "firebase/auth";
+import {
+  auth,
+  createOrUpdateUserProfile,
+  getUserProfile,
+  UserProfile,
+  signInWithGoogle as firebaseSignInWithGoogle,
+  logOut as firebaseLogOut,
+  onAuthChange,
+} from "@/lib/firebase";
+import { useSessionStore } from "@/hooks/useSessionStore";
 
 // Storage keys
-const DUAL_AUTH_KEY = 'infinityai_dual_auth';
-const STORAGE_VERSION_KEY = 'infinityai_version';
-const CURRENT_VERSION = '4.0';
+const DUAL_AUTH_KEY = "infinityai_dual_auth";
+const STORAGE_VERSION_KEY = "infinityai_version";
+const CURRENT_VERSION = "4.0";
 
 // Clear old storage on version mismatch
 function clearOldStorage() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
   if (storedVersion !== CURRENT_VERSION) {
-    console.log('Clearing old storage data for version upgrade to', CURRENT_VERSION);
+    console.log(
+      "Clearing old storage data for version upgrade to",
+      CURRENT_VERSION
+    );
     localStorage.removeItem(DUAL_AUTH_KEY);
-    localStorage.removeItem('infinityai_coupon_session');
-    localStorage.removeItem('infinityai_auth_type');
-    localStorage.removeItem('infinityai_session');
-    localStorage.removeItem('infinityai_user');
-    localStorage.removeItem('infinityai-storage');
+    localStorage.removeItem("infinityai_coupon_session");
+    localStorage.removeItem("infinityai_auth_type");
+    localStorage.removeItem("infinityai_session");
+    localStorage.removeItem("infinityai_user");
+    localStorage.removeItem("infinityai-storage");
     localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
   }
 }
@@ -77,21 +95,28 @@ interface DualAuthContextType {
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
 
   // Auth methods - Step 2: Coupon Verification
-  verifyCoupon: (couponCode: string) => Promise<{ success: boolean; error?: string }>;
+  verifyCoupon: (
+    couponCode: string
+  ) => Promise<{ success: boolean; error?: string }>;
 
   // Logout (clears both)
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 
   // Dhan connection methods
-  connectDhan: (clientId: string, accessToken: string) => Promise<{ success: boolean; error?: string }>;
+  connectDhan: (
+    clientId: string,
+    accessToken: string
+  ) => Promise<{ success: boolean; error?: string }>;
   disconnectDhan: () => Promise<{ success: boolean; error?: string }>;
 }
 
-const DualAuthContext = createContext<DualAuthContextType | undefined>(undefined);
+const DualAuthContext = createContext<DualAuthContextType | undefined>(
+  undefined
+);
 
 // Engine C URL for coupon verification
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || '';
+const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -110,22 +135,28 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = isGoogleSignedIn && isCouponVerified;
 
   // Session and User for compatibility
-  const session: CouponSession | null = isAuthenticated && firebaseUser ? {
-    sessionId: couponData?.sessionId || firebaseUser.uid,
-    userId: firebaseUser.uid,
-    features: couponData?.features || [],
-    expiresAt: couponData?.expiresAt || '',
-    dhanConfigured: userProfile?.dhanConnected || false,
-  } : null;
+  const session: CouponSession | null =
+    isAuthenticated && firebaseUser
+      ? {
+          sessionId: couponData?.sessionId || firebaseUser.uid,
+          userId: firebaseUser.uid,
+          features: couponData?.features || [],
+          expiresAt: couponData?.expiresAt || "",
+          dhanConfigured: userProfile?.dhanConnected || false,
+        }
+      : null;
 
-  const user: CouponUser | null = isAuthenticated && firebaseUser ? {
-    userId: firebaseUser.uid,
-    name: firebaseUser.displayName || userProfile?.displayName || 'User',
-    email: firebaseUser.email || undefined,
-    dhanConnected: userProfile?.dhanConnected || false,
-    dhanClientId: userProfile?.dhanClientId,
-    photoURL: firebaseUser.photoURL,
-  } : null;
+  const user: CouponUser | null =
+    isAuthenticated && firebaseUser
+      ? {
+          userId: firebaseUser.uid,
+          name: firebaseUser.displayName || userProfile?.displayName || "User",
+          email: firebaseUser.email || undefined,
+          dhanConnected: userProfile?.dhanConnected || false,
+          dhanClientId: userProfile?.dhanClientId,
+          photoURL: firebaseUser.photoURL,
+        }
+      : null;
 
   // Clear old storage on mount
   useEffect(() => {
@@ -139,7 +170,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     // Safety timeout
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
-        console.warn('Auth loading safety timeout triggered');
+        console.warn("Auth loading safety timeout triggered");
         setLoading(false);
       }
     }, 5000);
@@ -150,13 +181,12 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
     if (sessionStore.isAuthenticated && sessionStore.sessionId) {
       storedCouponData = {
-        code: 'REDACTED', // We might not store code in sessionStore, but we store features
+        code: "REDACTED", // We might not store code in sessionStore, but we store features
         features: sessionStore.features,
-        expiresAt: sessionStore.expiresAt || '',
+        expiresAt: sessionStore.expiresAt || "",
         sessionId: sessionStore.sessionId,
       };
     }
-
 
     // Listen for Firebase auth state changes (safe wrapper handles SSR)
     const unsubscribe = onAuthChange(async (fbUser) => {
@@ -178,7 +208,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } catch (error) {
-          console.error('Error loading Firebase user profile:', error);
+          console.error("Error loading Firebase user profile:", error);
           if (isMounted) {
             setFirebaseUser(fbUser);
             if (storedCouponData) {
@@ -217,11 +247,11 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       const res = await firebaseSignInWithGoogle();
       if (!res.success) {
         setLoading(false);
-        return { success: false, error: res.error || 'Google sign-in failed' };
+        return { success: false, error: res.error || "Google sign-in failed" };
       }
 
       const fbUser = res.user!;
-      const profile = res.profile ?? await getUserProfile(fbUser.uid);
+      const profile = res.profile ?? (await getUserProfile(fbUser.uid));
 
       setFirebaseUser(fbUser);
       setUserProfile(profile || null);
@@ -229,106 +259,124 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return { success: true };
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      console.error("Google sign-in error:", error);
       setLoading(false);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to sign in with Google'
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to sign in with Google",
       };
     }
   }, []);
 
   // Verify coupon code (Step 2 - requires Google sign-in first)
-  const verifyCoupon = useCallback(async (couponCode: string) => {
-    if (!firebaseUser) {
-      return { success: false, error: 'Please sign in with Google first' };
-    }
-
-    setLoading(true);
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
-
-      console.log('Verifying coupon:', couponCode, 'for user:', firebaseUser.email);
-
-      const response = await fetch(`${ENGINE_C_URL}/api/auth/coupon/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          coupon_code: couponCode,
-          google_user_id: firebaseUser.uid,
-          google_email: firebaseUser.email,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      console.log('Coupon verify response status:', response.status);
-
-      // Handle non-OK responses
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Coupon verify failed:', response.status, errorData);
-        setLoading(false);
-        return {
-          success: false,
-          error: errorData.detail || errorData.message || `Server error: ${response.status}`
-        };
+  const verifyCoupon = useCallback(
+    async (couponCode: string) => {
+      if (!firebaseUser) {
+        return { success: false, error: "Please sign in with Google first" };
       }
 
-      const data = await response.json();
-      console.log('Coupon verify data:', data);
+      setLoading(true);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
 
-      if (data.success) {
-        const newCouponData = {
-          code: couponCode,
-          features: data.features || [],
-          expiresAt: data.expires_at || '',
-          sessionId: data.session_id || '',
-        };
+        console.log(
+          "Verifying coupon:",
+          couponCode,
+          "for user:",
+          firebaseUser.email
+        );
 
-        setCouponData(newCouponData);
-        setIsCouponVerified(true);
+        const response = await fetch(`${ENGINE_C_URL}/api/auth/coupon/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            coupon_code: couponCode,
+            google_user_id: firebaseUser.uid,
+            google_email: firebaseUser.email,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-        // Store dual auth session
-        const sessionData = {
-            sessionId: data.session_id || '',
+        console.log("Coupon verify response status:", response.status);
+
+        // Handle non-OK responses
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Coupon verify failed:", response.status, errorData);
+          setLoading(false);
+          return {
+            success: false,
+            error:
+              errorData.detail ||
+              errorData.message ||
+              `Server error: ${response.status}`,
+          };
+        }
+
+        const data = await response.json();
+        console.log("Coupon verify data:", data);
+
+        if (data.success) {
+          const newCouponData = {
+            code: couponCode,
+            features: data.features || [],
+            expiresAt: data.expires_at || "",
+            sessionId: data.session_id || "",
+          };
+
+          setCouponData(newCouponData);
+          setIsCouponVerified(true);
+
+          // Store dual auth session
+          const sessionData = {
+            sessionId: data.session_id || "",
             userId: firebaseUser.uid,
             features: data.features || [],
-            expiresAt: data.expires_at || '',
-        };
+            expiresAt: data.expires_at || "",
+          };
 
-        useSessionStore.getState().setSession(sessionData);
+          useSessionStore.getState().setSession(sessionData);
 
-        localStorage.setItem(DUAL_AUTH_KEY, JSON.stringify({
-          googleUserId: firebaseUser.uid,
-          couponCode: couponCode,
-          couponVerified: true,
-          features: data.features || [],
-          expiresAt: data.expires_at || '',
-          sessionId: data.session_id || '',
-        }));
+          localStorage.setItem(
+            DUAL_AUTH_KEY,
+            JSON.stringify({
+              googleUserId: firebaseUser.uid,
+              couponCode: couponCode,
+              couponVerified: true,
+              features: data.features || [],
+              expiresAt: data.expires_at || "",
+              sessionId: data.session_id || "",
+            })
+          );
 
-        setLoading(false);
-        return { success: true };
-      } else {
+          setLoading(false);
+          return { success: true };
+        } else {
+          setLoading(false);
+          return {
+            success: false,
+            error: data.detail || data.message || "Invalid coupon code",
+          };
+        }
+      } catch (error) {
+        console.error("Coupon verification error:", error);
         setLoading(false);
         return {
           success: false,
-          error: data.detail || data.message || 'Invalid coupon code'
+          error:
+            error instanceof Error && error.name === "AbortError"
+              ? "Request timeout. Please try again."
+              : "Failed to verify coupon. Please try again.",
         };
       }
-    } catch (error) {
-      console.error('Coupon verification error:', error);
-      setLoading(false);
-      return {
-        success: false,
-        error: error instanceof Error && error.name === 'AbortError'
-          ? 'Request timeout. Please try again.'
-          : 'Failed to verify coupon. Please try again.'
-      };
-    }
-  }, [firebaseUser]);
+    },
+    [firebaseUser]
+  );
 
   // Logout (clears both Google and coupon)
   const logout = useCallback(async () => {
@@ -339,17 +387,17 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
       // Try to notify backend
       try {
-        await fetch(`${ENGINE_C_URL}/api/auth/logout`, { method: 'POST' });
+        await fetch(`${ENGINE_C_URL}/api/auth/logout`, { method: "POST" });
       } catch (e) {
         // Ignore errors
       }
 
       // Clear all auth storage
       localStorage.removeItem(DUAL_AUTH_KEY);
-      localStorage.removeItem('infinityai_coupon_session');
-      localStorage.removeItem('infinityai_auth_type');
-      localStorage.removeItem('infinityai_session');
-      localStorage.removeItem('infinityai_user');
+      localStorage.removeItem("infinityai_coupon_session");
+      localStorage.removeItem("infinityai_auth_type");
+      localStorage.removeItem("infinityai_session");
+      localStorage.removeItem("infinityai_user");
 
       setFirebaseUser(null);
       setUserProfile(null);
@@ -357,7 +405,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       setCouponData(null);
       useSessionStore.getState().clearSession();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
     setLoading(false);
   }, []);
@@ -369,18 +417,18 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         const profile = await getUserProfile(firebaseUser.uid);
         setUserProfile(profile);
       } catch (error) {
-        console.error('Failed to refresh session:', error);
+        console.error("Failed to refresh session:", error);
       }
     }
   }, [firebaseUser]);
 
   // Dhan connection placeholders
   const connectDhan = useCallback(async () => {
-    return { success: false, error: 'Use settings page to connect Dhan' };
+    return { success: false, error: "Use settings page to connect Dhan" };
   }, []);
 
   const disconnectDhan = useCallback(async () => {
-    return { success: false, error: 'Use settings page to disconnect Dhan' };
+    return { success: false, error: "Use settings page to disconnect Dhan" };
   }, []);
 
   const value: DualAuthContextType = {
@@ -417,12 +465,12 @@ const defaultAuthState: DualAuthContextType = {
   isAuthenticated: false,
   firebaseUser: null,
   userProfile: null,
-  signInWithGoogle: async () => ({ success: false, error: 'Not initialized' }),
-  verifyCoupon: async () => ({ success: false, error: 'Not initialized' }),
+  signInWithGoogle: async () => ({ success: false, error: "Not initialized" }),
+  verifyCoupon: async () => ({ success: false, error: "Not initialized" }),
   logout: async () => {},
   refreshSession: async () => {},
-  connectDhan: async () => ({ success: false, error: 'Not initialized' }),
-  disconnectDhan: async () => ({ success: false, error: 'Not initialized' }),
+  connectDhan: async () => ({ success: false, error: "Not initialized" }),
+  disconnectDhan: async () => ({ success: false, error: "Not initialized" }),
 };
 
 export function useCouponAuth(): DualAuthContextType {
@@ -431,7 +479,9 @@ export function useCouponAuth(): DualAuthContextType {
   // If context is not available, return a safe default instead of throwing
   // This can happen during SSR, hydration, or if the provider isn't mounted yet
   if (context === undefined) {
-    console.warn('useCouponAuth: Context not available, returning default state');
+    console.warn(
+      "useCouponAuth: Context not available, returning default state"
+    );
     return defaultAuthState;
   }
   return context;

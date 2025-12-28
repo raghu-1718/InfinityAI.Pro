@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -14,17 +20,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useOrders } from '@/hooks/useApi';
-import { toast } from 'sonner';
-import { formatCurrency, formatDateTime } from '@/lib/format';
+} from "@/components/ui/select";
+import { useOrders } from "@/hooks/useApi";
+import { toast } from "sonner";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 import {
   History,
   Search,
@@ -36,28 +42,35 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   RefreshCw,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Order type definition
 interface Order {
   orderId?: string;
   symbol: string;
-  transactionType: 'BUY' | 'SELL';
-  orderType: 'LIMIT' | 'MARKET' | 'SL' | 'SL-M';
+  transactionType: "BUY" | "SELL";
+  orderType: "LIMIT" | "MARKET" | "SL" | "SL-M";
   quantity: number;
   price?: number;
-  status: 'PENDING' | 'OPEN' | 'FILLED' | 'CANCELLED' | 'REJECTED';
+  status: "PENDING" | "OPEN" | "FILLED" | "CANCELLED" | "REJECTED";
   timestamp: string;
   filledQty?: number;
   avgPrice?: number;
 }
 
 export default function HistoryPage() {
-  const { data: ordersData, isLoading, error: ordersError, isError: isOrdersError, refetch, isFetching } = useOrders();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const {
+    data: ordersData,
+    isLoading,
+    error: ordersError,
+    isError: isOrdersError,
+    refetch,
+    isFetching,
+  } = useOrders();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   const orders = Array.isArray(ordersData?.data) ? ordersData.data : [];
 
@@ -69,33 +82,39 @@ export default function HistoryPage() {
       order.orderId?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
-      statusFilter === 'all' || order.orderStatus?.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "all" ||
+      order.orderStatus?.toLowerCase() === statusFilter.toLowerCase();
 
     const matchesType =
-      typeFilter === 'all' || order.transactionType?.toLowerCase() === typeFilter.toLowerCase();
+      typeFilter === "all" ||
+      order.transactionType?.toLowerCase() === typeFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
   // Group orders by date
-  const ordersByDate = filteredOrders.reduce((acc: Record<string, any[]>, order: any) => {
-    const date = order.createTime
-      ? new Date(order.createTime).toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
-      : 'Unknown Date';
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(order);
-    return acc;
-  }, {});
+  const ordersByDate = filteredOrders.reduce(
+    (acc: Record<string, any[]>, order: any) => {
+      const date = order.createTime
+        ? new Date(order.createTime).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "Unknown Date";
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(order);
+      return acc;
+    },
+    {}
+  );
 
   return (
     <div className="p-6 space-y-6">
       {isOrdersError && (
         <div className="bg-red-900 text-red-100 p-3 rounded mb-4 w-full text-center">
-          <strong>Error:</strong> {ordersError?.message || 'Failed to load order history.'}
+          <strong>Error:</strong>{" "}
+          {ordersError?.message || "Failed to load order history."}
         </div>
       )}
       {/* Page Header */}
@@ -106,8 +125,14 @@ export default function HistoryPage() {
             View and track all your past orders
           </p>
         </div>
-        <Button onClick={() => refetch()} variant="outline" disabled={isFetching}>
-          <RefreshCw className={cn('mr-2 h-4 w-4', isFetching && 'animate-spin')} />
+        <Button
+          onClick={() => refetch()}
+          variant="outline"
+          disabled={isFetching}
+        >
+          <RefreshCw
+            className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")}
+          />
           Refresh
         </Button>
       </div>
@@ -180,8 +205,8 @@ export default function HistoryPage() {
               <p className="mt-2 text-muted-foreground">No orders found</p>
               <p className="text-xs text-muted-foreground">
                 {orders.length === 0
-                  ? 'Start trading to see your order history'
-                  : 'Try adjusting your filters'}
+                  ? "Start trading to see your order history"
+                  : "Try adjusting your filters"}
               </p>
             </div>
           ) : (
@@ -227,11 +252,11 @@ export default function HistoryPage() {
 function OrderStats({ orders }: { orders: any[] }) {
   const stats = orders.reduce(
     (acc, order) => {
-      if (order.orderStatus === 'TRADED') acc.traded++;
-      if (order.orderStatus === 'PENDING') acc.pending++;
-      if (order.orderStatus === 'REJECTED') acc.rejected++;
-      if (order.transactionType === 'BUY') acc.buys++;
-      if (order.transactionType === 'SELL') acc.sells++;
+      if (order.orderStatus === "TRADED") acc.traded++;
+      if (order.orderStatus === "PENDING") acc.pending++;
+      if (order.orderStatus === "REJECTED") acc.rejected++;
+      if (order.transactionType === "BUY") acc.buys++;
+      if (order.transactionType === "SELL") acc.sells++;
       return acc;
     },
     { traded: 0, pending: 0, rejected: 0, buys: 0, sells: 0 }
@@ -256,29 +281,32 @@ function OrderStats({ orders }: { orders: any[] }) {
 }
 
 function OrderRow({ order }: { order: any }) {
-  const status = order.orderStatus || 'PENDING';
-  const isBuy = order.transactionType === 'BUY';
+  const status = order.orderStatus || "PENDING";
+  const isBuy = order.transactionType === "BUY";
 
-  const statusConfig: Record<string, { icon: any; color: string; bgColor: string }> = {
+  const statusConfig: Record<
+    string,
+    { icon: any; color: string; bgColor: string }
+  > = {
     TRADED: {
       icon: CheckCircle,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100 dark:bg-green-900/30',
+      color: "text-green-600",
+      bgColor: "bg-green-100 dark:bg-green-900/30",
     },
     PENDING: {
       icon: Clock,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
     },
     REJECTED: {
       icon: XCircle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100 dark:bg-red-900/30',
+      color: "text-red-600",
+      bgColor: "bg-red-100 dark:bg-red-900/30",
     },
     CANCELLED: {
       icon: XCircle,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-100 dark:bg-gray-800',
+      color: "text-gray-600",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
     },
   };
 
@@ -289,7 +317,14 @@ function OrderRow({ order }: { order: any }) {
     <TableRow>
       <TableCell>
         <div className="flex items-center gap-2">
-          <div className={cn('rounded p-1', isBuy ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30')}>
+          <div
+            className={cn(
+              "rounded p-1",
+              isBuy
+                ? "bg-green-100 dark:bg-green-900/30"
+                : "bg-red-100 dark:bg-red-900/30"
+            )}
+          >
             {isBuy ? (
               <ArrowUpCircle className="h-4 w-4 text-green-600" />
             ) : (
@@ -297,36 +332,46 @@ function OrderRow({ order }: { order: any }) {
             )}
           </div>
           <div>
-            <p className="font-medium">{order.tradingSymbol || order.securityId}</p>
-            <p className="text-xs text-muted-foreground font-mono">{order.orderId ? String(order.orderId).slice(0, 8) : 'N/A'}...</p>
+            <p className="font-medium">
+              {order.tradingSymbol || order.securityId}
+            </p>
+            <p className="text-xs text-muted-foreground font-mono">
+              {order.orderId ? String(order.orderId).slice(0, 8) : "N/A"}...
+            </p>
           </div>
         </div>
       </TableCell>
       <TableCell>
         <Badge
           variant="outline"
-          className={isBuy ? 'border-green-500 text-green-600' : 'border-red-500 text-red-600'}
+          className={
+            isBuy
+              ? "border-green-500 text-green-600"
+              : "border-red-500 text-red-600"
+          }
         >
           {order.transactionType}
         </Badge>
       </TableCell>
       <TableCell className="font-mono">{order.quantity}</TableCell>
-      <TableCell className="font-mono">{formatCurrency(order.price || 0)}</TableCell>
+      <TableCell className="font-mono">
+        {formatCurrency(order.price || 0)}
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          <div className={cn('rounded p-1', config.bgColor)}>
-            <StatusIcon className={cn('h-3 w-3', config.color)} />
+          <div className={cn("rounded p-1", config.bgColor)}>
+            <StatusIcon className={cn("h-3 w-3", config.color)} />
           </div>
-          <span className={cn('text-sm', config.color)}>{status}</span>
+          <span className={cn("text-sm", config.color)}>{status}</span>
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground text-sm">
         {order.createTime
-          ? new Date(order.createTime).toLocaleTimeString('en-IN', {
-              hour: '2-digit',
-              minute: '2-digit',
+          ? new Date(order.createTime).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
             })
-          : '--'}
+          : "--"}
       </TableCell>
     </TableRow>
   );

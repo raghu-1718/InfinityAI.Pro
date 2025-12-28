@@ -1,5 +1,5 @@
 "use client";
-import type { Metadata } from "next";
+
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -17,15 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "InfinityAI.Pro - AI-Powered Trading Platform",
-  description: "Real-time AI-powered trading analytics, risk management, and execution platform",
-  icons: {
-    icon: "/favicon.ico",
-  },
-};
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   // Fail-fast env check (client only)
   const [missing, setMissing] = useState<string[]>([]);
   useEffect(() => {
@@ -33,11 +27,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   }, []);
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+      >
         <EnvErrorBanner missing={missing} />
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

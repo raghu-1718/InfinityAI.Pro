@@ -158,6 +158,7 @@ app = FastAPI(
     version="3.8-performance-optimized"
 )
 
+
 # --- Health Checks ---
 @app.get("/health")
 @app.get("/healthz")
@@ -170,6 +171,11 @@ async def health_check():
         "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
         "timestamp": datetime.utcnow().isoformat()
     }
+
+# Cloud Run expects /api/health for health checks
+@app.get("/api/health")
+async def api_health_check():
+    return {"status": "ok", "service": "engine-c-execution", "timestamp": datetime.utcnow().isoformat()}
 
 # Robust explicit OPTIONS handler for CORS preflight (Restored)
 @app.api_route("/api/auth/coupon/verify", methods=["OPTIONS"])
