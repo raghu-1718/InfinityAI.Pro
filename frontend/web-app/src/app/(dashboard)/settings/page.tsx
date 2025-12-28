@@ -30,6 +30,8 @@ import { useCouponAuth } from "@/contexts/DualAuthContext";
 import { setDhanClientId, clearDhanClientId } from "@/lib/user";
 import { EngineStatusCards } from "@/components/dashboard/engine-status";
 
+import { cn } from "@/lib/utils";
+
 const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
 
 interface DhanCredentials {
