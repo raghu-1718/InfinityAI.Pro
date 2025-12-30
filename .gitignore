@@ -85,3 +85,11 @@ gcloud/application_default_credentials.json
 token.txt
 PATH.txt
 settings.txt
+
+# Hygiene rules
+logs/*.json
+data/historical/*.txt
+data/historical/*.csv
+*.ps1
+*.sh
+!infra/scripts/
