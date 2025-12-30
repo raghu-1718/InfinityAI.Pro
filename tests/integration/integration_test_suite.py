@@ -23,12 +23,13 @@ class InfinityAIIntegrationTester:
 
     def __init__(self):
         # Current deployment URLs (GCP Cloud Run + Firebase)
+        # Current deployment URLs (GCP Cloud Run + Firebase)
         self.urls = {
-            "frontend": "https://infinityai.pro",
-            "engine_a": "https://infinityai-engine-a-bprmddefsa-uc.a.run.app",
-            "engine_b": "https://infinityai-engine-b-bprmddefsa-uc.a.run.app",
-            "engine_c": "https://infinityai-engine-c-execution-bprmddefsa-uc.a.run.app",
-            "engine_d": "https://infinityai-engine-d-bprmddefsa-uc.a.run.app"
+            "frontend": "https://gen-lang-client-0779271931.web.app",
+            "engine_a": "https://engine-a-429140669077.us-central1.run.app",
+            "engine_b": "https://engine-b-429140669077.us-central1.run.app",
+            "engine_c": "https://engine-c-429140669077.us-central1.run.app",
+            "engine_d": "https://engine-d-429140669077.us-central1.run.app"
         }
 
         # Test results
