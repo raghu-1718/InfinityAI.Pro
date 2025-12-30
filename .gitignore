@@ -93,3 +93,9 @@ data/historical/*.csv
 *.ps1
 *.sh
 !infra/scripts/
+
+# Hygiene Phase 2
+.venv/
+.firebase/
+artifacts/
+infra_snapshot/
