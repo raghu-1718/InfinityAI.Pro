@@ -11,12 +11,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY ./requirements.txt /app/
+COPY engine-c/requirements.txt /app/
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY ./src /app/src
+COPY shared /app/shared
+COPY engine-c/src /app/src
 
 # Environment variables
 ENV PORT=8080

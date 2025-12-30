@@ -41,11 +41,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.covariance import LedoitWolf
 import joblib
 
-# Google Cloud Integrations (Official SDKs)
+# Google Cloud Integrations (From Shared Library)
 try:
-    from src.google_integrations import (
+    from shared.google_integrations import (
         GenAIClient,
-        GeminiModel,  # Added for model selection
+        GeminiModel,
         TradingLogger,
         TradingEventType,
         ModelStorage,
@@ -374,6 +374,7 @@ class SystemStateResponse(BaseModel):
     optimism_level: str # HIGH, NORMAL, LOW
     current_vix: float
     timestamp: str
+    engine_version: str = "v4.0"
 
 @app.get("/api/system/state", response_model=SystemStateResponse)
 async def get_system_state(user_id: Optional[str] = Header(None, alias="X-User-ID")):
@@ -452,6 +453,7 @@ async def get_system_state(user_id: Optional[str] = Header(None, alias="X-User-I
         engine_active=AUTONOMOUS_TRADER.is_active,
         optimism_level=optimism_level,
         current_vix=current_vix,
+        engine_version="v4.0",
         timestamp=datetime.utcnow().isoformat()
     )
 
@@ -1395,30 +1397,6 @@ async def set_kill_switch(req: KillSwitchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/system/state")
-async def get_system_state():
-    """Global System State for Frontend Banner"""
-    status = "NORMAL"
-    message = "All systems operational"
-    
-    if not AUTONOMOUS_TRADER.is_active:
-        status = "STANDBY"
-        message = "Engine is ready to start"
-    else:
-        status = "LIVE_TRADING"
-        message = "AI Engine Active"
-
-    # Check dependencies (simplified)
-    if not GOOGLE_INTEGRATIONS_AVAILABLE:
-        status = "DEGRADED"
-        message = "ML Services Unavailable"
-
-    return {
-        "status": status,
-        "message": message,
-        "engine_version": "v4.0",
-        "timestamp": datetime.utcnow().isoformat()
-    }
 
 
 if __name__ == "__main__":

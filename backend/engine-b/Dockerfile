@@ -28,20 +28,21 @@ WORKDIR /app
 # --------------------------------------------------
 # Python dependencies (cached layer)
 # --------------------------------------------------
-COPY requirements.txt /app/requirements.txt
+COPY engine-b/requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # --------------------------------------------------
 # NLTK assets (explicit + resilient)
 # --------------------------------------------------
-COPY src/download_nltk.py /app/src/download_nltk.py
+COPY engine-b/src/download_nltk.py /app/src/download_nltk.py
 RUN python /app/src/download_nltk.py && rm /app/src/download_nltk.py
 
 # --------------------------------------------------
-# Application source
+# Shared library & Application source
 # --------------------------------------------------
-COPY src /app/src
+COPY shared /app/shared
+COPY engine-b/src /app/src
 
 # --------------------------------------------------
 # Runtime directories

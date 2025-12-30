@@ -23,14 +23,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy dependency manifest first (layer caching)
-COPY requirements.txt .
+COPY engine-a/requirements.txt .
 
 # Upgrade pip + install dependencies
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
+# Copy shared library (from parent backend context)
+COPY shared ./shared
+
 # Copy application source
-COPY src ./src
+COPY engine-a/src ./src
 
 # -----------------------------------------------------
 # Runtime environment
