@@ -1,3 +1,7 @@
 {
-  "extends": "./frontend/web-app/tsconfig.json"
+  "files": [],
+  "references": [
+    { "path": "./frontend/web-app" },
+    { "path": "./frontend/functions" }
+  ]
 }

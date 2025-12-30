@@ -3,13 +3,13 @@
   "version": "3.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "functions"
+    "frontend/web-app",
+    "frontend/functions"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=frontend",
-    "build": "npm run build --workspace=frontend && npm run build --workspace=functions",
-    "build:frontend": "npm run build --workspace=frontend",
+    "dev": "npm run dev --workspace=web-app",
+    "build": "npm run build --workspace=web-app && npm run build --workspace=functions",
+    "build:frontend": "npm run build --workspace=web-app",
     "build:functions": "npm run build --workspace=functions",
     "deploy": "firebase deploy",
     "deploy:hosting": "firebase deploy --only hosting",

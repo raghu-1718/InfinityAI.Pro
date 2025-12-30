@@ -1,3 +1,5 @@
+import path from "path";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
@@ -16,13 +18,9 @@ const nextConfig = {
 
   // Set turbopack root to resolve workspace warning
   turbopack: {
-    root: process.cwd(),
+    root: path.resolve(__dirname, "../../"),
   },
 
-  // Skip linting constraints during build for rapid iteration
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
