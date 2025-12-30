@@ -90,6 +90,7 @@ settings.txt
 logs/*.json
 data/historical/*.txt
 data/historical/*.csv
+!data/historical/.gitkeep
 *.ps1
 *.sh
 !infra/scripts/
