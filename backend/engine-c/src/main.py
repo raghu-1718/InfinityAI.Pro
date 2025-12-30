@@ -8,7 +8,9 @@ def log_startup_error(e, context="startup"):
     print(f"[ERROR] {context}: {e}")
     print(traceback.format_exc())
 import os
-ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "live").lower()  # 'live' or 'paper'
+ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", os.getenv("TRADING_MODE", "live")).lower()  # 'live' or 'paper'/'sandbox'
+if ENGINE_C_MODE == "sandbox":
+    ENGINE_C_MODE = "paper"
 ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -1340,7 +1342,32 @@ async def place_order(order: OrderRequest, request: Request):
     # --- Live/Paper mode switch ---
     if ENGINE_C_MODE == "paper":
         # Simulate order placement, do not call Dhan
-        return {"status": "paper", "order_id": None, "dhan_response": "Simulated order (paper mode)"}
+        simulated_id = f"sim_{uuid.uuid4().hex[:12]}"
+        
+        # Log to Firestore for Dashboards
+        try:
+            db = firestore.Client()
+            db.collection("paper_orders").document(simulated_id).set({
+                "symbol": order.security_id,
+                "quantity": order.quantity,
+                "price": order.price or 0.0,
+                "transaction_type": order.transaction_type,
+                "status": "TRADED",
+                "timestamp": datetime.utcnow().isoformat(),
+                "mode": "sandbox"
+            })
+        except Exception as fe:
+            logger.warning(f"Paper order Firestore log failed: {fe}")
+
+        return {
+            "status": "success", 
+            "order_id": simulated_id, 
+            "dhan_response": {
+                "status": "success",
+                "data": {"orderId": simulated_id},
+                "remarks": "Simulated execution (Sandbox/Paper Mode)"
+            }
+        }
 
     try:
         dhan_client = get_dhan_client()
@@ -2418,21 +2445,24 @@ async def get_trading_settings_schema():
 @app.get("/api/portfolio")
 async def get_portfolio(user_id: str = "default"):
     """Get user's complete portfolio summary"""
+    manager = get_credentials_manager()
+    if manager is None:
+        logger.error("Credentials manager not available for /api/portfolio")
+        raise HTTPException(status_code=503, detail="Credentials manager not available")
+
+    creds = await manager.get_user_credentials(user_id)
+    if not creds:
+        logger.warning(f"No credentials found for user_id={user_id} in /api/portfolio")
+        raise HTTPException(status_code=400, detail="User credentials missing. Please connect your Dhan account.")
+
+    client_id = creds.get("credentials", {}).get("client_id")
+    access_token = creds.get("credentials", {}).get("access_token")
+
+    if not client_id or not access_token:
+        logger.warning(f"Incomplete credentials for user_id={user_id} in /api/portfolio")
+        raise HTTPException(status_code=400, detail="Incomplete credentials. Please reconnect your Dhan account.")
+
     try:
-        manager = get_credentials_manager()
-        if manager is None:
-            raise HTTPException(status_code=503, detail="Credentials manager not available")
-
-        creds = await manager.get_user_credentials(user_id)
-        if not creds:
-            raise HTTPException(status_code=404, detail="No credentials found. Please connect your Dhan account.")
-
-        client_id = creds.get("credentials", {}).get("client_id")
-        access_token = creds.get("credentials", {}).get("access_token")
-
-        if not client_id or not access_token:
-            raise HTTPException(status_code=400, detail="Incomplete credentials")
-
         dhan_client = dhanhq(client_id, access_token)
 
         # Fetch all data
@@ -2507,12 +2537,9 @@ async def get_portfolio(user_id: str = "default"):
                 "trades_today": 0
             }
         }
-
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Failed to fetch portfolio: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to fetch portfolio for user_id={user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error while fetching portfolio.")
 
 
 # ==============================================================================

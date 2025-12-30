@@ -1,0 +1,1347 @@
+[
+  {
+    "insertId": "6951934d000e4bd5f0bad233",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T20:30:05.942038062Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:5132 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T20:30:05.936917Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003776172s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.2",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951934d000e4e419bc03caa",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T20:30:05.943327417Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "ccdfbabdd365fe5f",
+    "timestamp": "2025-12-28T20:30:05.932456Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/08570f288a88ad02bbfcb9c4df56afd1",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695190f60001043773ddcd99",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T20:20:06.071495090Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:26190 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T20:20:06.066615Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004607901s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.97",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.78.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "695190f6000107cbd73e12cb",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T20:20:06.074032325Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "819b519e6cb1596c",
+    "timestamp": "2025-12-28T20:20:06.060879Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/3f0d353999989ddfbc815dd1cd75639b",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69518e9e000469cb3bbf16c0",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T20:10:06.296028998Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:37402 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T20:10:06.289227Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003873252s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.66",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.78.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69518e9e00046d89a1246c95",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T20:10:06.294579484Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "cce4e2aa3ca5a0b5",
+    "timestamp": "2025-12-28T20:10:06.284197Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/4fe32b3e01c1d7d8cb873d716c4e8781",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69518c4600023f2de7500e7b",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T20:00:06.152842339Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:61214 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T20:00:06.147245Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004426795s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.162",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69518c4600024147b73871d5",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T20:00:06.152675232Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "c498091af45d4040",
+    "timestamp": "2025-12-28T20:00:06.141730Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/c4d2c92dca273651a6766c9e349833d7",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695189ee00009b8ec9e620a2",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:50:06.046604760Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:60024 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:50:06.039822Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003520419s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.33",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "695189ee00009d94347aa269",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:50:06.047766252Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "029aa523de57bef1",
+    "timestamp": "2025-12-28T19:50:06.035401Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/263cff38274e68c1e915b55b1564bd82",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695187960000383f64120b2a",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:40:06.020715773Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:43122 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:40:06.014399Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003617608s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.5",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.78.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951879600003b810d250f28",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:40:06.020773577Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "75c09b56e07353cd",
+    "timestamp": "2025-12-28T19:40:06.010016Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/5fd3d03e4f0cf251af9eff78d9bf0ccf",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951853d000b6e9d4a4a774c",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:30:05.755414695Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:15706 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:30:05.749213Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003579989s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.192",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951853d000b71fcc6de146f",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:30:05.755545862Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "eaac5ad125de841d",
+    "timestamp": "2025-12-28T19:30:05.744495Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/d417f302b4895a3f1a1a4e4c1fc2c9ba",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695182e5000e7c03f91fbd2e",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:20:05.954856862Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:35862 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:20:05.949251Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003841824s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.227",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "695182e5000e7f3f31f140cf",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:20:05.955170977Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "5f6c0b25ff4f9af9",
+    "timestamp": "2025-12-28T19:20:05.944367Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/af68a3d1481c2ffc0edffc9a16a74a5b",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951808d000e8d8f826876dd",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:10:05.960337186Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:19228 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:10:05.953743Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003202143s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.193",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951808d000e90644d2393fa",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:10:05.958911772Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "f90055265eac3a64",
+    "timestamp": "2025-12-28T19:10:05.949737Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/15c1b19987bac5dea905494d26f24fe8",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69517e35000cba333646f94a",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T19:00:05.839045283Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:7638 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T19:00:05.834099Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004431340s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.228",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69517e35000cbe55a41cdfea",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T19:00:05.841105695Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "1b60c53fad739d0b",
+    "timestamp": "2025-12-28T19:00:05.829303Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/1a36c99666ac707ad7d9bc77a5a4e659",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69517bde0000208fabcb0e16",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:50:06.014151498Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:63222 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:50:06.008335Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003556940s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.193",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69517bde0000235c8ecb6d63",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:50:06.018117260Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "d52db6b22f5d3a53",
+    "timestamp": "2025-12-28T18:50:06.003647Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/c08c7c11ab1e0db959bf2ed60222f652",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69517985000d9a3f50befe49",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:40:05.897048281Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:40400 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:40:05.891455Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003705853s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.194",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69517985000d9d6f44208a1a",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:40:05.897251299Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "8f77497403264a1b",
+    "timestamp": "2025-12-28T18:40:05.887047Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/f3be7b65d10c1478165f9e9f4a5581ef",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951772d000d50e34228b504",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:30:05.878319094Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:41214 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:30:05.872675Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003592037s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.130",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951772d000d538faf3f65db",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:30:05.878484976Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "5c2919bf67f6a8ba",
+    "timestamp": "2025-12-28T18:30:05.868416Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/564459f890582184d2025c87ccc20a4e",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695174d5000b0f10ec8fc0a5",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:20:05.730802672Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:58284 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:20:05.724752Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004125350s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.160",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "695174d5000b12b315bac0ae",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:20:05.731296034Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "6b2dc1d357045f26",
+    "timestamp": "2025-12-28T18:20:05.720252Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/aec3370e27a59a08bf10f1a491c5b0cd",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951727d000d011626120ed8",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:10:05.856947266Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:34562 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:10:05.852246Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004246884s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.99",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951727d000d054134ef9001",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:10:05.859170699Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "140e6bfce5963dce",
+    "timestamp": "2025-12-28T18:10:05.847178Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/8d63be2988d3683a0385af758a9f0b07",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69517025000d9ca77cc53eb6",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T18:00:05.899226862Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:62040 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T18:00:05.892071Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.005011173s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.163",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.76.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69517025000da19947505eb0",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T18:00:05.897981990Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "708ff72af9bb8233",
+    "timestamp": "2025-12-28T18:00:05.882480Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/24702cc21e01ff85105a690a7bce0cd6",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69516dcd000d1e5624ca825f",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:50:05.864912198Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:24276 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:50:05.859734Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004161322s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.64",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.77.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69516dcd000d223bca8e4a43",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:50:05.865048743Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "face63e061eec782",
+    "timestamp": "2025-12-28T17:50:05.854453Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/c2c9563c1ecbdd5164c20848ca25796e",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69516b75000d36ec108ad5f7",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:40:05.869660528Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:6800 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:40:05.866028Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004744066s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.129",
+      "requestMethod": "GET",
+      "requestSize": "421",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.77.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69516b75000d3acea52696b8",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:40:05.872419155Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "f0532263f88ca39a",
+    "timestamp": "2025-12-28T17:40:05.860364Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/7fc7fbdc28f0f1ef4b557e95dae9dda2",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951691d000ceeda3a23d2cb",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:30:05.853499826Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:17626 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:30:05.847578Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004061576s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.160",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.77.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951691d000cf1fd6a393488",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:30:05.854283379Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "fe366d122d2b2deb",
+    "timestamp": "2025-12-28T17:30:05.842067Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/c9ba31d1a5c011d7c729931814f0c6e6",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695167f10009b5d30e84dfdb",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:25:05.642068495Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:15048 - \"GET / HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:25:05.636371Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003636884s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "45.148.10.99",
+      "requestMethod": "GET",
+      "requestSize": "226",
+      "requestUrl": "https://engine-c.infinityai.pro/",
+      "responseSize": "625",
+      "serverIp": "142.251.142.211",
+      "status": 200,
+      "userAgent": "Mozilla/5.0"
+    },
+    "insertId": "695167f10009b930581e11b9",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:25:05.643613949Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "126aea10a709522b",
+    "timestamp": "2025-12-28T17:25:05.632057Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/43a6e79b9de531ffa420201545277a0e",
+    "traceSampled": true
+  },
+  {
+    "insertId": "695166c5000ed05ebec35920",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:20:05.976705622Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:7528 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:20:05.970846Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003961414s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.131",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.77.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "695166c5000ed31526aa4938",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:20:05.976888792Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "b26f7488cb391108",
+    "timestamp": "2025-12-28T17:20:05.965693Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/87ca3c2537e67b0528c3eb0f602e8b9e",
+    "traceSampled": true
+  },
+  {
+    "insertId": "6951646e0000d6181c9f8c80",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:10:06.060253773Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:2790 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:10:06.054808Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.003821190s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "35.187.129.226",
+      "requestMethod": "GET",
+      "requestSize": "420",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.77.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "6951646e0000d93ae7913381",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:10:06.061577379Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "dcf0fbe23df2612b",
+    "timestamp": "2025-12-28T17:10:06.049552Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/b43818abe8551b53f6700e5aae8c917c",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69516215000e77268c70284a",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2025-12-28T17:00:05.953433952Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     169.254.169.126:18184 - \"GET /api/health HTTP/1.1\" 200 OK",
+    "timestamp": "2025-12-28T17:00:05.948006Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.004372967s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "34.116.19.33",
+      "requestMethod": "GET",
+      "requestSize": "446",
+      "requestUrl": "https://engine-c-mfvaq54jjq-uc.a.run.app/api/health",
+      "responseSize": "387",
+      "serverIp": "34.143.74.2",
+      "status": 200,
+      "userAgent": "Google-Cloud-Scheduler"
+    },
+    "insertId": "69516215000e7a1dae5876db",
+    "labels": {
+      "instanceId": "0007e26d68b518829abc209c4aec66cdf1bc4e5ff634722dbf1c888cccf37f104cc8b557e3edf770c6b58bce42a99bd43d85733eca892f38bb6efd5ae7ce8044d5d833aff51e4433acd6e100623a"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2025-12-28T17:00:05.953516281Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-c",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-c-00043-w66",
+        "service_name": "engine-c"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "c88a4b4d75213850",
+    "timestamp": "2025-12-28T17:00:05.942140Z",
+    "trace": "projects/gen-lang-client-0779271931/traces/6abd622b0d9345dfd8e8cd11b059efe8",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69516177000dda9f4731b00c",
+    "labels": {
+      "instanceId": "0007e26d6815f39f0d3de5897e1be7b9af06b1ceb659cb3e6868351bec096fdb721c4c5acc84b4fe0f9cbde3e90c59f2c090573182835fe8948ea98cd6893bacd8fb63463722c82b790c4af1ff5716"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-28T16:57:28.145913797Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00053-fnq",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     Finished server process [1]",
+    "timestamp": "2025-12-28T16:57:27.907935Z"
+  },
+  {
+    "insertId": "69516177000dda159ad9f32b",
+    "labels": {
+      "instanceId": "0007e26d6815f39f0d3de5897e1be7b9af06b1ceb659cb3e6868351bec096fdb721c4c5acc84b4fe0f9cbde3e90c59f2c090573182835fe8948ea98cd6893bacd8fb63463722c82b790c4af1ff5716"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-28T16:57:28.145913797Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00053-fnq",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "INFO:     Application shutdown complete.",
+    "timestamp": "2025-12-28T16:57:27.907797Z"
+  },
+  {
+    "insertId": "69516177000dd994376b96ca",
+    "labels": {
+      "instanceId": "0007e26d6815f39f0d3de5897e1be7b9af06b1ceb659cb3e6868351bec096fdb721c4c5acc84b4fe0f9cbde3e90c59f2c090573182835fe8948ea98cd6893bacd8fb63463722c82b790c4af1ff5716"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-28T16:57:28.145913797Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00053-fnq",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-28 16:57:27,909 - InfinityAI.EngineB - INFO - ? Engine B cleanup complete",
+    "timestamp": "2025-12-28T16:57:27.907668Z"
+  },
+  {
+    "insertId": "69516177000dd88e0bac0e5e",
+    "labels": {
+      "instanceId": "0007e26d6815f39f0d3de5897e1be7b9af06b1ceb659cb3e6868351bec096fdb721c4c5acc84b4fe0f9cbde3e90c59f2c090573182835fe8948ea98cd6893bacd8fb63463722c82b790c4af1ff5716"
+    },
+    "logName": "projects/gen-lang-client-0779271931/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2025-12-28T16:57:28.145913797Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "engine-b",
+        "location": "us-central1",
+        "project_id": "gen-lang-client-0779271931",
+        "revision_name": "engine-b-00053-fnq",
+        "service_name": "engine-b"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2025-12-28 16:57:27,908 - InfinityAI.EngineB - INFO - ? Engine B shutting down...",
+    "timestamp": "2025-12-28T16:57:27.907406Z"
+  }
+]

@@ -1,0 +1,50 @@
+INFO:     169.254.169.126:26190 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:37402 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:61214 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:60024 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:43122 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:15706 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:35862 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:19228 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:7638 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:63222 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:40400 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:41214 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:58284 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:34562 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:62040 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:24276 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:6800 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:17626 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:15048 - "GET / HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:7528 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:2790 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     169.254.169.126:18184 - "GET /api/health HTTP/1.1" 200 OK
+
+INFO:     Finished server process [1]
+INFO:     Application shutdown complete.
+2025-12-28 16:57:27,909 - InfinityAI.EngineB - INFO - ? Engine B cleanup complete
+2025-12-28 16:57:27,908 - InfinityAI.EngineB - INFO - ? Engine B shutting down...
+INFO:     Waiting for application shutdown.
+INFO:     Shutting down

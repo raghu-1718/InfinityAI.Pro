@@ -164,6 +164,8 @@ export default function SettingsPage() {
           user_id: session.userId,
           client_id: dhanCredentials.client_id,
           access_token: dhanCredentials.access_token,
+          api_key: "",
+          api_secret: "",
         }),
       });
 

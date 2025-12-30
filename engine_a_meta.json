@@ -1,0 +1,158 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/build-enable-automatic-updates": "false",
+      "run.googleapis.com/build-id": "9777a290-ecf2-4921-91d7-8730b9519ad4",
+      "run.googleapis.com/build-image-uri": "us-central1-docker.pkg.dev/gen-lang-client-0779271931/cloud-run-source-deploy/engine-a",
+      "run.googleapis.com/build-name": "projects/429140669077/locations/us-central1/builds/9777a290-ecf2-4921-91d7-8730b9519ad4",
+      "run.googleapis.com/build-source-location": "gs://run-sources-gen-lang-client-0779271931-us-central1/services/engine-a/1766614132.948967-fc64b8f4b0b2406b9137423befc46165.zip#1766614134122049",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "550.0.0",
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all",
+      "run.googleapis.com/invoker-iam-disabled": "true",
+      "run.googleapis.com/operation-id": "6caf707a-25a6-4f30-89a5-b2ba68bd448b",
+      "run.googleapis.com/urls": "[\"https://engine-a-429140669077.us-central1.run.app\",\"https://engine-a-mfvaq54jjq-uc.a.run.app\"]",
+      "serving.knative.dev/creator": "github-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com",
+      "serving.knative.dev/lastModifier": "github-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com"
+    },
+    "creationTimestamp": "2025-12-07T18:37:28.039026Z",
+    "generation": 56,
+    "labels": {
+      "cloud.googleapis.com/location": "us-central1"
+    },
+    "name": "engine-a",
+    "namespace": "429140669077",
+    "resourceVersion": "AAZG+t0Xdfs",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/429140669077/services/engine-a",
+    "uid": "c3c5b085-bea0-4a03-a02f-a66ac296c15a"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "5",
+          "run.googleapis.com/client-name": "gcloud",
+          "run.googleapis.com/client-version": "550.0.0",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "labels": {
+          "client.knative.dev/nonce": "swwfayafbg",
+          "run.googleapis.com/startupProbeType": "Default"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "GOOGLE_CLOUD_PROJECT",
+                "value": "gen-lang-client-0779271931"
+              },
+              {
+                "name": "ENGINE_B_URL",
+                "value": "https://engine-b-mfvaq54jjq-uc.a.run.app"
+              },
+              {
+                "name": "ENGINE_C_URL",
+                "value": "https://engine-c-mfvaq54jjq-uc.a.run.app"
+              },
+              {
+                "name": "DHAN_CLIENT_ID",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "dhan-client-id"
+                  }
+                }
+              },
+              {
+                "name": "DHAN_API_SECRET",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "dhan-api-secret"
+                  }
+                }
+              },
+              {
+                "name": "DHAN_ACCESS_TOKEN",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "dhan-access-token"
+                  }
+                }
+              }
+            ],
+            "image": "us-central1-docker.pkg.dev/gen-lang-client-0779271931/infinityai/engine-a:edc41e0fe9929e6b02e9fc66e733a054f3b66227",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8080
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ],
+        "serviceAccountName": "infinity-engine-sa@gen-lang-client-0779271931.iam.gserviceaccount.com",
+        "timeoutSeconds": 300
+      }
+    },
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100
+      }
+    ]
+  },
+  "status": {
+    "address": {
+      "url": "https://engine-a-mfvaq54jjq-uc.a.run.app"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2025-12-28T03:38:45.334523Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2025-12-28T03:38:26.911179Z",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2025-12-28T03:38:44.820760Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "engine-a-00055-6xc",
+    "latestReadyRevisionName": "engine-a-00055-6xc",
+    "observedGeneration": 56,
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "engine-a-00055-6xc"
+      }
+    ],
+    "url": "https://engine-a-mfvaq54jjq-uc.a.run.app"
+  }
+}

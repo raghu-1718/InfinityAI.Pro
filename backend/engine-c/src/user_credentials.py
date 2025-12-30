@@ -18,28 +18,32 @@ logger = logging.getLogger(__name__)
 # Get encryption key from Secret Manager or environment
 def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
+    # 1. Prioritize secure environment variable (for manual overrides/fixes)
+    env_key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
+    if env_key:
+        try:
+            return base64.urlsafe_b64decode(env_key) if len(env_key) > 64 else env_key.encode()
+        except Exception as e:
+            logger.warning(f"Failed to decode env var key: {e}")
+
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
         logger.error("GOOGLE_CLOUD_PROJECT env var missing")
-        return b"insecure_dev_key_fallback" # Prevent crash, but warn
+        return b"insecure_dev_key_fallback"
+
     try:
-        # Try to get from Secret Manager first
+        # 2. Try to get from Secret Manager
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project_id}/secrets/user-credentials-key/versions/latest"
         response = client.access_secret_version(request={"name": name})
         return response.payload.data
     except Exception as e:
         logger.warning(f"Could not get encryption key from Secret Manager: {e}")
-        # Fallback to environment variable or generate one
-        # Fallback to environment variable or generate one
-        key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
-        if key:
-            return base64.urlsafe_b64decode(key) if len(key) > 64 else key.encode() # Handle hex or base64 
             
-        # Generate a consistent key based on project ID (for development only)
-        # WARNING: This is not secure for production if key is not set!
-        logger.warning("⚠️ Using insecure derived key! Set ENCRYPTION_KEY env var.")
-        return base64.urlsafe_b64encode(hashlib.sha256(project_id.encode()).digest())
+    # 3. Generate a consistent key based on project ID (Fallback)
+    logger.warning("⚠️ Using insecure derived key! Set USER_CREDENTIALS_KEY env var.")
+    # Return a VALID Fernet key (32 url-safe base64 bytes) to prevent crash
+    return b"J4z72_08-729048-70247-908274092704972094702="
 
 
 class UserCredentialsManager:

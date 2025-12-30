@@ -1576,6 +1576,7 @@ async def market_status():
 @app.post("/api/v1/signal", response_model=SignalResponse)
 async def generate_signal(req: SignalRequest):
     """Generate trading signal with ML + Technical + Sentiment analysis"""
+
     symbol = req.symbol.upper()
 
     # Fetch data
@@ -1594,18 +1595,24 @@ async def generate_signal(req: SignalRequest):
 
     latest = df_features.iloc[-1]
 
-    # Feature extraction already done above
+    # --- Sentiment Analysis ---
+    sentiment_score = None
+    try:
+        if hasattr(req, 'news_headlines') and req.news_headlines:
+            sentiment_score = SENTIMENT_ANALYZER.aggregate_headlines(req.news_headlines)
+    except Exception as e:
+        logger.warning(f"Sentiment analysis failed for {symbol}: {e}")
+        sentiment_score = None
 
     # 1. Determine Asset Class & Strategy
     symbol_upper = symbol.upper()
-    
     if symbol_upper in ["NIFTY", "BANKNIFTY", "FINNIFTY"]:
         analysis_result = _analyze_fno(latest, current_price, df_features)
         asset_class = "FNO"
         exchange_segment = "IDX_I"
     elif symbol_upper in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER", "GOLDM", "SILVERM"]:
         analysis_result = _analyze_commodity(latest, current_price, df_features)
-        asset_class = "COMMODITY" 
+        asset_class = "COMMODITY"
         exchange_segment = "MCX_COMM"
     else:
         analysis_result = _analyze_equity(latest, current_price, df_features)
@@ -1615,7 +1622,7 @@ async def generate_signal(req: SignalRequest):
     score = analysis_result["score"]
     reasons = analysis_result["reasons"]
     signal = analysis_result["signal"]
-    
+
     # 2. ML Model Enhancement (Common across all assets if trained)
     ml_used = False
     if symbol in MODEL_STORE.trained_symbols:
@@ -1634,12 +1641,12 @@ async def generate_signal(req: SignalRequest):
                 reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} conf)")
                 # If ML is very confident, it can override weak technical signals
                 if ml_confidence > 0.85 and signal == "HOLD":
-                     signal = "BUY" 
+                    signal = "BUY"
             elif ml_class == 0:  # SELL
                 score -= 3
                 reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} conf)")
                 if ml_confidence > 0.85 and signal == "HOLD":
-                     signal = "SELL"
+                    signal = "SELL"
             else:
                 reasons.append(f"ML Ensemble: HOLD ({ml_confidence:.1%} conf)")
 
@@ -1653,10 +1660,10 @@ async def generate_signal(req: SignalRequest):
         signal = "BUY"
     elif score <= -3:
         signal = "SELL"
-    
+
     # 4. Confidence & Targets
     confidence = min(95, max(30, 50 + abs(score) * 8))
-    
+
     atr = latest.get('ATRr_14', current_price * 0.02)
     stop_loss, target = RISK_ENGINE.get_stop_loss_target(current_price, atr, signal)
 
