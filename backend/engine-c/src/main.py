@@ -78,15 +78,31 @@ try:
     HAS_PERFORMANCE_MODULE = True
 except ImportError as e:
     HAS_PERFORMANCE_MODULE = False
-    get_cache_manager = None
-    cache_response = None
-    ConnectionPoolManager = None
-    get_aiohttp_session = None
-    get_rate_limiter = None
-    adaptive_rate_limit = None
+    def cache_response(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    def with_circuit_breaker(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    def get_cache_manager(*args, **kwargs): return None
+    def ConnectionPoolManager(): pass
+    ConnectionPoolManager.initialize = lambda: None
+    ConnectionPoolManager.shutdown = lambda: None
+    def get_aiohttp_session(*args, **kwargs): return None
+    def get_rate_limiter(*args, **kwargs): return None
+    def adaptive_rate_limit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    def get_health_monitor(*args, **kwargs):
+        class MockMonitor:
+            async def start_monitoring(self, *a, **k): pass
+            async def stop_monitoring(self, *a, **k): pass
+            def register_service(self, *a, **k): pass
+        return MockMonitor()
     RateLimitConfig = None
-    get_health_monitor = None
-    with_circuit_breaker = None
     CircuitBreakerConfig = None
     print(f"⚠️ Performance module not available: {e}")
     log_startup_error(e, context="Performance module import")
