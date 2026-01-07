@@ -16,7 +16,6 @@ from google.cloud import storage
 
 from features import build_features
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +37,40 @@ def train_model(dataset_path: str, model_uri: str):
     """
     Train XGBoost model and upload to GCS
     
+import os
+# OpenTelemetry setup
+from opentelemetry import trace
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+# Initialize OpenTelemetry Tracing
+resource = Resource(attributes={SERVICE_NAME: "ml-train"})
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer = trace.get_tracer(__name__)
+otlp_exporter = OTLPSpanExporter(endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317"), insecure=True)
+span_processor = BatchSpanProcessor(otlp_exporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
+
+def upload_to_gcs(local_path: str, gcs_uri: str):
+    with tracer.start_as_current_span("upload_to_gcs"):
+        try:
+            client = storage.Client()
+            bucket_name, blob_path = gcs_uri.replace("gs://", "").split("/", 1)
+            bucket = client.bucket(bucket_name)
+            blob = bucket.blob(blob_path)
+            blob.upload_from_filename(local_path)
+            logger.info(f"✅ Uploaded {local_path} to {gcs_uri}")
+        except Exception as e:
+            logger.error(f"❌ GCS upload failed: {e}")
+            raise
+
+def train_model(dataset_path: str, model_uri: str):
+    with tracer.start_as_current_span("train_model"):
+        """
+        Train XGBoost model and upload to GCS
+        """
     Args:
         dataset_path: Path or GCS URI to CSV dataset  
         model_uri: GCS URI for saving model (e.g., gs://bucket/model.json)

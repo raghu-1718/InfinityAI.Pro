@@ -1,0 +1,12 @@
+ERROR: (gcloud.identity) Invalid choice: 'platform'.
+Maybe you meant:
+  gcloud config get
+  gcloud identity groups describe
+  gcloud ai-platform jobs describe
+  gcloud ai-platform models describe
+  gcloud ai-platform operations describe
+  gcloud ai-platform versions describe
+  gcloud config configurations describe
+
+To search the help text of gcloud commands, run:
+  gcloud help -- SEARCH_TERMS

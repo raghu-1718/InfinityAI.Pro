@@ -1,1 +1,0 @@
-"""Engine core src package"""

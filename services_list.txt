@@ -1,0 +1,16 @@
+analyzeimagewithroboticser	https://analyzeimagewithroboticser-228557716858.us-central1.run.app
+analyzeportfolio	https://analyzeportfolio-228557716858.us-central1.run.app
+engine-a	https://engine-a-228557716858.us-central1.run.app
+engine-b	https://engine-b-228557716858.us-central1.run.app
+engine-c	https://engine-c-228557716858.us-central1.run.app
+getaisignals	https://getaisignals-228557716858.us-central1.run.app
+getbatchaisignals	https://getbatchaisignals-228557716858.us-central1.run.app
+getdhanoverview	https://getdhanoverview-228557716858.us-central1.run.app
+getenginebstatus	https://getenginebstatus-228557716858.us-central1.run.app
+getgeminianalysis	https://getgeminianalysis-228557716858.us-central1.run.app
+getvertexaianalysis	https://getvertexaianalysis-228557716858.us-central1.run.app
+savedhancredentials	https://savedhancredentials-228557716858.us-central1.run.app
+starttrading	https://starttrading-228557716858.us-central1.run.app
+stoptrading	https://stoptrading-228557716858.us-central1.run.app
+submitdhancredentialsv2	https://submitdhancredentialsv2-228557716858.us-central1.run.app
+syncholdings	https://syncholdings-228557716858.us-central1.run.app

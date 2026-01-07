@@ -1,0 +1,41 @@
+INFO:src.user_credentials:\u2705 UserCredentialsManager initialized (AES-256-GCM / Cipher)
+WARNING:src.user_credentials:DEBUG: GCM Decrypt failed: 
+ERROR:src.user_credentials:Decryption error: 
+Testing decryption of: dd346af1964175317be93845:773cf0a0456d8183fc47566c68c7b21a:acc41650f17632f4c69bc741
+DEBUG: Manager Key: 758c6bfc504fbffce67090816617dbfb6556770c3e5105fe40b7f69a37d4f5ee
+DEBUG_DECRYPT: Key=758c6bfc504fbffce67090816617dbfb6556770c3e5105fe40b7f69a37d4f5ee
+DEBUG_DECRYPT: IV=dd346af1964175317be93845
+DEBUG_DECRYPT: Tag=773cf0a0456d8183fc47566c68c7b21a
+DEBUG_DECRYPT: Cipher=acc41650f17632f4c69bc741
+Traceback (most recent call last):
+  File "C:\workspace\InfinityAI.Pro\backend\engine-c\src\user_credentials.py", line 135, in _decrypt
+    return f.decrypt(encrypted_data.encode()).decode()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Raghu\AppData\Local\Programs\Python\Python311\Lib\site-packages\cryptography\fernet.py", line 85, in decrypt
+    timestamp, data = Fernet._get_unverified_token_data(token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Raghu\AppData\Local\Programs\Python\Python311\Lib\site-packages\cryptography\fernet.py", line 119, in _get_unverified_token_data
+    raise InvalidToken
+cryptography.fernet.InvalidToken
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\workspace\InfinityAI.Pro\backend\engine-c\test_crypto_fix.py", line 33, in test_decryption
+    decrypted = manager._decrypt(ENCRYPTED_STRING)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\workspace\InfinityAI.Pro\backend\engine-c\src\user_credentials.py", line 138, in _decrypt
+    raise ValueError("Failed to decrypt credentials")
+ValueError: Failed to decrypt credentials
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\workspace\InfinityAI.Pro\backend\engine-c\test_crypto_fix.py", line 66, in <module>
+    test_decryption()
+  File "C:\workspace\InfinityAI.Pro\backend\engine-c\test_crypto_fix.py", line 42, in test_decryption
+    print(f"\u274c EXCEPTION: {e}")
+  File "C:\Users\Raghu\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>

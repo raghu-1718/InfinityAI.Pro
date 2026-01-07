@@ -27,7 +27,9 @@ import {
   Zap,
 } from "lucide-react";
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
+import { getEngineCUrl } from "@/lib/api";
+
+const ENGINE_C_URL = getEngineCUrl();
 
 // Types
 interface AgentMessage {

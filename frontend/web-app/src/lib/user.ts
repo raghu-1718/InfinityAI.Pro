@@ -10,28 +10,22 @@
  */
 
 // Storage keys
-const DHAN_CLIENT_ID_KEY = 'dhan_client_id';
-const USER_ID_KEY = 'infinityai_user_id';
-const AUTH_TYPE_KEY = 'infinityai_auth_type';
-const COUPON_SESSION_KEY = 'infinityai_coupon_session';
+const DHAN_CLIENT_ID_KEY = "dhan_client_id";
+const USER_ID_KEY = "infinityai_user_id";
+const AUTH_TYPE_KEY = "infinityai_auth_type";
+const COUPON_SESSION_KEY = "infinityai_coupon_session";
 
 /**
  * Get the current user's ID
  * Uses the most reliable identifier available
  */
 export function getUserId(): string {
-  if (typeof window === 'undefined') return 'default_user';
+  if (typeof window === "undefined") return "default_user";
 
-  // Priority 1: Dhan Client ID (10-digit number) - most stable for trading
-  const dhanClientId = localStorage.getItem(DHAN_CLIENT_ID_KEY);
-  if (dhanClientId && /^\d{10}$/.test(dhanClientId)) {
-    return dhanClientId;
-  }
-
-  // Priority 2: Check auth type and get appropriate ID
+  // Priority 1: Check auth type and get appropriate ID (Most stable persistent ID)
   const authType = localStorage.getItem(AUTH_TYPE_KEY);
 
-  if (authType === 'coupon') {
+  if (authType === "coupon") {
     // Get coupon session user ID
     const couponSession = localStorage.getItem(COUPON_SESSION_KEY);
     if (couponSession) {
@@ -41,9 +35,18 @@ export function getUserId(): string {
           return session.userId;
         }
       } catch {
-        console.warn('Failed to parse coupon session');
+        console.warn("Failed to parse coupon session");
       }
     }
+  }
+
+  // Also check for Firebase Auth UID if available in standard storage locations (if applicable)
+  // But for now, we stick to the provided keys.
+
+  // Priority 2: Dhan Client ID (10-digit number) - fallback if not authenticated but connected
+  const dhanClientId = localStorage.getItem(DHAN_CLIENT_ID_KEY);
+  if (dhanClientId && /^\d{10}$/.test(dhanClientId)) {
+    return dhanClientId;
   }
 
   // Priority 3: Generated fallback ID (for unauthenticated users)
@@ -60,9 +63,9 @@ export function getUserId(): string {
  * This becomes the primary identifier once connected
  */
 export function setDhanClientId(clientId: string): void {
-  if (typeof window !== 'undefined' && clientId && /^\d{10}$/.test(clientId)) {
+  if (typeof window !== "undefined" && clientId && /^\d{10}$/.test(clientId)) {
     localStorage.setItem(DHAN_CLIENT_ID_KEY, clientId);
-    console.log('✅ Dhan Client ID stored:', clientId);
+    console.log("✅ Dhan Client ID stored:", clientId);
   }
 }
 
@@ -70,7 +73,7 @@ export function setDhanClientId(clientId: string): void {
  * Get the stored Dhan Client ID
  */
 export function getDhanClientId(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   return localStorage.getItem(DHAN_CLIENT_ID_KEY);
 }
 
@@ -78,7 +81,7 @@ export function getDhanClientId(): string | null {
  * Clear the Dhan Client ID (on disconnect)
  */
 export function clearDhanClientId(): void {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     localStorage.removeItem(DHAN_CLIENT_ID_KEY);
   }
 }
@@ -102,17 +105,17 @@ export function getUserDisplayInfo(): {
   const userId = getUserId();
   const dhanConnected = isDhanConnected();
 
-  let displayName = 'Guest User';
+  let displayName = "Guest User";
   if (dhanConnected) {
     displayName = `Dhan User ${userId}`;
-  } else if (userId.startsWith('user_')) {
-    displayName = 'Guest';
+  } else if (userId.startsWith("user_")) {
+    displayName = "Guest";
   }
 
   return {
     userId,
     isDhanConnected: dhanConnected,
-    displayName
+    displayName,
   };
 }
 
@@ -120,7 +123,7 @@ export function getUserDisplayInfo(): {
  * Clear all user identification data (for logout)
  */
 export function clearUserIdentity(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   localStorage.removeItem(DHAN_CLIENT_ID_KEY);
   localStorage.removeItem(USER_ID_KEY);
   localStorage.removeItem(AUTH_TYPE_KEY);
@@ -134,7 +137,7 @@ const userUtils = {
   clearDhanClientId,
   isDhanConnected,
   getUserDisplayInfo,
-  clearUserIdentity
+  clearUserIdentity,
 };
 
 export default userUtils;

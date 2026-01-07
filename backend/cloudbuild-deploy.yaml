@@ -1,0 +1,49 @@
+steps:
+  # --- ENGINE A ---
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-engine-a'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest', '-f', 'engine-a/Dockerfile', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-engine-a'
+    args: ['push', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest']
+    waitFor: ['build-engine-a']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-engine-a'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'engine-a', '--image', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest', '--set-env-vars', 'ENGINE_B_URL=https://engine-b-228557716858.us-central1.run.app,ENGINE_C_URL=https://engine-c-228557716858.us-central1.run.app,GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0', '--region', 'us-central1']
+    waitFor: ['push-engine-a']
+
+  # --- ENGINE B ---
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-engine-b'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest', '-f', 'engine-b/Dockerfile', '.']
+    waitFor: ['-'] # Start Parallel
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-engine-b'
+    args: ['push', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest']
+    waitFor: ['build-engine-b']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-engine-b'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'engine-b', '--image', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest', '--set-env-vars', 'GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0', '--set-secrets', 'DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest', '--memory', '2Gi', '--cpu', '1', '--timeout', '300s', '--region', 'us-central1']
+    waitFor: ['push-engine-b']
+
+  # --- ENGINE C ---
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-engine-c'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest', '-f', 'engine-c/Dockerfile', '.']
+    waitFor: ['-'] # Start Parallel
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-engine-c'
+    args: ['push', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest']
+    waitFor: ['build-engine-c']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-engine-c'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'engine-c', '--image', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest', '--set-env-vars', 'GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0', '--region', 'us-central1']
+    waitFor: ['push-engine-c']
+
+images:
+  - 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest'
+  - 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest'
+  - 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest'

@@ -28,21 +28,23 @@ WORKDIR /app
 # --------------------------------------------------
 # Python dependencies (cached layer)
 # --------------------------------------------------
-COPY engine-b/requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+COPY backend/engine-b/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Download NLTK data (Fix for startup crash)
+RUN python -m nltk.downloader vader_lexicon -d /usr/local/share/nltk_data
 
 # --------------------------------------------------
 # NLTK assets (explicit + resilient)
 # --------------------------------------------------
-COPY engine-b/src/download_nltk.py /app/src/download_nltk.py
+COPY backend/engine-b/src/download_nltk.py /app/src/download_nltk.py
 RUN python /app/src/download_nltk.py && rm /app/src/download_nltk.py
 
 # --------------------------------------------------
 # Shared library & Application source
 # --------------------------------------------------
-COPY shared /app/shared
-COPY engine-b/src /app/src
+COPY backend/shared /app/shared
+COPY backend/engine-b/src /app/src
 
 # --------------------------------------------------
 # Runtime directories

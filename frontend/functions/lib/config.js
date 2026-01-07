@@ -9,10 +9,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ENGINE_URLS = void 0;
 exports.ENGINE_URLS = {
     // Engine A: Orchestration & Analytics
-    ANALYTICS: process.env.ENGINE_ANALYTICS_URL || "https://engine-a.infinityai.pro",
+    // Engine A: Orchestration & Analytics
+    ANALYTICS: process.env.ENGINE_ANALYTICS_URL ||
+        "https://engine-a-mfvaq54jjq-uc.a.run.app",
     // Engine B: AI/ML & Market Data
-    CORE: process.env.ENGINE_CORE_URL || "https://engine-b.infinityai.pro",
+    CORE: process.env.ENGINE_CORE_URL || "https://engine-b-mfvaq54jjq-uc.a.run.app",
     // Engine C: Trade Execution
-    EXECUTION: process.env.ENGINE_EXECUTION_URL || "https://engine-c.infinityai.pro",
+    EXECUTION: process.env.ENGINE_EXECUTION_URL ||
+        "https://engine-c-mfvaq54jjq-uc.a.run.app",
 };
 //# sourceMappingURL=config.js.map

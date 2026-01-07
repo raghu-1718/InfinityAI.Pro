@@ -9,19 +9,29 @@ import hashlib
 import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+# from cryptography.hazmat.primitives.ciphers.aead import AESGCM  <-- Removed
 from google.cloud import firestore
 from google.cloud import secretmanager
 
 logger = logging.getLogger(__name__)
 
+# ... (get_encryption_key remains same) ...
 # Get encryption key from Secret Manager or environment
 def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
-    # 1. Prioritize secure environment variable (for manual overrides/fixes)
+    # 1. Prioritize secure environment variable
     env_key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
     if env_key:
         try:
+            # Check if it's a 64-char hex string (32 bytes) - standard for this project
+            if len(env_key) == 64:
+                 try:
+                     return bytes.fromhex(env_key)
+                 except ValueError:
+                     pass # Not hex
+
+            # Fallback checks (base64 or raw)
             return base64.urlsafe_b64decode(env_key) if len(env_key) > 64 else env_key.encode()
         except Exception as e:
             logger.warning(f"Failed to decode env var key: {e}")
@@ -29,41 +39,95 @@ def get_encryption_key() -> bytes:
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
         logger.error("GOOGLE_CLOUD_PROJECT env var missing")
-        return b"insecure_dev_key_fallback"
+        return b"insecure_dev_key_fallback_32b_!!" # 32 bytes
 
     try:
         # 2. Try to get from Secret Manager
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project_id}/secrets/user-credentials-key/versions/latest"
         response = client.access_secret_version(request={"name": name})
-        return response.payload.data
+        data = response.payload.data
+        # Try hex decode if looks like hex
+        try:
+            val_str = data.decode('utf-8')
+            if len(val_str) == 64:
+                 return bytes.fromhex(val_str)
+        except:
+            pass
+        return data
     except Exception as e:
         logger.warning(f"Could not get encryption key from Secret Manager: {e}")
-            
+
     # 3. Generate a consistent key based on project ID (Fallback)
     logger.warning("⚠️ Using insecure derived key! Set USER_CREDENTIALS_KEY env var.")
-    # Return a VALID Fernet key (32 url-safe base64 bytes) to prevent crash
-    return b"J4z72_08-729048-70247-908274092704972094702="
+    # Return a VALID 32-byte key for AES-256
+    return b"J4z72_08-729048-70247-9082740927"
 
 
 class UserCredentialsManager:
-    """Manages encrypted user credentials in Firestore"""
+    """Manages encrypted user credentials in Firestore (AES-256-GCM)"""
 
     def __init__(self):
         self.db = firestore.Client()
-        self.collection = "user_credentials"
+        self.collection = "dhan_credentials" # Unified collection with Frontend!
         self.encryption_key = get_encryption_key()
-        self.cipher = Fernet(self.encryption_key)
-        logger.info("✅ UserCredentialsManager initialized")
+        # Ensure key is 32 bytes for AES-256
+        if len(self.encryption_key) != 32:
+             logger.warning(f"Encryption key length {len(self.encryption_key)} != 32. Truncating or padding.")
+             self.encryption_key = (self.encryption_key + b'0'*32)[:32]
+
+        # self.aesgcm = AESGCM(self.encryption_key) <-- Removed
+        logger.info("UserCredentialsManager initialized (AES-256-GCM / Cipher)")
 
     def _encrypt(self, data: str) -> str:
-        """Encrypt sensitive data"""
-        return self.cipher.encrypt(data.encode()).decode()
+        """Encrypt sensitive data using AES-256-GCM (Frontend compatible)"""
+        if not data: return None
+        nonce = os.urandom(12) # Use 12 bytes standard IV
+
+        # Explicit Cipher
+        encryptor = Cipher(
+            algorithms.AES(self.encryption_key),
+            modes.GCM(nonce),
+        ).encryptor()
+
+        ciphertext = encryptor.update(data.encode()) + encryptor.finalize()
+        tag = encryptor.tag
+
+        return f"{nonce.hex()}:{tag.hex()}:{ciphertext.hex()}"
 
     def _decrypt(self, encrypted_data: str) -> str:
-        """Decrypt sensitive data"""
+        """Decrypt sensitive data (Supports AES-GCM and legacy Fernet)"""
+        if not encrypted_data: return None
+
+        # 1. Try AES-GCM (Format: iv:tag:ciphertext)
         try:
-            return self.cipher.decrypt(encrypted_data.encode()).decode()
+            parts = encrypted_data.split(':')
+            if len(parts) == 3:
+                iv = bytes.fromhex(parts[0])
+                tag = bytes.fromhex(parts[1])
+                ciphertext = bytes.fromhex(parts[2])
+
+                # Explicit Cipher Decrypt
+                decryptor = Cipher(
+                    algorithms.AES(self.encryption_key),
+                    modes.GCM(iv, tag),
+                ).decryptor()
+
+                data = decryptor.update(ciphertext) + decryptor.finalize()
+                return data.decode()
+        except Exception as e:
+            # Not GCM or key mismatch
+            logger.warning(f"GCM Decrypt failed: {e}")
+            pass # Fallthrough to legacy
+
+        # 2. Legacy Fallback (Fernet) - if applicable
+        # This is unlikely to work with the AES key, but if keys were different:
+        try:
+            from cryptography.fernet import Fernet
+            # Fernet needs urlsafe base64 key
+            f_key = base64.urlsafe_b64encode(self.encryption_key)
+            f = Fernet(f_key)
+            return f.decrypt(encrypted_data.encode()).decode()
         except Exception as e:
             logger.error(f"Decryption error: {e}")
             raise ValueError("Failed to decrypt credentials")
@@ -78,13 +142,6 @@ class UserCredentialsManager:
     ) -> Dict[str, Any]:
         """
         Save user's Dhan credentials securely in Firestore
-
-        Args:
-            user_id: Unique user identifier (Firebase UID or email)
-            client_id: Dhan Client ID
-            access_token: Dhan Access Token
-            api_key: Optional Dhan API Key (not typically needed for users)
-            api_secret: Optional Dhan API Secret (not typically needed for users)
         """
         try:
             # Encrypt sensitive credentials
@@ -95,10 +152,21 @@ class UserCredentialsManager:
                 "api_secret": self._encrypt(api_secret) if api_secret else None,
             }
 
-            # Create document
+            # Create document (Backend format)
+            # To maintain compatibility with frontend, we should probably support both or migrate.
+            # For now, we save as backend format (nested) but read both.
             doc_data = {
                 "user_id": user_id,
                 "credentials": encrypted_credentials,
+                # Also save flat CamelCase for Frontend compatibility if needed?
+                # Frontend writes flat. Backend writes nested.
+                # Let's save flat too to be safe.
+                "clientId": self._encrypt(client_id) if client_id else None, # Frontend encrypts ClientId too? Verify.
+                # Frontend: clientId: encrypt(clientId)
+                "accessToken": self._encrypt(access_token),
+                "apiKey": self._encrypt(api_key) if api_key else None,
+                "apiSecret": self._encrypt(api_secret) if api_secret else None,
+
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
                 "is_active": True,
@@ -123,9 +191,8 @@ class UserCredentialsManager:
 
     async def get_user_credentials(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
-        Retrieve and decrypt user's Dhan credentials
-
-        Returns decrypted credentials or None if not found
+        Retrieve and decrypt user's Dhan credentials.
+        Handles both Backend (snake_case, nested) and Frontend (CamelCase, flat) formats.
         """
         try:
             doc_ref = self.db.collection(self.collection).document(user_id)
@@ -135,27 +202,115 @@ class UserCredentialsManager:
                 return None
 
             data = doc.to_dict()
+
+            # 1. Try Nested Backend Format
             encrypted_creds = data.get("credentials", {})
+
+            client_id = None
+            access_token = None
+            api_key = None
+            api_secret = None
+
+            if encrypted_creds:
+                 client_id_enc = encrypted_creds.get("client_id")
+                 # Check if client_id is encrypted (frontend does encrypt it, backend usually doesn't)
+                 # If it looks like iv:tag:ciphertext, decrypt it.
+                 if client_id_enc and ":" in client_id_enc:
+                      try:
+                          client_id = self._decrypt(client_id_enc)
+                      except:
+                          client_id = client_id_enc
+                 else:
+                      client_id = client_id_enc
+
+                 access_token = self._decrypt(encrypted_creds.get("access_token"))
+                 api_key = self._decrypt(encrypted_creds.get("api_key"))
+                 api_secret = self._decrypt(encrypted_creds.get("api_secret"))
+
+            # 2. Fallback to Flat Frontend Format (CamelCase)
+            if not client_id or not access_token:
+                 # Frontend: clientId, accessToken, apiKey, apiSecret
+                 # All are encrypted by frontend
+                 try:
+                     if not client_id and data.get("clientId"):
+                         client_id = self._decrypt(data.get("clientId"))
+
+                     if not access_token and data.get("accessToken"):
+                         access_token = self._decrypt(data.get("accessToken"))
+
+                     if not api_key and data.get("apiKey"):
+                         api_key = self._decrypt(data.get("apiKey"))
+
+                     if not api_secret and data.get("apiSecret"):
+                         api_secret = self._decrypt(data.get("apiSecret"))
+                 except Exception as dec_err:
+                     logger.warning(f"Frontend format decryption failed: {dec_err}")
+
+            if not client_id or not access_token:
+                 logger.warning(f"Incomplete credentials for {user_id}")
+                 # Return something indicating config mismatch if partial data found
+                 return {
+                    "user_id": user_id,
+                    "connection_status": "incomplete",
+                    "is_active": False,
+                    "credentials": {}
+                 }
 
             # Decrypt credentials
             decrypted = {
-                "client_id": encrypted_creds.get("client_id"),
-                "access_token": self._decrypt(encrypted_creds["access_token"]) if encrypted_creds.get("access_token") else None,
-                "api_key": self._decrypt(encrypted_creds["api_key"]) if encrypted_creds.get("api_key") else None,
-                "api_secret": self._decrypt(encrypted_creds["api_secret"]) if encrypted_creds.get("api_secret") else None,
+                "client_id": client_id,
+                "access_token": access_token,
+                "api_key": api_key,
+                "api_secret": api_secret,
             }
 
             return {
                 "user_id": user_id,
                 "credentials": decrypted,
-                "is_active": data.get("is_active", False),
-                "connection_status": data.get("connection_status", "unknown"),
-                "updated_at": data.get("updated_at")
+                "is_active": data.get("is_active", True),
+                "connection_status": data.get("connection_status", "connected" if client_id else "unknown"),
+                "updated_at": data.get("updated_at") or data.get("lastUpdatedAt")
             }
 
         except Exception as e:
             logger.error(f"Error retrieving credentials: {e}")
             return None
+
+    async def find_credentials_by_client_id(self, client_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Locate credentials by stored Dhan client_id when the document ID is a Firebase UID.
+        This allows numeric client IDs from the frontend to resolve to the correct record.
+        """
+        if not client_id:
+            return None
+
+        try:
+            query = (
+                self.db.collection(self.collection)
+                .where("credentials.client_id", "==", client_id)
+                .limit(1)
+            )
+            docs = list(query.stream())
+            doc = docs[0] if docs else None
+
+            if not doc:
+                # Fallback to legacy flat field, in case nested credentials are missing
+                query_flat = (
+                    self.db.collection(self.collection)
+                    .where("clientId", "==", client_id)
+                    .limit(1)
+                )
+                docs_flat = list(query_flat.stream())
+                doc = docs_flat[0] if docs_flat else None
+
+            if doc:
+                # Reuse the standard decrypt/normalize path
+                return await self.get_user_credentials(doc.id)
+
+        except Exception as e:
+            logger.error(f"Error finding credentials by client_id {client_id}: {e}")
+
+        return None
 
     async def update_connection_status(
         self,
@@ -193,16 +348,14 @@ class UserCredentialsManager:
     async def list_connected_users(self) -> list:
         """List all users with connected accounts (admin only)"""
         try:
-            docs = self.db.collection(self.collection).where(
-                "is_active", "==", True
-            ).stream()
+            docs = self.db.collection(self.collection).stream() # Scan all
 
             users = []
             for doc in docs:
                 data = doc.to_dict()
                 users.append({
-                    "user_id": data.get("user_id"),
-                    "client_id": data.get("credentials", {}).get("client_id"),
+                    "user_id": data.get("user_id") or doc.id,
+                    "client_id": data.get("credentials", {}).get("client_id") or data.get("clientId"),
                     "connection_status": data.get("connection_status"),
                     "updated_at": data.get("updated_at")
                 })
@@ -213,7 +366,7 @@ class UserCredentialsManager:
             logger.error(f"Error listing users: {e}")
             return []
 
-    # ==================== USER TRADING SETTINGS ====================
+    # ==================== USER TRADING SETTINGS (Keep separate) ====================
 
     async def save_trading_settings(
         self,
@@ -222,22 +375,6 @@ class UserCredentialsManager:
     ) -> Dict[str, Any]:
         """
         Save user's trading configuration settings in Firestore
-
-        Settings include:
-        - stop_loss_percent: Default stop loss percentage (e.g., 2.0)
-        - take_profit_percent: Default take profit percentage (e.g., 4.0)
-        - max_trades_per_day: Maximum trades allowed per day
-        - trading_amount: Default amount per trade (in INR)
-        - min_capital: Minimum capital required to trade
-        - max_capital: Maximum capital to use for trading
-        - risk_level: 'conservative' | 'moderate' | 'aggressive'
-        - max_risk_per_trade: Max risk as fraction (e.g., 0.02 = 2%)
-        - min_confidence: Minimum AI confidence to execute (e.g., 0.75)
-        - selected_instruments: List of instruments to trade
-        - use_ai_signals: Whether to use AI signals
-        - auto_rebalance: Whether to auto-rebalance portfolio
-        - trailing_stop_loss: Enable trailing stop loss
-        - position_sizing_method: 'fixed' | 'percentage' | 'kelly'
         """
         try:
             # Validate and set defaults

@@ -18,7 +18,9 @@ import {
   logOut as firebaseLogOut,
   onAuthChange,
 } from "@/lib/firebase";
+import { verifyCouponAPI } from "@/lib/cloudFunctions";
 import { useSessionStore } from "@/hooks/useSessionStore";
+import { getEngineCUrl } from "@/lib/api";
 
 // Storage keys
 const DUAL_AUTH_KEY = "infinityai_dual_auth";
@@ -116,7 +118,7 @@ const DualAuthContext = createContext<DualAuthContextType | undefined>(
 );
 
 // Engine C URL for coupon verification
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
+const ENGINE_C_URL = getEngineCUrl();
 
 export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -280,9 +282,6 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
       setLoading(true);
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
-
         console.log(
           "Verifying coupon:",
           couponCode,
@@ -290,35 +289,11 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           firebaseUser.email
         );
 
-        const response = await fetch(`${ENGINE_C_URL}/api/auth/coupon/verify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            coupon_code: couponCode,
-            google_user_id: firebaseUser.uid,
-            google_email: firebaseUser.email,
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        console.log("Coupon verify response status:", response.status);
-
-        // Handle non-OK responses
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("Coupon verify failed:", response.status, errorData);
-          setLoading(false);
-          return {
-            success: false,
-            error:
-              errorData.detail ||
-              errorData.message ||
-              `Server error: ${response.status}`,
-          };
-        }
-
-        const data = await response.json();
+        const data = await verifyCouponAPI(
+          couponCode,
+          firebaseUser.uid,
+          firebaseUser.email || ""
+        );
         console.log("Coupon verify data:", data);
 
         if (data.success) {

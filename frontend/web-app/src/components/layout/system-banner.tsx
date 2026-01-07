@@ -16,7 +16,9 @@ const DEFAULT_STATE: SystemState = {
   engine_version: "v4.0",
 };
 
-const ENGINE_A_URL = process.env.NEXT_PUBLIC_ENGINE_A_URL || "";
+import { getEngineAUrl } from "@/lib/api";
+
+const ENGINE_A_URL = getEngineAUrl();
 
 export function SystemBanner() {
   const [state, setState] = useState<SystemState | null>(DEFAULT_STATE);

@@ -39,7 +39,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDhanOverview = exports.getEngineBStatus = exports.getBatchAiSignals = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getAiSignals = exports.syncHoldings = exports.analyzePortfolio = exports.stopTrading = exports.startTrading = exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
+exports.fetchAccountData = exports.getUserCredentials = exports.storeUserCredentials = exports.verifyCoupon = exports.getDhanOverview = exports.getEngineBStatus = exports.getBatchAiSignals = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getAiSignals = exports.syncHoldings = exports.analyzePortfolio = exports.stopTrading = exports.startTrading = exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
 const admin = __importStar(require("firebase-admin"));
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -60,4 +60,12 @@ Object.defineProperty(exports, "analyzeImageWithRoboticsER", { enumerable: true,
 Object.defineProperty(exports, "getBatchAiSignals", { enumerable: true, get: function () { return analyzePortfolio_1.getBatchAiSignals; } });
 Object.defineProperty(exports, "getEngineBStatus", { enumerable: true, get: function () { return analyzePortfolio_1.getEngineBStatus; } });
 Object.defineProperty(exports, "getDhanOverview", { enumerable: true, get: function () { return analyzePortfolio_1.getDhanOverview; } });
+// Export new trading setup functions
+var verifyCoupon_1 = require("./verifyCoupon");
+Object.defineProperty(exports, "verifyCoupon", { enumerable: true, get: function () { return verifyCoupon_1.verifyCoupon; } });
+var userCredentials_1 = require("./userCredentials");
+Object.defineProperty(exports, "storeUserCredentials", { enumerable: true, get: function () { return userCredentials_1.storeUserCredentials; } });
+Object.defineProperty(exports, "getUserCredentials", { enumerable: true, get: function () { return userCredentials_1.getUserCredentials; } });
+var accountData_1 = require("./accountData");
+Object.defineProperty(exports, "fetchAccountData", { enumerable: true, get: function () { return accountData_1.fetchAccountData; } });
 //# sourceMappingURL=index.js.map

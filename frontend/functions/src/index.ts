@@ -24,3 +24,8 @@ export {
   getEngineBStatus,
   getDhanOverview,
 } from "./analyzePortfolio";
+
+// Export new trading setup functions
+export { verifyCoupon } from "./verifyCoupon";
+export { storeUserCredentials, getUserCredentials } from "./userCredentials";
+export { fetchAccountData } from "./accountData";

@@ -1,0 +1,37 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "-f",
+        "backend/engine-a/Dockerfile",
+        ".",
+      ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+      ]
+  # --- Automated E2E/Smoke Test Steps ---
+  - name: "python:3.11-slim"
+    id: "smoke-check-firestore-collections"
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        pip install --no-cache-dir -r backend/engine-a/requirements.txt
+        python tools/smoke_tests/check_collections.py
+  - name: "python:3.11-slim"
+    id: "smoke-verify-engine-c-dhan"
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        pip install --no-cache-dir -r backend/engine-a/requirements.txt
+        python tools/verify_engine_c_dhan.py
+
+images:
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest"

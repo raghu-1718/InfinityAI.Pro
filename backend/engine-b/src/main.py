@@ -1,23 +1,27 @@
-import os
 import sys
-# --- Fail-fast environment variable enforcement ---
+import os
+
+# --- Environment handling (graceful) ---
 def require_env(var: str) -> str:
+    """Require a critical env var; warn and continue for non-critical ones."""
     value = os.getenv(var)
     if value is None or value.strip() == "":
-        print(f"❌ FATAL: Required environment variable '{var}' is missing or empty.", file=sys.stderr)
-        sys.exit(1)
+        # Only treat GOOGLE_CLOUD_PROJECT as critical; others fall back to Secret Manager
+        if var == "GOOGLE_CLOUD_PROJECT":
+            print(f"❌ FATAL: Required environment variable '{var}' is missing or empty.", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print(f"⚠️ Optional env '{var}' not set; will use Secret Manager or safe defaults.", file=sys.stderr)
+            return ""
     return value
 
-# Enforce required environment variables at startup
+# Enforce only critical env var
 REQUIRED_ENV_VARS = [
     "GOOGLE_CLOUD_PROJECT",
-    "DHAN_CLIENT_ID",
-    "DHAN_ACCESS_TOKEN",
-    # Add more as needed from .env.example and code usage
 ]
 for _var in REQUIRED_ENV_VARS:
     require_env(_var)
-import sys
+
 import asyncio
 import logging
 import time
@@ -33,11 +37,33 @@ from dhanhq import dhanhq
 import uvicorn
 from google.cloud import secretmanager
 
+# Optional OpenTelemetry instrumentation (guarded)
+HAS_OTEL = False
+try:
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+    HAS_OTEL = True
+except Exception:
+    HAS_OTEL = False
+
 # ML/AI Libraries - Gradient Boosting Focus
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+import logging
+
+# Initialize logging FIRST (before any logger calls)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# NOTE: OpenTelemetry disabled - not in requirements.txt
+
+# Create FastAPI app
+app = FastAPI()
+if HAS_OTEL:
+    FastAPIInstrumentor().instrument_app(app)
+    RequestsInstrumentor().instrument()
 import xgboost as xgb
 import lightgbm as lgb
 import joblib
@@ -82,9 +108,9 @@ try:
 except Exception:
     HAS_NLTK = False
 
-# Google Cloud Integrations (From Shared Library)
+# Google Cloud Integrations (Official SDKs)
 try:
-    from shared.google_integrations import (
+    from src.google_integrations import (
         GenAIClient,
         TradingLogger,
         TradingEventType,
@@ -93,7 +119,16 @@ try:
         TradingSignalAgent,
         RiskAssessmentAgent,
         MarketAnalysisAgent,
-        AgentContext,
+        AgentContext
+    )
+    HAS_GOOGLE_INTEGRATIONS = True
+except ImportError as e:
+    HAS_GOOGLE_INTEGRATIONS = False
+    print(f"⚠️ Google integrations not available: {e}")
+
+# Enhanced GenAI with Function Calling (v3.7.7)
+try:
+    from src.google_integrations import (
         EnhancedGenAIClient,
         TradingRecommendation,
         MARKET_DATA_TOOLS,
@@ -106,12 +141,10 @@ try:
         NewsAggregator,
         INFINITYAI_SYSTEM_PROMPT
     )
-    HAS_GOOGLE_INTEGRATIONS = True
     HAS_ENHANCED_GENAI = True
 except ImportError as e:
-    HAS_GOOGLE_INTEGRATIONS = False
     HAS_ENHANCED_GENAI = False
-    print(f"⚠️ Google integrations not available: {e}")
+    print(f"⚠️ Enhanced GenAI not available: {e}")
 
 # Setup logging
 logging.basicConfig(
@@ -149,12 +182,14 @@ SIGNAL_AGENT = None
 RISK_AGENT = None
 MARKET_AGENT = None
 
+# Global Project ID Definition (Fail-safe)
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-pro-dev")
+
 if HAS_GOOGLE_INTEGRATIONS:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not PROJECT_ID:
+        # PROJECT_ID already defined above
+        if PROJECT_ID == "infinity-ai-pro-dev":
             logger.warning("⚠️ GOOGLE_CLOUD_PROJECT not set. Secrets/GCS may fail.")
-            PROJECT_ID = "infinity-ai-pro-dev" # Component testing default
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER_B = TradingLogger(
@@ -237,13 +272,14 @@ if HAS_ENHANCED_TRADING_AI and GENAI_CLIENT_B:
 # --- Vertex AI Reasoning Engine Integration ---
 REASONING_ENGINE_CLIENT = None
 try:
-    from shared.google_integrations import ReasoningEngineClient
+    from src.google_integrations.reasoning_engine_client import ReasoningEngineClient
+    # Agent ID from User Dump: 8753627684120035328 (financial-advisor-21947)
     REASONING_ENGINE_CLIENT = ReasoningEngineClient(
         project_id=PROJECT_ID,
         location="us-central1",
-        agent_id=os.getenv("VERTEX_AI_AGENT_ID", "8753627684120035328")
+        agent_id="8753627684120035328"
     )
-    logger.info(f"✅ Vertex AI Reasoning Engine Client initialized")
+    logger.info("✅ Vertex AI Reasoning Engine Client initialized (financial-advisor-21947)")
 except ImportError:
     logger.warning("⚠️ ReasoningEngineClient module not found")
 except Exception as e:
@@ -292,6 +328,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Cloud Run and Frontend monitoring"""
+    return {
+        "status": "active",
+        "service": "engine-b",
+        "timestamp": datetime.utcnow().isoformat(),
+        "capabilities": MODEL_STORE.get_capabilities() if 'MODEL_STORE' in globals() else {}
+    }
 
 # =====================================================================
 # SEBI 2025 MARKET CONFIGURATION
@@ -1721,7 +1767,7 @@ def _analyze_equity(latest, price, df):
     if macd and signal:
         if macd > signal: score += 1; reasons.append("MACD Bullish Crossover")
         else: score -= 1; reasons.append("MACD Bearish Crossover")
-    
+
     return {"score": score, "reasons": reasons, "signal": _score_to_signal(score)}
 
 def _analyze_fno(latest, price, df):
@@ -1731,13 +1777,13 @@ def _analyze_fno(latest, price, df):
     """
     score = 0
     reasons = []
-    
+
     # ADX - Filter Choppy Markets
     adx = latest.get('ADX_14')
     if adx and adx < 20:
         reasons.append("Choppy Market (Low ADX) - Avoiding Trades")
         return {"score": 0, "reasons": reasons, "signal": "HOLD"}
-    
+
     # Fast MA for Scalping nature
     ema_20 = latest.get('EMA_20', latest.get('EMA_50')) # Fallback to 50 if 20 missing
     if ema_20:
@@ -1759,20 +1805,20 @@ def _analyze_commodity(latest, price, df):
     """
     score = 0
     reasons = []
-    
+
     # ADX is Critical for Commodities
     adx = latest.get('ADX_14')
     if adx and adx > 25:
         score += 1
         reasons.append(f"Strong Trend (ADX {adx:.0f})")
-    
+
     # MACD Weighting is higher
     macd = latest.get('MACD_12_26_9')
     signal = latest.get('MACDs_12_26_9')
     if macd and signal:
         if macd > signal: score += 2; reasons.append("MACD Bullish Trend")
         else: score -= 2; reasons.append("MACD Bearish Trend")
-        
+
     # Price vs Long Term MA
     ema_200 = latest.get('EMA_200', latest.get('EMA_50'))
     if ema_200:
@@ -2085,12 +2131,12 @@ async def train_batch_models(symbols: List[str] = ["NIFTY", "BANKNIFTY", "RELIAN
 @app.get("/api/v1/models")
 async def list_models():
     """List all available ML models with ensemble weights"""
-    
+
     def get_model_status(name):
         model = MODEL_STORE.get_model(name)
         if model is None:
             return 'not_available'
-        
+
         # Check if fitted (heuristic)
         try:
             if name == 'random_forest':
@@ -2108,10 +2154,10 @@ async def list_models():
             elif name == 'catboost':
                  if model.is_fitted():
                      return 'loaded'
-            
+
             # If we are here, it might be initialized but not fitted.
             # However, for the purpose of 'status', 'initialized' is better than crashing.
-            # But the original code was crashing on implicit checks. 
+            # But the original code was crashing on implicit checks.
             # Let's return 'initialized_waiting_for_data' if it exists but maybe not fitted.
             return 'initialized'
         except Exception:
@@ -3031,7 +3077,7 @@ async def generate_enhanced_signal(req: EnhancedSignalRequest):
             # Use Gemini 2.5 Flash (Standard)
             logger.info(f"⚡ Using Fast Model (Gemini Flash) for {req.symbol}")
             res = await ENHANCED_GENAI_CLIENT.generate_trading_signal(
-                symbol=req.symbol, 
+                symbol=req.symbol,
                 analysis_type=req.user_analysis_type
             )
             return res.to_dict()
@@ -4088,15 +4134,15 @@ async def consult_agent(req: AgentConsultRequest):
     try:
         # Import here to ensure we pick up the latest from __init__
         from src.google_integrations import ReasoningEngineClient
-             
+
         # Initialize client (lazy load to avoid startup tax)
         agent_client = ReasoningEngineClient()
-        
+
         if req.symbol:
             response = await agent_client.analyze_stock(req.symbol)
         else:
             response = await agent_client.query(req.query)
-            
+
         return {
             "status": "success",
             "agent_id": agent_client.agent_id,
@@ -4111,5 +4157,7 @@ async def consult_agent(req: AgentConsultRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    import os
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 

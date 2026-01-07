@@ -1,5 +1,4 @@
-# Explicit CORS preflight handler imports
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import Response, FastAPI, Request
 import traceback
 
@@ -30,6 +29,22 @@ import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
 
+# Import Real-Time Enhancements Module
+try:
+    from src.realtime_enhancements import (
+        initialize_realtime,
+        store_postback_event,
+        update_portfolio_position,
+        broadcast_realtime_event,
+        sse_event_generator,
+        ndjson_event_generator
+    )
+    REALTIME_ENABLED = True
+except ImportError as e:
+    logger_init = logging.getLogger("realtime_import")
+    logger_init.warning(f"⚠️ Real-time enhancements not available: {e}")
+    REALTIME_ENABLED = False
+
 # Initialize Firestore client globally
 try:
     _firestore_db = firestore.Client()
@@ -40,6 +55,11 @@ except Exception as e:
     logger_init = logging.getLogger("firestore_init")
     logger_init.warning(f"⚠️ Firestore client not initialized: {e}")
     log_startup_error(e, context="Firestore client init")
+
+import os
+
+# NOTE: OpenTelemetry disabled - not in requirements.txt
+# (OpenTelemetry imports and initialization would go here)
 
 # ML Libraries for Execution Optimization
 
@@ -69,7 +89,7 @@ except ImportError:
 
 # Performance optimization imports
 try:
-    from shared.performance import (
+    from backend.shared.performance import (
         get_cache_manager, cache_response,
         ConnectionPoolManager, get_aiohttp_session,
         get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
@@ -78,31 +98,15 @@ try:
     HAS_PERFORMANCE_MODULE = True
 except ImportError as e:
     HAS_PERFORMANCE_MODULE = False
-    def cache_response(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
-    def with_circuit_breaker(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
-    def get_cache_manager(*args, **kwargs): return None
-    def ConnectionPoolManager(): pass
-    ConnectionPoolManager.initialize = lambda: None
-    ConnectionPoolManager.shutdown = lambda: None
-    def get_aiohttp_session(*args, **kwargs): return None
-    def get_rate_limiter(*args, **kwargs): return None
-    def adaptive_rate_limit(*args, **kwargs):
-        def decorator(func):
-            return func
-        return decorator
-    def get_health_monitor(*args, **kwargs):
-        class MockMonitor:
-            async def start_monitoring(self, *a, **k): pass
-            async def stop_monitoring(self, *a, **k): pass
-            def register_service(self, *a, **k): pass
-        return MockMonitor()
+    get_cache_manager = None
+    cache_response = None
+    ConnectionPoolManager = None
+    get_aiohttp_session = None
+    get_rate_limiter = None
+    adaptive_rate_limit = None
     RateLimitConfig = None
+    get_health_monitor = None
+    with_circuit_breaker = None
     CircuitBreakerConfig = None
     print(f"⚠️ Performance module not available: {e}")
     log_startup_error(e, context="Performance module import")
@@ -166,9 +170,12 @@ activity_logger: Optional[ActivityLogger] = None
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Engine URLs (Corrected for Production)
-ENGINE_B_URL = os.environ.get("ENGINE_B_URL", "https://engine-b-429140669077.us-central1.run.app")
-ENGINE_A_URL = os.environ.get("ENGINE_A_URL", "https://engine-a-429140669077.us-central1.run.app")
+# Engine URLs - Can be provided by Cloud Run deployment
+def _get_env(var: str, default: str = None) -> str:
+    return os.environ.get(var, default)
+
+ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://engine-b:8080")
+ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://engine-a:8080")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
@@ -276,6 +283,14 @@ async def startup_event():
         except Exception as e:
             logger.warning(f"Performance monitor init failed: {e}")
 
+    # Initialize Real-Time Enhancements (robust)
+    if REALTIME_ENABLED:
+        try:
+            await with_timeout(initialize_realtime(_firestore_db), 10, "initialize_realtime")
+            logger.info("✅ Real-time enhancements enabled")
+        except Exception as e:
+            logger.warning(f"Real-time enhancements init failed: {e}")
+
     # Initialize coupons (robust)
     try:
         manager = get_coupon_auth_manager()
@@ -307,21 +322,18 @@ async def shutdown_event():
             logger.warning(f"Shutdown warning: {e}")
 
 
-# CORS allowed origins for production
+# CORS allowed origins for production - RESTRICTED, NOT WILDCARD
+project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'galvanic-pulsar-482815-h0')
 ALLOWED_ORIGINS = [
+    f"https://{project_id}.web.app",
+    f"https://{project_id}.firebaseapp.com",
     "https://infinityai.pro",
     "https://www.infinityai.pro",
     "https://app.infinityai.pro",
-    "https://engine-a.infinityai.pro",
-    "https://engine-b.infinityai.pro",
-    "https://engine-c.infinityai.pro",
-    f"https://{os.getenv('GOOGLE_CLOUD_PROJECT')}.web.app",
-    f"https://{os.getenv('GOOGLE_CLOUD_PROJECT')}.firebaseapp.com",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "*"
+    "http://localhost:3000",  # Dev only
+    "http://localhost:8000",  # Dev only
 ]
+# CRITICAL: NEVER use "*" in production
 
 # Add CORS middleware FIRST (added last so it executes first in FastAPI)
 app.add_middleware(
@@ -338,9 +350,9 @@ class TraceIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         trace_id = request.headers.get("X-Trace-ID") or str(uuid.uuid4())
         request.state.trace_id = trace_id
-        
+
         response = await call_next(request)
-        
+
         response.headers["X-Trace-ID"] = trace_id
         return response
 
@@ -586,7 +598,6 @@ class OrderRequest(BaseModel):
     exchange_segment: str  # NSE_EQ, NSE_FNO, BSE_EQ, etc.
     product_type: str      # INTRADAY, CNC, MARGIN, etc.
     order_type: str        # MARKET, LIMIT, STOP_LOSS, etc.
-    validity: str          # DAY, IOC
     security_id: str       # Dhan Security ID
     quantity: int
     price: Optional[float] = 0.0
@@ -594,7 +605,6 @@ class OrderRequest(BaseModel):
     disclosed_quantity: Optional[int] = 0
     after_market_order: Optional[bool] = False
     amo_time: Optional[str] = "OPEN"
-    bo_profit_value: Optional[float] = 0.0
     bo_stop_loss_value: Optional[float] = 0.0
     drv_expiry_date: Optional[str] = None
     drv_options_type: Optional[str] = None
@@ -651,7 +661,7 @@ async def get_system_status(user_id: Optional[str] = Header(None, alias="X-User-
     dhan_connected = False
     account_name = None
     client_id = None
-    
+
     # Check Dhan Connection if User ID is present
     if user_id:
         try:
@@ -712,18 +722,24 @@ async def get_dhan_client_async(user_id: str) -> dhanhq:
     try:
         creds_manager = get_credentials_manager()
         creds = await creds_manager.get_user_credentials(user_id)
+        resolved_user_id = user_id
+
+        # If no direct match, try locating by Dhan client_id (numeric user_id from frontend)
+        if not creds and user_id and user_id.isdigit():
+            creds = await creds_manager.find_credentials_by_client_id(user_id)
+            if creds:
+                resolved_user_id = creds.get("user_id", user_id)
 
         if creds:
-            # Credentials are nested under 'credentials' key
             credentials = creds.get("credentials", {})
             client_id = credentials.get("client_id")
             access_token = credentials.get("access_token")
 
             if client_id and access_token:
-                logger.info(f"✅ DhanHQ client created for user {user_id}")
+                logger.info(f"✅ DhanHQ client created for user {resolved_user_id}")
                 return dhanhq(client_id, access_token)
 
-        logger.error(f"User credentials not found for user_id: {user_id}")
+        logger.error(f"User credentials not found for user_id/client_id: {user_id}")
         raise HTTPException(status_code=401, detail="User credentials not found or invalid")
     except HTTPException:
         raise
@@ -930,7 +946,7 @@ async def verify_dhan_deep(request: DhanCredentialsRequest):
     """Protocol-Level Deep Verification"""
     try:
         dhan = dhanhq(request.client_id, request.access_token)
-        
+
         # 1. Verify Token Validity (Fund Limits)
         funds = dhan.get_fund_limits()
         if not funds:
@@ -959,11 +975,11 @@ async def verify_dhan_deep(request: DhanCredentialsRequest):
                  price=0
              )
         except Exception as e:
-             # Even if it fails due to symbol, if it reached Dhan and they replied "Invalid Symbol", 
+             # Even if it fails due to symbol, if it reached Dhan and they replied "Invalid Symbol",
              # that PROVES order capability. "Unknown Error" would mean blockage.
              pass
 
-        return DhanCredentialsResponse(success=True, verified=True, 
+        return DhanCredentialsResponse(success=True, verified=True,
                                        message="Deep Verification Passed: Identity + Funds + Order Scope Verified")
     except Exception as e:
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
@@ -981,14 +997,14 @@ async def system_verify():
         "signal_freshness": "OK",
         "trace_id": uuid.uuid4().hex
     }
-    
+
     # Check Dhan Token from Secret Manager (First User found)
     try:
         # Simple check for existence of any connection
         status["dhan_token"] = "CHECKED"
     except:
         status["dhan_token"] = "ERROR"
-        
+
     return status
 
 
@@ -998,18 +1014,18 @@ async def receive_dhan_postback(request: DhanPostbackRequest):
     try:
         # 1. Log the event (Audit Trail)
         print(f"Values: received postback for order {request.orderId}: {request.orderStatus}")
-        
+
         # 2. Update Firestore Order Record
         try:
             # We assume orderId matches the document ID in 'orders' collection
-            # or we query by 'order_id' field. 
+            # or we query by 'order_id' field.
             # For simplicity in this verifiction phase, we try direct update if doc exists
             # In a full system, you might need a query if IDs differ.
              proj = os.getenv("GOOGLE_CLOUD_PROJECT")
              if not proj: raise ValueError("GOOGLE_CLOUD_PROJECT not set")
              db = firestore.Client(project=proj)
              order_ref = db.collection("orders").document(request.orderId)
-             
+
              # Check existence first or use set with merge
              # We update status and execution details
              order_ref.set({
@@ -1019,11 +1035,11 @@ async def receive_dhan_postback(request: DhanPostbackRequest):
                  "filled_qty": request.quantity,
                  "exchange_order_id": request.exchangeOrderId
              }, merge=True)
-             
+
         except Exception as e:
             print(f"Firestore update failed for postback: {e}")
             # We don't fail the postback response to Dhan, just log error
-            
+
         return {"status": "received", "orderId": request.orderId}
     except Exception as e:
         print(f"Error processing postback: {e}")
@@ -1040,19 +1056,19 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         parent = f"projects/{proj_id}"
-        
+
         credentials_data = {
-            "client_id": request.client_id, 
+            "client_id": request.client_id,
             "api_key": request.api_key,
-            "api_secret": request.api_secret, 
+            "api_secret": request.api_secret,
             "access_token": request.access_token,
             "updated_at": datetime.utcnow().isoformat()
         }
-        
+
         # Ensure secret exists
         try:
             client.create_secret(request={
-                "parent": parent, 
+                "parent": parent,
                 "secret_id": secret_id,
                 "secret": {"replication": {"automatic": {}}}
             })
@@ -1060,13 +1076,13 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         except Exception as e:
             # Already exists or other error (handled by version add)
             pass
-        
+
         # Add new version
         client.add_secret_version(request={
             "parent": f"{parent}/secrets/{secret_id}",
             "payload": {"data": json.dumps(credentials_data).encode("UTF-8")}
         })
-        
+
         # Verify connection live
         verified = False
         message = "Credentials saved"
@@ -1081,7 +1097,7 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
                 message += " but verification failed (invalid response)"
         except Exception as ve:
             message += f" but verification failed: {str(ve)[:50]}"
-        
+
         return DhanCredentialsResponse(success=True, verified=verified, message=message)
     except Exception as e:
         logger.error(f"❌ Error saving credentials: {e}")
@@ -1098,10 +1114,10 @@ async def get_dhan_credentials(user_id: str):
         proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
         name = f"projects/{proj_id}/secrets/{secret_id}/versions/latest"
-        
+
         resp = client.access_secret_version(request={"name": name})
         data = json.loads(resp.payload.data.decode("UTF-8"))
-        
+
         masked = {
             "client_id": data.get("client_id", ""),
             "api_key": "***" + (data.get("api_key", "")[-4:] or ""),
@@ -1109,11 +1125,11 @@ async def get_dhan_credentials(user_id: str):
             "access_token": "***" + (data.get("access_token", "")[-4:] or ""),
             "is_verified": False  # Don't assume verified just because it exists
         }
-        
+
         return DhanCredentialsResponse(
-            success=True, 
+            success=True,
             verified=False, # UI should show 'CONNECTED' but maybe 'UNVERIFIED' until button clicked
-            message="Credentials loaded", 
+            message="Credentials loaded",
             credentials=masked
         )
     except Exception as e:
@@ -1126,7 +1142,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
     try:
         client_id = request.client_id
         access_token = request.access_token
-        
+
         # If credentials not provided in request, try to load from Secret Manager
         if not client_id or not access_token:
              # Load from SM... (omitted for brevity, assume frontend sends them or we load)
@@ -1135,12 +1151,12 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
 
         dhan = dhanhq(client_id, access_token)
         funds = dhan.get_fund_limits()
-        
+
         if funds and funds.get('status') == 'success':
             return DhanCredentialsResponse(success=True, verified=True, message="Connection verified successfully")
         else:
             return DhanCredentialsResponse(success=True, verified=False, message=f"Verification failed: {funds.get('remarks', 'Invalid response')}")
-            
+
     except Exception as e:
         logger.error(f"Verification error: {e}")
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
@@ -1359,7 +1375,7 @@ async def place_order(order: OrderRequest, request: Request):
     if ENGINE_C_MODE == "paper":
         # Simulate order placement, do not call Dhan
         simulated_id = f"sim_{uuid.uuid4().hex[:12]}"
-        
+
         # Log to Firestore for Dashboards
         try:
             db = firestore.Client()
@@ -1376,8 +1392,8 @@ async def place_order(order: OrderRequest, request: Request):
             logger.warning(f"Paper order Firestore log failed: {fe}")
 
         return {
-            "status": "success", 
-            "order_id": simulated_id, 
+            "status": "success",
+            "order_id": simulated_id,
             "dhan_response": {
                 "status": "success",
                 "data": {"orderId": simulated_id},
@@ -1613,6 +1629,7 @@ async def dhan_postback(request: Dict[str, Any]):
     """
     Receive order/trade updates from DhanHQ via webhook.
     This endpoint receives real-time updates on order status, fills, etc.
+    ENHANCED: Now stores to Firestore and broadcasts in real-time.
     """
     try:
         logger.info(f"📥 DhanHQ Postback received: {request}")
@@ -1622,40 +1639,131 @@ async def dhan_postback(request: Dict[str, Any]):
         status = request.get("status") or request.get("orderStatus")
         transaction_type = request.get("transaction_type") or request.get("transactionType")
         symbol = request.get("trading_symbol") or request.get("tradingSymbol")
+        client_id = request.get("client_id") or request.get("clientId")
 
         # Log the trade event
         logger.info(f"📊 Order Update: {order_id} - {symbol} - {transaction_type} - {status}")
 
         if activity_logger:
-            # Explicitly log to Firestore activity_logs
-            trace_id = getattr(request, "state", {}).get("trace_id") or request.headers.get("X-Trace-ID")
+            trace_id = request.get("X-Trace-ID", str(uuid.uuid4()))
             await activity_logger.log_activity(
-                user_id="system", # Or extract from order metadata if available
+                user_id=client_id or "system",
                 activity_type="TRADE_UPDATE",
                 description=f"Order {order_id} for {symbol} is {status}",
                 metadata={
                     "order_id": order_id,
                     "symbol": symbol,
                     "status": status,
-                    "side": transaction_type
+                    "side": transaction_type,
+                    "full_payload": request
                 },
                 trace_id=trace_id,
                 severity="info" if status != "REJECTED" else "warning"
             )
 
-        # TODO: Store in Firestore for trade history
-        # TODO: Update portfolio positions
-        # TODO: Send notification to frontend
+        # ENHANCED: Store in Firestore for trade history
+        if REALTIME_ENABLED:
+            try:
+                await store_postback_event(order_id, client_id, request)
+                logger.info(f"✅ Postback stored in Firestore: {order_id}")
+            except Exception as e:
+                logger.warning(f"Failed to store postback: {e}")
+
+            # ENHANCED: Update portfolio positions
+            try:
+                await update_portfolio_position(client_id, symbol, request)
+                logger.info(f"✅ Portfolio position updated: {symbol}")
+            except Exception as e:
+                logger.warning(f"Failed to update position: {e}")
+
+            # ENHANCED: Broadcast real-time event
+            try:
+                await broadcast_realtime_event("order_update", {
+                    "order_id": order_id,
+                    "symbol": symbol,
+                    "status": status,
+                    "side": transaction_type,
+                    "client_id": client_id,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+                logger.info(f"📢 Broadcast: order_update for {order_id}")
+            except Exception as e:
+                logger.warning(f"Failed to broadcast event: {e}")
 
         return {
             "status": "received",
-            "message": "Postback processed successfully",
+            "message": "Postback processed and stored successfully",
             "order_id": order_id,
+            "stored": REALTIME_ENABLED,
             "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:
         logger.error(f"❌ Postback processing failed: {e}")
         return {"status": "error", "message": str(e)}
+
+
+# --- Server-Sent Events (SSE) Bridge for Real-Time Data ---
+@app.get("/api/realtime/stream/{user_id}")
+async def realtime_stream(user_id: str):
+    """
+    Server-Sent Events (SSE) endpoint for real-time trading data.
+    Streams order updates, trade confirmations, and market data in real-time.
+
+    Frontend usage (JavaScript):
+    const eventSource = new EventSource(`/api/realtime/stream/${userId}`);
+    eventSource.addEventListener('order_update', (event) => {
+        const order = JSON.parse(event.data);
+        console.log('Order Status:', order.status);
+    });
+    """
+    if not REALTIME_ENABLED:
+        raise HTTPException(status_code=503, detail="Real-time enhancements not available")
+
+    return StreamingResponse(
+        sse_event_generator(user_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
+    )
+
+
+# --- Alternative WebSocket-compatible HTTP streaming endpoint ---
+@app.get("/api/realtime/updates/{user_id}")
+async def realtime_updates(user_id: str):
+    """
+    Real-time updates endpoint - JSON Lines format (NDJSON).
+    Alternative to SSE for clients that prefer newline-delimited JSON.
+
+    Frontend usage (Node.js):
+    const response = await fetch(`/api/realtime/updates/${userId}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value);
+        const lines = buffer.split('\\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+            if (line) {
+                const event = JSON.parse(line);
+                console.log('Real-time update:', event);
+            }
+        }
+    }
+    """
+    if not REALTIME_ENABLED:
+        raise HTTPException(status_code=503, detail="Real-time enhancements not available")
+
+    return StreamingResponse(
+        ndjson_event_generator(user_id),
+        media_type="application/x-ndjson"
+    )
 
 
 # ==============================================================================
@@ -1717,6 +1825,12 @@ async def get_user_credentials_simple(user_id: str):
             }
 
         creds = await manager.get_user_credentials(user_id)
+        resolved_user_id = user_id
+
+        if not creds and user_id and user_id.isdigit():
+            creds = await manager.find_credentials_by_client_id(user_id)
+            if creds:
+                resolved_user_id = creds.get("user_id", user_id)
 
         if not creds:
             return {
@@ -1728,7 +1842,7 @@ async def get_user_credentials_simple(user_id: str):
             }
 
         return {
-            "user_id": user_id,
+            "user_id": resolved_user_id,
             "configured": True,
             "client_id": creds.get("credentials", {}).get("client_id", ""),
             "api_key": creds.get("credentials", {}).get("api_key", ""),
@@ -1756,10 +1870,16 @@ async def delete_user_credentials_simple(user_id: str):
         manager = get_credentials_manager()
         if manager is None:
             raise HTTPException(status_code=503, detail="Credentials manager not available")
+        target_id = user_id
+        if user_id and user_id.isdigit():
+            # Prefer deleting the actual document if stored under Firebase UID
+            creds = await manager.find_credentials_by_client_id(user_id)
+            if creds:
+                target_id = creds.get("user_id", user_id)
 
-        success = await manager.delete_user_credentials(user_id)
+        success = await manager.delete_user_credentials(target_id)
         return {
-            "user_id": user_id,
+            "user_id": target_id,
             "deleted": success,
             "message": "Credentials deleted successfully" if success else "Failed to delete"
         }
@@ -1780,6 +1900,12 @@ async def verify_user_credentials_simple(user_id: str):
             }
 
         creds = await manager.get_user_credentials(user_id)
+        resolved_user_id = user_id
+
+        if not creds and user_id and user_id.isdigit():
+            creds = await manager.find_credentials_by_client_id(user_id)
+            if creds:
+                resolved_user_id = creds.get("user_id", user_id)
 
         if not creds:
             return {

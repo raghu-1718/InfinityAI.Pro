@@ -28,6 +28,20 @@ steps:
     env:
       - 'PYTHONUNBUFFERED=1'
 
+   # Step 4: Automated E2E/Smoke Test Steps
+   - name: 'python:3.10-slim'
+     id: 'smoke-check-firestore-collections'
+     entrypoint: 'python'
+     args: ['tools/smoke_tests/check_collections.py']
+     env:
+       - 'GOOGLE_APPLICATION_CREDENTIALS=/workspace/sa-key.json'
+   - name: 'python:3.10-slim'
+     id: 'smoke-compare-nifty'
+     entrypoint: 'python'
+     args: ['tools/smoke_tests/compare_nifty.py']
+     env:
+       - 'GOOGLE_APPLICATION_CREDENTIALS=/workspace/sa-key.json'
+
 # Push images to registry
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'

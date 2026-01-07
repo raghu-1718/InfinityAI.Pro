@@ -50,6 +50,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getEngineCUrl } from "@/lib/api";
 
 interface TradingSession {
   isActive: boolean;
@@ -147,7 +148,7 @@ export function AutoTradingCard() {
   const loadSettingsFromBackend = async (userId: string) => {
     try {
       setSettingsLoading(true);
-      const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
+      const ENGINE_C_URL = getEngineCUrl();
       const response = await fetch(
         `${ENGINE_C_URL}/api/trading-settings/${userId}`
       );
@@ -190,7 +191,7 @@ export function AutoTradingCard() {
 
     try {
       setSettingsLoading(true);
-      const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
+      const ENGINE_C_URL = getEngineCUrl();
       const response = await fetch(
         `${ENGINE_C_URL}/api/trading-settings/${userId}`,
         {

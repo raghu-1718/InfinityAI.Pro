@@ -43,9 +43,9 @@ on:
         type: boolean
 
 env:
-  GCP_PROJECT_ID: gen-lang-client-0779271931
+  GCP_PROJECT_ID: galvanic-pulsar-482815-h0
   GCP_REGION: us-central1
-  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/gen-lang-client-0779271931/infinityai
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai
 
 jobs:
   # ============================================
@@ -146,18 +146,21 @@ jobs:
             --timeout=300 \
             --min-instances=0 \
             --max-instances=5 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_B_URL=https://engine-b-mfvaq54jjq-uc.a.run.app,ENGINE_C_URL=https://engine-c-mfvaq54jjq-uc.a.run.app" \
-            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest"
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_B_URL=https://engine-b-3acobgd3qa-uc.a.run.app,ENGINE_C_URL=https://engine-c-3acobgd3qa-uc.a.run.app,OTEL_EXPORTER_OTLP_ENDPOINT=cloudtrace.googleapis.com:443" \
+            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest" \
+            --project=${{ env.GCP_PROJECT_ID }}
 
       - name: Health Check
         run: |
           echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
           echo "🔍 Running health check..."
-          if curl -sf https://engine-a-mfvaq54jjq-uc.a.run.app/health; then
+          HEALTH_URL="https://$(gcloud run services describe engine-a --region=${{ env.GCP_REGION }} --format='value(status.url)' --project=${{ env.GCP_PROJECT_ID }})/health"
+          if curl -sf "$HEALTH_URL"; then
             echo "✅ Engine A is healthy!"
           else
             echo "⚠️ Health check failed - service may still be starting"
+            exit 1
           fi
 
   # ============================================
@@ -222,8 +225,9 @@ jobs:
             --concurrency=50 \
             --min-instances=0 \
             --max-instances=10 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-mfvaq54jjq-uc.a.run.app,ENGINE_C_URL=https://engine-c-mfvaq54jjq-uc.a.run.app" \
-            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,GEMINI_API_KEY=gemini-api-key:latest"
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-3acobgd3qa-uc.a.run.app,ENGINE_C_URL=https://engine-c-3acobgd3qa-uc.a.run.app,OTEL_EXPORTER_OTLP_ENDPOINT=cloudtrace.googleapis.com:443" \
+            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,GEMINI_API_KEY=gemini-api-key:latest" \
+            --project=${{ env.GCP_PROJECT_ID }}
 
       - name: Health Check
         run: |
@@ -297,8 +301,9 @@ jobs:
             --timeout=300 \
             --min-instances=0 \
             --max-instances=5 \
-            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-mfvaq54jjq-uc.a.run.app,ENGINE_B_URL=https://engine-b-mfvaq54jjq-uc.a.run.app" \
-            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,ENCRYPTION_KEY=encryption-key:latest"
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }},ENGINE_A_URL=https://engine-a-3acobgd3qa-uc.a.run.app,ENGINE_B_URL=https://engine-b-3acobgd3qa-uc.a.run.app,OTEL_EXPORTER_OTLP_ENDPOINT=cloudtrace.googleapis.com:443" \
+            --set-secrets="DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_API_SECRET=dhan-api-secret:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest,ENCRYPTION_KEY=encryption-key:latest" \
+            --project=${{ env.GCP_PROJECT_ID }}
 
       - name: Health Check
         run: |

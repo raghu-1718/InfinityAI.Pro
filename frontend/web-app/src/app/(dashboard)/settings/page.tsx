@@ -28,11 +28,13 @@ import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
 import { setDhanClientId, clearDhanClientId } from "@/lib/user";
+import { storeCredentialsAPI } from "@/lib/cloudFunctions";
 import { EngineStatusCards } from "@/components/dashboard/engine-status";
 
 import { cn } from "@/lib/utils";
+import { getEngineCUrl } from "@/lib/api";
 
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL || "";
+const ENGINE_C_URL = getEngineCUrl();
 
 interface DhanCredentials {
   client_id: string;
@@ -45,7 +47,7 @@ interface DhanCredentials {
 export default function SettingsPage() {
   // Global state
   const { userProfile } = useAppStore();
-  const { session } = useCouponAuth();
+  const { session, refreshSession } = useCouponAuth();
 
   // Dhan Credentials State
   const [dhanCredentials, setDhanCredentials] = useState<DhanCredentials>({
@@ -73,20 +75,22 @@ export default function SettingsPage() {
 
       try {
         const response = await fetch(
-          `${ENGINE_C_URL}/api/dhan/credentials/${session.userId}`
+          `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`
         );
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success && data.credentials) {
+          if (data.configured) {
             setDhanCredentials({
-              client_id: data.credentials.client_id || "",
-              api_key: data.credentials.api_key || "",
-              api_secret: data.credentials.api_secret || "",
-              access_token: data.credentials.access_token || "",
-              is_verified: data.verified,
+              client_id: data.client_id || "",
+              api_key: data.api_key || "",
+              api_secret: data.api_secret || "",
+              access_token: "", // masked on server; keep empty locally
+              is_verified: Boolean(data.is_verified),
             });
-            setConnectionStatus(data.verified ? "connected" : "disconnected");
+            setConnectionStatus(
+              data.is_verified ? "connected" : "disconnected"
+            );
           }
         }
       } catch (error) {
@@ -110,40 +114,44 @@ export default function SettingsPage() {
 
     setIsConnecting(true);
     try {
-      const response = await fetch(`${ENGINE_C_URL}/api/dhan/credentials`, {
+      const response = await fetch(`${ENGINE_C_URL}/api/user/credentials`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: session.userId,
           client_id: dhanCredentials.client_id,
-          api_key: dhanCredentials.api_key || "ignored", // API might require key but we use token mainly
-          api_secret: dhanCredentials.api_secret || "ignored",
+          api_key: dhanCredentials.api_key || "",
+          api_secret: dhanCredentials.api_secret || "",
           access_token: dhanCredentials.access_token,
         }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        const isActuallyVerified = data.verified;
-        setConnectionStatus(isActuallyVerified ? "connected" : "error");
-        setDhanCredentials({
-          ...dhanCredentials,
-          is_verified: isActuallyVerified,
-        });
+      const isSuccess = data.status === "success" || response.ok;
+      const isVerified = Boolean(data.is_verified);
 
-        if (isActuallyVerified) {
-          toast.success("Credentials saved and verified!");
-        } else {
-          toast.warning(
-            "Credentials saved but verification failed. Check your token."
-          );
-        }
-
-        setDhanClientId(dhanCredentials.client_id);
-      } else {
+      if (!isSuccess) {
         throw new Error(data.message || "Save failed");
       }
+
+      setConnectionStatus(isVerified ? "connected" : "error");
+      setDhanCredentials({
+        ...dhanCredentials,
+        is_verified: isVerified,
+      });
+
+      if (isVerified) {
+        toast.success("Credentials saved and verified!");
+        // REFRESH GLOBAL SESSION STATE
+        await refreshSession();
+      } else {
+        toast.warning(
+          "Credentials saved but verification failed. Check your token."
+        );
+      }
+
+      setDhanClientId(dhanCredentials.client_id);
     } catch (error: any) {
       toast.error(`Save failed: ${error.message}`);
       setConnectionStatus("error");
@@ -157,24 +165,18 @@ export default function SettingsPage() {
 
     setIsConnecting(true);
     try {
-      const response = await fetch(`${ENGINE_C_URL}/api/dhan/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: session.userId,
-          client_id: dhanCredentials.client_id,
-          access_token: dhanCredentials.access_token,
-          api_key: "",
-          api_secret: "",
-        }),
-      });
+      const response = await fetch(
+        `${ENGINE_C_URL}/api/user/credentials/verify?user_id=${session.userId}`
+      );
 
       const data = await response.json();
 
-      if (data.verified) {
+      if (data.is_verified) {
         setConnectionStatus("connected");
         setDhanCredentials({ ...dhanCredentials, is_verified: true });
         toast.success("Connection verified successfully!");
+        // REFRESH GLOBAL SESSION STATE
+        await refreshSession();
       } else {
         setConnectionStatus("error");
         setDhanCredentials({ ...dhanCredentials, is_verified: false });
@@ -194,13 +196,13 @@ export default function SettingsPage() {
     setIsConnecting(true);
     try {
       const response = await fetch(
-        `${ENGINE_C_URL}/api/dhan/credentials/${session.userId}`,
+        `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`,
         { method: "DELETE" }
       );
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.deleted || response.ok) {
         setConnectionStatus("disconnected");
         setDhanCredentials({
           client_id: "",
@@ -220,6 +222,9 @@ export default function SettingsPage() {
             clientId: "",
           });
         }
+
+        // REFRESH GLOBAL SESSION STATE
+        await refreshSession();
 
         toast.success("Disconnected from Dhan");
       } else {
@@ -378,11 +383,11 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/20 p-4 rounded-lg">
                     <div className="space-y-2">
                       <Label className="text-xs uppercase text-muted-foreground">
-                        Postback URL
+                        Postback URL (DhanHQ Webhook)
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://engine-c.infinityai.pro/api/dhan/postback
+                          https://engine-c-228557716858.us-central1.run.app/api/dhan/postback
                         </code>
                         <Button
                           variant="outline"
@@ -390,7 +395,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://engine-c.infinityai.pro/api/dhan/postback"
+                              "https://engine-c-228557716858.us-central1.run.app/api/dhan/postback"
                             );
                             toast.success("Copied Postback URL");
                           }}
@@ -398,14 +403,18 @@ export default function SettingsPage() {
                           <CheckCircle className="h-3 w-3" />
                         </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Configure this URL in DhanHQ Developer Dashboard for
+                        order/trade webhooks
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs uppercase text-muted-foreground">
-                        Redirect URL
+                        OAuth Redirect URL
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://infinityai.pro/settings
+                          https://engine-c-228557716858.us-central1.run.app/auth/dhan/success
                         </code>
                         <Button
                           variant="outline"
@@ -413,7 +422,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://infinityai.pro/settings"
+                              "https://engine-c-228557716858.us-central1.run.app/auth/dhan/success"
                             );
                             toast.success("Copied Redirect URL");
                           }}
@@ -421,7 +430,127 @@ export default function SettingsPage() {
                           <CheckCircle className="h-3 w-3" />
                         </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Configure this URL in DhanHQ Developer Dashboard for
+                        OAuth callback
+                      </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Credentials Input Section */}
+                <div className="mt-6 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Your DhanHQ Credentials
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dhan-client-id">Client ID</Label>
+                      <Input
+                        id="dhan-client-id"
+                        placeholder="1101302170"
+                        value={dhanCredentials.client_id}
+                        onChange={(e) =>
+                          setDhanCredentials((prev) => ({
+                            ...prev,
+                            client_id: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dhan-access-token">Access Token</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="dhan-access-token"
+                          type={showAccessToken ? "text" : "password"}
+                          placeholder="eyJ0eXAiOiJKV1QiLCJhbGci..."
+                          value={dhanCredentials.access_token}
+                          onChange={(e) =>
+                            setDhanCredentials((prev) => ({
+                              ...prev,
+                              access_token: e.target.value,
+                            }))
+                          }
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setShowAccessToken(!showAccessToken)}
+                        >
+                          {showAccessToken ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Get your access token from DhanHQ Developer Dashboard
+                      </p>
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        if (
+                          !dhanCredentials.client_id ||
+                          !dhanCredentials.access_token
+                        ) {
+                          toast.error(
+                            "Please enter both Client ID and Access Token"
+                          );
+                          return;
+                        }
+
+                        setIsConnecting(true);
+                        try {
+                          const data = await storeCredentialsAPI(
+                            session?.userId || "",
+                            dhanCredentials.client_id,
+                            dhanCredentials.access_token
+                          );
+
+                          if (data.success) {
+                            setConnectionStatus("connected");
+                            toast.success("Credentials saved successfully!");
+
+                            // Store client ID in local storage
+                            setDhanClientId(dhanCredentials.client_id);
+                          } else {
+                            toast.error(
+                              data.message || "Failed to save credentials"
+                            );
+                          }
+                        } catch (error: any) {
+                          console.error("Error saving credentials:", error);
+                          toast.error(error.message || "Network error");
+                        } finally {
+                          setIsConnecting(false);
+                        }
+                      }}
+                      className="w-full"
+                      disabled={isConnecting}
+                    >
+                      {isConnecting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Save Credentials
+                        </>
+                      )}
+                    </Button>
+                    {connectionStatus === "connected" && (
+                      <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                        <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Credentials verified and connected
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

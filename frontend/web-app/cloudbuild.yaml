@@ -1,0 +1,54 @@
+steps:
+  # Step 1: Build Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+      - "-t"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:$SHORT_SHA"
+      - "-f"
+      - "frontend/web-app/Dockerfile"
+      - "."
+    id: "build-image"
+
+  # Step 2: Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+    id: "push-image"
+    waitFor: ["build-image"]
+
+  # Step 3: Deploy to Cloud Run
+  - name: "gcr.io/cloud-builders/run"
+    args:
+      - "deploy"
+      - "web-app"
+      - "--image"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+      - "--region"
+      - "us-central1"
+      - "--platform"
+      - "managed"
+      - "--memory"
+      - "1Gi"
+      - "--cpu"
+      - "1"
+      - "--timeout"
+      - "3600"
+      - "--allow-unauthenticated"
+      - "--port"
+      - "3000"
+      - "--set-env-vars"
+      - "NODE_ENV=production"
+    id: "deploy-cloud-run"
+    waitFor: ["push-image"]
+
+images:
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:$SHORT_SHA"
+
+timeout: "1800s"
+options:
+  machineType: "N1_HIGHCPU_8"

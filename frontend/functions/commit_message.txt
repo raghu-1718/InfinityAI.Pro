@@ -1,0 +1,5 @@
+# InfinityAI.Pro - Commit package-lock.json update
+
+- Regenerated package-lock.json in frontend/functions to resolve lockfile mismatch and deployment errors.
+- Ensures firebase-functions@7.0.2 is used and npm ci will succeed in Cloud Build.
+- Required for successful Firebase Functions deployment after dependency or config changes.

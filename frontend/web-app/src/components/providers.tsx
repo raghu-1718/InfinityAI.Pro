@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState, useEffect, type ReactNode } from 'react';
-import { Toaster } from '@/components/ui/sonner';
-import { CouponAuthProvider } from '@/contexts/DualAuthContext';
-import { useAppStore } from '@/lib/store';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useState, useEffect, type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { CouponAuthProvider } from "@/contexts/DualAuthContext";
+import { useAppStore } from "@/lib/store";
 
 // Hydrate Zustand store on client side
 function StoreHydration() {
@@ -32,9 +32,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreHydration />
-      <CouponAuthProvider>
-        {children}
-      </CouponAuthProvider>
+      <CouponAuthProvider>{children}</CouponAuthProvider>
       <Toaster position="top-right" richColors />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

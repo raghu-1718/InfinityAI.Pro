@@ -61,9 +61,10 @@ class CouponAuthManager:
             self._memory_sessions = {}
             self._memory_users = {}
 
+
     def _hash_code(self, code: str) -> str:
-        """Hash coupon code for secure comparison"""
-        return hashlib.sha256(code.upper().strip().encode()).hexdigest()
+        """Get coupon code ID (Plain text now)"""
+        return code.upper().strip()
 
     def _generate_session_id(self, coupon_code: str) -> str:
         """Generate unique session ID"""
@@ -72,7 +73,7 @@ class CouponAuthManager:
 
     def _generate_user_id(self, coupon_code: str, session_id: str) -> str:
         """Generate unique user ID based on coupon"""
-        return f"coupon_{self._hash_code(coupon_code)[:16]}_{session_id[:8]}"
+        return f"coupon_{hashlib.sha256(coupon_code.encode()).hexdigest()[:8]}_{session_id[:8]}"
 
     # =========================================================================
     # Coupon Management (Admin Functions)
@@ -84,171 +85,156 @@ class CouponAuthManager:
         description: str = "InfinityAI Pro Access",
         max_uses: int = 1,
         valid_days: int = 365,
-        features: List[str] = None
+        features: List[str] = None,
+        assigned_email: Optional[str] = None
     ) -> Dict[str, Any]:
         """Create a new coupon code"""
-        code_hash = self._hash_code(code)
+        code_id = self._hash_code(code)
 
         coupon_data = {
-            "code_hash": code_hash,
-            "code_display": code.upper()[:4] + "****",  # Masked display
+            "code_id": code_id,
+            "code_display": code.upper(),
             "description": description,
             "max_uses": max_uses,
             "current_uses": 0,
             "expires_at": utcnow() + timedelta(days=valid_days),
             "is_active": True,
             "created_at": utcnow(),
-            "features": features or ["dashboard", "trading", "signals", "ai_analysis"]
+            "features": features or ["dashboard", "trading", "signals", "ai_analysis"],
+            "assigned_email": assigned_email.lower().strip() if assigned_email else None
         }
 
         if self.db:
-            doc_ref = self.db.collection(self.coupons_collection).document(code_hash)
+            doc_ref = self.db.collection(self.coupons_collection).document(code_id)
             doc_ref.set(coupon_data)
         else:
-            self._memory_coupons[code_hash] = coupon_data
+            self._memory_coupons[code_id] = coupon_data
 
-        logger.info(f"✅ Created coupon: {coupon_data['code_display']}")
+        logger.info(f"✅ Created coupon: {code_id} (assigned to: {assigned_email})")
         return {"success": True, "coupon": coupon_data}
 
     async def get_coupon(self, code: str) -> Optional[Dict[str, Any]]:
         """Get coupon by code"""
-        code_hash = self._hash_code(code)
+        code_id = self._hash_code(code)
 
         if self.db:
-            doc_ref = self.db.collection(self.coupons_collection).document(code_hash)
+            doc_ref = self.db.collection(self.coupons_collection).document(code_id)
             doc = doc_ref.get()
             if doc.exists:
                 return doc.to_dict()
             return None
         else:
-            return self._memory_coupons.get(code_hash)
+            return self._memory_coupons.get(code_id)
 
     # =========================================================================
     # Authentication Functions
     # =========================================================================
 
-    async def validate_coupon(self, code: str, link_user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def validate_coupon(self, code: str, link_user_id: Optional[str] = None, email: Optional[str] = None) -> Dict[str, Any]:
         """
         Validate a coupon code and create a session if valid.
-        If link_user_id is provided (e.g. Firebase UID), use it.
-
-        Returns:
-            success: bool
-            session_id: str (if successful)
-            user_id: str (if successful)
-            message: str
-            features: list (if successful)
+        If link_user_id/email is provided, validate binding.
         """
         code = code.upper().strip()
 
         if not code or len(code) < 4:
-            return {
-                "success": False,
-                "message": "Invalid coupon code format"
-            }
+            return {"success": False, "message": "Invalid coupon code format"}
 
         coupon = await self.get_coupon(code)
 
         if not coupon:
-            logger.warning(f"Invalid coupon attempt: {code[:4]}****")
-            return {
-                "success": False,
-                "message": "Invalid coupon code"
-            }
+            logger.warning(f"Invalid coupon attempt: {code}")
+            return {"success": False, "message": "Invalid coupon code"}
 
         # Check if active
         if not coupon.get("is_active", False):
-            return {
-                "success": False,
-                "message": "This coupon has been deactivated"
-            }
+            return {"success": False, "message": "This coupon has been deactivated"}
+
+        # Check binding (Strict 1-to-1 Email check)
+        assigned_email = coupon.get("assigned_email")
+        if assigned_email and email:
+            if assigned_email.lower() != email.lower():
+                logger.warning(f"Coupon {code} stolen attempt by {email} (owned by {assigned_email})")
+                return {"success": False, "message": "This coupon is reserved for a different user"}
+        
+        # If coupon has assigned email but no email provided in request
+        if assigned_email and not email:
+             return {"success": False, "message": "Email verification required for this coupon"}
+
 
         # Check expiry
         expires_at = coupon.get("expires_at")
         if expires_at:
-            if isinstance(expires_at, datetime):
-                if expires_at < utcnow():
-                    return {
-                        "success": False,
-                        "message": "This coupon has expired"
-                    }
-            else:
-                # Handle Firestore timestamp
-                try:
-                    if expires_at.timestamp() < utcnow().timestamp():
-                        return {
-                            "success": False,
-                            "message": "This coupon has expired"
-                        }
-                except:
-                    pass
+            # Handle both datetime and Firestore Timestamp
+            try:
+                if isinstance(expires_at, datetime):
+                     exp = expires_at
+                else:
+                     exp = datetime.fromtimestamp(expires_at.timestamp(), tz=timezone.utc)
+                
+                if exp < utcnow():
+                    return {"success": False, "message": "This coupon has expired"}
+            except Exception as e:
+                logger.error(f"Expiry check error: {e}")
 
         # Check usage limit (with Idempotency)
         max_uses = coupon.get("max_uses", 1)
         current_uses = coupon.get("current_uses", 0)
         
-        # Check if this user already used this coupon
+        # Check if this user already used this coupon (Re-entry allowed)
         is_reentry = False
         if link_user_id:
-            used_by = coupon.get("used_by")
-            # Handle both single string and list of users (future proofing)
+            used_by = coupon.get("used_by", [])
             if isinstance(used_by, list):
                 is_reentry = link_user_id in used_by
             elif isinstance(used_by, str):
                 is_reentry = used_by == link_user_id
 
         if max_uses > 0 and current_uses >= max_uses and not is_reentry:
-            return {
-                "success": False,
-                "message": "This coupon has reached its usage limit"
-            }
+            return {"success": False, "message": "This coupon has reached its usage limit"}
 
         # Create session
         session_id = self._generate_session_id(code)
-        
-        # Use provided user ID (Firebase UID) if available, otherwise generate one
         user_id = link_user_id if link_user_id else self._generate_user_id(code, session_id)
 
         session_data = {
             "session_id": session_id,
             "user_id": user_id,
-            "google_user_id": link_user_id, # explicit field
-            "coupon_code_hash": self._hash_code(code),
+            "google_user_id": link_user_id,
+            "google_email": email,
+            "coupon_code": code, # Storing plain code now
             "created_at": utcnow(),
-            "expires_at": utcnow() + timedelta(days=30),  # Session valid for 30 days
+            "expires_at": utcnow() + timedelta(days=30),
             "is_active": True,
             "dhan_configured": False,
             "last_activity": utcnow()
         }
 
         # Update coupon usage
-        code_hash = self._hash_code(code)
         if self.db:
-            # Save session
             self.db.collection(self.sessions_collection).document(session_id).set(session_data)
             
-            # Only increment if this is a NEW use
             if not is_reentry:
-                coupon_ref = self.db.collection(self.coupons_collection).document(code_hash)
-                # If we want to support list of users in future, we'd array_union here
-                coupon_ref.update({
-                    "current_uses": firestore.Increment(1),
-                    "used_by": user_id, 
-                    "used_at": utcnow()
-                })
+                try:
+                    self.db.collection(self.coupons_collection).document(code).update({
+                        "current_uses": firestore.Increment(1),
+                        "used_by": firestore.ArrayUnion([user_id]),
+                        "used_at": utcnow()
+                    })
+                except Exception as e:
+                    logger.error(f"Failed to update coupon stats: {e}")
         else:
             self._memory_sessions[session_id] = session_data
             if not is_reentry:
-                self._memory_coupons[code_hash]["current_uses"] = current_uses + 1
-                self._memory_coupons[code_hash]["used_by"] = user_id
+                self._memory_coupons[code]["current_uses"] = current_uses + 1
 
-        logger.info(f"✅ Session created for coupon: {code[:4]}**** -> User: {user_id[:16]}...")
+        logger.info(f"✅ Session created for coupon: {code} -> User: {email}")
 
         return {
             "success": True,
             "session_id": session_id,
             "user_id": user_id,
-            "message": "Coupon validated successfully! Welcome to InfinityAI Pro.",
+            "message": "Access Granted! Welcome to InfinityAI Pro.",
             "features": coupon.get("features", ["dashboard"]),
             "expires_at": session_data["expires_at"].isoformat()
         }

@@ -1,0 +1,17 @@
+steps:
+  # --- ENGINE C ONLY ---
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-engine-c'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest', '-f', 'engine-c/Dockerfile', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-engine-c'
+    args: ['push', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest']
+    waitFor: ['build-engine-c']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-engine-c'
+    entrypoint: gcloud
+    args: ['run', 'deploy', 'engine-c', '--image', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest', '--set-env-vars', 'GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0', '--region', 'us-central1']
+    waitFor: ['push-engine-c']
+
+images:
+  - 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest'

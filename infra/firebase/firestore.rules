@@ -24,7 +24,7 @@ service cloud.firestore {
     // Dhan credentials: write-only for users, read for cloud functions
     match /dhan_credentials/{userId} {
       allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow read: if false; // No client read access
+      allow read: if false; // No client read access (System Only)
     }
 
     // Demat, portfolio, and funds — user-restricted
@@ -40,20 +40,19 @@ service cloud.firestore {
       }
     }
 
-    // Engine health, AI signals, trades — public read, function write
-    match /engine_health/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
+    // AI Signals - Read-only for users (own signals only), backend write-only
     match /ai_signals/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if false;  // Backend/Cloud Functions only
     }
 
+    // Trades - User-isolated read/write
     match /trades/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.createdBy
+      );
+      allow write: if false;  // Backend/Cloud Functions only
     }
   }
 }

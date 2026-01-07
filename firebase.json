@@ -1,0 +1,65 @@
+{
+  "functions": {
+    "source": "frontend/functions"
+  },
+  "firestore": {
+    "rules": "infra/firebase/firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "frontend/web-app/out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/system/**",
+        "run": {
+          "serviceId": "engine-a",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/engine-a/health",
+        "run": {
+          "serviceId": "engine-a",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/v1/signals/**",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/engine-b/health",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/dhan/**",
+        "run": {
+          "serviceId": "engine-c",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/auth/**",
+        "run": {
+          "serviceId": "engine-c",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

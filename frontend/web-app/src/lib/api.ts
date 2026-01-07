@@ -2,25 +2,62 @@
 
 import { getUserId } from "@/lib/user";
 
+// Helper to determine Engine A URL based on environment
+export const getEngineAUrl = () => {
+  if (process.env.NODE_ENV === "development") {
+    return (
+      process.env.NEXT_PUBLIC_ENGINE_A_URL ||
+      "https://engine-a-228557716858.us-central1.run.app"
+    );
+  }
+  // Production defaults to Cloud Run domain if no env override is provided
+  return (
+    process.env.NEXT_PUBLIC_ENGINE_A_URL ||
+    "https://engine-a-228557716858.us-central1.run.app"
+  );
+};
+
+// Helper to determine Engine B URL based on environment
+export const getEngineBUrl = () => {
+  if (process.env.NODE_ENV === "development") {
+    return (
+      process.env.NEXT_PUBLIC_ENGINE_B_URL ||
+      "https://engine-b-228557716858.us-central1.run.app"
+    );
+  }
+  return (
+    process.env.NEXT_PUBLIC_ENGINE_B_URL ||
+    "https://engine-b-228557716858.us-central1.run.app"
+  );
+};
+
+// Helper to determine Engine C URL based on environment
+// Prod -> Relative path (uses Firebase Rewrites)
+// Dev -> Absolute path (Direct Cloud Run)
+export const getEngineCUrl = () => {
+  if (process.env.NODE_ENV === "development") {
+    return (
+      process.env.NEXT_PUBLIC_ENGINE_C_URL ||
+      "https://engine-c-228557716858.us-central1.run.app"
+    );
+  }
+  return (
+    process.env.NEXT_PUBLIC_ENGINE_C_URL ||
+    "https://engine-c-228557716858.us-central1.run.app"
+  );
+};
+
+// API URLs must be set via environment variables only (fail-fast enforced)
 // API URLs must be set via environment variables only (fail-fast enforced)
 const API_CONFIG = {
-  ENGINE_A: process.env.NEXT_PUBLIC_ENGINE_A_URL || "",
-  ENGINE_B: process.env.NEXT_PUBLIC_ENGINE_B_URL || "",
-  ENGINE_C: process.env.NEXT_PUBLIC_ENGINE_C_URL || "",
+  ENGINE_A: getEngineAUrl(),
+  ENGINE_B: getEngineBUrl(),
+  ENGINE_C: getEngineCUrl(),
 };
 
-// No fallback URLs allowed in production
-const FALLBACK_URLS = {
-  ENGINE_A: "",
-  ENGINE_B: "",
-  ENGINE_C: "",
-};
+// Removed legacy FALLBACK_URLS to strictly enforce correct config.
 
-async function fetchWithFallback(
-  primaryUrl: string,
-  fallbackUrl: string,
-  options?: RequestInit
-) {
+async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
   // Fail-fast: Only use primaryUrl, never fallback to demo/test endpoints
   const response = await fetch(primaryUrl, {
     ...options,
@@ -272,9 +309,8 @@ export const engineA = {
       headers["X-User-ID"] = userId;
     }
 
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/system/state`,
-      `${FALLBACK_URLS.ENGINE_A}/api/system/state`,
       { headers }
     );
     return res.json() as Promise<SystemStateResponse>;
@@ -287,9 +323,8 @@ export const engineA = {
     asset_class: string;
     user_id: string;
   }) => {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/trading/session/start`,
-      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/start`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -305,9 +340,8 @@ export const engineA = {
 
   // Stop Trading Session (Kill Switch)
   stopSession: async () => {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/trading/session/stop`,
-      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/stop`,
       {
         method: "POST",
       }
@@ -319,17 +353,16 @@ export const engineA = {
   },
 
   async health(): Promise<EngineHealth> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_A}/health`,
-      `${FALLBACK_URLS.ENGINE_A}/health`
+    // Engine A Health Check - Uses /api/system/state as the reliable endpoint
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_A}/api/system/state`
     );
     return res.json();
   },
 
   async calculateRiskScore(data: RiskScoreRequest): Promise<RiskScoreResponse> {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/score`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/score`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -340,9 +373,8 @@ export const engineA = {
   },
 
   async calculateVaR(data: VaRRequest) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/var`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/var`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,9 +385,8 @@ export const engineA = {
   },
 
   async calculateCVaR(data: CVaRRequest) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/cvar`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/cvar`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -366,9 +397,8 @@ export const engineA = {
   },
 
   async calculateSortino(data: { returns: number[]; risk_free_rate?: number }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/sortino`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/sortino`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -379,9 +409,8 @@ export const engineA = {
   },
 
   async calculateKelly(data: KellyRequest) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/kelly`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/kelly`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -392,9 +421,8 @@ export const engineA = {
   },
 
   async calculatePositionSize(data: PositionSizeRequest) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/position-size`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/position-size`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -408,9 +436,8 @@ export const engineA = {
     returns: number[];
     risk_free_rate?: number;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/risk/comprehensive`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/risk/comprehensive`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -421,9 +448,8 @@ export const engineA = {
   },
 
   async startTrade(data: { symbol: string; qty?: number; strategy?: string }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/trade/start`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/trade/start`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -443,9 +469,8 @@ export const engineA = {
     symbol?: string;
     qty?: number;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/v1/trade/start-instrument`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/trade/start-instrument`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -488,9 +513,8 @@ export const engineA = {
       // So we strictly send these.
     };
 
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/trading/session/start`,
-      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/start`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -501,9 +525,8 @@ export const engineA = {
   },
 
   async stopAutoTrading(userId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/trading/session/stop`,
-      `${FALLBACK_URLS.ENGINE_A}/api/trading/session/stop`,
       {
         method: "POST",
         headers: {
@@ -521,9 +544,8 @@ export const engineA = {
     // I will disable this or leave as is (it might fail if endpoint missing).
     // For safety, let's point to a health check or similar if specific status missing.
     // actually, let's leave it pointing to old V1 for now as I didn't remove V1 routers (if they exist).
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`,
-      `${FALLBACK_URLS.ENGINE_A}/api/v1/auto-trade/status`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`
     );
     return res.json();
   },
@@ -532,23 +554,16 @@ export const engineA = {
 // Engine B - AI/ML Intelligence
 export const engineB = {
   async health(): Promise<EngineHealth> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/health`,
-      `${FALLBACK_URLS.ENGINE_B}/health`
-    );
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/health`);
     return res.json();
   },
 
   async getSignal(data: SignalRequest): Promise<SignalResponse> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/signal`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/signal`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }
-    );
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/v1/signal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
     return res.json();
   },
 
@@ -558,29 +573,24 @@ export const engineB = {
     user_analysis_type?: string;
     use_pro_model?: boolean;
   }): Promise<SignalResponse> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/signal`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/signal`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol: data.symbol,
-          use_gemini: true,
-          _metadata: {
-            timeframe: data.timeframe,
-            type: data.user_analysis_type,
-          },
-        }),
-      }
-    );
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/v1/signal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        symbol: data.symbol,
+        use_gemini: true,
+        _metadata: {
+          timeframe: data.timeframe,
+          type: data.user_analysis_type,
+        },
+      }),
+    });
     return res.json();
   },
 
   async getGeminiAnalysis(data: { symbol: string; context?: string }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/gemini/analyze`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/gemini/analyze`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -591,9 +601,8 @@ export const engineB = {
   },
 
   async getBatchSignals(symbols: string[]) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/signals/batch`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/signals/batch`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -604,18 +613,16 @@ export const engineB = {
   },
 
   async getModelStatus() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/models/status`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/models/status`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/models/status`
     );
     return res.json();
   },
 
   // Analyze portfolio holdings using AI/ML
   async analyzePortfolio(holdings: any[]) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/portfolio/analyze`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/portfolio/analyze`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -627,9 +634,8 @@ export const engineB = {
 
   // Get AI recommendations for a specific holding
   async getHoldingRecommendation(symbol: string, holding: any) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/holding/recommendation`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/holding/recommendation`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -644,9 +650,8 @@ export const engineB = {
     holdings: any[],
     riskTolerance: "low" | "medium" | "high" = "medium"
   ) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/portfolio/optimize`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/portfolio/optimize`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -658,9 +663,8 @@ export const engineB = {
 
   // Market Prediction - Next day/week predictions
   async getMarketPrediction(timeframe: "day" | "week" | "month" = "day") {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/market/prediction`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/market/prediction`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -672,9 +676,8 @@ export const engineB = {
 
   // Sector Analysis - AI analysis of sectors
   async getSectorAnalysis() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/sector/analysis`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/sector/analysis`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/sector/analysis`
     );
     return res.json();
   },
@@ -686,9 +689,8 @@ export const engineB = {
     signalType?: "BUY" | "SELL" | "HOLD";
     minConfidence?: number;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/screener`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/screener`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -700,27 +702,24 @@ export const engineB = {
 
   // Technical Indicators - Get indicators for a symbol
   async getTechnicalIndicators(symbol: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/technical/${symbol}`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/technical/${symbol}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/technical/${symbol}`
     );
     return res.json();
   },
 
   // Sentiment Analysis - News and social media sentiment
   async getSentimentAnalysis(symbol: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/sentiment/${symbol}`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/sentiment/${symbol}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/sentiment/${symbol}`
     );
     return res.json();
   },
 
   // Correlation Analysis - Find correlated stocks
   async getCorrelationAnalysis(symbols: string[]) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/correlation`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/correlation`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -735,9 +734,8 @@ export const engineB = {
     budget?: number,
     riskLevel?: "conservative" | "moderate" | "aggressive"
   ) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/trade-ideas`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/trade-ideas`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -751,9 +749,8 @@ export const engineB = {
   async analyzePosition(
     position: PositionAnalysisRequest
   ): Promise<PositionAnalysisResponse> {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/position/analyze`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/position/analyze`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -765,9 +762,8 @@ export const engineB = {
 
   // Portfolio Analysis - Analyze entire portfolio with AI
   async analyzePortfolioPositions(positions: PositionAnalysisRequest[]) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/portfolio/analyze`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/portfolio/analyze`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -779,9 +775,8 @@ export const engineB = {
 
   // Sentiment Analysis - Analyze text for sentiment
   async analyzeSentiment(symbol: string, text: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/sentiment`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/sentiment`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -793,9 +788,8 @@ export const engineB = {
 
   // Market Status
   async getMarketStatus() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/market/status`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/market/status`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/market/status`
     );
     return res.json();
   },
@@ -806,9 +800,8 @@ export const engineB = {
 
   // Finance AI Status - Check if Finance AI is available
   async getFinanceAIStatus() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/status`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`
     );
     return res.json();
   },
@@ -826,9 +819,8 @@ export const engineB = {
       | "risk_manager"
       | "sentiment_analyst";
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/signal`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/signal`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -845,9 +837,8 @@ export const engineB = {
     technical_indicators?: Record<string, any>;
     news_headlines?: string[];
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/market-analysis`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/market-analysis`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -865,9 +856,8 @@ export const engineB = {
     capital: number;
     risk_appetite: "LOW" | "MODERATE" | "HIGH";
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/options-strategy`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/options-strategy`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -887,9 +877,8 @@ export const engineB = {
     }>;
     account_value: number;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/risk-analysis`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/finance-ai/risk-analysis`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -901,9 +890,8 @@ export const engineB = {
 
   // Free-form Gemini Chat for any trading question
   async askGemini(data: { question: string; context?: string }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/gemini/chat`,
-      `${FALLBACK_URLS.ENGINE_B}/api/v1/gemini/chat`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -917,62 +905,53 @@ export const engineB = {
 // Engine C - Execution
 export const engineC = {
   async health(): Promise<EngineHealth> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/health`,
-      `${FALLBACK_URLS.ENGINE_C}/health`
-    );
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/health`);
     return res.json();
   },
 
   async getFunds(userId?: string): Promise<FundsResponse> {
     const queryParam = userId ? `?user_id=${userId}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/funds${queryParam}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/funds${queryParam}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/funds${queryParam}`
     );
     return res.json();
   },
 
   async getPositions(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/positions${queryParam}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/positions${queryParam}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/positions${queryParam}`
     );
     return res.json();
   },
 
   async getHoldings(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/holdings${queryParam}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/holdings${queryParam}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/holdings${queryParam}`
     );
     return res.json();
   },
 
   async getOrders(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/dhan/orders${queryParam}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/orders${queryParam}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/orders${queryParam}`
     );
     return res.json();
   },
 
   // Get complete user account with funds, positions, holdings
   async getUserAccount(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/v1/user/${userId}/account`,
-      `${FALLBACK_URLS.ENGINE_C}/api/v1/user/${userId}/account`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/v1/user/${userId}/account`
     );
     return res.json();
   },
 
   async placeOrder(data: OrderRequest) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/dhan/place-order`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/place-order`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -983,9 +962,8 @@ export const engineC = {
   },
 
   async cancelOrder(orderId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/dhan/cancel-order`,
-      `${FALLBACK_URLS.ENGINE_C}/api/dhan/cancel-order`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -996,18 +974,16 @@ export const engineC = {
   },
 
   async getExecutionAnalytics() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/v1/execution/analytics`,
-      `${FALLBACK_URLS.ENGINE_C}/api/v1/execution/analytics`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/v1/execution/analytics`
     );
     return res.json();
   },
 
   // User Credentials API
   async getUserCredentials(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials?user_id=${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`
     );
     return res.json();
   },
@@ -1018,9 +994,8 @@ export const engineC = {
     access_token: string;
     api_key?: string;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/user/credentials`,
-      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1031,25 +1006,22 @@ export const engineC = {
   },
 
   async verifyUserCredentials(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`
     );
     return res.json();
   },
 
   async getUserDemat(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/user/demat?user_id=${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`
     );
     return res.json();
   },
 
   async deleteUserCredentials(userId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/user/credentials?user_id=${userId}`,
       { method: "DELETE" }
     );
     return res.json();
@@ -1058,9 +1030,8 @@ export const engineC = {
   // ==================== USER TRADING SETTINGS ====================
 
   async getTradingSettings(userId: string): Promise<TradingSettingsResponse> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`
     );
     return res.json();
   },
@@ -1069,9 +1040,8 @@ export const engineC = {
     userId: string,
     settings: Partial<TradingSettings>
   ): Promise<TradingSettingsResponse> {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1082,18 +1052,16 @@ export const engineC = {
   },
 
   async resetTradingSettings(userId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings/${userId}`,
       { method: "DELETE" }
     );
     return res.json();
   },
 
   async getTradingSettingsSchema(): Promise<TradingSettingsSchema> {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`,
-      `${FALLBACK_URLS.ENGINE_C}/api/trading-settings-schema`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`
     );
     return res.json();
   },
@@ -1111,9 +1079,8 @@ export const engineC = {
     instruments?: string[];
     strategy?: string;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/background-trading/start`,
-      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/start`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1124,9 +1091,8 @@ export const engineC = {
   },
 
   async stopBackgroundTrading(userId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/background-trading/stop`,
-      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/stop`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1137,9 +1103,8 @@ export const engineC = {
   },
 
   async getBackgroundTradingStatus(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/background-trading/status/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/background-trading/status/${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/background-trading/status/${userId}`
     );
     return res.json();
   },
@@ -1153,9 +1118,8 @@ export const engineC = {
     type: string;
     details?: Record<string, any>;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/activity/log`,
-      `${FALLBACK_URLS.ENGINE_C}/api/activity/log`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1180,26 +1144,23 @@ export const engineC = {
     if (options?.limit) params.append("limit", options.limit.toString());
 
     const queryString = params.toString() ? `?${params.toString()}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/activity/log/${userId}${queryString}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/activity/log/${userId}${queryString}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/activity/log/${userId}${queryString}`
     );
     return res.json();
   },
 
   async getActivitySummary(userId: string, date?: string) {
     const queryString = date ? `?date=${date}` : "";
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/activity/summary/${userId}${queryString}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/activity/summary/${userId}${queryString}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/activity/summary/${userId}${queryString}`
     );
     return res.json();
   },
 
   async getTodayActivity(userId: string) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/activity/today/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/activity/today/${userId}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/activity/today/${userId}`
     );
     return res.json();
   },
@@ -1209,9 +1170,8 @@ export const engineC = {
   // ============================================================================
 
   async getAgentStatus() {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/agent/status`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/status`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/agent/status`
     );
     return res.json();
   },
@@ -1221,9 +1181,8 @@ export const engineC = {
     message: string;
     context?: Record<string, any>;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/chat`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/chat`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1240,9 +1199,8 @@ export const engineC = {
     market_data?: Record<string, any>;
     portfolio_context?: Record<string, any>;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/analyze`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/analyze`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1257,9 +1215,8 @@ export const engineC = {
     symbol: string,
     timeframe: string = "intraday"
   ) {
-    const res = await fetchWithFallback(
-      `${API_CONFIG.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`
     );
     return res.json();
   },
@@ -1270,9 +1227,8 @@ export const engineC = {
     signal: Record<string, any>;
     config?: Record<string, any>;
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/should-execute`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/should-execute`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1292,9 +1248,8 @@ export const engineC = {
       trading_amount?: number;
     };
   }) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/auto-trade`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/auto-trade`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1305,9 +1260,8 @@ export const engineC = {
   },
 
   async createAgentSession(userId: string) {
-    const res = await fetchWithFallback(
+    const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/session/create/${userId}`,
-      `${FALLBACK_URLS.ENGINE_C}/api/agent/session/create/${userId}`,
       { method: "POST" }
     );
     return res.json();

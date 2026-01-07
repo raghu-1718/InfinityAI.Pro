@@ -1,0 +1,20 @@
+INFO:src.user_credentials:UserCredentialsManager initialized (AES-256-GCM / Cipher)
+WARNING:src.user_credentials:DEBUG: GCM Decrypt failed: 
+ERROR:src.user_credentials:Decryption error: 
+INFO:src.user_credentials:UserCredentialsManager initialized (AES-256-GCM / Cipher)
+Testing decryption of: dd346af1964175317be93845:773cf0a0456d8183fc47566c68c7b21a:acc41650f17632f4c69bc741
+DEBUG: Manager Key: 758c6bfc504fbffce67090816617dbfb6556770c3e5105fe40b7f69a37d4f5ee
+DEBUG_DECRYPT: Key=758c6bfc504fbffce67090816617dbfb6556770c3e5105fe40b7f69a37d4f5ee
+DEBUG_DECRYPT: IV=dd346af1964175317be93845
+DEBUG_DECRYPT: Tag=773cf0a0456d8183fc47566c68c7b21a
+DEBUG_DECRYPT: Cipher=acc41650f17632f4c69bc741
+EXCEPTION: Failed to decrypt credentials
+
+Testing full encryption cycle (Python -> Python)...
+Encrypted (Py): 3db626d010ba4653f983bffe:1d88f22cc3f3eb9331cce429ad488704:725ff4e39eb4cb3f6b319acf0a
+Py-Generated Parts: IVLen=24, TagLen=32, CipherLen=26
+DEBUG_DECRYPT: Key=758c6bfc504fbffce67090816617dbfb6556770c3e5105fe40b7f69a37d4f5ee
+DEBUG_DECRYPT: IV=3db626d010ba4653f983bffe
+DEBUG_DECRYPT: Tag=1d88f22cc3f3eb9331cce429ad488704
+DEBUG_DECRYPT: Cipher=725ff4e39eb4cb3f6b319acf0a
+SUCCESS: Cycle complete.
