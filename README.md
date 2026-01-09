@@ -20,7 +20,7 @@
 
 ## 📋 Executive Summary
 
-**InfinityAI.Pro v5.0** is a production-grade algorithmic trading platform engineered for institutional-grade precision in Indian financial markets (NSE, BSE, NFO, MCX). 
+**InfinityAI.Pro v5.0** is a production-grade algorithmic trading platform engineered for institutional-grade precision in Indian financial markets (NSE, BSE, NFO, MCX).
 
 ### ✅ Current Live Architecture
 - **Frontend**: Next.js 16 Static Export on Firebase Hosting (https://galvanic-pulsar-482815-h0.web.app)
@@ -57,7 +57,7 @@
 
 ### 4. **Three-Engine Autonomous Trading System** ✅
 - **Engine-A** (Orchestrator): Risk management, position sizing, kill switch
-- **Engine-B** (Analyst): Gemini 2.0 Flash AI signal generation  
+- **Engine-B** (Analyst): Gemini 2.0 Flash AI signal generation
 - **Engine-C** (Executor): DhanHQ broker integration, order execution
 - All engines auto-scaling on Cloud Run
 
@@ -383,10 +383,10 @@ All rights reserved © 2025
 
 ---
 
-**Last Updated**: January 8, 2026  
-**Version**: 5.0  
-**Status**: ✅ Production Live  
-**Region**: us-central1  
+**Last Updated**: January 8, 2026
+**Version**: 5.0
+**Status**: ✅ Production Live
+**Region**: us-central1
 **Project**: galvanic-pulsar-482815-h0
 
 <div align="center">

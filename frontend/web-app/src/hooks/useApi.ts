@@ -26,7 +26,7 @@ export function useEngineHealth() {
     queryFn: () => api.checkAllEngines(),
     refetchInterval: 30000, // 30 seconds
     staleTime: 10000,
-    retry: 1, // Only retry once
+    retry: 2, // Increased from 1 to 2
     retryDelay: 2000,
   });
 
@@ -34,22 +34,25 @@ export function useEngineHealth() {
     if (query.data) {
       const { engineA, engineB, engineC } = query.data;
 
+      // Debug logging for health checks
+      console.log('🏥 Engine Health Check:', { engineA, engineB, engineC });
+
       updateEngineStatus('engineA', {
-        status: engineA ? 'online' : 'offline',
+        status: engineA && (engineA.status !== 'offline') ? 'online' : 'offline',
         version: engineA?.version || null,
         capabilities: Array.isArray(engineA?.ml_capabilities) ? engineA.ml_capabilities : [],
         lastChecked: new Date(),
       });
 
       updateEngineStatus('engineB', {
-        status: engineB ? 'online' : 'offline',
+        status: engineB && (engineB.status !== 'offline') ? 'online' : 'offline',
         version: engineB?.version || null,
         capabilities: engineB?.capabilities ? Object.keys(engineB.capabilities) : (Array.isArray(engineB?.ml_capabilities) ? engineB.ml_capabilities : []),
         lastChecked: new Date(),
       });
 
       updateEngineStatus('engineC', {
-        status: engineC ? 'online' : 'offline',
+        status: engineC && (engineC.status !== 'offline') ? 'online' : 'offline',
         version: engineC?.version || null,
         capabilities: Array.isArray(engineC?.ml_capabilities) ? engineC.ml_capabilities : [],
         lastChecked: new Date(),

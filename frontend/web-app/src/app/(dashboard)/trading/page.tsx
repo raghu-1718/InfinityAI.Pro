@@ -26,7 +26,7 @@ import {
   Power,
   ShieldAlert,
   Activity,
-  DollarSign,
+  Banknote,
   Wallet,
   TrendingUp,
   Infinity as InfinityIcon,
@@ -72,14 +72,31 @@ export default function TradingPage() {
   const [isKillSwitchActive, setIsKillSwitchActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Initialize trading state on page load: ensure clean start
+  useEffect(() => {
+    // Always start with isEngineRunning = false (clean slate on page load)
+    // This ensures the START button appears, not STOP
+    setIsEngineRunning(false);
+    setIsKillSwitchActive(false);
+    setIsLoading(false);
+    
+    console.log("🔄 Trading page mounted - state reset to clean START");
+  }, []);
+
   // Poll for status (Engine A Availability)
+  // This sync check runs AFTER the initialization, so it won't override the clean start
   useEffect(() => {
     const checkStatus = async () => {
       try {
         const state = await engineA.getSystemState();
-        setIsEngineRunning(state.engine_active);
+        // Only update if engine reports actually running (safety check)
+        // The initial load will show START button regardless
+        if (state.engine_active) {
+          console.log("📊 Engine A reports active - syncing frontend state");
+          setIsEngineRunning(true);
+        }
       } catch (e) {
-        console.error("Status Poll Failed", e);
+        console.error("❌ Status Poll Failed", e);
       }
     };
     checkStatus();
@@ -138,6 +155,7 @@ export default function TradingPage() {
         const uid = session?.userId || "unknown";
         await engineA.stopAutoTrading(uid);
         setIsEngineRunning(false);
+        setIsKillSwitchActive(false); // Reset kill switch on manual stop
         toast.success("Engine Stopped", {
           description: "Trading halted. Positions may still be open.",
         });
@@ -203,6 +221,13 @@ export default function TradingPage() {
         <p className="text-lg text-slate-300 max-w-2xl mx-auto backdrop-blur-sm py-1 rounded-full bg-white/5 border border-white/5">
           Automated High-Frequency Trading & Risk Management System
         </p>
+
+        {/* Trading Mode Badge - LIVE ONLY */}
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Badge variant="destructive" className="animate-pulse px-4 py-2 text-sm font-semibold bg-red-900/40 border-red-500 text-red-300">
+            🔴 LIVE TRADING MODE
+          </Badge>
+        </div>
 
         {/* Phase 6: Session Status Banner */}
         <div className="max-w-3xl mx-auto mt-6 transition-all duration-500 hover:scale-[1.02]">
@@ -305,7 +330,7 @@ export default function TradingPage() {
                   </span>
                 </div>
                 <div className="relative group/input">
-                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover/input:text-emerald-400 transition-colors" />
+                  <Banknote className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover/input:text-emerald-400 transition-colors" />
                   <Input
                     type="number"
                     value={tradingCapital}

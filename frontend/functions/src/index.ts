@@ -11,17 +11,13 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 
 // Export all functions
-export { submitDhanCredentialsV2, saveDhanCredentials } from "./storeCredentials";
 export { startTrading, stopTrading } from "./startTrading";
 export {
   analyzePortfolio,
-  syncHoldings,
   getAiSignals,
   getVertexAiAnalysis,
   getGeminiAnalysis,
-  analyzeImageWithRoboticsER,
   getBatchAiSignals,
-  getEngineBStatus,
   getDhanOverview,
 } from "./analyzePortfolio";
 

@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDhanCallbackUrls = exports.getDhanOverview = exports.onHoldingsUpdate = exports.analyzePortfolio = exports.getEngineBStatus = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getBatchAiSignals = exports.getAiSignals = exports.syncHoldings = void 0;
+exports.getDhanCallbackUrls = exports.getDhanOverview = exports.onHoldingsUpdate = exports.analyzePortfolio = exports.analyzeImageWithRoboticsER = exports.getGeminiAnalysis = exports.getVertexAiAnalysis = exports.getBatchAiSignals = exports.getAiSignals = exports.syncHoldings = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
@@ -334,31 +334,6 @@ exports.analyzeImageWithRoboticsER = (0, https_1.onCall)({
             console.error('Engine CORE Error Response:', error.response.data);
         }
         throw new https_1.HttpsError("internal", `Failed to get Robotics-ER analysis: ${error.message}`);
-    }
-});
-/**
- * Get Engine CORE Model Status
- *
- * Fetches the operational status of the AI models inside Engine CORE.
- * @returns { status }
- */
-exports.getEngineBStatus = (0, https_1.onCall)({
-    region: "us-central1",
-    memory: "256MiB",
-    timeoutSeconds: 30,
-}, async (request) => {
-    // Optional: Add admin-only authentication here
-    if (!request.auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be logged in.");
-    }
-    try {
-        console.log(`🩺 Fetching model status from Engine CORE`);
-        const response = await axios_1.default.get(`${config_1.ENGINE_URLS.CORE}/api/models/status`);
-        return response.data;
-    }
-    catch (error) {
-        console.error(`❌ Error fetching status from Engine CORE:`, error);
-        throw new https_1.HttpsError("internal", `Failed to get Engine CORE status: ${error.message}`);
     }
 });
 /**

@@ -372,36 +372,6 @@ export const analyzeImageWithRoboticsER = onCall(
 );
 
 /**
- * Get Engine CORE Model Status
- *
- * Fetches the operational status of the AI models inside Engine CORE.
- * @returns { status }
- */
-export const getEngineBStatus = onCall(
-  {
-    region: "us-central1",
-    memory: "256MiB",
-    timeoutSeconds: 30,
-  },
-  async (request) => {
-    // Optional: Add admin-only authentication here
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "User must be logged in.");
-    }
-
-    try {
-      console.log(`🩺 Fetching model status from Engine CORE`);
-
-      const response = await axios.get(`${ENGINE_URLS.CORE}/api/models/status`);
-
-      return response.data;
-    } catch (error: any) {
-      console.error(`❌ Error fetching status from Engine CORE:`, error);
-      throw new HttpsError("internal", `Failed to get Engine CORE status: ${error.message}`);
-    }
-  });
-
-/**
  * Analyze Portfolio
  *
  * Manually trigger portfolio analysis with Gemini AI

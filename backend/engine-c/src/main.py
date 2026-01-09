@@ -7,9 +7,7 @@ def log_startup_error(e, context="startup"):
     print(f"[ERROR] {context}: {e}")
     print(traceback.format_exc())
 import os
-ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", os.getenv("TRADING_MODE", "live")).lower()  # 'live' or 'paper'/'sandbox'
-if ENGINE_C_MODE == "sandbox":
-    ENGINE_C_MODE = "paper"
+ENGINE_C_MODE = "live"  # LIVE MODE ONLY - no paper trading
 ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -1371,36 +1369,7 @@ async def place_order(order: OrderRequest, request: Request):
     if engine_source != ALLOWED_EXECUTION_SOURCE:
         raise HTTPException(status_code=403, detail="Forbidden: Only Engine-A may execute real trades.")
 
-    # --- Live/Paper mode switch ---
-    if ENGINE_C_MODE == "paper":
-        # Simulate order placement, do not call Dhan
-        simulated_id = f"sim_{uuid.uuid4().hex[:12]}"
-
-        # Log to Firestore for Dashboards
-        try:
-            db = firestore.Client()
-            db.collection("paper_orders").document(simulated_id).set({
-                "symbol": order.security_id,
-                "quantity": order.quantity,
-                "price": order.price or 0.0,
-                "transaction_type": order.transaction_type,
-                "status": "TRADED",
-                "timestamp": datetime.utcnow().isoformat(),
-                "mode": "sandbox"
-            })
-        except Exception as fe:
-            logger.warning(f"Paper order Firestore log failed: {fe}")
-
-        return {
-            "status": "success",
-            "order_id": simulated_id,
-            "dhan_response": {
-                "status": "success",
-                "data": {"orderId": simulated_id},
-                "remarks": "Simulated execution (Sandbox/Paper Mode)"
-            }
-        }
-
+    # LIVE MODE ONLY - All trades execute against Dhan API
     try:
         dhan_client = get_dhan_client()
 # --- Alpaca integration for data/backtesting only (no trading endpoints exposed) ---
@@ -1685,8 +1654,8 @@ async def dhan_postback(request: Dict[str, Any]):
                     "side": transaction_type,
                     "client_id": client_id,
                     "timestamp": datetime.utcnow().isoformat()
-                })
-                logger.info(f"📢 Broadcast: order_update for {order_id}")
+                }, user_id=client_id)  # Pass user_id for per-user queue
+                logger.info(f"📢 Broadcast: order_update for {order_id} to user {client_id}")
             except Exception as e:
                 logger.warning(f"Failed to broadcast event: {e}")
 

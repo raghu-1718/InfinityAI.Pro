@@ -7,13 +7,13 @@ export const getEngineAUrl = () => {
   if (process.env.NODE_ENV === "development") {
     return (
       process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-      "https://engine-a-228557716858.us-central1.run.app"
+      "https://engine-a-3acobgd3qa-uc.a.run.app"
     );
   }
   // Production defaults to Cloud Run domain if no env override is provided
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-228557716858.us-central1.run.app"
+    "https://engine-a-3acobgd3qa-uc.a.run.app"
   );
 };
 
@@ -22,12 +22,12 @@ export const getEngineBUrl = () => {
   if (process.env.NODE_ENV === "development") {
     return (
       process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-      "https://engine-b-228557716858.us-central1.run.app"
+      "https://engine-b-3acobgd3qa-uc.a.run.app"
     );
   }
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-228557716858.us-central1.run.app"
+    "https://engine-b-3acobgd3qa-uc.a.run.app"
   );
 };
 
@@ -38,12 +38,12 @@ export const getEngineCUrl = () => {
   if (process.env.NODE_ENV === "development") {
     return (
       process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-      "https://engine-c-228557716858.us-central1.run.app"
+      "https://engine-c-3acobgd3qa-uc.a.run.app"
     );
   }
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-228557716858.us-central1.run.app"
+    "https://engine-c-3acobgd3qa-uc.a.run.app"
   );
 };
 

@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserAccount } from "@/hooks/useApi";
+import { useAppStore } from "@/lib/store";
 import {
   Wallet,
   TrendingUp,
@@ -19,10 +20,15 @@ interface AccountSummaryProps {
 }
 
 export function AccountSummary({ userId }: AccountSummaryProps) {
-  const { accountData, loading, error, fetchAccountData, hasCredentials } =
-    useUserData(userId);
+  const { userProfile } = useAppStore();
+  const {
+    data: accountData,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useUserAccount();
 
-  if (!hasCredentials) {
+  if (!userProfile?.isConnected) {
     return (
       <Card className="border-amber-500/20 bg-amber-500/5">
         <CardContent className="p-6">
@@ -55,7 +61,7 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Card className="border-red-500/20 bg-red-500/5">
         <CardContent className="p-6">
@@ -65,11 +71,11 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
               <h3 className="font-semibold text-lg">
                 Error Loading Account Data
               </h3>
-              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="text-sm text-muted-foreground">Failed to load account data</p>
               <Button
                 variant="link"
                 className="px-0 mt-2"
-                onClick={() => fetchAccountData(true)}
+                onClick={() => refetch()}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
@@ -85,7 +91,11 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
     return null;
   }
 
-  const { account_summary, funds, positions, orders } = accountData;
+  // Defensive extraction with fallbacks
+  const account_summary = accountData.account_summary || {};
+  const funds = accountData.funds || {};
+  const positions = accountData.positions || { count: 0, data: [] };
+  const orders = accountData.orders || { count: 0, data: [] };
 
   return (
     <div className="space-y-6">
@@ -100,10 +110,10 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-white">
-              ₹{funds.availabelBalance.toFixed(2)}
+              ₹{(funds.availabelBalance || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Withdrawable: ₹{funds.withdrawableBalance.toFixed(2)}
+              Withdrawable: ₹{(funds.withdrawableBalance || 0).toFixed(2)}
             </p>
           </CardContent>
         </Card>
@@ -117,16 +127,16 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-white">
-              ₹{account_summary.total_holdings_value.toFixed(2)}
+              ₹{(account_summary.total_holdings_value || 0).toFixed(2)}
             </div>
             <p
               className={`text-xs mt-1 ${
-                account_summary.total_holdings_pnl >= 0
+                (account_summary.total_holdings_pnl || 0) >= 0
                   ? "text-green-400"
                   : "text-red-400"
               }`}
             >
-              P&L: ₹{account_summary.total_holdings_pnl.toFixed(2)}
+              P&L: ₹{(account_summary.total_holdings_pnl || 0).toFixed(2)}
             </p>
           </CardContent>
         </Card>
@@ -141,31 +151,31 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
           <CardContent>
             <div
               className={`text-3xl font-bold ${
-                account_summary.total_positions_pnl >= 0
+                (account_summary.total_positions_pnl || 0) >= 0
                   ? "text-green-400"
                   : "text-red-400"
               }`}
             >
-              ₹{account_summary.total_positions_pnl.toFixed(2)}
+              ₹{(account_summary.total_positions_pnl || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Open: {positions.count}
+              Open: {positions.count || 0}
             </p>
           </CardContent>
         </Card>
 
         <Card
           className={`border-${
-            account_summary.net_pnl >= 0 ? "green" : "red"
+            (account_summary.net_pnl || 0) >= 0 ? "green" : "red"
           }-500/20 bg-gradient-to-br from-${
-            account_summary.net_pnl >= 0 ? "green" : "red"
+            (account_summary.net_pnl || 0) >= 0 ? "green" : "red"
           }-500/5 to-transparent`}
         >
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp
                 className={`h-4 w-4 text-${
-                  account_summary.net_pnl >= 0 ? "green" : "red"
+                  (account_summary.net_pnl || 0) >= 0 ? "green" : "red"
                 }-400`}
               />
               Net P&L
@@ -174,10 +184,10 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
           <CardContent>
             <div
               className={`text-3xl font-bold ${
-                account_summary.net_pnl >= 0 ? "text-green-400" : "text-red-400"
+                (account_summary.net_pnl || 0) >= 0 ? "text-green-400" : "text-red-400"
               }`}
             >
-              ₹{account_summary.net_pnl.toFixed(2)}
+              ₹{(account_summary.net_pnl || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Realized + Unrealized
@@ -194,7 +204,7 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchAccountData(true)}
+              onClick={() => refetch()}
               disabled={loading}
             >
               <RefreshCw
@@ -214,25 +224,25 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
                 <div className="flex justify-between text-sm">
                   <span>SOD Limit</span>
                   <span className="font-mono">
-                    ₹{funds.sodLimit.toFixed(2)}
+                    ₹{(funds.sodLimit || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Utilized Amount</span>
                   <span className="font-mono">
-                    ₹{funds.utilizedAmount.toFixed(2)}
+                    ₹{(funds.utilizedAmount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Collateral</span>
                   <span className="font-mono">
-                    ₹{funds.collateralAmount.toFixed(2)}
+                    ₹{(funds.collateralAmount || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Blocked Payout</span>
                   <span className="font-mono">
-                    ₹{funds.blockedPayoutAmount.toFixed(2)}
+                    ₹{(funds.blockedPayoutAmount || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -246,21 +256,21 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
                 <div className="flex justify-between text-sm">
                   <span>Holdings</span>
                   <Badge variant="secondary">
-                    {accountData.holdings.count}
+                    {accountData.holdings?.count || 0}
                   </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Open Positions</span>
-                  <Badge variant="secondary">{positions.count}</Badge>
+                  <Badge variant="secondary">{positions.count || 0}</Badge>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Active Orders</span>
-                  <Badge variant="secondary">{orders.count}</Badge>
+                  <Badge variant="secondary">{orders.count || 0}</Badge>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Client ID</span>
                   <span className="font-mono text-xs">
-                    {funds.dhanClientId}
+                    {funds.dhanClientId || userProfile?.clientId || 'N/A'}
                   </span>
                 </div>
               </div>
@@ -269,7 +279,7 @@ export function AccountSummary({ userId }: AccountSummaryProps) {
 
           <div className="mt-4 pt-4 border-t">
             <p className="text-xs text-muted-foreground">
-              Last updated: {new Date(accountData.timestamp).toLocaleString()}
+              Last updated: {accountData.timestamp ? new Date(accountData.timestamp).toLocaleString() : 'N/A'}
             </p>
           </div>
         </CardContent>

@@ -24,7 +24,7 @@ interface AccountDataResponse {
 
 const ENGINE_C_URL =
   process.env.ENGINE_C_URL ||
-  "https://engine-c-228557716858.us-central1.run.app";
+  "https://engine-c-3acobgd3qa-uc.a.run.app";
 
 /**
  * Fetch account data from Engine-C

@@ -6,18 +6,20 @@ Features:
 - Store postback webhooks to Firestore for audit trail
 - Real-time position updates via SSE/NDJSON
 - Event broadcasting to all subscribers
+- Per-user event queues to prevent cross-user event pollution
 """
 
 import json
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, Any, AsyncGenerator
-from collections import deque
+from typing import Dict, Any, AsyncGenerator, Optional
+from collections import deque, defaultdict
 
 # Global state
 _firestore_db = None
-_event_queue = deque(maxlen=1000)  # Circular buffer for events
+_event_queue = deque(maxlen=1000)  # Global circular buffer for events (deprecated)
+_user_event_queues: Dict[str, deque] = defaultdict(lambda: deque(maxlen=500))  # Per-user queues
 logger = logging.getLogger(__name__)
 
 
@@ -103,10 +105,15 @@ async def update_portfolio_position(client_id: str, symbol: str, event_data: Dic
     return False
 
 
-async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any]):
+async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any], user_id: Optional[str] = None):
     """
     Broadcast event to all SSE subscribers.
     Format: {"event": "...", "data": {...}, "timestamp": "..."}
+    
+    Args:
+        event_type: Type of event (e.g., 'order_update', 'position_update')
+        event_data: Event payload
+        user_id: Optional user ID for per-user event tracking. If provided, event goes to user-specific queue
     """
     try:
         event_message = {
@@ -114,8 +121,17 @@ async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any]):
             "data": event_data,
             "timestamp": datetime.utcnow().isoformat()
         }
+        
+        # Add to global queue (backward compatibility)
         _event_queue.append(event_message)
-        logger.info(f"📢 Broadcast: {event_type} - {event_data.get('order_id', 'N/A')}")
+        
+        # Add to per-user queue if user_id provided
+        if user_id:
+            _user_event_queues[user_id].append(event_message)
+            logger.info(f"📢 Per-User Broadcast: {event_type} for user {user_id}")
+        else:
+            logger.info(f"📢 Broadcast: {event_type} - {event_data.get('order_id', 'N/A')}")
+        
         return True
     except Exception as e:
         logger.error(f"Failed to broadcast event: {e}")
@@ -125,6 +141,7 @@ async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any]):
 async def sse_event_generator(user_id: str) -> AsyncGenerator[str, None]:
     """
     Server-Sent Events (SSE) generator for streaming real-time data.
+    Now uses per-user event queues to prevent cross-user event pollution.
 
     Usage (Frontend):
     const eventSource = new EventSource(`/api/realtime/stream/${userId}`);
@@ -143,12 +160,15 @@ async def sse_event_generator(user_id: str) -> AsyncGenerator[str, None]:
 
         heartbeat_count = 0
         max_duration = 1200  # Stream for up to 20 minutes
+        
+        # Get or create per-user queue
+        user_queue = _user_event_queues[user_id]
 
         for i in range(max_duration):
             try:
-                # Send queued events
-                if _event_queue:
-                    event = _event_queue.pop(0)
+                # Send queued events specific to this user
+                if user_queue:
+                    event = user_queue.popleft()
                     yield f"data: {json.dumps(event)}\n\n"
                 else:
                     # Send heartbeat every 30 seconds

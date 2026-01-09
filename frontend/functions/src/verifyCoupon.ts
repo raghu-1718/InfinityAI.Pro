@@ -42,21 +42,25 @@ const VALID_COUPONS: Record<
       "vertex_ai",
       "engine_c_access",
     ],
-    expires_at: "2025-12-31",
+    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
+    expires_at: "2026-07-08",
     max_uses: 100,
   },
   INFINITY0506: {
     features: ["portfolio_analysis", "ai_signals"],
-    expires_at: "2025-06-30",
+    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
+    expires_at: "2026-07-08",
     max_uses: 50,
   },
   INFINITYRAJ: {
     features: ["portfolio_analysis"],
-    expires_at: "2025-12-31",
+    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
+    expires_at: "2026-07-08",
     max_uses: 1,
   },
   TESTCOUPON: {
     features: ["portfolio_analysis"],
+    // Long-lived test coupon kept far-future
     expires_at: "2099-12-31",
     max_uses: 999,
   },
@@ -97,10 +101,20 @@ export const verifyCoupon = onCall(
     const userCouponSnap = await userCouponRef.get();
 
     if (userCouponSnap.exists) {
-      throw new HttpsError(
-        "already-exists",
-        "You have already redeemed this coupon"
-      );
+      // Allow re-verification: Return existing session instead of blocking
+      const userSessionRef = db.collection("user_sessions").doc(google_user_id);
+      const sessionSnap = await userSessionRef.get();
+
+      if (sessionSnap.exists) {
+        const sessionData = sessionSnap.data();
+        return {
+          success: true,
+          session_id: sessionData?.session_id || `session_${google_user_id}_${Date.now()}`,
+          features: couponConfig.features,
+          expires_at: sessionData?.expires_at?.toDate().toISOString() || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        };
+      }
+      // If session doesn't exist but redemption does, continue to create new session below
     }
 
     // Check coupon usage limit

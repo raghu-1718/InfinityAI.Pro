@@ -172,9 +172,9 @@ export function useUserData(userId: string | null) {
   // Auto-fetch account data when credentials are available
   useEffect(() => {
     if (credentials) {
-      fetchAccountData();
+      fetchAccountDataMethod();
     }
-  }, [credentials, fetchAccountData]);
+  }, [credentials, fetchAccountDataMethod]);
 
   return {
     credentials,

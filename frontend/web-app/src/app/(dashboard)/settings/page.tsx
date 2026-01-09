@@ -387,7 +387,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://engine-c-228557716858.us-central1.run.app/api/dhan/postback
+                          https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback
                         </code>
                         <Button
                           variant="outline"
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://engine-c-228557716858.us-central1.run.app/api/dhan/postback"
+                              "https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback"
                             );
                             toast.success("Copied Postback URL");
                           }}
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://engine-c-228557716858.us-central1.run.app/auth/dhan/success
+                          https://engine-c-3acobgd3qa-uc.a.run.app/auth/dhan/success
                         </code>
                         <Button
                           variant="outline"
@@ -422,7 +422,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://engine-c-228557716858.us-central1.run.app/auth/dhan/success"
+                              "https://engine-c-3acobgd3qa-uc.a.run.app/auth/dhan/success"
                             );
                             toast.success("Copied Redirect URL");
                           }}
@@ -438,121 +438,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Credentials Input Section */}
-                <div className="mt-6 p-4 border rounded-lg bg-muted/30">
-                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    Your DhanHQ Credentials
-                  </h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dhan-client-id">Client ID</Label>
-                      <Input
-                        id="dhan-client-id"
-                        placeholder="1101302170"
-                        value={dhanCredentials.client_id}
-                        onChange={(e) =>
-                          setDhanCredentials((prev) => ({
-                            ...prev,
-                            client_id: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dhan-access-token">Access Token</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="dhan-access-token"
-                          type={showAccessToken ? "text" : "password"}
-                          placeholder="eyJ0eXAiOiJKV1QiLCJhbGci..."
-                          value={dhanCredentials.access_token}
-                          onChange={(e) =>
-                            setDhanCredentials((prev) => ({
-                              ...prev,
-                              access_token: e.target.value,
-                            }))
-                          }
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setShowAccessToken(!showAccessToken)}
-                        >
-                          {showAccessToken ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Get your access token from DhanHQ Developer Dashboard
-                      </p>
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        if (
-                          !dhanCredentials.client_id ||
-                          !dhanCredentials.access_token
-                        ) {
-                          toast.error(
-                            "Please enter both Client ID and Access Token"
-                          );
-                          return;
-                        }
-
-                        setIsConnecting(true);
-                        try {
-                          const data = await storeCredentialsAPI(
-                            session?.userId || "",
-                            dhanCredentials.client_id,
-                            dhanCredentials.access_token
-                          );
-
-                          if (data.success) {
-                            setConnectionStatus("connected");
-                            toast.success("Credentials saved successfully!");
-
-                            // Store client ID in local storage
-                            setDhanClientId(dhanCredentials.client_id);
-                          } else {
-                            toast.error(
-                              data.message || "Failed to save credentials"
-                            );
-                          }
-                        } catch (error: any) {
-                          console.error("Error saving credentials:", error);
-                          toast.error(error.message || "Network error");
-                        } finally {
-                          setIsConnecting(false);
-                        }
-                      }}
-                      className="w-full"
-                      disabled={isConnecting}
-                    >
-                      {isConnecting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Save Credentials
-                        </>
-                      )}
-                    </Button>
-                    {connectionStatus === "connected" && (
-                      <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Credentials verified and connected
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {/* Removed duplicate Credentials Input Section to avoid confusion */}
               </div>
               <div className="mt-4 flex justify-end">
                 <Button variant="outline">
