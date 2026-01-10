@@ -1,0 +1,73 @@
+{
+  "verification_results": {
+    "passed": 14,
+    "failed": 0,
+    "warnings": 9,
+    "timestamp": "2026-01-11T00:24:03.982929"
+  },
+  "architecture": {
+    "project_id": "galvanic-pulsar-482815-h0",
+    "region": "us-central1",
+    "timestamp": "2026-01-11T00:24:03.982929",
+    "components": {
+      "frontend": {
+        "type": "Firebase Hosting",
+        "url": "https://galvanic-pulsar-482815-h0.web.app",
+        "technology": "Next.js 16 Static Export",
+        "status": "Live"
+      },
+      "cloud_run": {
+        "engine-a": {
+          "url": "https://engine-a-3acobgd3qa-uc.a.run.app",
+          "role": "Orchestrator & Risk Management",
+          "memory": "1Gi",
+          "cpu": "1",
+          "status": "Deployed"
+        },
+        "engine-b": {
+          "url": "https://engine-b-3acobgd3qa-uc.a.run.app",
+          "role": "AI Analyst (Gemini 2.0 Flash)",
+          "memory": "4Gi",
+          "cpu": "2",
+          "status": "Deployed"
+        },
+        "engine-c": {
+          "url": "https://engine-c-3acobgd3qa-uc.a.run.app",
+          "role": "Trade Execution (DhanHQ)",
+          "memory": "1Gi",
+          "cpu": "1",
+          "mode": "LIVE",
+          "status": "Deployed"
+        }
+      },
+      "cloud_functions": {
+        "count": 4,
+        "runtime": "Python 3.12 (Gen2)",
+        "functions": [
+          "get-live-prices",
+          "detect-momentum-signals",
+          "get-price-history",
+          "live-data-ingestion"
+        ]
+      },
+      "database": {
+        "type": "Firestore (Native Mode)",
+        "collections": [
+          "trades",
+          "positions",
+          "signals",
+          "users",
+          "dhan_credentials",
+          "sessions",
+          "audit_logs"
+        ]
+      },
+      "security": {
+        "source_enforcement": "Active (X-Engine-Source header)",
+        "session_locks": "Atomic (Firestore transactions)",
+        "credentials": "Secret Manager",
+        "authentication": "Firebase Auth + OAuth"
+      }
+    }
+  }
+}
