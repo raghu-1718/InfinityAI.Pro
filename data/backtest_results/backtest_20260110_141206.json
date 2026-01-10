@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-01-10T14:12:06.561715",
+  "backtests": {
+    "NIFTY": {
+      "symbol": "NIFTY",
+      "strategy": "MA Crossover (20/50)",
+      "period_days": 365,
+      "candles": 365,
+      "performance": {
+        "total_return_pct": 3.3417997226724165,
+        "annual_return_pct": 3.3417997226724165,
+        "sharpe_ratio": 0.3552500036150859,
+        "sortino_ratio": 0.28420000289206876,
+        "max_drawdown_pct": -14.316142541292987,
+        "win_rate_pct": 80.0,
+        "profit_factor": 3.3169840861850353
+      },
+      "trades": {
+        "total": 5,
+        "won": 4,
+        "lost": 1,
+        "avg_pnl": 7643.4204001015505,
+        "best_trade_pct": 2.861454043059314,
+        "worst_trade_pct": -1.7057048792689606
+      },
+      "equity_final": 1033417.9972267242,
+      "capital_used": 1000000.0
+    },
+    "BANKNIFTY": {
+      "symbol": "BANKNIFTY",
+      "strategy": "MA Crossover (20/50)",
+      "period_days": 365,
+      "candles": 365,
+      "performance": {
+        "total_return_pct": 36.52234780989503,
+        "annual_return_pct": 36.52234780989503,
+        "sharpe_ratio": 1.5792009014790582,
+        "sortino_ratio": 1.2633607211832467,
+        "max_drawdown_pct": -13.174314180835879,
+        "win_rate_pct": 100.0,
+        "profit_factor": 1.0
+      },
+      "trades": {
+        "total": 2,
+        "won": 2,
+        "lost": 0,
+        "avg_pnl": 123975.78886668477,
+        "best_trade_pct": 18.742442583766717,
+        "worst_trade_pct": 6.2612505133737155
+      },
+      "equity_final": 1365223.4780989503,
+      "capital_used": 1000000.0
+    },
+    "FINNIFTY": {
+      "symbol": "FINNIFTY",
+      "strategy": "MA Crossover (20/50)",
+      "period_days": 365,
+      "candles": 365,
+      "performance": {
+        "total_return_pct": 0.06591491784192621,
+        "annual_return_pct": 0.06591491784192621,
+        "sharpe_ratio": 0.1070201518601175,
+        "sortino_ratio": 0.085616121488094,
+        "max_drawdown_pct": -10.545039313741126,
+        "win_rate_pct": 100.0,
+        "profit_factor": 1.0
+      },
+      "trades": {
+        "total": 2,
+        "won": 2,
+        "lost": 0,
+        "avg_pnl": 12875.25407174838,
+        "best_trade_pct": 1.6944872872448848,
+        "worst_trade_pct": 1.0009387250166335
+      },
+      "equity_final": 1000659.1491784193,
+      "capital_used": 1000000.0
+    }
+  }
+}
