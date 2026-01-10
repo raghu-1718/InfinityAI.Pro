@@ -165,5 +165,5 @@ https://console.cloud.google.com/functions/details/us-central1/backtest-orchestr
 
 ---
 
-**Last Updated:** 2026-01-10  
+**Last Updated:** 2026-01-10
 **Version:** 1.0.0

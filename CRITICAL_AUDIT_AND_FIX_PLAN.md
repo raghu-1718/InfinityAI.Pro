@@ -1,6 +1,6 @@
 # Critical System Audit & Fix Plan
-**Project:** InfinityAI.Pro / galvanic-pulsar-482815-h0  
-**Date:** January 9, 2026  
+**Project:** InfinityAI.Pro / galvanic-pulsar-482815-h0
+**Date:** January 9, 2026
 **Status:** Issues Identified, Fix Strategy Ready
 
 ---
@@ -11,7 +11,7 @@ The application has multiple interconnected issues affecting user experience and
 
 1. ✅ **Engine-B is actually ONLINE** (cloud logs show 200 OK health checks)
    - Issue: Frontend health check logic incorrectly marks it as offline
-   - Root cause: Response parsing or status comparison logic  
+   - Root cause: Response parsing or status comparison logic
    - Impact: Dashboard shows "System Degraded" instead of "All Engines Online"
 
 2. ❌ **Dhan Credentials:** Uncertain if persisted in backend
@@ -26,7 +26,7 @@ The application has multiple interconnected issues affecting user experience and
    - Affects all balance displays, P&L, orders
    - Multiple components need currency symbol update
 
-5. ❌ **Asset Classes:** Hardcoded placeholders  
+5. ❌ **Asset Classes:** Hardcoded placeholders
    - Currently using mock/placeholder config
    - Need to validate integration with Dhan API and market data
 
@@ -235,7 +235,7 @@ Dhan credentials could execute live trades
 1. **Fix Engine-B health check** (5 min)
    - Add logging and validation
    - Should immediately show all engines online
-   
+
 2. **Fix trading session state** (10 min)
    - Clear session on page load
    - Set default to `isActive: false`
@@ -290,7 +290,7 @@ After fixes applied:
 ## Estimated Time
 
 - **Phase 1:** 35 minutes
-- **Phase 2:** 65 minutes  
+- **Phase 2:** 65 minutes
 - **Phase 3:** 30 minutes
 - **Phase 4:** 45 minutes
 - **Total:** ~3 hours for complete audit + fixes + deployment

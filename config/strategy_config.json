@@ -1,0 +1,107 @@
+{
+  "strategy_name": "MA_Crossover_Optimized",
+  "version": "2.0",
+  "optimized_date": "2026-01-10",
+  "optimization_period": "3y",
+  "optimization_data_source": "Yahoo Finance",
+
+  "symbol_configurations": {
+    "NIFTY": {
+      "ma_short": 15,
+      "ma_long": 45,
+      "expected_trades_per_year": 0.67,
+      "historical_return_pct": 0.67,
+      "sharpe_ratio": 1.27,
+      "max_drawdown_pct": 0.15,
+      "win_rate_pct": 100.0,
+      "notes": "Optimized for medium-term swings. Best with 3y data."
+    },
+    "BANKNIFTY": {
+      "ma_short": 20,
+      "ma_long": 50,
+      "expected_trades_per_year": 0,
+      "historical_return_pct": 0.0,
+      "sharpe_ratio": 0.0,
+      "max_drawdown_pct": 0.0,
+      "win_rate_pct": 0.0,
+      "notes": "Strong uptrend - no MA crossover signals in recent period. Consider momentum strategy."
+    },
+    "FINNIFTY": {
+      "ma_short": 20,
+      "ma_long": 50,
+      "expected_trades_per_year": 0,
+      "historical_return_pct": 0.0,
+      "sharpe_ratio": 0.0,
+      "max_drawdown_pct": 0.0,
+      "win_rate_pct": 0.0,
+      "notes": "Strong uptrend - no MA crossover signals. Consider momentum strategy."
+    },
+    "SENSEX": {
+      "ma_short": 20,
+      "ma_long": 50,
+      "expected_trades_per_year": 0,
+      "historical_return_pct": 0.0,
+      "sharpe_ratio": 0.0,
+      "max_drawdown_pct": 0.0,
+      "win_rate_pct": 0.0,
+      "notes": "Strong uptrend - no MA crossover signals. Consider momentum strategy."
+    },
+    "GOLD": {
+      "ma_short": 50,
+      "ma_long": 200,
+      "expected_trades_per_year": 0.33,
+      "historical_return_pct": 2.20,
+      "sharpe_ratio": 1.96,
+      "max_drawdown_pct": 0.34,
+      "win_rate_pct": 100.0,
+      "notes": "BEST PERFORMER. Slow MA crossover captures major trends."
+    },
+    "CRUDEOIL": {
+      "ma_short": 15,
+      "ma_long": 45,
+      "expected_trades_per_year": 2.33,
+      "historical_return_pct": 0.12,
+      "sharpe_ratio": 0.11,
+      "max_drawdown_pct": 0.41,
+      "win_rate_pct": 57.1,
+      "notes": "Marginal profitability. Higher frequency but lower win rate."
+    }
+  },
+
+  "default_parameters": {
+    "ma_short": 20,
+    "ma_long": 50,
+    "initial_capital": 1000000,
+    "risk_per_trade_pct": 2.0,
+    "commission_pct": 0.05,
+    "slippage_pct": 0.0
+  },
+
+  "recommendations": {
+    "high_confidence": ["GOLD"],
+    "medium_confidence": ["NIFTY"],
+    "low_confidence": ["CRUDEOIL"],
+    "not_recommended": ["BANKNIFTY", "FINNIFTY", "SENSEX"],
+
+    "notes": [
+      "MA crossover works best on commodities (GOLD, CRUDEOIL)",
+      "Equity indices in strong uptrend - few signals",
+      "Consider longer periods (3y vs 1y) for better signal capture",
+      "NIFTY MA(15/45) is optimal for equity indices with signals",
+      "GOLD MA(50/200) provides best risk-adjusted returns"
+    ]
+  },
+
+  "alternative_strategies": {
+    "for_indices": {
+      "strategy": "Momentum/Trend Following",
+      "reason": "Indices in sustained uptrend with minimal consolidation",
+      "suggested_indicators": ["RSI", "MACD", "Bollinger Bands", "ATR"]
+    },
+    "for_commodities": {
+      "strategy": "MA Crossover (Current)",
+      "reason": "Commodities have better cyclical behavior",
+      "optimization": "Use MA(50/200) for GOLD, MA(15/45) for CRUDEOIL"
+    }
+  }
+}

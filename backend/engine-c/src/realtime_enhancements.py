@@ -109,7 +109,7 @@ async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any], 
     """
     Broadcast event to all SSE subscribers.
     Format: {"event": "...", "data": {...}, "timestamp": "..."}
-    
+
     Args:
         event_type: Type of event (e.g., 'order_update', 'position_update')
         event_data: Event payload
@@ -121,17 +121,17 @@ async def broadcast_realtime_event(event_type: str, event_data: Dict[str, Any], 
             "data": event_data,
             "timestamp": datetime.utcnow().isoformat()
         }
-        
+
         # Add to global queue (backward compatibility)
         _event_queue.append(event_message)
-        
+
         # Add to per-user queue if user_id provided
         if user_id:
             _user_event_queues[user_id].append(event_message)
             logger.info(f"📢 Per-User Broadcast: {event_type} for user {user_id}")
         else:
             logger.info(f"📢 Broadcast: {event_type} - {event_data.get('order_id', 'N/A')}")
-        
+
         return True
     except Exception as e:
         logger.error(f"Failed to broadcast event: {e}")
@@ -160,7 +160,7 @@ async def sse_event_generator(user_id: str) -> AsyncGenerator[str, None]:
 
         heartbeat_count = 0
         max_duration = 1200  # Stream for up to 20 minutes
-        
+
         # Get or create per-user queue
         user_queue = _user_event_queues[user_id]
 

@@ -123,14 +123,14 @@ export function useUserProfile() {
              // If passing a check, we should trust the API if it successfully returned "configured: false"
              // But we need to distinguish between "not found/not configured" and "network error".
              // This block runs if API returned 200 OK but configured=false.
-             
+
              // WE MUST DISCONNECT LOCALLY TO MATCH BACKEND
              console.log('Backend reports not configured. Syncing local state.');
              setUserProfile({
                  ...currentProfile,
                  isConnected: false,
                  isVerified: false,
-                 clientId: '', 
+                 clientId: '',
              });
              return { ...res, userProfile: { ...currentProfile, isConnected: false } };
           }
@@ -138,7 +138,7 @@ export function useUserProfile() {
         }
       } catch (error: any) {
         console.error('Failed to fetch user credentials:', error);
-        
+
         // Only if it's a 404, we treat as "User Not Found" -> Disconnected
         if (error?.status === 404) {
              if (currentProfile?.isConnected) {
@@ -158,7 +158,7 @@ export function useUserProfile() {
         throw error;
       }
     },
-    refetchInterval: 60000, 
+    refetchInterval: 60000,
     staleTime: 30000,
     retry: (failureCount, error: any) => {
       if (error?.status === 404) return false;

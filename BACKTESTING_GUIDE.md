@@ -316,15 +316,15 @@ class CustomStrategy:
         self.config = config
         self.engine = BacktestEngine("NIFTY", config=config)
         self.integration = EngineIntegration(config)
-    
+
     async def my_strategy(self):
         # Load data
         df = self.engine.df
-        
+
         # Generate custom signals
         entries = ... # Your logic here
         exits = ...
-        
+
         # Portfolio simulation
         portfolio = vbt.Portfolio.from_signals(
             df["Close"].values,
@@ -334,7 +334,7 @@ class CustomStrategy:
             fees=self.config.commission,
             freq="1d"
         )
-        
+
         # Generate report
         return await self.engine._generate_backtest_report(portfolio)
 ```
@@ -434,6 +434,6 @@ firebase firestore:query backtest_results
 
 ---
 
-**Status**: ✅ Ready for backtesting with Dhan data  
-**Updated**: 2026-01-10  
+**Status**: ✅ Ready for backtesting with Dhan data
+**Updated**: 2026-01-10
 **Maintainer**: Platform Engineering Team

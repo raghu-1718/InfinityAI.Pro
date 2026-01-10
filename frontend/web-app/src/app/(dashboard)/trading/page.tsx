@@ -79,7 +79,7 @@ export default function TradingPage() {
     setIsEngineRunning(false);
     setIsKillSwitchActive(false);
     setIsLoading(false);
-    
+
     console.log("🔄 Trading page mounted - state reset to clean START");
   }, []);
 
