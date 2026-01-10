@@ -125,7 +125,7 @@ jobs:
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-a:latest"
 
           echo "🔨 Building Engine A..."
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-a
+          docker build -f backend/engine-a/Dockerfile -t $IMAGE -t $IMAGE_LATEST .
 
           echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
@@ -203,7 +203,7 @@ jobs:
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-b:latest"
 
           echo "🔨 Building Engine B (AI/ML - this may take a few minutes)..."
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-b
+          docker build -f backend/engine-b/Dockerfile -t $IMAGE -t $IMAGE_LATEST .
 
           echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
@@ -280,7 +280,7 @@ jobs:
           IMAGE_LATEST="${{ env.ARTIFACT_REGISTRY }}/engine-c:latest"
 
           echo "🔨 Building Engine C..."
-          docker build -t $IMAGE -t $IMAGE_LATEST backend/engine-c
+          docker build -f backend/engine-c/Dockerfile -t $IMAGE -t $IMAGE_LATEST .
 
           echo "📤 Pushing to Artifact Registry..."
           docker push $IMAGE
