@@ -57,7 +57,7 @@ class IngestConfig:
 class DhanHistoricalClient:
     """Async client for fetching historical data from Dhan API"""
     
-    BASE_URL = "https://api.dhan.co/v2"
+    BASE_URL = "https://api.dhan.co"
     
     # Symbol to Dhan Security ID mapping (NSE Equity)
     SYMBOL_MAP = {
@@ -104,21 +104,27 @@ class DhanHistoricalClient:
             }
             
             try:
-                async with self.session.get(
-                    f"{self.BASE_URL}/{endpoint}",
-                    headers=headers,
-                    params=params,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as resp:
-                    if resp.status == 200:
-                        return await resp.json()
-                    elif resp.status == 429:
-                        logger.warning(f"Rate limited. Waiting 5s before retry...")
-                        await asyncio.sleep(5)
-                        return await self._request(endpoint, params)
-                    else:
-                        logger.error(f"API error {resp.status}: {await resp.text()}")
-                        return {}
+                # Try v2 endpoint first, then fall back to v1
+                for api_version in ["v2", "v1"]:
+                    async with self.session.get(
+                        f"{self.BASE_URL}/{api_version}/{endpoint}",
+                        headers=headers,
+                        params=params,
+                        timeout=aiohttp.ClientTimeout(total=30)
+                    ) as resp:
+                        if resp.status == 200:
+                            return await resp.json()
+                        elif resp.status == 404 and api_version == "v2":
+                            logger.debug(f"v2 endpoint not available, trying v1...")
+                            continue
+                        elif resp.status == 429:
+                            logger.warning(f"Rate limited. Waiting 5s before retry...")
+                            await asyncio.sleep(5)
+                            return await self._request(endpoint, params)
+                        else:
+                            logger.error(f"API error {resp.status} on {api_version}: {await resp.text()}")
+                
+                return {}
             except asyncio.TimeoutError:
                 logger.error(f"Timeout fetching {endpoint}")
                 return {}
