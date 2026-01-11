@@ -26,6 +26,8 @@ interface VerifyCouponResponse {
 }
 
 // Valid coupon configurations
+// NOTE: Each coupon is single-use (max_uses: 1) and email-bound
+// When first redeemed, it binds to the user's email and cannot be used by other emails
 const VALID_COUPONS: Record<
   string,
   {
@@ -34,7 +36,7 @@ const VALID_COUPONS: Record<
     max_uses: number;
   }
 > = {
-  INFINITY1718: {
+  INFINITY_DAD: {
     features: [
       "live_trading",
       "portfolio_analysis",
@@ -42,27 +44,86 @@ const VALID_COUPONS: Record<
       "vertex_ai",
       "engine_c_access",
     ],
-    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
-    expires_at: "2026-07-08",
-    max_uses: 100,
-  },
-  INFINITY0506: {
-    features: ["portfolio_analysis", "ai_signals"],
-    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
-    expires_at: "2026-07-08",
-    max_uses: 50,
-  },
-  INFINITYRAJ: {
-    features: ["portfolio_analysis"],
-    // Extended 6 months from current date (2026-01-08 → 2026-07-08)
-    expires_at: "2026-07-08",
+    // 1 year expiry from 2026-01-11
+    expires_at: "2027-01-11",
     max_uses: 1,
   },
-  TESTCOUPON: {
-    features: ["portfolio_analysis"],
-    // Long-lived test coupon kept far-future
-    expires_at: "2099-12-31",
-    max_uses: 999,
+  INFINITY_MOM: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_RAJ: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_SAI: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_PRIYA: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_RAGHU: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_KAVI: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
+  },
+  INFINITY_HARSHA: {
+    features: [
+      "live_trading",
+      "portfolio_analysis",
+      "ai_signals",
+      "vertex_ai",
+      "engine_c_access",
+    ],
+    expires_at: "2027-01-11",
+    max_uses: 1,
   },
 };
 
@@ -99,6 +160,24 @@ export const verifyCoupon = onCall(
       .collection("user_coupons")
       .doc(`${google_user_id}_${normalizedCode}`);
     const userCouponSnap = await userCouponRef.get();
+
+    // Check email binding for this coupon (dynamic binding on first use)
+    const couponEmailBindingRef = db
+      .collection("coupon_email_bindings")
+      .doc(normalizedCode);
+    const couponEmailBindingSnap = await couponEmailBindingRef.get();
+
+    if (couponEmailBindingSnap.exists) {
+      // Coupon already bound to an email
+      const boundEmail = couponEmailBindingSnap.data()?.bound_email;
+      if (boundEmail && boundEmail !== google_email) {
+        // Coupon is bound to a different email
+        throw new HttpsError(
+          "permission-denied",
+          `This coupon is already bound to ${boundEmail}. Each coupon can only be used by one email address.`
+        );
+      }
+    }
 
     if (userCouponSnap.exists) {
       // Allow re-verification: Return existing session instead of blocking
@@ -159,7 +238,20 @@ export const verifyCoupon = onCall(
         redeemed_at: admin.firestore.Timestamp.now(),
       });
 
-      // 3. Create/update user session
+      // 3. Create email binding for this coupon (on first use)
+      if (!couponEmailBindingSnap.exists) {
+        batch.set(
+          couponEmailBindingRef,
+          {
+            coupon_code: normalizedCode,
+            bound_email: google_email,
+            bound_user_id: google_user_id,
+            bound_at: admin.firestore.Timestamp.now(),
+          }
+        );
+      }
+
+      // 4. Create/update user session
       const userSessionRef = db
         .collection("user_sessions")
         .doc(google_user_id);
@@ -175,7 +267,7 @@ export const verifyCoupon = onCall(
         { merge: true }
       );
 
-      // 4. Update user profile with features
+      // 5. Update user profile with features
       const userProfileRef = db.collection("user_profiles").doc(google_user_id);
       batch.set(
         userProfileRef,
