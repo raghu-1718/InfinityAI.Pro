@@ -11,14 +11,14 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY engine-c/requirements.txt /app/requirements.txt
+COPY backend/engine-c/requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY shared /app/shared
-COPY options /app/backend/options
-COPY engine-c/src /app/src
+COPY backend/shared /app/shared
+COPY backend/options /app/backend/options
+COPY backend/engine-c/src /app/src
 COPY config /app/config
 
 # Environment variables
