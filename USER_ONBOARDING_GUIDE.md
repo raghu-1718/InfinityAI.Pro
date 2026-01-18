@@ -3,6 +3,7 @@
 Complete guide to getting started with InfinityAI.Pro algorithmic trading platform.
 
 **Table of Contents**
+
 1. [Getting Started](#getting-started)
 2. [Account Setup](#account-setup)
 3. [Connecting DhanHQ](#connecting-dhanq)
@@ -19,6 +20,7 @@ Complete guide to getting started with InfinityAI.Pro algorithmic trading platfo
 ### What is InfinityAI.Pro?
 
 InfinityAI.Pro is an **institutional-grade algorithmic trading platform** that:
+
 - 📊 Analyzes market data in real-time
 - 🤖 Generates AI-powered trading signals
 - 💰 Executes trades automatically (or with your approval)
@@ -61,19 +63,20 @@ After login, complete your profile:
 
 Configure:
 
-| Setting | Options | Default | Notes |
-|---------|---------|---------|-------|
-| Trading Mode | Paper / Live | Paper | ⚠️ Paper by default for safety |
-| Risk Level | Conservative / Moderate / Aggressive | Moderate | Affects position sizing |
-| Auto-Execute | On / Off | Off | ⚠️ Requires manual approval |
-| Max Position Size | 5% - 25% | 10% | Per-symbol exposure limit |
-| Daily Loss Limit | $100 - $10,000 | $500 | Stop trading if exceeded |
+| Setting           | Options                              | Default  | Notes                          |
+| ----------------- | ------------------------------------ | -------- | ------------------------------ |
+| Trading Mode      | Paper / Live                         | Paper    | ⚠️ Paper by default for safety |
+| Risk Level        | Conservative / Moderate / Aggressive | Moderate | Affects position sizing        |
+| Auto-Execute      | On / Off                             | Off      | ⚠️ Requires manual approval    |
+| Max Position Size | 5% - 25%                             | 10%      | Per-symbol exposure limit      |
+| Daily Loss Limit  | $100 - $10,000                       | $500     | Stop trading if exceeded       |
 
 ### Step 3: Set Notification Preferences
 
 **Dashboard** → **Settings** → **Notifications**
 
 Choose how to receive alerts:
+
 - ✅ Email notifications (for signals, orders, alerts)
 - ✅ Push notifications (on mobile app)
 - ✅ In-app notifications (live updates)
@@ -86,6 +89,7 @@ Choose how to receive alerts:
 ### Why Connect DhanHQ?
 
 DhanHQ is your **broker connection** - it:
+
 - Provides real-time market data
 - Executes your trades
 - Manages your account balance
@@ -110,11 +114,13 @@ DhanHQ is your **broker connection** - it:
 In DhanHQ Developer Settings, set webhooks:
 
 1. **Postback URL** (for order updates):
+
    ```
    https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback
    ```
 
 2. **Redirect URL** (for OAuth login):
+
    ```
    https://engine-c-3acobgd3qa-uc.a.run.app/api/auth/dhan/success
    ```
@@ -139,15 +145,18 @@ In DhanHQ Developer Settings, set webhooks:
 ### Troubleshooting Connection Issues
 
 **Error: "Invalid Credentials"**
+
 - ❌ Double-check Client ID, API Key, API Secret
 - ❌ Ensure DhanHQ account KYC is complete
 - ❌ Try logging out and back in
 
 **Error: "Webhook URL Rejected"**
+
 - ❌ Verify you've set the Postback URL in DhanHQ settings
 - ❌ Webhook URL must exactly match the one provided
 
 **Error: "Connection Timeout"**
+
 - ❌ Check your internet connection
 - ❌ DhanHQ API might be temporarily unavailable
 - ❌ Try again in 5 minutes
@@ -159,6 +168,7 @@ In DhanHQ Developer Settings, set webhooks:
 ### What is Paper Trading?
 
 **Paper trading** = Simulated trading with virtual capital
+
 - ✅ No real money at risk
 - ✅ Test strategies safely
 - ✅ Learn platform features
@@ -188,14 +198,14 @@ In DhanHQ Developer Settings, set webhooks:
 
 ### Paper Trading Features
 
-| Feature | Availability | Notes |
-|---------|--------------|-------|
-| Buy/Sell Orders | ✅ Yes | Filled instantly at market price |
-| Limit Orders | ✅ Yes | Simulates fills realistically |
-| Stop-Loss Orders | ✅ Yes | Triggers automatically |
-| Multi-Leg Strategies | ✅ Yes | Test complex strategies |
-| P&L Tracking | ✅ Yes | Real-time P&L updates |
-| Statistics | ✅ Yes | Win rate, Sharpe ratio, etc. |
+| Feature              | Availability | Notes                            |
+| -------------------- | ------------ | -------------------------------- |
+| Buy/Sell Orders      | ✅ Yes       | Filled instantly at market price |
+| Limit Orders         | ✅ Yes       | Simulates fills realistically    |
+| Stop-Loss Orders     | ✅ Yes       | Triggers automatically           |
+| Multi-Leg Strategies | ✅ Yes       | Test complex strategies          |
+| P&L Tracking         | ✅ Yes       | Real-time P&L updates            |
+| Statistics           | ✅ Yes       | Win rate, Sharpe ratio, etc.     |
 
 ### Paper Trading Best Practices
 
@@ -236,15 +246,17 @@ In DhanHQ Developer Settings, set webhooks:
 ### Enabling Live Mode
 
 1. **Settings** → **Trading Preferences** → Change to **"Live Mode"**
-2. **Confirmation Dialog**: 
+2. **Confirmation Dialog**:
+
    ```
    ⚠️ WARNING: You are switching to LIVE TRADING
    - Real capital will be at risk
    - Orders will execute on DhanHQ broker
    - Losses are real
-   
+
    Do you want to continue?
    ```
+
 3. Click **"Yes, Enable Live Trading"**
 4. ✅ Dashboard now shows "💰 LIVE TRADING" badge
 
@@ -266,14 +278,14 @@ In DhanHQ Developer Settings, set webhooks:
 
 InfinityAI.Pro has built-in protections:
 
-| Feature | Function | Example |
-|---------|----------|---------|
-| **Daily Loss Limit** | Stops trading if daily loss exceeded | Stop at -$500 |
-| **Max Position Size** | Limits per-symbol exposure | Max 10% per symbol |
-| **Concentration Risk** | Prevents over-concentration | Max 30% in index |
-| **Order Confirmation** | Requires your approval (if enabled) | Manual click to execute |
-| **Circuit Breaker** | Auto stops on market crash | If market -10% |
-| **Emergency Stop** | Instant kill switch | Red button on dashboard |
+| Feature                | Function                             | Example                 |
+| ---------------------- | ------------------------------------ | ----------------------- |
+| **Daily Loss Limit**   | Stops trading if daily loss exceeded | Stop at -$500           |
+| **Max Position Size**  | Limits per-symbol exposure           | Max 10% per symbol      |
+| **Concentration Risk** | Prevents over-concentration          | Max 30% in index        |
+| **Order Confirmation** | Requires your approval (if enabled)  | Manual click to execute |
+| **Circuit Breaker**    | Auto stops on market crash           | If market -10%          |
+| **Emergency Stop**     | Instant kill switch                  | Red button on dashboard |
 
 ### Live Trading Workflow
 
@@ -337,18 +349,23 @@ Before market opens (9:00 AM IST):
 ### Key Dashboard Sections
 
 #### 1. Portfolio Summary
+
 Shows your total account health:
+
 - **Balance**: Total account value
 - **Invested**: Capital in open positions
 - **Cash**: Available to trade
 - **P&L**: Total profit/loss
 
 **Buttons**:
+
 - **Deposit**: Add money (DhanHQ)
 - **Withdraw**: Withdraw profits (DhanHQ)
 
 #### 2. Active Positions
+
 Lists all open trades:
+
 - **Symbol**: What you're holding
 - **Qty**: Number of shares/lots
 - **Entry**: Your purchase price
@@ -356,12 +373,15 @@ Lists all open trades:
 - **P&L**: Unrealized profit/loss
 
 **Actions per position**:
+
 - **Add**: Buy more
 - **Exit**: Close position
 - **SL/Target**: Set stop-loss / take-profit
 
 #### 3. Recent Signals
+
 AI trading recommendations:
+
 - **Time**: When signal was generated
 - **Symbol**: Which security
 - **Signal**: BUY, SELL, or HOLD
@@ -369,11 +389,13 @@ AI trading recommendations:
 - **Status**: ✅ (executed), ⏳ (pending), ❌ (rejected)
 
 **Actions**:
+
 - **View Details**: See reasoning
 - **Execute**: Place the trade now
 - **Ignore**: Skip this signal
 
 #### 4. Trading Controls
+
 - **Quick Trade**: Manually place order
 - **Auto-Trade**: Enable/disable automation
 - **Emergency Stop**: Kill all positions instantly
@@ -417,6 +439,7 @@ AI trading recommendations:
 **Settings** → **Notifications**
 
 Turn notifications ON/OFF for:
+
 - ✅ New trading signals
 - ✅ Order executed
 - ✅ Position closed
@@ -431,9 +454,11 @@ Turn notifications ON/OFF for:
 ### Common Issues & Solutions
 
 #### "Dashboard Won't Load"
+
 **Symptom**: Blank screen or infinite loading
 
 **Solutions**:
+
 1. Refresh page: `Ctrl+R` (or `Cmd+R`)
 2. Clear cache: Settings → Clear Browsing Data
 3. Try incognito mode
@@ -441,9 +466,11 @@ Turn notifications ON/OFF for:
 5. Try different browser
 
 #### "DhanHQ Connection Failed"
+
 **Symptom**: Can't connect broker or getting 401 errors
 
 **Solutions**:
+
 1. Verify credentials in Settings
 2. Ensure DhanHQ account KYC is complete
 3. Check if API keys are still valid (regenerate if needed)
@@ -451,42 +478,51 @@ Turn notifications ON/OFF for:
 5. Contact DhanHQ support if issue persists
 
 #### "Paper Trading Orders Won't Fill"
+
 **Symptom**: Orders stuck in pending status
 
 **Solutions**:
+
 1. Verify Market is open (9:15 AM - 3:30 PM IST, Mon-Fri)
 2. For limit orders, ensure price is reasonable
 3. Try placing a MARKET order instead
 4. Refresh page and try again
 
 #### "Paper vs Live Mode Confusion"
+
 **Symptom**: Not sure which mode I'm in
 
 **Check**:
+
 - Look at dashboard badge:
   - 📄 = Paper mode (safe, simulated)
   - 💰 = Live mode (real money)
 - View in Settings → Trading → Trading Mode
 
 #### "Signals Not Appearing"
+
 **Symptom**: No BUY/SELL signals shown
 
 **Possible Causes**:
+
 1. Market conditions don't match strategy
 2. All signals might be HOLD (wait mode)
 3. Your confidence threshold is too high
 4. Engine B is offline (check health)
 
 **Fix**:
+
 1. Check signal filter in Dashboard
 2. Adjust risk level (might generate more signals)
 3. Restart browser
 4. Contact support if signals don't return in 1 hour
 
 #### "Lost Connection / App Crashed"
+
 **Symptom**: App suddenly stops responding
 
 **Quick Recovery**:
+
 1. Refresh page immediately (Ctrl+R)
 2. Your positions are safe (stored in Firestore)
 3. Orders in progress are safe (DhanHQ has them)
@@ -518,52 +554,52 @@ Turn notifications ON/OFF for:
 
 ### Trading Terms
 
-| Term | Definition | Example |
-|------|-----------|---------|
-| **BUY** | Go long - buy to profit from price increase | BUY 1 NIFTY |
-| **SELL** | Go short - sell to profit from price decrease | SELL 1 NIFTY |
-| **HOLD** | Do nothing - wait for better signal | HOLD (0% confidence) |
-| **MARKET Order** | Buy/sell at current market price (instant) | Market order fills now |
-| **LIMIT Order** | Buy/sell at specified price or better | Wait for price to reach level |
-| **STOP-LOSS** | Automatic exit if price drops (loss limit) | SL at -₹500 |
-| **TAKE-PROFIT** | Automatic exit if price rises (profit target) | TP at +₹1000 |
-| **POSITION** | Active trade - currently holding security | LONG 1 NIFTY |
-| **P&L** | Profit & Loss - your gain or loss | +₹500 (profit) or -₹200 (loss) |
-| **INTRADAY** | Trade opened and closed same day | Buy 9:15 AM, Sell 3:30 PM |
-| **SWING** | Trade held overnight or multi-day | Hold for 3-5 days |
-| **PORTFOLIO** | All your combined positions | Total of all holdings |
-| **EXPOSURE** | Total capital at risk | If buying NIFTY with $10K, exposure = $10K |
-| **SLIPPAGE** | Difference between expected and actual fill price | Order at ₹100, filled at ₹100.50 (₹0.50 slippage) |
-| **VOLATILITY** | How much price moves | High vol = big swings = risky |
+| Term             | Definition                                        | Example                                           |
+| ---------------- | ------------------------------------------------- | ------------------------------------------------- |
+| **BUY**          | Go long - buy to profit from price increase       | BUY 1 NIFTY                                       |
+| **SELL**         | Go short - sell to profit from price decrease     | SELL 1 NIFTY                                      |
+| **HOLD**         | Do nothing - wait for better signal               | HOLD (0% confidence)                              |
+| **MARKET Order** | Buy/sell at current market price (instant)        | Market order fills now                            |
+| **LIMIT Order**  | Buy/sell at specified price or better             | Wait for price to reach level                     |
+| **STOP-LOSS**    | Automatic exit if price drops (loss limit)        | SL at -₹500                                       |
+| **TAKE-PROFIT**  | Automatic exit if price rises (profit target)     | TP at +₹1000                                      |
+| **POSITION**     | Active trade - currently holding security         | LONG 1 NIFTY                                      |
+| **P&L**          | Profit & Loss - your gain or loss                 | +₹500 (profit) or -₹200 (loss)                    |
+| **INTRADAY**     | Trade opened and closed same day                  | Buy 9:15 AM, Sell 3:30 PM                         |
+| **SWING**        | Trade held overnight or multi-day                 | Hold for 3-5 days                                 |
+| **PORTFOLIO**    | All your combined positions                       | Total of all holdings                             |
+| **EXPOSURE**     | Total capital at risk                             | If buying NIFTY with $10K, exposure = $10K        |
+| **SLIPPAGE**     | Difference between expected and actual fill price | Order at ₹100, filled at ₹100.50 (₹0.50 slippage) |
+| **VOLATILITY**   | How much price moves                              | High vol = big swings = risky                     |
 
 ### Platform Terms
 
-| Term | Definition |
-|------|-----------|
-| **Engine-A** | Risk management & portfolio optimization engine |
-| **Engine-B** | AI signal generation (using ML models) |
-| **Engine-C** | Trade execution engine (connects to DhanHQ) |
-| **DhanHQ** | Your broker - executes real trades |
-| **Firestore** | Secure cloud database (stores your data) |
-| **OAuth** | Secure login method (using Google account) |
-| **API** | Connection between InfinityAI.Pro and DhanHQ |
-| **Webhook** | Real-time update from DhanHQ (order fills, etc.) |
-| **HMAC** | Security verification for webhooks (prevents fraud) |
+| Term          | Definition                                          |
+| ------------- | --------------------------------------------------- |
+| **Engine-A**  | Risk management & portfolio optimization engine     |
+| **Engine-B**  | AI signal generation (using ML models)              |
+| **Engine-C**  | Trade execution engine (connects to DhanHQ)         |
+| **DhanHQ**    | Your broker - executes real trades                  |
+| **Firestore** | Secure cloud database (stores your data)            |
+| **OAuth**     | Secure login method (using Google account)          |
+| **API**       | Connection between InfinityAI.Pro and DhanHQ        |
+| **Webhook**   | Real-time update from DhanHQ (order fills, etc.)    |
+| **HMAC**      | Security verification for webhooks (prevents fraud) |
 
 ### AI/ML Terms
 
-| Term | Definition |
-|------|-----------|
-| **Signal** | AI recommendation to BUY, SELL, or HOLD |
-| **Confidence** | How sure the AI is (0-100%) |
-| **Model** | Mathematical algorithm (e.g., XGBoost) |
-| **Ensemble** | Multiple AI models voting together |
-| **Backtest** | Testing strategy on historical data |
-| **Overfitting** | Model works on past data but fails in real trading |
-| **Win Rate** | % of trades that make money |
-| **Sharpe Ratio** | Risk-adjusted return metric (higher = better) |
-| **Drawdown** | Largest peak-to-trough loss from peak |
-| **ML** | Machine Learning - AI that learns from data |
+| Term             | Definition                                         |
+| ---------------- | -------------------------------------------------- |
+| **Signal**       | AI recommendation to BUY, SELL, or HOLD            |
+| **Confidence**   | How sure the AI is (0-100%)                        |
+| **Model**        | Mathematical algorithm (e.g., XGBoost)             |
+| **Ensemble**     | Multiple AI models voting together                 |
+| **Backtest**     | Testing strategy on historical data                |
+| **Overfitting**  | Model works on past data but fails in real trading |
+| **Win Rate**     | % of trades that make money                        |
+| **Sharpe Ratio** | Risk-adjusted return metric (higher = better)      |
+| **Drawdown**     | Largest peak-to-trough loss from peak              |
+| **ML**           | Machine Learning - AI that learns from data        |
 
 ---
 
@@ -580,6 +616,7 @@ Turn notifications ON/OFF for:
 ### What to Include in Support Requests
 
 When reporting an issue, include:
+
 1. **Error Message**: Exact error text
 2. **Screenshot**: Visual proof of issue
 3. **Steps to Reproduce**: How to recreate the problem
@@ -589,8 +626,8 @@ When reporting an issue, include:
 
 ---
 
-**Last Updated**: January 19, 2026  
-**Version**: 1.0  
-**Status**: ✅ Live & Ready  
+**Last Updated**: January 19, 2026
+**Version**: 1.0
+**Status**: ✅ Live & Ready
 
 For latest updates, visit: https://github.com/raghu-1718/InfinityAI.Pro/wiki

@@ -47,11 +47,11 @@ class PaperPosition:
 
 class PaperTradingEngine:
     """Simulates trading without real capital"""
-    
+
     def __init__(self, initial_capital: float = 1000000.0, slippage_pct: float = 0.001):
         """
         Initialize paper trading engine
-        
+
         Args:
             initial_capital: Starting cash amount
             slippage_pct: Slippage percentage (0.001 = 0.1%)
@@ -63,9 +63,9 @@ class PaperTradingEngine:
         self.orders: Dict[str, PaperOrder] = {}
         self.trades: List[Dict] = []
         self.pnl_history: List[float] = []
-        
+
     def place_order(
-        self, 
+        self,
         symbol: str,
         transaction_type: str,
         quantity: int,
@@ -75,7 +75,7 @@ class PaperTradingEngine:
     ) -> Dict[str, Any]:
         """
         Simulate order placement
-        
+
         Args:
             symbol: Trading symbol (e.g., 'NIFTY')
             transaction_type: BUY or SELL
@@ -83,12 +83,12 @@ class PaperTradingEngine:
             price: Limit price (0 for MARKET orders)
             order_type: MARKET, LIMIT, STOPLOSS
             trigger_price: For STOPLOSS orders
-            
+
         Returns:
             Order confirmation dict
         """
         order_id = f"PAPER-{uuid.uuid4().hex[:8].upper()}"
-        
+
         try:
             # Validate order
             if quantity <= 0:
@@ -97,20 +97,20 @@ class PaperTradingEngine:
                     "remarks": "Quantity must be positive",
                     "order_id": order_id
                 }
-            
+
             if transaction_type.upper() not in ["BUY", "SELL"]:
                 return {
                     "status": "failure",
                     "remarks": "Invalid transaction type. Use BUY or SELL",
                     "order_id": order_id
                 }
-            
+
             # Calculate order value with slippage
             order_price = price if price > 0 else price  # For MARKET, use latest price
             order_value = quantity * order_price
             slippage = order_value * self.slippage_pct
             total_cost = order_value + slippage if transaction_type.upper() == "BUY" else order_value - slippage
-            
+
             # Validate cash for BUY orders
             if transaction_type.upper() == "BUY" and total_cost > self.cash:
                 return {
@@ -118,7 +118,7 @@ class PaperTradingEngine:
                     "remarks": f"Insufficient funds. Required: {total_cost:.2f}, Available: {self.cash:.2f}",
                     "order_id": order_id
                 }
-            
+
             # Create order record
             order = PaperOrder(
                 order_id=order_id,
@@ -131,17 +131,17 @@ class PaperTradingEngine:
                 timestamp=datetime.utcnow(),
                 remarks="Paper trading simulation"
             )
-            
+
             self.orders[order_id] = order
-            
+
             # Execute order immediately (paper trading)
             self._execute_paper_trade(symbol, transaction_type, quantity, order_price)
-            
+
             logger.info(
                 f"📄 Paper order filled: {order_id} | {symbol} | "
                 f"{transaction_type} {quantity} @ {order_price:.2f}"
             )
-            
+
             return {
                 "status": "success",
                 "order_id": order_id,
@@ -154,7 +154,7 @@ class PaperTradingEngine:
                 "timestamp": datetime.utcnow().isoformat(),
                 "warning": "This is a paper trade simulation, not a real trade"
             }
-            
+
         except Exception as e:
             logger.error(f"Paper order error: {e}")
             return {
@@ -162,17 +162,17 @@ class PaperTradingEngine:
                 "remarks": str(e),
                 "order_id": order_id
             }
-    
+
     def _execute_paper_trade(self, symbol: str, transaction_type: str, quantity: int, price: float):
         """Execute simulated trade"""
         symbol = symbol.upper()
         transaction_type = transaction_type.upper()
-        
+
         if transaction_type == "BUY":
             # Update cash
             cost = quantity * price * (1 + self.slippage_pct)
             self.cash -= cost
-            
+
             # Update or create position
             if symbol in self.positions:
                 pos = self.positions[symbol]
@@ -190,20 +190,20 @@ class PaperTradingEngine:
                     current_price=price,
                     entry_time=datetime.utcnow()
                 )
-            
+
         elif transaction_type == "SELL":
             if symbol not in self.positions:
                 raise ValueError(f"No position to sell for {symbol}")
-            
+
             pos = self.positions[symbol]
             if pos.quantity < quantity:
                 raise ValueError(f"Insufficient position: Have {pos.quantity}, trying to sell {quantity}")
-            
+
             # Calculate profit/loss
             revenue = quantity * price * (1 - self.slippage_pct)
             cost = quantity * pos.entry_price
             pnl = revenue - cost
-            
+
             # Record trade
             self.trades.append({
                 "symbol": symbol,
@@ -214,19 +214,19 @@ class PaperTradingEngine:
                 "pnl_pct": (pnl / cost) * 100 if cost > 0 else 0,
                 "timestamp": datetime.utcnow().isoformat()
             })
-            
+
             # Update cash
             self.cash += revenue
-            
+
             # Update position
             pos.quantity -= quantity
             if pos.quantity == 0:
                 del self.positions[symbol]
             else:
                 pos.current_price = price
-        
+
         self.pnl_history.append(self.get_portfolio_value())
-    
+
     def get_portfolio_value(self) -> float:
         """Get total portfolio value (cash + positions)"""
         position_value = sum(
@@ -234,13 +234,13 @@ class PaperTradingEngine:
             for pos in self.positions.values()
         )
         return self.cash + position_value
-    
+
     def get_portfolio_state(self) -> Dict[str, Any]:
         """Get complete portfolio state"""
         total_value = self.get_portfolio_value()
         pnl = total_value - self.initial_capital
         pnl_pct = (pnl / self.initial_capital) * 100 if self.initial_capital > 0 else 0
-        
+
         return {
             "mode": "PAPER_TRADING",
             "initial_capital": self.initial_capital,
@@ -261,23 +261,23 @@ class PaperTradingEngine:
             "open_positions": len(self.positions),
             "timestamp": datetime.utcnow().isoformat()
         }
-    
+
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
         """Cancel a paper order"""
         if order_id not in self.orders:
             return {"status": "failure", "remarks": "Order not found"}
-        
+
         order = self.orders[order_id]
         if order.status == "FILLED":
             return {"status": "failure", "remarks": "Cannot cancel filled order"}
-        
+
         order.status = "CANCELLED"
         return {
             "status": "success",
             "order_id": order_id,
             "remarks": "Paper order cancelled"
         }
-    
+
     def get_order_history(self) -> List[Dict]:
         """Get all orders"""
         return [
@@ -293,19 +293,19 @@ class PaperTradingEngine:
             }
             for order in self.orders.values()
         ]
-    
+
     def get_trade_history(self) -> List[Dict]:
         """Get completed trades"""
         return self.trades
-    
+
     def get_statistics(self) -> Dict[str, Any]:
         """Calculate trading statistics"""
         if not self.trades:
             return {"status": "No trades executed yet"}
-        
+
         pnls = [t["pnl"] for t in self.trades]
         winning_trades = [t for t in self.trades if t["pnl"] > 0]
-        
+
         return {
             "total_trades": len(self.trades),
             "winning_trades": len(winning_trades),

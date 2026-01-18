@@ -12,7 +12,7 @@ import os
 ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "paper").lower()  # paper or live (default: paper for safety)
 if ENGINE_C_MODE not in ["paper", "live"]:
     ENGINE_C_MODE = "paper"
-    
+
 ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -118,12 +118,23 @@ except ImportError:
 
 # Performance optimization imports
 try:
-    from backend.shared.performance import (
-        get_cache_manager, cache_response,
-        ConnectionPoolManager, get_aiohttp_session,
-        get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
-        get_health_monitor, with_circuit_breaker, CircuitBreakerConfig
-    )
+    try:
+        from backend.shared.performance import (
+            get_cache_manager, cache_response,
+            ConnectionPoolManager, get_aiohttp_session,
+            get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
+            get_health_monitor, with_circuit_breaker, CircuitBreakerConfig
+        )
+    except ImportError:
+        # Fallback for Cloud Run where working dir is /app
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+        from shared.performance import (
+            get_cache_manager, cache_response,
+            ConnectionPoolManager, get_aiohttp_session,
+            get_rate_limiter, adaptive_rate_limit, RateLimitConfig,
+            get_health_monitor, with_circuit_breaker, CircuitBreakerConfig
+        )
     HAS_PERFORMANCE_MODULE = True
 except ImportError as e:
     HAS_PERFORMANCE_MODULE = False
@@ -214,16 +225,28 @@ app = FastAPI(
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from shared.cors_config import ALLOWED_ORIGINS
+    try:
+        from backend.shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
-    # Fallback if shared module not in path
+    # Fallback if shared module not in path - add to sys.path
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from shared.cors_config import ALLOWED_ORIGINS
+    try:
+        from shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        # Last resort: use hardcoded production origins
+        ALLOWED_ORIGINS = [
+            "https://infinityai.pro",
+            "https://www.infinityai.pro",
+            "https://app.infinityai.pro",
+            "https://galvanic-pulsar-482815-h0.web.app",
+            "https://galvanic-pulsar-482815-h0.firebaseapp.com",
+        ]
+        logger.warning(f"⚠️ CORS config module not found, using hardcoded origins")
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
-
-# Register Options Analytics Router (Phase 1: Market Data Endpoints)
 try:
     from src.options_analytics_api import router as analytics_router
     app.include_router(analytics_router)
@@ -404,16 +427,6 @@ async def shutdown_event():
 
 
 # Import CORS config from shared module (environment-gated)
-try:
-    from shared.cors_config import ALLOWED_ORIGINS
-except ImportError:
-    # Fallback if shared module not in path
-    import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from shared.cors_config import ALLOWED_ORIGINS
-
-logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
-
 # Add CORS middleware FIRST (added last so it executes first in FastAPI)
 app.add_middleware(
     CORSMiddleware,
@@ -1133,7 +1146,7 @@ async def system_verify():
 async def receive_dhan_postback(request: Request):
     """
     Receive real-time order updates from Dhan
-    
+
     Signature Verification:
     - Validates X-Dhan-Signature header using HMAC-SHA256
     - Ensures webhook authenticity from DhanHQ
@@ -1143,47 +1156,47 @@ async def receive_dhan_postback(request: Request):
         # Get raw body for signature verification
         body = await request.body()
         signature_header = request.headers.get("X-Dhan-Signature", "")
-        
+
         # Verify webhook signature if verification is available
         if WEBHOOK_VERIFICATION_AVAILABLE:
             is_valid, message = verify_dhan_webhook(body, signature_header)
-            
+
             if not is_valid:
                 logger.warning(f"❌ Invalid webhook signature: {message}")
                 raise HTTPException(
                     status_code=403,
                     detail=f"Webhook signature verification failed: {message}"
                 )
-            
+
             logger.info("✅ Webhook signature verified")
         else:
             logger.warning("⚠️ Webhook signature verification disabled")
-        
+
         # Parse and validate payload
         payload = await request.json()
-        
+
         # Validate payload structure
         if WEBHOOK_VERIFICATION_AVAILABLE:
             is_valid, error = WebhookPayloadValidator.validate_postback(payload)
             if not is_valid:
                 logger.warning(f"❌ Invalid payload: {error}")
                 raise HTTPException(status_code=400, detail=f"Invalid payload: {error}")
-        
+
         # Log the event (Audit Trail)
         order_id = payload.get("orderId") or payload.get("order_id", "UNKNOWN")
         order_status = payload.get("orderStatus") or payload.get("status", "UNKNOWN")
-        
+
         logger.info(f"📨 Received postback for order {order_id}: {order_status}")
-        
+
         # Update Firestore Order Record
         try:
             proj = os.getenv("GOOGLE_CLOUD_PROJECT")
             if not proj:
                 raise ValueError("GOOGLE_CLOUD_PROJECT not set")
-            
+
             db = firestore.Client(project=proj)
             order_ref = db.collection("orders").document(order_id)
-            
+
             # Update order status and execution details
             order_ref.set({
                 "status": order_status,
@@ -1195,19 +1208,19 @@ async def receive_dhan_postback(request: Request):
                 "symbol": payload.get("symbol"),
                 "postback_received": True
             }, merge=True)
-            
+
             logger.info(f"✅ Firestore updated for order {order_id}")
-            
+
         except Exception as e:
             logger.error(f"Firestore update failed for postback: {e}")
             # Don't fail the postback response to Dhan, just log error
-        
+
         return {
             "status": "received",
             "orderId": order_id,
             "message": "Postback processed successfully"
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1544,13 +1557,13 @@ async def execution_analytics(req: ExecutionAnalyticsRequest):
 async def place_order(order: OrderRequest, request: Request):
     """
     Place order via DhanHQ API or Paper Trading Engine
-    
+
     Supports: Equity, F&O, Intraday, CNC, Market, Limit, SL orders
-    
+
     Mode:
     - PAPER: Simulated trading (safe for testing)
     - LIVE: Real trading on DhanHQ broker
-    
+
     Environment Variable: ENGINE_C_MODE (paper or live)
     """
     # --- Enforce stricter separation: Only allow requests from Engine-A ---
@@ -1563,7 +1576,7 @@ async def place_order(order: OrderRequest, request: Request):
         if ENGINE_C_MODE == "paper":
             if not PAPER_TRADING_AVAILABLE:
                 raise HTTPException(status_code=503, detail="Paper trading module not available")
-            
+
             # Use paper trading engine
             paper_engine = get_paper_engine()
             response = paper_engine.place_order(
@@ -1574,18 +1587,18 @@ async def place_order(order: OrderRequest, request: Request):
                 order_type=order.order_type,
                 trigger_price=getattr(order, 'trigger_price', None)
             )
-            
+
             # Add mode indicator
             response["mode"] = "PAPER_TRADING"
             response["portfolio_state"] = paper_engine.get_portfolio_state()
-            
+
             logger.info(f"📄 Paper order placed: {response}")
             return response
-        
+
         else:  # LIVE mode
             # All trades execute against Dhan API
             dhan_client = get_dhan_client()
-            
+
             # Build kwargs dynamically, only include non-None and relevant fields
             order_kwargs = {
                 "transaction_type": order.transaction_type,

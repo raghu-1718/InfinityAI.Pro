@@ -44,7 +44,7 @@ BUCKET = "infinityai-backtesting-data"
 # Health check utilities
 class HealthChecker:
     """Check health of all dependencies"""
-    
+
     @staticmethod
     async def check_firestore() -> Tuple[bool, str]:
         """Check Firestore connectivity"""
@@ -55,7 +55,7 @@ class HealthChecker:
             return True, "Firestore OK"
         except Exception as e:
             return False, f"Firestore failed: {str(e)}"
-    
+
     @staticmethod
     async def check_cloud_storage() -> Tuple[bool, str]:
         """Check Cloud Storage connectivity"""
@@ -67,7 +67,7 @@ class HealthChecker:
             return True, "Cloud Storage OK"
         except Exception as e:
             return False, f"Cloud Storage failed: {str(e)}"
-    
+
     @staticmethod
     async def check_engines() -> Tuple[bool, str]:
         """Check Engine A, B, C connectivity"""
@@ -76,10 +76,10 @@ class HealthChecker:
             "engine-b": "https://engine-b-3acobgd3qa-uc.a.run.app/health",
             "engine-c": "https://engine-c-3acobgd3qa-uc.a.run.app/health"
         }
-        
+
         all_healthy = True
         statuses = {}
-        
+
         async with aiohttp.ClientSession() as session:
             for name, url in engines.items():
                 try:
@@ -92,18 +92,18 @@ class HealthChecker:
                 except Exception as e:
                     statuses[name] = f"Error: {str(e)}"
                     all_healthy = False
-        
+
         return all_healthy, json.dumps(statuses)
-    
+
     @staticmethod
     async def check_all() -> Dict[str, any]:
         """Check all dependencies"""
         firestore_ok, firestore_msg = await HealthChecker.check_firestore()
         gcs_ok, gcs_msg = await HealthChecker.check_cloud_storage()
         engines_ok, engines_msg = await HealthChecker.check_engines()
-        
+
         all_ok = firestore_ok and gcs_ok and engines_ok
-        
+
         return {
             "status": "healthy" if all_ok else "degraded",
             "timestamp": datetime.utcnow().isoformat(),
@@ -323,19 +323,19 @@ class BacktestOrchestrator:
 def health_check(request):
     """
     Health check endpoint for Cloud Run startup probe
-    
+
     Returns 200 with health status and dependency checks
     Used for Cloud Run startup probe to validate service readiness
     """
     import asyncio
-    
+
     try:
         # Run async health checks
         health_status = asyncio.run(HealthChecker.check_all())
-        
+
         # Return 200 if healthy, 503 if degraded
         status_code = 200 if health_status["status"] == "healthy" else 503
-        
+
         return health_status, status_code
     except Exception as e:
         logger.error(f"Health check error: {e}")
@@ -350,7 +350,7 @@ def health_check(request):
 def ready_check(request):
     """
     Readiness check endpoint
-    
+
     Returns 200 if service is ready to accept backtest requests
     Used for Cloud Run readiness probe
     """
@@ -358,7 +358,7 @@ def ready_check(request):
         # Quick check that Firestore is accessible
         db = firestore.Client()
         _ = db.collection("_health_check").limit(1).stream()
-        
+
         return {
             "status": "ready",
             "timestamp": datetime.utcnow().isoformat()

@@ -1,9 +1,9 @@
 # 📊 Phase 5: Performance Testing Plan
 
-**Date**: January 20, 2026  
-**Duration**: 4 hours  
-**Objective**: Execute comprehensive performance testing under production-like load  
-**Sign-Off Authority**: Engineering Lead  
+**Date**: January 20, 2026
+**Duration**: 4 hours
+**Objective**: Execute comprehensive performance testing under production-like load
+**Sign-Off Authority**: Engineering Lead
 
 ---
 
@@ -35,21 +35,25 @@ Phase 5 focuses on validating system performance under realistic production load
 ### 2. Performance Targets
 
 **Latency Targets**:
+
 - p50 (median): <250ms ✅
 - p95 (95th percentile): <1,000ms ✅
 - p99 (99th percentile): <2,000ms ✅
 
 **Throughput Targets**:
+
 - Engine A (Orchestration): 2,000+ RPS
 - Engine B (ML Signals): 1,000+ RPS
 - Engine C (Execution): 1,500+ RPS
 - Frontend (Web): 3,000+ RPS
 
 **Error Rate Target**:
+
 - Overall: <0.1% ✅
 - Per-service: <0.2% ✅
 
 **Resource Utilization Targets**:
+
 - CPU: <80% peak
 - Memory: <70% peak
 - Network: <60% capacity
@@ -89,6 +93,7 @@ Frontend (Next.js Web App)
 ### User Journey Simulation
 
 **User Workflow** (repeats every 30 seconds during load test):
+
 1. Login (OAuth) - 10% of users
 2. Fetch portfolio - 80% of users
 3. Place paper trade - 5% of users
@@ -96,6 +101,7 @@ Frontend (Next.js Web App)
 5. Get AI signals - 40% of users
 
 **Request Mix**:
+
 - GET requests: 65%
 - POST requests: 20%
 - PUT requests: 10%
@@ -106,6 +112,7 @@ Frontend (Next.js Web App)
 ## 📊 Metrics to Collect
 
 ### Latency Metrics
+
 ```
 Per-endpoint:
 ├─ /health (Engine health check)
@@ -127,6 +134,7 @@ Per-endpoint:
 ```
 
 ### Throughput Metrics
+
 ```
 ├─ Requests/sec (RPS)
 ├─ Successful requests
@@ -136,6 +144,7 @@ Per-endpoint:
 ```
 
 ### Resource Metrics
+
 ```
 Per-service (collected via Cloud Monitoring):
 ├─ CPU utilization (%)
@@ -148,6 +157,7 @@ Per-service (collected via Cloud Monitoring):
 ```
 
 ### Error Analysis
+
 ```
 ├─ 2xx Success rate %
 ├─ 4xx Client error %
@@ -162,6 +172,7 @@ Per-service (collected via Cloud Monitoring):
 ## 🚀 Load Testing Phases
 
 ### Phase 5.1: Ramp-Up (10 minutes)
+
 **Objective**: Gradually increase load to detect scaling behavior
 
 - Start: 0 users
@@ -175,6 +186,7 @@ Per-service (collected via Cloud Monitoring):
   - Smooth transitions
 
 ### Phase 5.2: Sustained Load (15 minutes)
+
 **Objective**: Validate stable performance under peak load
 
 - Users: 1,000 concurrent
@@ -187,6 +199,7 @@ Per-service (collected via Cloud Monitoring):
   - Consistent throughput
 
 ### Phase 5.3: Ramp-Down (5 minutes)
+
 **Objective**: Verify graceful degradation and cleanup
 
 - Start: 1,000 users
@@ -204,6 +217,7 @@ Per-service (collected via Cloud Monitoring):
 ## 🔍 Success Criteria
 
 ### Must-Pass Criteria
+
 ```
 ✅ p95 latency < 1,000ms (all endpoints)
 ✅ Error rate < 0.1%
@@ -215,6 +229,7 @@ Per-service (collected via Cloud Monitoring):
 ```
 
 ### Should-Pass Criteria
+
 ```
 ✅ p99 latency < 2,000ms
 ✅ Throughput > 5,000 RPS (sustained)
@@ -223,6 +238,7 @@ Per-service (collected via Cloud Monitoring):
 ```
 
 ### Could-Pass Criteria
+
 ```
 ✅ p50 latency < 250ms
 ✅ Error rate < 0.05%
@@ -235,6 +251,7 @@ Per-service (collected via Cloud Monitoring):
 ## 🛠 Testing Tools & Setup
 
 ### Load Testing Tool: Apache JMeter
+
 ```bash
 # Installation
 cd backend/performance_tests
@@ -250,6 +267,7 @@ jmeter.properties (already configured)
 ```
 
 ### Monitoring: Cloud Monitoring API
+
 ```bash
 # Collect metrics during test
 gcloud monitoring time-series list \
@@ -258,6 +276,7 @@ gcloud monitoring time-series list \
 ```
 
 ### Logging: Cloud Logging
+
 ```bash
 # Query error logs
 gcloud logging read \
@@ -272,6 +291,7 @@ gcloud logging read \
 During this phase, we will establish baseline performance metrics that will be monitored during Phase 8 (24-48 hour production monitoring):
 
 ### Baseline to Record
+
 ```
 Metrics During Sustained Load (1000 users):
 ├─ Engine A:
@@ -304,16 +324,16 @@ Metrics During Sustained Load (1000 users):
 
 ## ⏰ Timeline
 
-| Phase | Task | Duration | Start | End |
-|-------|------|----------|-------|-----|
-| **5.1** | Ramp-up (0→1000 users) | 10 min | 00:00 | 00:10 |
-| **5.2** | Sustained load (1000 users) | 15 min | 00:10 | 00:25 |
-| **5.3** | Ramp-down (1000→0 users) | 5 min | 00:25 | 00:30 |
-| **5.4** | Data collection & analysis | 30 min | 00:30 | 01:00 |
-| **5.5** | Bottleneck identification | 30 min | 01:00 | 01:30 |
-| **5.6** | Results documentation | 30 min | 01:30 | 02:00 |
-| **5.7** | Engineering Lead review | 30 min | 02:00 | 02:30 |
-| **5.8** | Git commit & push | 15 min | 02:30 | 02:45 |
+| Phase   | Task                        | Duration | Start | End   |
+| ------- | --------------------------- | -------- | ----- | ----- |
+| **5.1** | Ramp-up (0→1000 users)      | 10 min   | 00:00 | 00:10 |
+| **5.2** | Sustained load (1000 users) | 15 min   | 00:10 | 00:25 |
+| **5.3** | Ramp-down (1000→0 users)    | 5 min    | 00:25 | 00:30 |
+| **5.4** | Data collection & analysis  | 30 min   | 00:30 | 01:00 |
+| **5.5** | Bottleneck identification   | 30 min   | 01:00 | 01:30 |
+| **5.6** | Results documentation       | 30 min   | 01:30 | 02:00 |
+| **5.7** | Engineering Lead review     | 30 min   | 02:00 | 02:30 |
+| **5.8** | Git commit & push           | 15 min   | 02:30 | 02:45 |
 
 **Total Phase 5 Time**: 4 hours ✅
 
@@ -322,6 +342,7 @@ Metrics During Sustained Load (1000 users):
 ## 🔐 Test Execution Checklist
 
 ### Pre-Test (30 minutes before)
+
 - [ ] Verify all 4 services are healthy (HTTP 200 response)
 - [ ] Clear application logs to avoid noise
 - [ ] Verify database is in consistent state
@@ -332,6 +353,7 @@ Metrics During Sustained Load (1000 users):
 - [ ] Start monitoring dashboards
 
 ### During Test
+
 - [ ] Monitor real-time metrics on Cloud Console
 - [ ] Watch for error spikes
 - [ ] Observe auto-scaling behavior
@@ -341,6 +363,7 @@ Metrics During Sustained Load (1000 users):
 - [ ] Monitor cost implications
 
 ### Post-Test (30 minutes after)
+
 - [ ] Stop load generation
 - [ ] Verify services return to idle state
 - [ ] Check for orphaned connections
@@ -379,6 +402,7 @@ By end of Phase 5, we will have:
 ## 🎯 Phase 5 Success Criteria
 
 **Phase 5 is COMPLETE when**:
+
 - ✅ Load test executed successfully (1000 concurrent users)
 - ✅ p95 latency < 1,000ms on all endpoints
 - ✅ Error rate < 0.1%
@@ -395,6 +419,7 @@ By end of Phase 5, we will have:
 Upon successful completion of Phase 5, the deployment pipeline proceeds to:
 
 **Phase 6: Security Audit** (2 hours)
+
 - Comprehensive security review
 - CORS verification
 - Data protection assessment
@@ -406,6 +431,7 @@ Upon successful completion of Phase 5, the deployment pipeline proceeds to:
 ## 📞 Contact & Escalation
 
 **Performance Issues Escalation Path**:
+
 1. Engineering Lead (primary)
 2. Platform Engineer (if scaling issues)
 3. GCP Support (if infrastructure issues)
@@ -414,6 +440,6 @@ Upon successful completion of Phase 5, the deployment pipeline proceeds to:
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: January 20, 2026*  
-*Status: Ready for Execution*
+_Document Version: 1.0_
+_Last Updated: January 20, 2026_
+_Status: Ready for Execution_

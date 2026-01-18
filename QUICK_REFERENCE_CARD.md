@@ -12,12 +12,14 @@ Frontend:    https://galvanic-pulsar-482815-h0.web.app
 ## Common Commands
 
 ### Check Service Status
+
 ```bash
 gcloud run services list --project=galvanic-pulsar-482815-h0
 gcloud run services describe engine-a --region=us-central1 --project=galvanic-pulsar-482815-h0
 ```
 
 ### View Recent Logs
+
 ```bash
 gcloud logging read "resource.type=cloud_run_revision" \
   --project=galvanic-pulsar-482815-h0 --limit=50
@@ -28,6 +30,7 @@ gcloud logging read "severity=ERROR" \
 ```
 
 ### Monitor Specific Service
+
 ```bash
 gcloud run services logs read engine-c \
   --region=us-central1 \
@@ -36,6 +39,7 @@ gcloud run services logs read engine-c \
 ```
 
 ### Check Environment Variables
+
 ```bash
 gcloud run services describe engine-a \
   --region=us-central1 \
@@ -44,6 +48,7 @@ gcloud run services describe engine-a \
 ```
 
 ### Restart Service (uses existing image)
+
 ```bash
 gcloud run deploy engine-a \
   --image=us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest \
@@ -52,6 +57,7 @@ gcloud run deploy engine-a \
 ```
 
 ### Rollback to Previous Revision
+
 ```bash
 gcloud run services update-traffic engine-a \
   --to-revisions=engine-a-00043-prev=100 \
@@ -62,6 +68,7 @@ gcloud run services update-traffic engine-a \
 ## Security Verification
 
 ### Test CORS (Localhost should be BLOCKED)
+
 ```bash
 curl -i -H "Origin: http://localhost:3000" \
   https://engine-a-3acobgd3qa-uc.a.run.app/health
@@ -69,6 +76,7 @@ curl -i -H "Origin: http://localhost:3000" \
 ```
 
 ### Test CORS (Production should be ALLOWED)
+
 ```bash
 curl -i -H "Origin: https://infinityai.pro" \
   https://engine-a-3acobgd3qa-uc.a.run.app/health
@@ -76,6 +84,7 @@ curl -i -H "Origin: https://infinityai.pro" \
 ```
 
 ### Check KMS Key
+
 ```bash
 gcloud kms keys describe dhan-credentials \
   --location=us-central1 \
@@ -84,6 +93,7 @@ gcloud kms keys describe dhan-credentials \
 ```
 
 ### Check KMS IAM Permissions
+
 ```bash
 gcloud kms keys get-iam-policy dhan-credentials \
   --location=us-central1 \
@@ -94,6 +104,7 @@ gcloud kms keys get-iam-policy dhan-credentials \
 ## Firestore Operations
 
 ### Check Credentials Collection
+
 ```bash
 # View encrypted credentials (via CLI)
 gcloud firestore documents list --collection-path=dhan_credentials \
@@ -107,6 +118,7 @@ gcloud firestore documents list --collection-path=user_broker_credentials \
 ## Environment Variables
 
 **Production Values** (all 3 engines):
+
 ```bash
 ENVIRONMENT=production
 GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0
@@ -118,12 +130,14 @@ ENABLE_LOCALHOST_CORS=false
 ## Build Commands
 
 ### Build Individual Engine
+
 ```bash
 gcloud builds submit --config=backend/engine-a/cloudbuild.yaml \
   --project=galvanic-pulsar-482815-h0 --region=us-central1
 ```
 
 ### Build Frontend
+
 ```bash
 cd frontend/web-app
 npm run build
@@ -133,6 +147,7 @@ firebase deploy --only hosting --project=galvanic-pulsar-482815-h0
 ## Monitoring Dashboards
 
 **Cloud Console URLs**:
+
 - Cloud Run: https://console.cloud.google.com/run?project=galvanic-pulsar-482815-h0
 - Logging: https://console.cloud.google.com/logs?project=galvanic-pulsar-482815-h0
 - Cloud Build: https://console.cloud.google.com/cloud-build?project=galvanic-pulsar-482815-h0
@@ -141,6 +156,7 @@ firebase deploy --only hosting --project=galvanic-pulsar-482815-h0
 ## Emergency Procedures
 
 ### If Service Down
+
 ```bash
 # Check status
 gcloud run services describe engine-a --region=us-central1
@@ -156,6 +172,7 @@ gcloud run services logs read engine-a --region=us-central1 --limit=100
 ```
 
 ### If CORS Errors
+
 ```bash
 # Check current config
 gcloud run services describe engine-a \
@@ -168,6 +185,7 @@ gcloud run services update engine-a \
 ```
 
 ### If Credentials Won't Decrypt
+
 ```bash
 # Check Engine C logs
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=engine-c" \
@@ -182,23 +200,23 @@ python tools/test_decryption.py
 
 ## Key Files & Locations
 
-| File | Purpose |
-|------|---------|
-| `backend/shared/cors_config.py` | CORS configuration |
-| `backend/engine-a/cloudbuild.yaml` | Engine A build config |
-| `backend/engine-b/cloudbuild.yaml` | Engine B build config |
-| `backend/engine-c/src/user_credentials.py` | Credential encryption/decryption |
-| `frontend/web-app/next.config.ts` | Frontend Firebase config |
-| `frontend/functions/lib/storeCredentials.js` | Cloud Functions encryption |
+| File                                         | Purpose                          |
+| -------------------------------------------- | -------------------------------- |
+| `backend/shared/cors_config.py`              | CORS configuration               |
+| `backend/engine-a/cloudbuild.yaml`           | Engine A build config            |
+| `backend/engine-b/cloudbuild.yaml`           | Engine B build config            |
+| `backend/engine-c/src/user_credentials.py`   | Credential encryption/decryption |
+| `frontend/web-app/next.config.ts`            | Frontend Firebase config         |
+| `frontend/functions/lib/storeCredentials.js` | Cloud Functions encryption       |
 
 ## Documentation
 
-| Document | Purpose |
-|----------|---------|
-| `PRODUCTION_DEPLOYMENT_COMPLETE.md` | Full deployment report |
-| `KMS_AND_ENCRYPTION_STATUS.md` | Security architecture |
-| `COMPREHENSIVE_ANALYSIS_AND_FIXES.md` | System analysis |
-| `KMS_CREDENTIAL_ENCRYPTION_SETUP.md` | KMS implementation guide |
+| Document                              | Purpose                  |
+| ------------------------------------- | ------------------------ |
+| `PRODUCTION_DEPLOYMENT_COMPLETE.md`   | Full deployment report   |
+| `KMS_AND_ENCRYPTION_STATUS.md`        | Security architecture    |
+| `COMPREHENSIVE_ANALYSIS_AND_FIXES.md` | System analysis          |
+| `KMS_CREDENTIAL_ENCRYPTION_SETUP.md`  | KMS implementation guide |
 
 ## Git Workflow
 
@@ -225,6 +243,7 @@ git branch -a
 ## Contact & Support
 
 **Issues/Escalation**:
+
 - GitHub Issues: https://github.com/raghu-1718/InfinityAI.Pro/issues
 - GCP Support: https://console.cloud.google.com/support
 - Email: ops@infinityai.pro
@@ -233,6 +252,6 @@ git branch -a
 
 ---
 
-**Last Updated**: January 19, 2026  
-**Status**: 🟢 Production Ready  
+**Last Updated**: January 19, 2026
+**Status**: 🟢 Production Ready
 **Next Review**: After 24-hour monitoring period

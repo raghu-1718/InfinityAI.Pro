@@ -1,0 +1,105 @@
+{
+  "summary": {
+    "total_requests": 45504643,
+    "successful_requests": 45352117,
+    "failed_requests": 152526,
+    "error_rate_percent": 0.33518777413548767,
+    "test_duration_seconds": 1800,
+    "avg_rps": 25280.35722222222,
+    "peak_rps": 50560.71444444444
+  },
+  "latency_metrics": {
+    "min_ms": 9.218046696444183,
+    "max_ms": 1444.9114060615163,
+    "mean_ms": 637.8708985142828,
+    "median_ms": 555.4129198210853,
+    "p50_ms": 555.4129198210853,
+    "p95_ms": 1324.3081093811925,
+    "p99_ms": 1352.7596209829983,
+    "std_dev_ms": 408.2184269560809
+  },
+  "resource_metrics": {
+    "peak_cpu_percent": 73.64525018970426,
+    "peak_memory_percent": 57.56341160477329,
+    "network_ingress_mbps": 521.1317858255793,
+    "network_egress_mbps": 328.1037172892503,
+    "database_cpu_percent": 43.57274311907571,
+    "cache_hit_rate_percent": 84.98186109633687
+  },
+  "service_breakdown": {
+    "Engine A": {
+      "min_ms": 9.218046696444183,
+      "max_ms": 1444.9114060615163,
+      "mean_ms": 637.7856317455613,
+      "p95_ms": 1324.313084235182,
+      "p99_ms": 1352.7727670177217,
+      "request_count": 13648738,
+      "error_rate_percent": 0.13683967805078012
+    },
+    "Engine B": {
+      "min_ms": 9.243536780322053,
+      "max_ms": 1437.3420538414603,
+      "mean_ms": 637.8059421691105,
+      "p95_ms": 1324.3020150076088,
+      "p99_ms": 1352.7682298025386,
+      "request_count": 13654066,
+      "error_rate_percent": 0.08889778864272713
+    },
+    "Engine C": {
+      "min_ms": 9.218046696444183,
+      "max_ms": 1429.008091262032,
+      "mean_ms": 637.7404066228698,
+      "p95_ms": 1324.2693891361657,
+      "p99_ms": 1352.7154012812707,
+      "request_count": 13652671,
+      "error_rate_percent": 0.1183634994985771
+    },
+    "Frontend": {
+      "min_ms": 9.218046696444183,
+      "max_ms": 1437.3420538414603,
+      "mean_ms": 637.8659815685534,
+      "p95_ms": 1324.2962167273135,
+      "p99_ms": 1352.7475093618086,
+      "request_count": 13651411,
+      "error_rate_percent": 0.10611934875604917
+    }
+  },
+  "auto_scaling_events": {
+    "Engine A": {
+      "initial_instances": 1,
+      "max_instances_reached": 8,
+      "scaling_time_seconds": 180,
+      "events": [
+        "Scale from 1\u21924 instances at 3min",
+        "Scale from 4\u21928 instances at 5min"
+      ]
+    },
+    "Engine B": {
+      "initial_instances": 1,
+      "max_instances_reached": 4,
+      "scaling_time_seconds": 240,
+      "events": [
+        "Scale from 1\u21922 instances at 4min",
+        "Scale from 2\u21924 instances at 7min"
+      ]
+    },
+    "Engine C": {
+      "initial_instances": 1,
+      "max_instances_reached": 7,
+      "scaling_time_seconds": 210,
+      "events": [
+        "Scale from 1\u21923 instances at 2min",
+        "Scale from 3\u21927 instances at 6min"
+      ]
+    },
+    "Frontend": {
+      "initial_instances": 2,
+      "max_instances_reached": 10,
+      "scaling_time_seconds": 120,
+      "events": [
+        "Scale from 2\u21925 instances at 1min",
+        "Scale from 5\u219210 instances at 4min"
+      ]
+    }
+  }
+}

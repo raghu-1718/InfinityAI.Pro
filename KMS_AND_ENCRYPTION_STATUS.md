@@ -1,7 +1,7 @@
 # 🔐 KMS & Encryption Status Report
 
-**Date**: January 19, 2026  
-**Project**: galvanic-pulsar-482815-h0  
+**Date**: January 19, 2026
+**Project**: galvanic-pulsar-482815-h0
 **Status**: ✅ ENCRYPTION ACTIVE (Local AES-256-GCM + KMS Ready)
 
 ---
@@ -9,6 +9,7 @@
 ## Executive Summary
 
 The system **currently uses local AES-256-GCM encryption** for all sensitive credentials:
+
 - ✅ Cloud Functions: AES-256-GCM encryption before Firestore write
 - ✅ Engine C: AES-256-GCM decryption when loading credentials
 - ✅ Firestore: All credentials stored encrypted
@@ -21,11 +22,12 @@ The system **currently uses local AES-256-GCM encryption** for all sensitive cre
 
 ### Local AES-256-GCM (ACTIVE)
 
-**Location**: Frontend Cloud Functions and Engine C  
-**Algorithm**: AES-256-GCM (256-bit key)  
-**Security Level**: FIPS-140-2 equivalent  
+**Location**: Frontend Cloud Functions and Engine C
+**Algorithm**: AES-256-GCM (256-bit key)
+**Security Level**: FIPS-140-2 equivalent
 
 **Encryption Flow**:
+
 ```
 User Browser
     ↓ Enter credentials (client_id, access_token)
@@ -45,6 +47,7 @@ Engine C (execute trades)
 ```
 
 **Encryption Key Management**:
+
 - **Source**: `ENCRYPTION_KEY` environment variable
 - **Storage**: Firebase Secret Manager (not committed to git)
 - **Format**: 32-byte hex string (256-bit)
@@ -55,23 +58,25 @@ Engine C (execute trades)
 **File**: [`frontend/functions/lib/storeCredentials.js`](frontend/functions/lib/storeCredentials.js)
 
 **Encryption Function**:
+
 ```typescript
 function encrypt(text: string): string {
   const keyHex = process.env.ENCRYPTION_KEY;
-  const key = Buffer.from(keyHex, 'hex');
+  const key = Buffer.from(keyHex, "hex");
   const iv = crypto.randomBytes(16); // Random initialization vector
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
+  let encrypted = cipher.update(text, "utf8", "hex");
+  encrypted += cipher.final("hex");
   const authTag = cipher.getAuthTag();
-  
+
   // Format: iv:authTag:ciphertext (all hex-encoded)
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
 }
 ```
 
 **Stored in Firestore**:
+
 ```json
 {
   "user_id": "user123",
@@ -88,6 +93,7 @@ function encrypt(text: string): string {
 **File**: [`backend/engine-c/src/user_credentials.py`](backend/engine-c/src/user_credentials.py)
 
 **Decryption Function**:
+
 ```python
 def _decrypt(self, encrypted_data: str) -> str:
   """Decrypt AES-256-GCM (format: iv:tag:ciphertext)"""
@@ -95,17 +101,18 @@ def _decrypt(self, encrypted_data: str) -> str:
   iv = bytes.fromhex(parts[0])
   tag = bytes.fromhex(parts[1])
   ciphertext = bytes.fromhex(parts[2])
-  
+
   decryptor = Cipher(
     algorithms.AES(self.encryption_key),
     modes.GCM(iv, tag),
   ).decryptor()
-  
+
   data = decryptor.update(ciphertext) + decryptor.finalize()
   return data.decode()
 ```
 
 **Usage**:
+
 ```python
 # Load encrypted credentials from Firestore
 cred_doc = db.collection('dhan_credentials').document(user_id).get()
@@ -127,8 +134,8 @@ order = dhan_client.place_order(symbol, quantity, price, order_type)
 
 ### ✅ KMS Key Ring Created
 
-**Name**: `infinityai-credentials`  
-**Location**: `us-central1`  
+**Name**: `infinityai-credentials`
+**Location**: `us-central1`
 **Created**: 2026-01-18T21:18:01Z
 
 ```bash
@@ -139,10 +146,10 @@ gcloud kms keyrings describe infinityai-credentials \
 
 ### ✅ KMS Encryption Key Created
 
-**Name**: `dhan-credentials`  
-**Algorithm**: AES-256 (GOOGLE_SYMMETRIC_ENCRYPTION)  
-**Purpose**: ENCRYPT_DECRYPT  
-**Rotation**: 90 days (next: 2026-04-19)  
+**Name**: `dhan-credentials`
+**Algorithm**: AES-256 (GOOGLE_SYMMETRIC_ENCRYPTION)
+**Purpose**: ENCRYPT_DECRYPT
+**Rotation**: 90 days (next: 2026-04-19)
 **Created**: 2026-01-18T21:18:06Z
 
 ```bash
@@ -155,10 +162,12 @@ gcloud kms keys describe dhan-credentials \
 ### ✅ IAM Permissions Configured
 
 **Cloud Functions** (`galvanic-pulsar-482815-h0@appspot.gserviceaccount.com`):
+
 - ✅ `roles/cloudkms.cryptoKeyEncrypter` - Can encrypt
 - Status: ACTIVE
 
 **Engine C** (`engine-c-sa@galvanic-pulsar-482815-h0.iam.gserviceaccount.com`):
+
 - ✅ `roles/cloudkms.cryptoKeyDecrypter` - Can decrypt
 - Status: ACTIVE
 
@@ -176,18 +185,19 @@ gcloud kms keys get-iam-policy dhan-credentials \
 
 ### Current Local Encryption (✅ ACTIVE)
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| **Algorithm** | ✅ Secure | AES-256-GCM (NIST approved) |
-| **Key Size** | ✅ Secure | 256-bit (2^256 possible keys) |
-| **IV/Nonce** | ✅ Secure | 12-byte random nonce per encryption |
-| **Authentication** | ✅ Secure | GCM provides authenticated encryption |
-| **Key Storage** | ⚠️ Manual | Environment variable (no automatic rotation) |
-| **Key Rotation** | ⚠️ Manual | Requires manual Secret Manager update |
-| **Audit Trail** | ⚠️ Limited | No centralized audit logging |
-| **Key Escape** | ⚠️ Risk | Key in memory during operations |
+| Aspect             | Status     | Details                                      |
+| ------------------ | ---------- | -------------------------------------------- |
+| **Algorithm**      | ✅ Secure  | AES-256-GCM (NIST approved)                  |
+| **Key Size**       | ✅ Secure  | 256-bit (2^256 possible keys)                |
+| **IV/Nonce**       | ✅ Secure  | 12-byte random nonce per encryption          |
+| **Authentication** | ✅ Secure  | GCM provides authenticated encryption        |
+| **Key Storage**    | ⚠️ Manual  | Environment variable (no automatic rotation) |
+| **Key Rotation**   | ⚠️ Manual  | Requires manual Secret Manager update        |
+| **Audit Trail**    | ⚠️ Limited | No centralized audit logging                 |
+| **Key Escape**     | ⚠️ Risk    | Key in memory during operations              |
 
 **Risk Level**: 🟢 **LOW** (for current scale)
+
 - Credentials user-isolated in Firestore (ACL enforced)
 - Encryption key in secure environment variables
 - Plaintext only exists in memory during operations
@@ -199,27 +209,27 @@ gcloud kms keys get-iam-policy dhan-credentials \
 
 ### When to Implement KMS:
 
-| Scenario | Recommendation |
-|----------|---|
-| **Current Scale** | Local AES-256-GCM is sufficient |
-| **500+ Users** | Upgrade to KMS for audit trail |
-| **Compliance Required** | Upgrade for FIPS-140-2 HSM (soon) |
+| Scenario                    | Recommendation                        |
+| --------------------------- | ------------------------------------- |
+| **Current Scale**           | Local AES-256-GCM is sufficient       |
+| **500+ Users**              | Upgrade to KMS for audit trail        |
+| **Compliance Required**     | Upgrade for FIPS-140-2 HSM (soon)     |
 | **Key Rotation Automation** | Upgrade for automated 90-day rotation |
-| **PCI-DSS Required** | Upgrade for certified key management |
+| **PCI-DSS Required**        | Upgrade for certified key management  |
 
 ### KMS Integration Benefits:
 
-| Feature | Local AES | Cloud KMS |
-|---------|-----------|-----------|
-| **Encryption** | ✅ Yes | ✅ Yes |
-| **Automated Rotation** | ❌ No | ✅ Yes (90-day) |
-| **Audit Trail** | ⚠️ Manual | ✅ Cloud Logging |
-| **HSM Protection** | ❌ No | ⏳ Soon (available) |
-| **Key Never Leaves GCP** | ❌ No* | ✅ Yes |
-| **Cost** | $0 | $0.25/month |
-| **Complexity** | Low | Medium |
+| Feature                  | Local AES | Cloud KMS           |
+| ------------------------ | --------- | ------------------- |
+| **Encryption**           | ✅ Yes    | ✅ Yes              |
+| **Automated Rotation**   | ❌ No     | ✅ Yes (90-day)     |
+| **Audit Trail**          | ⚠️ Manual | ✅ Cloud Logging    |
+| **HSM Protection**       | ❌ No     | ⏳ Soon (available) |
+| **Key Never Leaves GCP** | ❌ No\*   | ✅ Yes              |
+| **Cost**                 | $0        | $0.25/month         |
+| **Complexity**           | Low       | Medium              |
 
-*Key is in code memory during encryption/decryption
+\*Key is in code memory during encryption/decryption
 
 ### KMS Implementation Steps (If Needed):
 
@@ -365,36 +375,40 @@ gcloud kms keys get-iam-policy dhan-credentials \
 
 ## Deployment Status
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Cloud Functions (Encrypt)** | ✅ DEPLOYED | AES-256-GCM active |
-| **Engine C (Decrypt)** | ✅ DEPLOYED | AES-256-GCM active |
-| **Firestore** | ✅ SECURED | User-isolated, encrypted |
-| **KMS Key Ring** | ✅ CREATED | infinityai-credentials |
-| **KMS Key** | ✅ CREATED | dhan-credentials (AES-256) |
-| **KMS IAM Perms** | ✅ CONFIGURED | Ready for migration |
+| Component                     | Status        | Details                    |
+| ----------------------------- | ------------- | -------------------------- |
+| **Cloud Functions (Encrypt)** | ✅ DEPLOYED   | AES-256-GCM active         |
+| **Engine C (Decrypt)**        | ✅ DEPLOYED   | AES-256-GCM active         |
+| **Firestore**                 | ✅ SECURED    | User-isolated, encrypted   |
+| **KMS Key Ring**              | ✅ CREATED    | infinityai-credentials     |
+| **KMS Key**                   | ✅ CREATED    | dhan-credentials (AES-256) |
+| **KMS IAM Perms**             | ✅ CONFIGURED | Ready for migration        |
 
 ---
 
 ## Next Steps
 
 ### Immediate (Complete ✅)
+
 - [x] Verify local AES-256-GCM encryption active
 - [x] Create KMS infrastructure
 - [x] Grant IAM permissions
 - [x] Document current security posture
 
 ### Short-term (Optional)
+
 - [ ] Run encryption/decryption tests
 - [ ] Verify DhanHQ API calls with decrypted credentials
 - [ ] Set up Cloud Logging monitoring
 
 ### Medium-term (If Compliance Needed)
+
 - [ ] Migrate to KMS encryption (~3-4 hours)
 - [ ] Enable automated 90-day key rotation
 - [ ] Set up audit logging alerts
 
 ### Long-term (HSM)
+
 - [ ] Upgrade to Cloud KMS with HSM (FIPS-140-2)
 - [ ] PCI-DSS compliance if needed
 - [ ] Key escrow and recovery procedures
@@ -404,12 +418,14 @@ gcloud kms keys get-iam-policy dhan-credentials \
 ## Cost Breakdown
 
 ### Current (Local Encryption)
+
 - **Cloud Functions**: ~$2/month
 - **Engine C**: ~$0 (no additional cost)
 - **Firestore**: ~$5/month
 - **Total**: ~$7/month
 
 ### With KMS (Optional Future)
+
 - **Cloud Functions**: ~$2/month
 - **Engine C**: ~$0 (no additional cost)
 - **Firestore**: ~$5/month
@@ -425,12 +441,14 @@ gcloud kms keys get-iam-policy dhan-credentials \
 If issues occur after testing:
 
 ### Option 1: Continue Local Encryption
+
 ```bash
 # Keep current setup - no action needed
 # AES-256-GCM is production-grade and secure
 ```
 
 ### Option 2: Emergency Credential Rotation
+
 ```bash
 # Update ENCRYPTION_KEY in Secrets Manager
 gcloud secrets versions add ENCRYPTION_KEY --data-file=new_key.bin
@@ -440,6 +458,7 @@ gcloud secrets versions add ENCRYPTION_KEY --data-file=new_key.bin
 ```
 
 ### Option 3: Revert to Plaintext (Not Recommended!)
+
 ```bash
 # Remove encryption calls
 # Re-store credentials as plaintext
@@ -468,6 +487,7 @@ gcloud secrets versions add ENCRYPTION_KEY --data-file=new_key.bin
 ### Encryption Key Rotation
 
 **Local (Manual)**:
+
 ```bash
 # 1. Generate new 32-byte key
 openssl rand -hex 16 > new_key.hex
@@ -480,6 +500,7 @@ gcloud secrets versions add ENCRYPTION_KEY --data-file=new_key.hex
 ```
 
 **KMS (Automatic, when migrated)**:
+
 ```bash
 # KMS automatically rotates every 90 days
 # All operations use latest key version
@@ -508,6 +529,7 @@ gcloud logging read "protoPayload.methodName=~'firestore.dhan_credentials" \
 **Security Status**: ✅ **PRODUCTION READY**
 
 The InfinityAI.Pro trading platform has **active end-to-end encryption** for all sensitive credentials:
+
 - ✅ Credentials encrypted before storage
 - ✅ Credentials decrypted on-demand
 - ✅ User data isolation enforced
@@ -517,6 +539,6 @@ The InfinityAI.Pro trading platform has **active end-to-end encryption** for all
 
 ---
 
-**Document Generated**: January 19, 2026, 22:30 UTC  
-**Status**: ✅ VERIFICATION COMPLETE  
+**Document Generated**: January 19, 2026, 22:30 UTC
+**Status**: ✅ VERIFICATION COMPLETE
 **Next Review**: Before production trading launch
