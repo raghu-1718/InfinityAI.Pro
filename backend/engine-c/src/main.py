@@ -200,6 +200,10 @@ except ImportError:
     from shared.cors_config import ALLOWED_ORIGINS
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
+
+# Register Options Analytics Router (Phase 1: Market Data Endpoints)
+try:
+    from src.options_analytics_api import router as analytics_router
     app.include_router(analytics_router)
     logger.info("✅ Options Analytics API endpoints enabled")
 except ImportError as e:
