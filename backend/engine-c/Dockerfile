@@ -17,7 +17,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY backend/shared /app/shared
+COPY backend/options /app/backend/options
 COPY backend/engine-c/src /app/src
+COPY backend/config /app/config
 
 # Environment variables
 ENV PORT=8080
