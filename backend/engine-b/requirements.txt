@@ -29,6 +29,9 @@ google-cloud-logging>=3.10.0
 # Cloud Storage - ML model and trading history storage
 google-cloud-storage>=2.14.0
 
+# Cloud Firestore - signal and trade data persistence
+google-cloud-firestore>=2.14.0
+
 # =====================================================================
 # News & RSS Integration
 # =====================================================================

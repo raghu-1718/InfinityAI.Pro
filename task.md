@@ -49,3 +49,15 @@
   - [x] **Dhan Integration (Engine C)**: Verify broker connectivity and execution logic.
   - [x] **Data Flow**: Trace request/response cycle across all components.
   - [x] **Final Report**: Generate `verification_report.md`.
+
+- [ ] **9. Critical Fixes & Tests (Current Sprint)**
+  - [/] **Dhan Credential Fix**:
+    - [x] Verify credentials (valid).
+    - [x] Debug Frontend/Backend Flow.
+    - [x] Fix Backend (Engine C) logic for unmapped users (Emergency Fallback).
+    - [/] Deploy Engine C (In Progress).
+  - [x] **Unit Testing Implementation**:
+    - [x] Engine C: Dhan Integration Tests (`test_dhan_integration.py`).
+    - [x] Engine A: Risk Manager Tests (`test_risk.py`).
+  - [ ] **E2E Script Update**:
+    - [ ] Remove legacy services from `verify_live_trading.py`.

@@ -1,7 +1,8 @@
 # 🚀 IMMEDIATE ACTIONS - PRIORITY 1 SECURITY FIXES
-**Status**: ACTION REQUIRED TODAY  
-**Project**: galvanic-pulsar-482815-h0  
-**Estimated Time**: 4-6 hours  
+
+**Status**: ACTION REQUIRED TODAY
+**Project**: galvanic-pulsar-482815-h0
+**Estimated Time**: 4-6 hours
 
 ---
 
@@ -10,11 +11,13 @@
 ### Current State: TWO DIFFERENT API KEYS
 
 **File 1**: `frontend/web-app/next.config.ts`
+
 ```typescript
 NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k",
 ```
 
 **File 2**: `frontend/web-app/src/lib/firebase/config.ts`
+
 ```typescript
 apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",
 ```
@@ -24,12 +27,14 @@ apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",
 The correct API key is in `firebase/config.ts` (this file is used by actual Firebase SDK init).
 
 **Step 1**: Update `next.config.ts` to match
+
 ```bash
 cd c:\workspace\InfinityAI.Pro
 ```
 
 **Step 2**: Replace in next.config.ts (lines 29-46)
 OLD:
+
 ```typescript
 env: {
   NEXT_PUBLIC_ENGINE_A_URL: "https://engine-a-228557716858.us-central1.run.app",
@@ -46,6 +51,7 @@ env: {
 ```
 
 NEW:
+
 ```typescript
 env: {
   // Use Firebase Hosting rewrites instead of hardcoded URLs
@@ -60,6 +66,7 @@ env: {
 ```
 
 **Step 3**: Verify
+
 ```bash
 # Build frontend to catch any issues early
 cd frontend/web-app
@@ -69,6 +76,7 @@ npm run build
 ```
 
 **Verification**:
+
 - [ ] next.config.ts has matching API key from firebase/config.ts
 - [ ] Firebase auth login works
 - [ ] No console errors about mismatched configs
@@ -80,8 +88,9 @@ npm run build
 ### Current Issue: DEV ORIGINS IN PRODUCTION
 
 **Files with issue**:
+
 - `backend/engine-a/src/main.py` (lines 136-138)
-- `backend/engine-b/src/main.py` (lines 323-325)  
+- `backend/engine-b/src/main.py` (lines 323-325)
 - `backend/engine-c/src/main.py` (lines 377-378)
 
 ### ✅ ACTION: Environment-Gate CORS Origins
@@ -97,14 +106,14 @@ from typing import List
 def get_allowed_origins() -> List[str]:
     """
     Get allowed CORS origins based on environment.
-    
+
     DEVELOPMENT: Allows localhost for local testing
     PRODUCTION: Only allows whitelisted domains
     """
-    
+
     environment = os.getenv("ENVIRONMENT", "production").lower()
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
-    
+
     # Base production origins
     production_origins = [
         "https://infinityai.pro",
@@ -113,7 +122,7 @@ def get_allowed_origins() -> List[str]:
         f"https://{project_id}.web.app",
         f"https://{project_id}.firebaseapp.com",
     ]
-    
+
     # Development-only origins (never in production)
     development_only = [
         "http://localhost:3000",
@@ -123,7 +132,7 @@ def get_allowed_origins() -> List[str]:
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8080",
     ]
-    
+
     if environment == "development":
         return production_origins + development_only
     else:
@@ -139,6 +148,7 @@ ALLOWED_ORIGINS = get_allowed_origins()
 #### Engine A: `backend/engine-a/src/main.py`
 
 OLD (lines 130-147):
+
 ```python
 # CORS allowed origins for production
 ALLOWED_ORIGINS = [
@@ -157,6 +167,7 @@ ALLOWED_ORIGINS = [
 ```
 
 NEW:
+
 ```python
 # Import from shared config
 from src.shared.cors_config import ALLOWED_ORIGINS
@@ -200,6 +211,7 @@ done
 ```
 
 **Verification**:
+
 - [ ] CORS request from localhost rejected in production (`curl -H "Origin: http://localhost:3000" ...` returns 403)
 - [ ] CORS request from infinityai.pro accepted (returns 200)
 - [ ] All three engines report `ENVIRONMENT=production` in env vars
@@ -211,6 +223,7 @@ done
 ### Current Issue: PLAINTEXT TOKENS STORED
 
 **Problem**:
+
 ```firestore
 dhan_credentials/{userId} {
   "access_token": "eyJ0eXAi...",  // Plaintext - SECURITY RISK
@@ -254,27 +267,27 @@ gcloud kms keys add-iam-policy-binding credentials \
 **File**: `frontend/functions/src/storeCredentials.ts`
 
 ```typescript
-import { CloudKMS } from '@google-cloud/kms';
+import { CloudKMS } from "@google-cloud/kms";
 
 const kms = new CloudKMS();
 
 interface EncryptedCredentials {
-  access_token: string;  // Encrypted (base64)
-  client_id: string;     // Plaintext (OK - not secret)
+  access_token: string; // Encrypted (base64)
+  client_id: string; // Plaintext (OK - not secret)
   encrypted: true;
   encrypted_at: FirebaseFirestore.Timestamp;
-  encryption_key: string;  // Reference to KMS key used
+  encryption_key: string; // Reference to KMS key used
 }
 
 async function encryptCredential(plaintext: string): Promise<string> {
   const keyName = `projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai/cryptoKeys/credentials`;
-  
+
   const response = await kms.encrypt({
     name: keyName,
-    plaintext: Buffer.from(plaintext).toString('base64'),
+    plaintext: Buffer.from(plaintext).toString("base64"),
   });
-  
-  return response.ciphertext || '';
+
+  return response.ciphertext || "";
 }
 
 export const submitDhanCredentialsV2 = onCall(
@@ -293,7 +306,10 @@ export const submitDhanCredentialsV2 = onCall(
 
     // Validate
     if (!clientId || !accessToken) {
-      throw new HttpsError("invalid-argument", "Missing clientId or accessToken");
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing clientId or accessToken",
+      );
     }
 
     try {
@@ -304,15 +320,22 @@ export const submitDhanCredentialsV2 = onCall(
       const timestamp = admin.firestore.Timestamp.now();
 
       // Store encrypted credentials
-      await db.collection("dhan_credentials").doc(uid).set({
-        client_id: clientId,  // Plaintext OK
-        access_token: encryptedToken,  // Encrypted ✅
-        api_key: apiKey,  // Plaintext OK (though should also encrypt)
-        api_secret: apiSecret,  // Encrypted recommended
-        encrypted: true,  // Marker for decryption
-        encrypted_at: timestamp,
-        encryption_key: "projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai/cryptoKeys/credentials",
-      } as EncryptedCredentials, { merge: true });
+      await db
+        .collection("dhan_credentials")
+        .doc(uid)
+        .set(
+          {
+            client_id: clientId, // Plaintext OK
+            access_token: encryptedToken, // Encrypted ✅
+            api_key: apiKey, // Plaintext OK (though should also encrypt)
+            api_secret: apiSecret, // Encrypted recommended
+            encrypted: true, // Marker for decryption
+            encrypted_at: timestamp,
+            encryption_key:
+              "projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai/cryptoKeys/credentials",
+          } as EncryptedCredentials,
+          { merge: true },
+        );
 
       // Also store plaintext client_id in user_credentials for quick lookup
       await db.collection("user_credentials").doc(uid).set(
@@ -321,7 +344,7 @@ export const submitDhanCredentialsV2 = onCall(
           has_credentials: true,
           updated_at: timestamp,
         },
-        { merge: true }
+        { merge: true },
       );
 
       return {
@@ -332,7 +355,7 @@ export const submitDhanCredentialsV2 = onCall(
       console.error("Error storing encrypted credentials:", error);
       throw new HttpsError("internal", "Failed to store credentials");
     }
-  }
+  },
 );
 ```
 
@@ -368,18 +391,18 @@ class UserCredentialsManager:
         """Retrieve and decrypt user's Dhan credentials."""
         try:
             cred_doc = await self.db.collection('dhan_credentials').document(user_id).get()
-            
+
             if not cred_doc.exists:
                 return None
-            
+
             data = cred_doc.to_dict()
-            
+
             # If encrypted, decrypt the access token
             if data.get('encrypted'):
                 data['access_token'] = await self.decrypt_credential(data['access_token'])
                 if data.get('api_secret'):
                     data['api_secret'] = await self.decrypt_credential(data['api_secret'])
-            
+
             return {
                 'client_id': data['client_id'],
                 'access_token': data['access_token'],
@@ -409,6 +432,7 @@ gcloud run deploy engine-c \
 ```
 
 **Verification**:
+
 - [ ] New credentials stored with `encrypted: true` flag
 - [ ] Firestore doc shows encrypted token (not readable)
 - [ ] Engine C can decrypt and place orders successfully
@@ -421,6 +445,7 @@ gcloud run deploy engine-c \
 ### Current Issue: POINTS TO WRONG PROJECT
 
 OLD `.env`:
+
 ```dotenv
 GOOGLE_CLOUD_PROJECT=infinity-ai-pro-dev
 NODE_ENV=development
@@ -481,6 +506,7 @@ cat .env
 ```
 
 **Verification**:
+
 - [ ] `gcloud config get-value project` returns `galvanic-pulsar-482815-h0`
 - [ ] `.env` contains correct project ID
 - [ ] `ENVIRONMENT=production`
@@ -555,11 +581,11 @@ curl https://engine-a-228557716858.us-central1.run.app/health
 - [ ] End-to-end trading test passes
 - [ ] Commit to git with message: "🔒 [URGENT] Security Fixes: CORS, Credentials, Config"
 
-**Estimated Total Time**: 6-7 hours  
-**Target Completion**: Today EOD  
+**Estimated Total Time**: 6-7 hours
+**Target Completion**: Today EOD
 
 ---
 
-**Status**: Ready to implement  
-**Risk Level**: Low (only config/security, no logic changes)  
-**Rollback**: 10 minutes (git revert)  
+**Status**: Ready to implement
+**Risk Level**: Low (only config/security, no logic changes)
+**Rollback**: 10 minutes (git revert)

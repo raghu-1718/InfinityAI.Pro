@@ -7,7 +7,12 @@ def log_startup_error(e, context="startup"):
     print(f"[ERROR] {context}: {e}")
     print(traceback.format_exc())
 import os
-ENGINE_C_MODE = "live"  # LIVE MODE ONLY - no paper trading
+
+# Paper/Live Trading Mode Configuration
+ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "paper").lower()  # paper or live (default: paper for safety)
+if ENGINE_C_MODE not in ["paper", "live"]:
+    ENGINE_C_MODE = "paper"
+    
 ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -67,6 +72,23 @@ import os
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 # (OpenTelemetry imports and initialization would go here)
+
+# Paper Trading & Webhook Verification
+try:
+    from src.paper_trading import get_paper_engine, PaperTradingEngine
+    PAPER_TRADING_AVAILABLE = True
+except ImportError as e:
+    logger_init = logging.getLogger("paper_trading_import")
+    logger_init.warning(f"⚠️ Paper trading module not available: {e}")
+    PAPER_TRADING_AVAILABLE = False
+
+try:
+    from src.webhook_verification import get_webhook_verifier, WebhookPayloadValidator, verify_dhan_webhook
+    WEBHOOK_VERIFICATION_AVAILABLE = True
+except ImportError as e:
+    logger_init = logging.getLogger("webhook_verification_import")
+    logger_init.warning(f"⚠️ Webhook verification module not available: {e}")
+    WEBHOOK_VERIFICATION_AVAILABLE = False
 
 # ML Libraries for Execution Optimization
 
@@ -243,14 +265,23 @@ async def health_check():
         "service": "engine-c-execution",
         "broker": "DhanHQ",
         "version": "3.8-performance-optimized",
+        "trading_mode": ENGINE_C_MODE.upper(),
+        "mode_badge": "📄 PAPER TRADING" if ENGINE_C_MODE == "paper" else "💰 LIVE TRADING",
         "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
+        "paper_trading_available": PAPER_TRADING_AVAILABLE,
+        "webhook_verification_available": WEBHOOK_VERIFICATION_AVAILABLE,
         "timestamp": datetime.utcnow().isoformat()
     }
 
 # Cloud Run expects /api/health for health checks
 @app.get("/api/health")
 async def api_health_check():
-    return {"status": "ok", "service": "engine-c-execution", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "status": "ok",
+        "service": "engine-c-execution",
+        "mode": ENGINE_C_MODE.upper(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 # Robust explicit OPTIONS handler for CORS preflight (Restored)
 @app.api_route("/api/auth/coupon/verify", methods=["OPTIONS"])
@@ -796,7 +827,7 @@ async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: 
                 )
                 await asyncio.sleep(wait_time)
                 return await get_dhan_client_async(user_id, retry_count + 1, start_time)
-             
+
              # Final failure
              elapsed_ms = (time.time() - start_time) * 1000
              logger.error(
@@ -1099,40 +1130,88 @@ async def system_verify():
 
 
 @app.post("/api/dhan/postback")
-async def receive_dhan_postback(request: DhanPostbackRequest):
-    """Receive real-time order updates from Dhan"""
+async def receive_dhan_postback(request: Request):
+    """
+    Receive real-time order updates from Dhan
+    
+    Signature Verification:
+    - Validates X-Dhan-Signature header using HMAC-SHA256
+    - Ensures webhook authenticity from DhanHQ
+    - Rejects invalid signatures with 403 Forbidden
+    """
     try:
-        # 1. Log the event (Audit Trail)
-        print(f"Values: received postback for order {request.orderId}: {request.orderStatus}")
-
-        # 2. Update Firestore Order Record
+        # Get raw body for signature verification
+        body = await request.body()
+        signature_header = request.headers.get("X-Dhan-Signature", "")
+        
+        # Verify webhook signature if verification is available
+        if WEBHOOK_VERIFICATION_AVAILABLE:
+            is_valid, message = verify_dhan_webhook(body, signature_header)
+            
+            if not is_valid:
+                logger.warning(f"❌ Invalid webhook signature: {message}")
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Webhook signature verification failed: {message}"
+                )
+            
+            logger.info("✅ Webhook signature verified")
+        else:
+            logger.warning("⚠️ Webhook signature verification disabled")
+        
+        # Parse and validate payload
+        payload = await request.json()
+        
+        # Validate payload structure
+        if WEBHOOK_VERIFICATION_AVAILABLE:
+            is_valid, error = WebhookPayloadValidator.validate_postback(payload)
+            if not is_valid:
+                logger.warning(f"❌ Invalid payload: {error}")
+                raise HTTPException(status_code=400, detail=f"Invalid payload: {error}")
+        
+        # Log the event (Audit Trail)
+        order_id = payload.get("orderId") or payload.get("order_id", "UNKNOWN")
+        order_status = payload.get("orderStatus") or payload.get("status", "UNKNOWN")
+        
+        logger.info(f"📨 Received postback for order {order_id}: {order_status}")
+        
+        # Update Firestore Order Record
         try:
-            # We assume orderId matches the document ID in 'orders' collection
-            # or we query by 'order_id' field.
-            # For simplicity in this verifiction phase, we try direct update if doc exists
-            # In a full system, you might need a query if IDs differ.
-             proj = os.getenv("GOOGLE_CLOUD_PROJECT")
-             if not proj: raise ValueError("GOOGLE_CLOUD_PROJECT not set")
-             db = firestore.Client(project=proj)
-             order_ref = db.collection("orders").document(request.orderId)
-
-             # Check existence first or use set with merge
-             # We update status and execution details
-             order_ref.set({
-                 "status": request.orderStatus,
-                 "updated_at": datetime.utcnow().isoformat(),
-                 "last_price": request.price,
-                 "filled_qty": request.quantity,
-                 "exchange_order_id": request.exchangeOrderId
-             }, merge=True)
-
+            proj = os.getenv("GOOGLE_CLOUD_PROJECT")
+            if not proj:
+                raise ValueError("GOOGLE_CLOUD_PROJECT not set")
+            
+            db = firestore.Client(project=proj)
+            order_ref = db.collection("orders").document(order_id)
+            
+            # Update order status and execution details
+            order_ref.set({
+                "status": order_status,
+                "updated_at": datetime.utcnow().isoformat(),
+                "last_price": payload.get("price"),
+                "filled_qty": payload.get("quantity") or payload.get("executedQuantity"),
+                "exchange_order_id": payload.get("exchangeOrderId"),
+                "trade_id": payload.get("tradeId"),
+                "symbol": payload.get("symbol"),
+                "postback_received": True
+            }, merge=True)
+            
+            logger.info(f"✅ Firestore updated for order {order_id}")
+            
         except Exception as e:
-            print(f"Firestore update failed for postback: {e}")
-            # We don't fail the postback response to Dhan, just log error
-
-        return {"status": "received", "orderId": request.orderId}
+            logger.error(f"Firestore update failed for postback: {e}")
+            # Don't fail the postback response to Dhan, just log error
+        
+        return {
+            "status": "received",
+            "orderId": order_id,
+            "message": "Postback processed successfully"
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Error processing postback: {e}")
+        logger.error(f"Error processing postback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/dhan/credentials", response_model=DhanCredentialsResponse)
@@ -1464,81 +1543,112 @@ async def execution_analytics(req: ExecutionAnalyticsRequest):
 @app.post("/api/dhan/place-order")
 async def place_order(order: OrderRequest, request: Request):
     """
-    Place order via DhanHQ API
+    Place order via DhanHQ API or Paper Trading Engine
+    
     Supports: Equity, F&O, Intraday, CNC, Market, Limit, SL orders
+    
+    Mode:
+    - PAPER: Simulated trading (safe for testing)
+    - LIVE: Real trading on DhanHQ broker
+    
+    Environment Variable: ENGINE_C_MODE (paper or live)
     """
     # --- Enforce stricter separation: Only allow requests from Engine-A ---
     engine_source = request.headers.get("X-Engine-Source", "").lower()
     if engine_source != ALLOWED_EXECUTION_SOURCE:
         raise HTTPException(status_code=403, detail="Forbidden: Only Engine-A may execute real trades.")
 
-    # LIVE MODE ONLY - All trades execute against Dhan API
     try:
-        dhan_client = get_dhan_client()
-# --- Alpaca integration for data/backtesting only (no trading endpoints exposed) ---
-# (Stub for future: Only allow market data and backtest APIs, never trading)
+        # Route based on trading mode
+        if ENGINE_C_MODE == "paper":
+            if not PAPER_TRADING_AVAILABLE:
+                raise HTTPException(status_code=503, detail="Paper trading module not available")
+            
+            # Use paper trading engine
+            paper_engine = get_paper_engine()
+            response = paper_engine.place_order(
+                symbol=order.security_id or order.symbol if hasattr(order, 'symbol') else "NIFTY",
+                transaction_type=order.transaction_type,
+                quantity=order.quantity,
+                price=order.price or 0,
+                order_type=order.order_type,
+                trigger_price=getattr(order, 'trigger_price', None)
+            )
+            
+            # Add mode indicator
+            response["mode"] = "PAPER_TRADING"
+            response["portfolio_state"] = paper_engine.get_portfolio_state()
+            
+            logger.info(f"📄 Paper order placed: {response}")
+            return response
+        
+        else:  # LIVE mode
+            # All trades execute against Dhan API
+            dhan_client = get_dhan_client()
+            
+            # Build kwargs dynamically, only include non-None and relevant fields
+            order_kwargs = {
+                "transaction_type": order.transaction_type,
+                "exchange_segment": order.exchange_segment,
+                "product_type": order.product_type,
+                "order_type": order.order_type,
+                "validity": order.validity,
+                "security_id": order.security_id,
+                "quantity": order.quantity,
+            }
+            # Always include price for DhanHQ SDK, default to 0 for MARKET orders
+            if order.price is not None:
+                order_kwargs["price"] = order.price
+            elif order.order_type == "MARKET":
+                order_kwargs["price"] = 0
+            # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
+            if order.trigger_price is not None and order.order_type in ["STOPLOSS", "STOPLIMIT", "STOPMARKET"]:
+                order_kwargs["trigger_price"] = order.trigger_price
+            if order.disclosed_quantity:
+                order_kwargs["disclosed_quantity"] = order.disclosed_quantity
+            if order.after_market_order:
+                order_kwargs["after_market_order"] = order.after_market_order
+            if order.amo_time and order.after_market_order:
+                order_kwargs["amo_time"] = order.amo_time
 
-        # Build kwargs dynamically, only include non-None and relevant fields
-        order_kwargs = {
-            "transaction_type": order.transaction_type,
-            "exchange_segment": order.exchange_segment,
-            "product_type": order.product_type,
-            "order_type": order.order_type,
-            "validity": order.validity,
-            "security_id": order.security_id,
-            "quantity": order.quantity,
-        }
-        # Always include price for DhanHQ SDK, default to 0 for MARKET orders
-        if order.price is not None:
-            order_kwargs["price"] = order.price
-        elif order.order_type == "MARKET":
-            order_kwargs["price"] = 0
-        # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
-        if order.trigger_price is not None and order.order_type in ["STOPLOSS", "STOPLIMIT", "STOPMARKET"]:
-            order_kwargs["trigger_price"] = order.trigger_price
-        if order.disclosed_quantity:
-            order_kwargs["disclosed_quantity"] = order.disclosed_quantity
-        if order.after_market_order:
-            order_kwargs["after_market_order"] = order.after_market_order
-        if order.amo_time and order.after_market_order:
-            order_kwargs["amo_time"] = order.amo_time
+            # Bracket order fields (only for BO/CO types)
+            if order.product_type in ["BO", "CO"]:
+                if order.bo_profit_value:
+                    order_kwargs["bo_profit_value"] = order.bo_profit_value
+                if order.bo_stop_loss_value:
+                    order_kwargs["bo_stop_loss_value"] = order.bo_stop_loss_value
 
-        # Bracket order fields (only for BO/CO types)
-        if order.product_type in ["BO", "CO"]:
-            if order.bo_profit_value:
-                order_kwargs["bo_profit_value"] = order.bo_profit_value
-            if order.bo_stop_loss_value:
-                order_kwargs["bo_stop_loss_value"] = order.bo_stop_loss_value
+            # Derivative fields (only for F&O)
+            if order.drv_expiry_date:
+                order_kwargs["drv_expiry_date"] = order.drv_expiry_date
+            if order.drv_options_type:
+                order_kwargs["drv_options_type"] = order.drv_options_type
+            if order.drv_strike_price:
+                order_kwargs["drv_strike_price"] = order.drv_strike_price
 
-        # Derivative fields (only for F&O)
-        if order.drv_expiry_date:
-            order_kwargs["drv_expiry_date"] = order.drv_expiry_date
-        if order.drv_options_type:
-            order_kwargs["drv_options_type"] = order.drv_options_type
-        if order.drv_strike_price:
-            order_kwargs["drv_strike_price"] = order.drv_strike_price
+            response = dhan_client.place_order(**order_kwargs)
 
-        response = dhan_client.place_order(**order_kwargs)
+            # Check response status
+            if isinstance(response, dict):
+                if response.get("status") == "failure":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Dhan Order Failed: {response.get('remarks', 'Unknown error')}"
+                    )
+                elif response.get("status") == "success":
+                    return {
+                        "status": "success",
+                        "mode": "LIVE_TRADING",
+                        "order_id": response.get("data", {}).get("orderId"),
+                        "dhan_response": response
+                    }
 
-        # Check response status
-        if isinstance(response, dict):
-            if response.get("status") == "failure":
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Dhan Order Failed: {response.get('remarks', 'Unknown error')}"
-                )
-            elif response.get("status") == "success":
-                return {
-                    "status": "success",
-                    "order_id": response.get("data", {}).get("orderId"),
-                    "dhan_response": response
-                }
-
-        return {"status": "success", "dhan_response": response}
+            return {"status": "success", "mode": "LIVE_TRADING", "dhan_response": response}
 
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Order placement failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Order placement failed: {str(e)}")
 
 # --- Order Cancellation Endpoint ---
@@ -1688,7 +1798,7 @@ async def get_funds(user_id: Optional[str] = None):
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }
-        
+
         # Normalize keys in the data block
         if isinstance(response, dict) and response.get("status") == "success":
              d = response.get("data", {})

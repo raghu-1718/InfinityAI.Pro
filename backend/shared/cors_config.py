@@ -6,7 +6,7 @@ to prevent localhost URLs from leaking into production deployments.
 
 Usage:
     from backend.shared.cors_config import ALLOWED_ORIGINS
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=ALLOWED_ORIGINS,
@@ -26,17 +26,17 @@ logger = logging.getLogger(__name__)
 def get_allowed_origins() -> List[str]:
     """
     Get allowed CORS origins based on environment.
-    
+
     DEVELOPMENT: Allows localhost for local testing
     PRODUCTION: Only allows whitelisted production domains
-    
+
     Returns:
         List of allowed origin URLs
     """
-    
+
     environment = os.getenv("ENVIRONMENT", "production").lower()
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
-    
+
     # Base production origins (ALWAYS included)
     production_origins = [
         "https://infinityai.pro",
@@ -45,7 +45,7 @@ def get_allowed_origins() -> List[str]:
         f"https://{project_id}.web.app",
         f"https://{project_id}.firebaseapp.com",
     ]
-    
+
     # Development-only origins (NEVER in production)
     development_only = [
         "http://localhost:3000",
@@ -55,7 +55,7 @@ def get_allowed_origins() -> List[str]:
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8080",
     ]
-    
+
     if environment == "development":
         logger.info("🔓 CORS: Development mode - allowing localhost origins")
         return production_origins + development_only

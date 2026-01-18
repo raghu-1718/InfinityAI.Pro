@@ -313,6 +313,53 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="api-key">API Key</Label>
+                    <Input
+                      id="api-key"
+                      name="api_key"
+                      value={dhanCredentials.api_key}
+                      onChange={(e) =>
+                        setDhanCredentials({
+                          ...dhanCredentials,
+                          api_key: e.target.value,
+                        })
+                      }
+                      placeholder="Enter API Key (for Data APIs)"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="api-secret">API Secret</Label>
+                    <div className="relative">
+                      <Input
+                        id="api-secret"
+                        name="api_secret"
+                        type={showAccessToken ? "text" : "password"}
+                        value={dhanCredentials.api_secret}
+                        onChange={(e) =>
+                          setDhanCredentials({
+                            ...dhanCredentials,
+                            api_secret: e.target.value,
+                          })
+                        }
+                        placeholder="Enter API Secret"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowAccessToken(!showAccessToken)}
+                      >
+                        {showAccessToken ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="access-token">Access Token</Label>
                     <div className="relative">
                       <Input
@@ -387,7 +434,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback
+                          {ENGINE_C_URL}/api/dhan/postback
                         </code>
                         <Button
                           variant="outline"
@@ -395,7 +442,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback"
+                              `${ENGINE_C_URL}/api/dhan/postback`
                             );
                             toast.success("Copied Postback URL");
                           }}
@@ -414,7 +461,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://engine-c-3acobgd3qa-uc.a.run.app/auth/dhan/success
+                          {ENGINE_C_URL}/auth/dhan/success
                         </code>
                         <Button
                           variant="outline"
@@ -422,7 +469,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              "https://engine-c-3acobgd3qa-uc.a.run.app/auth/dhan/success"
+                              `${ENGINE_C_URL}/auth/dhan/success`
                             );
                             toast.success("Copied Redirect URL");
                           }}

@@ -2,52 +2,31 @@
 > web-app@0.1.0 build
 > next build
 
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
- ÔÜá `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
- ÔÜá Invalid next.config.ts options detected: 
- ÔÜá     Unrecognized key(s) in object: 'eslint'
- ÔÜá See more info here: https://nextjs.org/docs/messages/invalid-next-config
-   Ôû▓ Next.js 16.0.5 (Turbopack)
-   - Environments: .env.production, .env
+   Ôû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local, .env.production, .env
 
    Creating an optimized production build ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
- Ô£ô Compiled successfully in 33.1s
-   Skipping validation of types
-   Collecting page data using 11 workers ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   Generating static pages using 11 workers (0/13) ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   Generating static pages using 11 workers (3/13) 
-   Generating static pages using 11 workers (6/13) 
-   Generating static pages using 11 workers (9/13) 
- Ô£ô Generating static pages using 11 workers (13/13) in 3.4s
-   Finalizing page optimization ...
 
-Route (app)
-Ôöî Ôùï /
-Ôö£ Ôùï /_not-found
-Ôö£ Ôùï /ai
-Ôö£ Ôùï /analytics
-Ôö£ Ôùï /history
-Ôö£ Ôùï /login
-Ôö£ Ôùï /portfolio
-Ôö£ Ôùï /settings
-Ôö£ Ôùï /signals
-Ôö£ Ôùï /start
-Ôöö Ôùï /trading
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./frontend/web-app/src/app/(dashboard)/options/page.tsx:187:8
+Parsing ecmascript source code failed
+  185 |            <div className="text-white/60 text-center py-10">Analytics Module Loading...</div>
+  186 |         </TabsContent>
+> 187 |       </Tabs>
+      |        ^^^^^^
+  188 |
+  189 |       {/* Analysis Result Dialog */}
+  190 |       <Dialog open={isResultOpen} onOpenChange={setIsResultOpen}>
+
+Unterminated regexp literal
 
 
-Ôùï  (Static)  prerendered as static content
-
+    at <unknown> (./frontend/web-app/src/app/(dashboard)/options/page.tsx:187:8)
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\workspace\InfinityAI.Pro\frontend\web-app
+npm error workspace web-app@0.1.0
+npm error location C:\workspace\InfinityAI.Pro\frontend\web-app
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build

@@ -65,6 +65,20 @@
       ]
     },
     {
+      "collectionGroup": "trade_audit",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "user_sessions",
       "queryScope": "COLLECTION",
       "fields": [

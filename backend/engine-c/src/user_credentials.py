@@ -212,20 +212,31 @@ class UserCredentialsManager:
             api_secret = None
 
             if encrypted_creds:
-                 client_id_enc = encrypted_creds.get("client_id")
-                 # Check if client_id is encrypted (frontend does encrypt it, backend usually doesn't)
-                 # If it looks like iv:tag:ciphertext, decrypt it.
-                 if client_id_enc and ":" in client_id_enc:
-                      try:
-                          client_id = self._decrypt(client_id_enc)
-                      except:
-                          client_id = client_id_enc
-                 else:
-                      client_id = client_id_enc
+                client_id_enc = encrypted_creds.get("client_id")
+                # Check if client_id is encrypted (frontend does encrypt it, backend usually doesn't)
+                # If it looks like iv:tag:ciphertext, decrypt it.
+                if client_id_enc and ":" in client_id_enc:
+                     try:
+                         client_id = self._decrypt(client_id_enc)
+                     except:
+                         client_id = client_id_enc
+                else:
+                     client_id = client_id_enc
 
-                 access_token = self._decrypt(encrypted_creds.get("access_token"))
-                 api_key = self._decrypt(encrypted_creds.get("api_key"))
-                 api_secret = self._decrypt(encrypted_creds.get("api_secret"))
+                try:
+                    access_token = self._decrypt(encrypted_creds.get("access_token"))
+                except Exception:
+                    access_token = encrypted_creds.get("access_token")
+
+                try:
+                    api_key = self._decrypt(encrypted_creds.get("api_key"))
+                except Exception:
+                    api_key = encrypted_creds.get("api_key")
+
+                try:
+                    api_secret = self._decrypt(encrypted_creds.get("api_secret"))
+                except Exception:
+                    api_secret = encrypted_creds.get("api_secret")
 
             # 2. Fallback to Flat Frontend Format (CamelCase)
             if not client_id or not access_token:

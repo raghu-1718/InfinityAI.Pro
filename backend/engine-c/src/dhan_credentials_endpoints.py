@@ -90,6 +90,7 @@ import logging
 from datetime import datetime
 from .secret_manager_credentials import get_secret_manager_credentials
 from dhanhq import dhanhq
+from .dhan_client_wrapper import create_dhan_client
 
 # Assuming app and models are injected or available in the module scope
 # (This pattern is fragile but I must follow the existing pattern if I can't verify the import source)
@@ -136,7 +137,7 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         verification_message = "Credentials saved but not verified"
         
         try:
-            dhan = dhanhq(request.client_id, request.access_token)
+            dhan = create_dhan_client(request.client_id, request.access_token)
             # Test API call
             funds = dhan.get_fund_limits()
             if funds:
@@ -264,7 +265,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
     try:
         logger.info(f"🔍 Verifying Dhan connection for user: {request.user_id}")
         
-        dhan = dhanhq(request.client_id, request.access_token)
+        dhan = create_dhan_client(request.client_id, request.access_token)
         
         # Test connection
         funds = dhan.get_fund_limits()

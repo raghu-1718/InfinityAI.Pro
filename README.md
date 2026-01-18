@@ -48,22 +48,22 @@
 - **Status**: ✅ **READY FOR LIVE TRADING**
 
 ### 2. **Three-Engine Autonomous Trading System** ✅ **OPERATIONAL**
-- **Engine-A (Orchestrator)**: 
+- **Engine-A (Orchestrator)**:
   - Risk management with VaR, CVaR, Kelly criterion
   - Session management with atomic locking
   - Kill switch for immediate trading halt
   - **Endpoints**: `/api/trading/session/start`, `/api/trading/session/stop`, `/api/system/state`
   - **URL**: https://engine-a-3acobgd3qa-uc.a.run.app
   - **Status**: ✅ Healthy (HTTP 200)
-  
-- **Engine-B (AI Analyst)**: 
+
+- **Engine-B (AI Analyst)**:
   - Gemini 2.0 Flash for market reasoning
   - Signal generation with confidence scores (min 0.6 threshold)
   - Asset-specific strategies: Momentum (Equities), Volatility (F&O), Trend (Commodities)
   - **URL**: https://engine-b-3acobgd3qa-uc.a.run.app
   - **Status**: ✅ Active (HTTP 200)
-  
-- **Engine-C (Executor)**: 
+
+- **Engine-C (Executor)**:
   - **LIVE MODE**: Real-money trading on DhanHQ broker
   - Order execution with strict source enforcement
   - Real-time account data: Balance, Holdings, Positions
@@ -1050,33 +1050,33 @@ service cloud.firestore {
     match /dhan_credentials/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Trades - per-user access only
     match /trades/{tradeId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      resource.data.user_id == request.auth.uid;
       allow write: if request.auth != null;
     }
-    
+
     // Positions - per-user access only
     match /positions/{positionId} {
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      resource.data.user_id == request.auth.uid;
       allow write: if request.auth != null;
     }
-    
+
     // Signals - read-only for authenticated users
     match /signals/{signalId} {
       allow read: if request.auth != null;
       allow write: if false; // Only backend can write
     }
-    
+
     // Sessions - per-user access only
     match /sessions/{sessionId} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if request.auth != null &&
                             resource.data.user_id == request.auth.uid;
     }
-    
+
     // Audit logs - read-only for authenticated users
     match /audit_logs/{logId} {
       allow read: if request.auth != null;
@@ -1187,7 +1187,7 @@ gcloud logging read "resource.type=cloud_run_revision" \
 
 ## 📝 License
 
-**Proprietary Software** - InfinityAI.Pro Trading Platform  
+**Proprietary Software** - InfinityAI.Pro Trading Platform
 All rights reserved © 2025-2026
 
 ### Terms of Use
@@ -1238,9 +1238,9 @@ This software is proprietary and confidential. Unauthorized copying, distributio
 
 ---
 
-**Last Updated**: January 11, 2026 00:24 UTC  
-**Version**: 6.0  
-**Status**: ✅ Production Live - **READY FOR LIVE TRADING**  
+**Last Updated**: January 11, 2026 00:24 UTC
+**Version**: 6.0
+**Status**: ✅ Production Live - **READY FOR LIVE TRADING**
 **Region**: us-central1
 **Project**: galvanic-pulsar-482815-h0
 **Verification**: 14/23 tests passed (60.9%) - ALL CRITICAL SYSTEMS OPERATIONAL

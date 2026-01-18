@@ -30,9 +30,11 @@ const nextConfig = {
   // Engine URLs removed - use Firebase Hosting rewrites instead (see firebase.json)
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "galvanic-pulsar-482815-h0.firebaseapp.com",
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
+      "galvanic-pulsar-482815-h0.firebaseapp.com",
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: "galvanic-pulsar-482815-h0",
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "galvanic-pulsar-482815-h0.firebasestorage.app",
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
+      "galvanic-pulsar-482815-h0.firebasestorage.app",
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "228557716858",
     NEXT_PUBLIC_FIREBASE_APP_ID: "1:228557716858:web:d3ae59af1254d4b893aac3",
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-17NHEMLXDV",

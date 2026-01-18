@@ -1962,12 +1962,12 @@ async def store_signal_to_firestore(user_id: str, signal: Any) -> bool:
             signal_dict = signal.__dict__
         else:
             signal_dict = dict(signal)
-        
+
         # Add metadata
         signal_dict['timestamp'] = firestore.SERVER_TIMESTAMP
         signal_dict['user_id'] = user_id
         signal_dict['stored_at'] = datetime.utcnow().isoformat()
-        
+
         # Store to Firestore: users/{uid}/signals
         db.collection('users').document(user_id).collection('signals').add(signal_dict)
         logger.info(f"✓ Stored signal for {signal_dict.get('symbol', 'UNKNOWN')} to Firestore (user: {user_id})")
@@ -1986,17 +1986,17 @@ async def generate_batch_signals(request: BatchSignalsRequest):
 
     signals = []
     stored_count = 0
-    
+
     for symbol in request.symbols:
         try:
             signal = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
             signals.append(signal)
-            
+
             # Store to Firestore if user_id provided
             if request.user_id:
                 if await store_signal_to_firestore(request.user_id, signal):
                     stored_count += 1
-            
+
         except Exception as e:
             logger.error(f"Batch signal error for {symbol}: {e}")
 

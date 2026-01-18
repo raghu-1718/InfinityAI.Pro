@@ -114,6 +114,10 @@ export function useUserProfile() {
             isConnected: true,
             isVerified: true,
           };
+          
+          if (typeof window !== 'undefined') {
+             localStorage.setItem('dhan_client_id', res.client_id);
+          }
 
           setUserProfile(newProfile);
           return { ...res, userProfile: newProfile };
@@ -192,6 +196,13 @@ export function useUserAccount() {
       const res = await engineC.getUserAccount(userId);
 
       if (res.status === 'success') {
+        // CRITICAL: Validate that returned data belongs to the requested userId
+        const returnedUserId = res.user_id || res.funds?.dhanClientId;
+        if (returnedUserId && returnedUserId !== userId) {
+          console.error(`Data mismatch: requested ${userId}, received ${returnedUserId}`);
+          throw new Error('User ID mismatch - data belongs to different user');
+        }
+
         // Update funds in store
         if (res.funds) {
           setFunds({
@@ -241,7 +252,34 @@ export function useUserAccount() {
     refetchInterval: 15000, // 15 seconds for real-time updates
     staleTime: 10000,
     enabled: !!userId,
-    retry: 2,
+    retry: (failureCount, error: any) => {
+      // Do not retry auth failures; user must re-verify
+      if (error?.status === 401) return false;
+
+      // Retry transient errors (404/500) a couple of times
+      if (error?.status === 404 || error?.status === 500) {
+        return failureCount < 2;
+      }
+
+      // Retry network/unknown errors up to 2 times
+      if (!error?.status) {
+        return failureCount < 2;
+      }
+
+      return failureCount < 2;
+    },
+    onError: (error: any) => {
+      console.warn('useUserAccount error', error);
+
+      // Keep connected state for transient issues; only disconnect on 401
+      if (error?.status === 401 && userProfile?.isConnected) {
+        setUserProfile({
+          ...userProfile,
+          isConnected: false,
+          isVerified: false,
+        });
+      }
+    },
   });
 }
 
@@ -1071,4 +1109,67 @@ export function useTradingActivityLogger(userId: string | undefined) {
   );
 
   return { logTrade };
+}
+
+// ==========================================
+// Options Analytics Hooks
+// ==========================================
+
+export function useOptionChain(
+  params: { under_security_id: number; under_exchange_segment: string; expiry: string },
+  enabled = true
+) {
+  const { userProfile } = useAppStore();
+  const userId = userProfile?.userId || userProfile?.clientId;
+
+  return useQuery({
+    queryKey: ['option-chain', params.under_security_id, params.expiry],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID required');
+      const res = await engineC.getOptionChain({ ...params, user_id: userId });
+      return res;
+    },
+    enabled: enabled && !!userId && !!params.expiry && params.under_security_id > 0,
+    staleTime: 30000,
+  });
+}
+
+export function useCalculateGreeks() {
+  return useMutation({
+    mutationFn: (data: {
+      spot_price: number;
+      strike_price: number;
+      time_to_expiry_days: number;
+      implied_volatility: number;
+      risk_free_rate?: number;
+      option_type: "call" | "put";
+    }) => engineC.calculateGreeks(data),
+  });
+}
+
+export function useIndices(enabled = true) {
+  const { userProfile } = useAppStore();
+  const userId = userProfile?.userId || userProfile?.clientId;
+
+  return useQuery({
+    queryKey: ['indices', 'market_quotes', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      // 13: NIFTY 50, 25: NIFTY BANK
+      const res = await engineC.getMarketQuotes(userId, ['13', '25'], 'IDX_I');
+      return res;
+    },
+    enabled: enabled && !!userId,
+    refetchInterval: 10000, 
+    staleTime: 5000,
+  });
+}
+export function useAnalyzeOptionStrategy() {
+  return useMutation({
+    mutationFn: (data: {
+      strategy_name: string;
+      spot_price: number;
+      params: Record<string, any>;
+    }) => engineC.analyzeOptionStrategy(data),
+  });
 }

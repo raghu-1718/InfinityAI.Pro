@@ -1,7 +1,7 @@
 # Coupon System Update - Deployment & Testing Guide
 
-**Date**: January 11, 2026  
-**Project**: galvanic-pulsar-482815-h0  
+**Date**: January 11, 2026
+**Project**: galvanic-pulsar-482815-h0
 **Update**: Migration to 8 new personalized coupons with dynamic email binding
 
 ---
@@ -9,7 +9,7 @@
 ## 📋 Summary of Changes
 
 ### Cloud Function: `verifyCoupon`
-**File**: `frontend/functions/src/verifyCoupon.ts`  
+**File**: `frontend/functions/src/verifyCoupon.ts`
 **Changes Made**:
 
 1. **Removed 4 old coupons**:
@@ -471,7 +471,7 @@ firebase functions:log --only verifyCoupon --project=galvanic-pulsar-482815-h0
 
 ---
 
-**Status**: ✅ Ready for Deployment  
-**Timeline**: 15-30 minutes (deploy + test)  
+**Status**: ✅ Ready for Deployment
+**Timeline**: 15-30 minutes (deploy + test)
 **Risk Level**: Low (backward compatible, no breaking changes)
 

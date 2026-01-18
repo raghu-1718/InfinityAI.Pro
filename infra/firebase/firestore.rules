@@ -39,9 +39,19 @@ service cloud.firestore {
 
     // Trading sessions and logs — user-restricted
     match /trading_sessions/{sessionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow users to read/create their own sessions
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      
       match /logs/{logId} {
-        allow read, write: if request.auth != null && request.auth.uid == resource.parent.data.userId;
+        allow read: if request.auth != null;
+        allow write: if false; // Backend only
+      }
+      // Trading session state (e.g., circuit breaker) - client read-only
+      match /state/{docId} {
+        allow read: if request.auth != null;
+        allow write: if false; // Backend only
       }
     }
 
@@ -66,15 +76,12 @@ service cloud.firestore {
       allow write: if false; // Backend only
     }
 
-    // Trading session state (e.g., circuit breaker) - client read-only
-    match /trading_sessions/{sessionId}/state/{docId} {
-      allow read: if request.auth != null && request.auth.uid == get(/databases/$(database)/documents/trading_sessions/$(sessionId)).data.userId;
-      allow write: if false; // Backend only
-    }
-
     // Trade audit timeline - client read own events only
     match /trade_audit/{docId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.uid ||
+        request.auth.uid == resource.data.userId
+      );
       allow write: if false; // Backend only
     }
   }

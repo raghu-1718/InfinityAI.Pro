@@ -42,29 +42,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = exports.ENCRYPTION_KEY = void 0;
+exports.saveDhanCredentials = exports.submitDhanCredentialsV2 = void 0;
 exports.getDecryptedCredentials = getDecryptedCredentials;
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
 const db = admin.firestore();
-const params_1 = require("firebase-functions/params");
+// Removed defineSecret to fix deployment timeout
+// Using direct env var like Engine C does
 // Encryption configuration - Using environment variable for better compatibility
-exports.ENCRYPTION_KEY = (0, params_1.defineSecret)("ENCRYPTION_KEY");
 const PROJECT_ID = process.env.GCP_PROJECT ||
     process.env.GCLOUD_PROJECT ||
     process.env.GOOGLE_CLOUD_PROJECT;
 const ALGORITHM = "aes-256-gcm";
 const USE_SECRET_MANAGER = false;
 /**
+ * Get encryption key from environment
+ */
+function getEncryptionKey() {
+    const keyHex = process.env.ENCRYPTION_KEY;
+    if (!keyHex) {
+        throw new Error("ENCRYPTION_KEY not configured");
+    }
+    return keyHex;
+}
+/**
  * Encrypts sensitive data using AES-256-GCM
  */
 function encrypt(text) {
-    const keyHex = exports.ENCRYPTION_KEY.value();
-    if (!keyHex) {
-        throw new Error("ENCRYPTION_KEY not configured via params API");
-    }
+    const keyHex = getEncryptionKey();
     const iv = crypto.randomBytes(12);
     const key = Buffer.from(keyHex, "hex");
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -77,10 +84,7 @@ function encrypt(text) {
  * Decrypts encrypted data
  */
 function decrypt(encryptedData) {
-    const keyHex = exports.ENCRYPTION_KEY.value();
-    if (!keyHex) {
-        throw new Error("ENCRYPTION_KEY not configured via params API");
-    }
+    const keyHex = getEncryptionKey();
     const parts = encryptedData.split(":");
     if (parts.length !== 3) {
         throw new Error("Invalid encrypted data format");

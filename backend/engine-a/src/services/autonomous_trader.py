@@ -143,13 +143,18 @@ class AutonomousTrader:
             logger.warning("AutonomousTrader already running")
             return
 
+        # re-initialize client if necessary
+        if self.http_client is None or self.http_client.is_closed:
+            self.http_client = httpx.AsyncClient(timeout=30.0)
+
         self.is_active = True
         self.task = asyncio.create_task(self._trading_loop())
         logger.info("🚀 AutonomousTrader Loop Started")
 
     async def stop(self):
         """Stop the autonomous trading loop"""
-        logger.info("🛑 Stopping AutonomousTrader...")
+        import traceback
+        logger.info(f"🛑 Stopping AutonomousTrader... Caller:\n{''.join(traceback.format_stack())}")
         self.is_active = False
         if self.task:
             self.task.cancel()
@@ -159,6 +164,21 @@ class AutonomousTrader:
                 pass
         await self.http_client.aclose()
         logger.info("✅ AutonomousTrader Stopped")
+
+    def get_status(self):
+        """Get the current status of the trader"""
+        return {
+            "is_active": self.is_active,
+            "user_id": self.config.get("user_id"),
+            "config": self.config
+        }
+
+    async def force_start(self):
+        """Manually force start the trader"""
+        if self.is_active:
+            return False, "Already active"
+        await self.start()
+        return True, "Started"
 
     async def _trading_loop(self):
         """Main loop: Signal -> Risk -> Execution"""
@@ -213,15 +233,23 @@ class AutonomousTrader:
 
             # Using the batch signal endpoint verified in Engine B
             url = f"{ENGINE_B_URL}/api/v1/signals/batch"
+            
+            # Using configured user_id (fixed bug #4)
+            uid = self.config.get("user_id", "active_trader")
+            
             payload = {
                 "symbols": symbols,
-                "fast": True
+                "fast": True,
+                "user_id": uid
             }
+            
+            logger.info(f"📡 Fetching signals from Engine B for user {uid}...")
 
             headers = {"X-Trace-ID": trace_id} if trace_id else {}
             resp = await self.http_client.post(url, json=payload, headers=headers)
             if resp.status_code == 200:
                 data = resp.json()
+                logger.info(f"✅ Engine B Response: {str(data)[:200]}...") # Log first 200 chars
                 if isinstance(data, str):
                     import json
                     try:
@@ -232,6 +260,8 @@ class AutonomousTrader:
 
                 if isinstance(data, list):
                     return data
+                elif isinstance(data, dict) and "signals" in data:
+                    return data["signals"]
                 elif isinstance(data, dict) and "data" in data:
                     return data["data"]
                 elif isinstance(data, dict):
@@ -345,7 +375,11 @@ class AutonomousTrader:
             }
 
             url = f"{ENGINE_C_URL}/api/dhan/place-order"
-            headers = {"X-Trace-ID": trace_id} if trace_id else {}
+            headers = {
+                "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
+                "X-User-ID": uid,
+                "X-Engine-Source": "engine-a"
+            }
             resp = await self.http_client.post(url, json=payload, headers=headers)
 
             if resp.status_code == 200:

@@ -1,0 +1,68 @@
+
+> web-app@0.1.0 build
+> next build
+
+   Ôû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./frontend/web-app/src/app/(dashboard)/options/page.tsx:6:1
+Export useAnalyzeOptionStrategy doesn't exist in target module
+  4 | import { useState, useEffect } from "react";
+  5 | import { useAppStore } from "@/lib/store";
+> 6 | import { useOptionChain, useCalculateGreeks, useAnalyzeOptionStrategy } from "@/hooks/useApi";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  7 | import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+  8 | import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  9 | import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+The export useAnalyzeOptionStrategy was not found in module [project]/frontend/web-app/src/hooks/useApi.ts [app-client] (ecmascript).
+Did you mean to import useSystemState?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Client Component Browser]
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Client Component SSR]
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Server Component]
+
+
+./frontend/web-app/src/app/(dashboard)/options/page.tsx:5:1
+Export useAnalyzeOptionStrategy doesn't exist in target module
+  3 | import { useState, useEffect } from "react";
+  4 | import { useAppStore } from "@/lib/store";
+> 5 | import { useOptionChain, useCalculateGreeks, useAnalyzeOptionStrategy } from "@/hooks/useApi";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+  7 | import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  8 | import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+The export useAnalyzeOptionStrategy was not found in module [project]/frontend/web-app/src/hooks/useApi.ts [app-ssr] (ecmascript).
+Did you mean to import useSystemState?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Client Component Browser]
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Client Component SSR]
+    ./frontend/web-app/src/app/(dashboard)/options/page.tsx [Server Component]
+
+
+    at <unknown> (./frontend/web-app/src/app/(dashboard)/options/page.tsx:6:1)
+    at <unknown> (./frontend/web-app/src/app/(dashboard)/options/page.tsx:5:1)
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\workspace\InfinityAI.Pro\frontend\web-app
+npm error workspace web-app@0.1.0
+npm error location C:\workspace\InfinityAI.Pro\frontend\web-app
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build

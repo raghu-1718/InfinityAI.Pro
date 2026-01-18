@@ -6,12 +6,28 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CouponAuthProvider } from "@/contexts/DualAuthContext";
 import { useAppStore } from "@/lib/store";
+import { auth } from "@/lib/firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
 
-// Hydrate Zustand store on client side
+// Hydrate Zustand store and listen for auth state changes
 function StoreHydration() {
+  const clearUserData = useAppStore((state) => state.clearUserData);
+
   useEffect(() => {
     useAppStore.persist.rehydrate();
-  }, []);
+
+    // Listen for Firebase Auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // User logged out, clear all user data from Zustand
+        console.log('User logged out, clearing local state');
+        clearUserData();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [clearUserData]);
+
   return null;
 }
 

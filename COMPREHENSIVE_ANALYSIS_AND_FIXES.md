@@ -1,12 +1,14 @@
 # 🔍 InfinityAI.Pro - Comprehensive System Analysis & Fixes
-**Status**: PRODUCTION ANALYSIS  
-**Project**: galvanic-pulsar-482815-h0  
-**Analysis Date**: 2026-01-19  
-**Analyst**: Principal Cloud Solutions Architect  
+
+**Status**: PRODUCTION ANALYSIS
+**Project**: galvanic-pulsar-482815-h0
+**Analysis Date**: 2026-01-19
+**Analyst**: Principal Cloud Solutions Architect
 
 ---
 
 ## TABLE OF CONTENTS
+
 1. [EXECUTIVE SUMMARY](#executive-summary)
 2. [SYSTEM ARCHITECTURE](#system-architecture)
 3. [FINDINGS: HARDCODED VALUES & ISSUES](#findings-hardcoded-values--issues)
@@ -23,6 +25,7 @@
 ## EXECUTIVE SUMMARY
 
 ### ✅ WHAT'S WORKING
+
 - **3-Engine Architecture**: Engine A (Orchestration/Risk), Engine B (AI Signals), Engine C (Execution)
 - **23 Cloud Run Services**: All healthy and deployed (backtest-orchestrator excepted - health check timeout)
 - **Firebase Integration**: Auth, Firestore, Cloud Functions operational
@@ -32,6 +35,7 @@
 - **ML Models**: Gradient boosting (XGBoost, LightGBM, CatBoost) ensemble for signal generation
 
 ### 🚨 CRITICAL ISSUES FOUND
+
 1. **HARDCODED API KEYS in Frontend** (Security Risk)
 2. **Dev/Demo URLs in CORS config** (Production liability)
 3. **Mismatched Firebase configs** (2 different API keys in codebase)
@@ -40,6 +44,7 @@
 6. **Environment variable enforcement missing** (Graceful degradation causing silent failures)
 
 ### ⚠️ GAPS IDENTIFIED
+
 1. Backtest orchestrator health check timeout
 2. Missing error boundaries in credential retrieval
 3. Inconsistent secret manager vs. Firestore credential storage
@@ -83,20 +88,20 @@ OAuth Flow        Greeks Calc         TWAP/VWAP Split
 
 ### Services Deployed (as of 2026-01-18)
 
-| Service | Status | URL | Version |
-|---------|--------|-----|---------|
-| engine-a | ✅ Ready | engine-a-228557716858.us-central1.run.app | 3.7-google-integrations |
-| engine-b | ✅ Ready | engine-b-228557716858.us-central1.run.app | v3.6-instrument-signals |
-| engine-c | ✅ Ready | engine-c-228557716858.us-central1.run.app | 3.8-performance-optimized |
-| backtest-orchestrator | ❌ Health Check Timeout | backtest-228557716858.us-central1.run.app | - |
-| analyzeportfolio | ✅ Ready | analyzeportfolio-228557716858.us-central1.run.app | - |
-| fetchaccountdata | ✅ Ready | fetchaccountdata-228557716858.us-central1.run.app | - |
-| starttrading | ✅ Ready | starttrading-228557716858.us-central1.run.app | - |
-| stoptrading | ✅ Ready | stoptrading-228557716858.us-central1.run.app | - |
-| storeusercredentials | ✅ Ready | storeusercredentials-228557716858.us-central1.run.app | - |
-| getaisignals | ✅ Ready | getaisignals-228557716858.us-central1.run.app | - |
-| ... | ... | ... | ... |
-| **TOTAL** | **22/23 Ready** | - | - |
+| Service               | Status                  | URL                                                   | Version                   |
+| --------------------- | ----------------------- | ----------------------------------------------------- | ------------------------- |
+| engine-a              | ✅ Ready                | engine-a-228557716858.us-central1.run.app             | 3.7-google-integrations   |
+| engine-b              | ✅ Ready                | engine-b-228557716858.us-central1.run.app             | v3.6-instrument-signals   |
+| engine-c              | ✅ Ready                | engine-c-228557716858.us-central1.run.app             | 3.8-performance-optimized |
+| backtest-orchestrator | ❌ Health Check Timeout | backtest-228557716858.us-central1.run.app             | -                         |
+| analyzeportfolio      | ✅ Ready                | analyzeportfolio-228557716858.us-central1.run.app     | -                         |
+| fetchaccountdata      | ✅ Ready                | fetchaccountdata-228557716858.us-central1.run.app     | -                         |
+| starttrading          | ✅ Ready                | starttrading-228557716858.us-central1.run.app         | -                         |
+| stoptrading           | ✅ Ready                | stoptrading-228557716858.us-central1.run.app          | -                         |
+| storeusercredentials  | ✅ Ready                | storeusercredentials-228557716858.us-central1.run.app | -                         |
+| getaisignals          | ✅ Ready                | getaisignals-228557716858.us-central1.run.app         | -                         |
+| ...                   | ...                     | ...                                                   | ...                       |
+| **TOTAL**             | **22/23 Ready**         | -                                                     | -                         |
 
 ---
 
@@ -123,16 +128,18 @@ env: {
 ```
 
 **Risk**: Firebase API Keys are intentionally public (by design), but hardcoding allows attackers to:
+
 - Identify project and resources
 - Bypass API key restrictions if not configured
 - Impersonate legitimate users if auth rules are weak
 
 **Conflict**: Also exists in `frontend/web-app/src/lib/firebase/config.ts` with **DIFFERENT** API key:
+
 ```typescript
 const firebaseConfig = {
-  apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",  // ⚠️ DIFFERENT!
+  apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8", // ⚠️ DIFFERENT!
   // ...
-  projectId: "galvanic-pulsar-482815-h0",  // Same project
+  projectId: "galvanic-pulsar-482815-h0", // Same project
 };
 ```
 
@@ -141,6 +148,7 @@ const firebaseConfig = {
 ### 🔴 CRITICAL: Mismatched Engine URLs
 
 **Current State**:
+
 - `next.config.ts`: `engine-a-228557716858.us-central1.run.app` (Development)
 - `firebase.json` rewrites: Uses service IDs (`engine-a`, `engine-b`, `engine-c`)
 - Actual deployed: `engine-a-3acobgd3qa-uc.a.run.app` (Production)
@@ -152,6 +160,7 @@ const firebaseConfig = {
 ### 🟡 HIGH: Localhost URLs in CORS Config
 
 **Files**:
+
 - `backend/engine-a/src/main.py` (Lines 136-138)
 - `backend/engine-b/src/main.py` (Lines 323-325)
 - `backend/engine-c/src/main.py` (Lines 377-378)
@@ -184,6 +193,7 @@ ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTk
 **Also in**: `tools/update_dhan_creds.py`, `tools/sync_firestore_creds.py`
 
 **Decoded JWT Analysis**:
+
 - Expiry: `1768235135` (~2026-01-12) - **EXPIRED**
 - Client ID: `1101302170`
 - Webhook: `https://engine-c-3acobgd3qa-uc.a.run.app/api/dhan/postback`
@@ -254,6 +264,7 @@ otlp_exporter = OTLPSpanExporter(
 **File**: `infra/firebase/firestore.rules`
 
 #### ✅ STRENGTHS:
+
 1. User isolation enforced (read/write own data only)
 2. Dhan credentials write-only for clients (no client read access)
 3. System collections (ai_signals, trades) read-restricted
@@ -273,6 +284,7 @@ match /dhan_credentials/{userId} {
 ```
 
 #### ⚠️ GAPS:
+
 1. **No rate limiting at Firestore level** (relies on Cloud Run rate limiter)
 2. **No data retention policies** (trading logs grow unbounded)
 3. **No compliance validation** (no PII masking on audit logs)
@@ -282,6 +294,7 @@ match /dhan_credentials/{userId} {
 ### Credentials Storage Analysis
 
 #### Current Flow:
+
 1. User enters Dhan credentials in Frontend `/settings` page
 2. Cloud Function `storeUserCredentials` (Cloud Run) receives POST
 3. Stores in Firestore `dhan_credentials/{userId}`
@@ -289,11 +302,12 @@ match /dhan_credentials/{userId} {
 5. **Issue**: Credentials stored plaintext in Firestore
 
 #### Missing:
+
 ```typescript
 // Should encrypt before storing
 const encryptedToken = await encryptWithGCPKMS(accessToken, userId);
-await db.collection('dhan_credentials').doc(userId).set({
-  access_token: encryptedToken,  // Encrypted
+await db.collection("dhan_credentials").doc(userId).set({
+  access_token: encryptedToken, // Encrypted
   encrypted_at: timestamp,
 });
 ```
@@ -305,6 +319,7 @@ await db.collection('dhan_credentials').doc(userId).set({
 ### What InfinityAI.Pro Can Do
 
 #### 🎯 Core Trading Capabilities
+
 1. **Multi-Strategy Execution**
    - Supports multiple simultaneous strategies (Engine B signals)
    - Risk scoring (Engine A) before execution
@@ -344,6 +359,7 @@ await db.collection('dhan_credentials').doc(userId).set({
    - Live portfolio rebalancing
 
 #### 📊 Analytics & Backtesting
+
 - Historical price data from Yahoo Finance (Phase 1)
 - Dhan Data API integration (Phase 2)
 - Backtest orchestrator for strategy validation
@@ -351,6 +367,7 @@ await db.collection('dhan_credentials').doc(userId).set({
 - Coupon-based access control (feature gating)
 
 #### 🔐 Security & Auth
+
 - Google Sign-In (Firebase Auth)
 - Dual-factor verification (Coupon codes)
 - User-isolated Firestore data
@@ -360,11 +377,13 @@ await db.collection('dhan_credentials').doc(userId).set({
 ### What's Missing / Not Yet Implemented
 
 1. **Paper Trading Mode** - Only live trading supported
+
    ```python
    ENGINE_C_MODE = "live"  # LIVE MODE ONLY - no paper trading
    ```
 
 2. **Webhook Verification** - Dhan postbacks not validated
+
    ```python
    # TODO: Verify Dhan webhook signature before processing
    @app.post("/api/dhan/postback")
@@ -388,22 +407,23 @@ await db.collection('dhan_credentials').doc(userId).set({
 
 ### How InfinityAI.Pro Compares
 
-| Feature | InfinityAI.Pro | Zerodha Streak | Shoonya | TradingView | Algotrader |
-|---------|---|---|---|---|---|
-| **Multi-Broker** | ❌ (Dhan only) | ✅ (Zerodha, others) | ✅ (Shoonya, others) | ✅ (Many) | ✅ (20+) |
-| **AI Signals** | ✅ (Proprietary ML) | ✅ (Scripts/ML) | ❌ | ✅ (Tradingview Pine) | ✅ (Python) |
-| **Real-time Execution** | ✅ (Live) | ✅ | ✅ | ❌ (Ideas only) | ✅ |
-| **Paper Trading** | ❌ ⚠️ | ✅ | ✅ | ✅ | ✅ |
-| **Greeks/Options** | ✅ (IV Surface, Max Pain) | ✅ | ❌ | ✅ | ✅ |
-| **Custom Indicators** | ⚠️ (Limited) | ✅ (Streak Scripts) | ✅ (Pine) | ✅ (Pine) | ✅ (Any Python) |
-| **Cost** | ⚠️ (Coupon-based) | Free (0% brokerage) | Free | Premium | $$ ($$$ for enterprise) |
-| **API Access** | ❌ | ✅ (REST) | ✅ | ✅ (Pine) | ✅ (REST) |
-| **Community** | 🆕 (Startup) | ✅ (Large) | ✅ (Growing) | ✅✅ (Huge) | ✅ (Pro users) |
-| **Cloud-Native** | ✅ (GCP) | ⚠️ (SaaS) | ⚠️ (SaaS) | ✅ (Tradingview Cloud) | ⚠️ (On-prem/Cloud) |
+| Feature                 | InfinityAI.Pro            | Zerodha Streak       | Shoonya              | TradingView            | Algotrader              |
+| ----------------------- | ------------------------- | -------------------- | -------------------- | ---------------------- | ----------------------- |
+| **Multi-Broker**        | ❌ (Dhan only)            | ✅ (Zerodha, others) | ✅ (Shoonya, others) | ✅ (Many)              | ✅ (20+)                |
+| **AI Signals**          | ✅ (Proprietary ML)       | ✅ (Scripts/ML)      | ❌                   | ✅ (Tradingview Pine)  | ✅ (Python)             |
+| **Real-time Execution** | ✅ (Live)                 | ✅                   | ✅                   | ❌ (Ideas only)        | ✅                      |
+| **Paper Trading**       | ❌ ⚠️                     | ✅                   | ✅                   | ✅                     | ✅                      |
+| **Greeks/Options**      | ✅ (IV Surface, Max Pain) | ✅                   | ❌                   | ✅                     | ✅                      |
+| **Custom Indicators**   | ⚠️ (Limited)              | ✅ (Streak Scripts)  | ✅ (Pine)            | ✅ (Pine)              | ✅ (Any Python)         |
+| **Cost**                | ⚠️ (Coupon-based)         | Free (0% brokerage)  | Free                 | Premium                | $$ ($$$ for enterprise) |
+| **API Access**          | ❌                        | ✅ (REST)            | ✅                   | ✅ (Pine)              | ✅ (REST)               |
+| **Community**           | 🆕 (Startup)              | ✅ (Large)           | ✅ (Growing)         | ✅✅ (Huge)            | ✅ (Pro users)          |
+| **Cloud-Native**        | ✅ (GCP)                  | ⚠️ (SaaS)            | ⚠️ (SaaS)            | ✅ (Tradingview Cloud) | ⚠️ (On-prem/Cloud)      |
 
 ### Competitive Advantages
 
 ✅ **Unique Strengths**:
+
 1. **3-Engine Microservices Architecture** - Decoupled orchestration/signals/execution
 2. **Proprietary ML Ensemble** - Multiple gradient boosting models
 3. **Advanced Greeks Calculation** - Options traders' favorite
@@ -412,6 +432,7 @@ await db.collection('dhan_credentials').doc(userId).set({
 6. **Coupon-Based Monetization** - Novel access control model
 
 ❌ **Competitive Gaps**:
+
 1. **Single Broker** (Dhan only) - Limits addressable market
 2. **No Paper Trading** - Risk-averse traders can't test
 3. **No API Access** - Can't be used programmatically
@@ -433,18 +454,21 @@ await db.collection('dhan_credentials').doc(userId).set({
 ### Throughput Analysis
 
 #### Engine A (Orchestration)
+
 - **Current**: Single instance on Cloud Run
 - **Capacity**: ~100-200 req/sec (based on 2 CPU, 2GB memory allocation)
 - **Bottleneck**: Firestore writes (multi-step risk calc + audit)
 - **Load**: Real-time portfolio risk → 50-100ms latency (acceptable)
 
 #### Engine B (Signal Generation)
+
 - **Current**: Single instance
 - **Capacity**: ~50 signals/sec (depends on model ensemble complexity)
 - **Bottleneck**: Model inference (XGBoost + LightGBM serial)
 - **Optimization**: Can parallelize model inference (not done currently)
 
 #### Engine C (Execution)
+
 - **Current**: Single instance
 - **Capacity**: ~500 orders/sec (Dhan broker API limit)
 - **Bottleneck**: Dhan API rate limits, not engine
@@ -454,7 +478,7 @@ await db.collection('dhan_credentials').doc(userId).set({
 
 ```
 User Action → Firestore Read: 10-20ms
-Firestore Read → Engine Risk Calc: 30-50ms  
+Firestore Read → Engine Risk Calc: 30-50ms
 Risk Calc → Firestore Audit: 10-20ms
 Audit → Engine C Order: 50-100ms
 Engine C → Dhan Broker: 200-500ms
@@ -465,13 +489,13 @@ Total End-to-End: 800ms - 2.5s
 
 ### Scaling Limits
 
-| Component | Limit | Current Usage | Headroom |
-|-----------|-------|---------------|----------|
-| Firestore | 20GB/partition | ~100MB | ✅ High |
-| Firestore RPS | 10k/sec | ~200/sec | ✅ High |
-| Cloud Run Instances | Unlimited | 1 per engine | ⚠️ Manual scaling |
-| Dhan API | 1000 req/sec | ~50/sec | ✅ High |
-| Cloud Trace | 100 events/sec | ~10/sec | ✅ High |
+| Component           | Limit          | Current Usage | Headroom          |
+| ------------------- | -------------- | ------------- | ----------------- |
+| Firestore           | 20GB/partition | ~100MB        | ✅ High           |
+| Firestore RPS       | 10k/sec        | ~200/sec      | ✅ High           |
+| Cloud Run Instances | Unlimited      | 1 per engine  | ⚠️ Manual scaling |
+| Dhan API            | 1000 req/sec   | ~50/sec       | ✅ High           |
+| Cloud Trace         | 100 events/sec | ~10/sec       | ✅ High           |
 
 **Recommendation**: Implement autoscaling policies based on request metrics.
 
@@ -482,6 +506,7 @@ Total End-to-End: 800ms - 2.5s
 ### Critical Data Paths
 
 #### Path 1: User Places Order via UI
+
 ```
 1. User clicks "Buy INFY" in Dashboard
 2. Frontend: POST /api/dhan/place-order (to Engine C via Firebase Hosting rewrite)
@@ -498,6 +523,7 @@ Total End-to-End: 800ms - 2.5s
 **Data Consistency**: Eventually consistent (Firestore writes async)
 
 #### Path 2: AI Signal Generated (Engine B)
+
 ```
 1. Engine B: Calls Dhan market data API for price history
 2. Engine B: Runs ML ensemble (XGBoost + LightGBM + CatBoost)
@@ -511,6 +537,7 @@ Total End-to-End: 800ms - 2.5s
 **Issue**: No deduplication if same signal generated twice → potential double orders
 
 #### Path 3: Dhan Postback Webhook
+
 ```
 1. Dhan API: Order fills, calls webhook
 2. Engine C: /api/dhan/postback receives webhook
@@ -531,19 +558,22 @@ Total End-to-End: 800ms - 2.5s
 ### PRIORITY 1: CRITICAL SECURITY (Immediate)
 
 #### Issue 1.1: Firebase Config Mismatch
+
 **Problem**: Two different API keys in codebase
+
 - `next.config.ts`: `AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k`
 - `firebase/config.ts`: `AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8`
 
 **Fix**:
+
 ```typescript
 // Unified config in single source of truth
 export const firebaseConfig = {
-  apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",  // Correct key
+  apiKey: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8", // Correct key
   authDomain: "galvanic-pulsar-482815-h0.firebaseapp.com",
   projectId: "galvanic-pulsar-482815-h0",
   storageBucket: "galvanic-pulsar-482815-h0.firebasestorage.app",
-  messagingSenderId: "228557716858",  // Corrected
+  messagingSenderId: "228557716858", // Corrected
   appId: "1:228557716858:web:d3ae59af1254d4b893aac3",
   measurementId: "G-17NHEMLXDV",
 };
@@ -554,7 +584,9 @@ export const firebaseConfig = {
 ---
 
 #### Issue 1.2: Localhost in Production CORS
+
 **Problem**: Dev origins leak into production
+
 ```python
 ALLOWED_ORIGINS = [
     "http://localhost:3000",      # ❌ MUST REMOVE
@@ -564,6 +596,7 @@ ALLOWED_ORIGINS = [
 ```
 
 **Fix**:
+
 ```python
 # Load from environment, only allow if dev mode
 def get_allowed_origins():
@@ -585,6 +618,7 @@ def get_allowed_origins():
 ```
 
 **CLI to Deploy**:
+
 ```bash
 gcloud run deploy engine-a \
   --set-env-vars="ENVIRONMENT=production" \
@@ -596,7 +630,9 @@ gcloud run deploy engine-a \
 ---
 
 #### Issue 1.3: Plaintext Dhan Credentials in Firestore
+
 **Problem**: Access tokens stored unencrypted
+
 ```firestore
 dhan_credentials/{userId} {
   access_token: "eyJ0eXAi..." // Plaintext
@@ -604,9 +640,10 @@ dhan_credentials/{userId} {
 ```
 
 **Fix**: Encrypt using GCP Cloud KMS
+
 ```typescript
 // frontend/functions/src/storeCredentials.ts
-import { CloudKMS } from '@google-cloud/kms';
+import { CloudKMS } from "@google-cloud/kms";
 
 const kms = new CloudKMS();
 const keyName = `projects/${PROJECT_ID}/locations/us-central1/keyRings/infinityai/cryptoKeys/credentials`;
@@ -614,7 +651,7 @@ const keyName = `projects/${PROJECT_ID}/locations/us-central1/keyRings/infinitya
 async function encryptCredential(plaintext: string): Promise<string> {
   const response = await kms.encrypt({
     name: keyName,
-    plaintext: Buffer.from(plaintext).toString('base64'),
+    plaintext: Buffer.from(plaintext).toString("base64"),
   });
   return response.ciphertext;
 }
@@ -623,12 +660,12 @@ export const submitDhanCredentialsV2 = onCall(
   { secrets: ["ENCRYPTION_KEY"] },
   async (request) => {
     const encrypted = await encryptCredential(request.data.accessToken);
-    await db.collection('dhan_credentials').doc(uid).set({
-      access_token: encrypted,  // ✅ Encrypted
+    await db.collection("dhan_credentials").doc(uid).set({
+      access_token: encrypted, // ✅ Encrypted
       encrypted: true,
       encrypted_at: admin.firestore.Timestamp.now(),
     });
-  }
+  },
 );
 ```
 
@@ -639,12 +676,15 @@ export const submitDhanCredentialsV2 = onCall(
 ### PRIORITY 2: HIGH-RISK DATA QUALITY (24 hours)
 
 #### Issue 2.1: .env File Points to Wrong Project
+
 **Problem**:
+
 ```dotenv
 GOOGLE_CLOUD_PROJECT=infinity-ai-pro-dev  # ❌ WRONG
 ```
 
 **Fix**:
+
 ```bash
 # Update .env
 cat > .env <<EOF
@@ -661,12 +701,15 @@ gcloud config get-value project
 ---
 
 #### Issue 2.2: Fake Dhan Tokens in Verification Scripts
+
 **Problem**: Expired test tokens in production tools
+
 ```python
 ACCESS_TOKEN = "eyJ0eXAi..."  # Expired 2026-01-12
 ```
 
 **Fix**: Remove or gate behind development check
+
 ```python
 # tools/verification/verify_dhan_creds.py
 import os
@@ -687,11 +730,14 @@ ACCESS_TOKEN = "eyJ0eXAi..."
 ---
 
 #### Issue 2.3: Mismatched Engine URLs
+
 **Problem**: Frontend hardcoded URLs don't match deployed services
+
 - Hardcoded: `engine-a-228557716858.us-central1.run.app`
 - Actual: `engine-a-3acobgd3qa-uc.a.run.app`
 
 **Fix**: Use Firebase Hosting rewrites (already configured in firebase.json)
+
 ```typescript
 // frontend/web-app/next.config.ts
 // Remove hardcoded URLs; rely on Firebase rewrites
@@ -701,7 +747,7 @@ env: {
   // NEXT_PUBLIC_ENGINE_A_URL: "https://engine-a-228557716858.us-central1.run.app",
   // NEXT_PUBLIC_ENGINE_B_URL: "https://engine-b-228557716858.us-central1.run.app",
   // NEXT_PUBLIC_ENGINE_C_URL: "https://engine-c-228557716858.us-central1.run.app",
-  
+
   // Use relative paths that Firebase rewrites handle
   NEXT_PUBLIC_API_BASE: "/",  // Firebase rewrites to correct service
   NEXT_PUBLIC_ENGINE_A_PATH: "/api/system",
@@ -722,12 +768,15 @@ export function getEngineAUrl(): string {
 ### PRIORITY 3: FUNCTIONAL GAPS (1 week)
 
 #### Issue 3.1: Missing Paper Trading Mode
+
 **Problem**:
+
 ```python
 ENGINE_C_MODE = "live"  # LIVE MODE ONLY
 ```
 
 **Fix**: Add paper trading toggle
+
 ```python
 # backend/engine-c/src/main.py
 ENGINE_MODE = os.getenv("ENGINE_MODE", "paper")  # Default paper for safety
@@ -750,7 +799,9 @@ gcloud run deploy engine-c \
 ---
 
 #### Issue 3.2: Missing Webhook Verification
+
 **Problem**: Dhan postbacks not validated
+
 ```python
 @app.post("/api/dhan/postback")
 async def dhan_postback(request: Request):
@@ -759,6 +810,7 @@ async def dhan_postback(request: Request):
 ```
 
 **Fix**: Verify Dhan signature
+
 ```python
 import hmac
 import hashlib
@@ -769,17 +821,17 @@ DHAN_WEBHOOK_SECRET = os.getenv("DHAN_WEBHOOK_SECRET")
 async def dhan_postback(request: Request):
     body = await request.body()
     signature = request.headers.get("X-Dhan-Signature")
-    
+
     # Verify signature
     expected_sig = hmac.new(
         DHAN_WEBHOOK_SECRET.encode(),
         body,
         hashlib.sha256
     ).hexdigest()
-    
+
     if not hmac.compare_digest(signature, expected_sig):
         raise HTTPException(403, "Invalid signature")
-    
+
     # Process webhook
     data = json.loads(body)
     await process_postback(data)
@@ -790,12 +842,15 @@ async def dhan_postback(request: Request):
 ---
 
 #### Issue 3.3: No Multi-Broker Support
+
 **Problem**: Only Dhan supported
+
 ```python
 broker = dhanhq(DHAN_CLIENT_ID, DHAN_ACCESS_TOKEN)
 ```
 
 **Fix**: Add broker abstraction
+
 ```python
 # backend/shared/brokers/base.py
 from abc import ABC, abstractmethod
@@ -803,10 +858,10 @@ from abc import ABC, abstractmethod
 class BrokerInterface(ABC):
     @abstractmethod
     async def place_order(self, order: Order) -> str: pass
-    
+
     @abstractmethod
     async def get_positions(self) -> List[Position]: pass
-    
+
     @abstractmethod
     async def get_orders(self) -> List[Order]: pass
 
@@ -839,7 +894,9 @@ def get_broker(user_id: str, broker_name: str) -> BrokerInterface:
 ### PRIORITY 4: OBSERVABILITY (2 weeks)
 
 #### Issue 4.1: Missing Health Checks for Dhan
+
 **Problem**: No way to know if Dhan API is down until order fails
+
 ```python
 @app.get("/health")
 async def health():
@@ -847,6 +904,7 @@ async def health():
 ```
 
 **Fix**: Add dependency health checks
+
 ```python
 @app.get("/health")
 async def health():
@@ -856,10 +914,10 @@ async def health():
         "dhan": await check_dhan_api(),
         "cache": await check_cache(),
     }
-    
+
     all_ok = all(v == "healthy" for v in checks.values())
     status_code = 200 if all_ok else 503
-    
+
     return {
         "status": "healthy" if all_ok else "degraded",
         "checks": checks,
@@ -882,13 +940,16 @@ async def check_dhan_api() -> str:
 ---
 
 #### Issue 4.2: Backtest Orchestrator Health Check Timeout
+
 **Problem**: Service shows health check failure
+
 ```
 Status: HealthCheckContainerError
 Message: Container failed to start and listen on port 8080
 ```
 
 **Fix**: Check container startup logs
+
 ```bash
 # View recent logs
 gcloud run revisions list --service=backtest-orchestrator \
@@ -913,7 +974,9 @@ gcloud run deploy backtest-orchestrator \
 ### PRIORITY 5: DEVELOPER EXPERIENCE (3 weeks)
 
 #### Issue 5.1: Inconsistent Environment Variable Handling
+
 **Problem**: Some engines gracefully degrade, others fail
+
 ```python
 # Engine A: Fails fast
 require_env("GOOGLE_CLOUD_PROJECT")  # Exits if missing
@@ -927,6 +990,7 @@ def require_env(var):
 ```
 
 **Fix**: Standardize enforcement
+
 ```python
 # backend/shared/config.py
 from enum import Enum
@@ -943,16 +1007,16 @@ def load_env(
     default: Optional[str] = None
 ) -> str:
     value = os.getenv(name)
-    
+
     if type == EnvVarType.REQUIRED:
         if not value:
             logger.error(f"❌ FATAL: Required env var '{name}' not set")
             sys.exit(1)
         return value
-    
+
     elif type == EnvVarType.OPTIONAL:
         return value or default or ""
-    
+
     elif type == EnvVarType.FALLBACK:
         if not value:
             logger.info(f"📌 Env var '{name}' not set, fetching from Secret Manager")
@@ -970,19 +1034,23 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 ---
 
 #### Issue 5.2: Missing API Documentation for End-Users
+
 **Problem**: No user-facing docs on how to get Dhan credentials
 
 **Fix**: Create credential setup guide
+
 ```markdown
 # 🔑 How to Get Your Dhan HQ Credentials
 
 ## Step 1: Create Dhan Account
+
 1. Go to https://dhan.co
 2. Click "Open Account"
 3. Complete KYC verification
 4. Get your **Client ID** (10 digits, e.g., 1234567890)
 
 ## Step 2: Generate Access Token
+
 1. Log in to Dhan Dashboard
 2. Go to Settings → API Keys
 3. Click "Generate New Token"
@@ -990,6 +1058,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 5. **Save securely** - you won't see it again
 
 ## Step 3: Add to InfinityAI.Pro
+
 1. Go to https://galvanic-pulsar-482815-h0.web.app
 2. Sign in with Google
 3. Verify your access code
@@ -1001,6 +1070,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 7. You should see "✅ Connected"
 
 ## Troubleshooting
+
 - **"Invalid credentials"**: Check for extra spaces
 - **"Connection timeout"**: Verify token not expired (see Dashboard)
 - **"401 Unauthorized"**: Token may be revoked; generate new one
@@ -1013,6 +1083,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 ### Before Production Release
 
 #### Security Audit
+
 - [ ] Remove localhost from CORS origins
 - [ ] Encrypt Dhan credentials with Cloud KMS
 - [ ] Verify webhook signatures on postbacks
@@ -1022,6 +1093,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 - [ ] Set up Cloud DLP for credential detection
 
 #### Configuration
+
 - [ ] Verify .env points to `galvanic-pulsar-482815-h0`
 - [ ] Remove fake Dhan tokens from tools/
 - [ ] Reconcile Firebase configs (one API key)
@@ -1030,6 +1102,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 - [ ] Configure rate limiting (1000 req/min per user)
 
 #### Functionality
+
 - [ ] All 23 Cloud Run services show "Ready" status
 - [ ] Backtest orchestrator health check passes
 - [ ] End-to-end test: Place order → Verify in Dhan → Check Firestore
@@ -1038,6 +1111,7 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 - [ ] User can retrieve account data after storing credentials
 
 #### Observability
+
 - [ ] Cloud Logging shows all engine activity
 - [ ] Cloud Trace captures end-to-end request flows
 - [ ] Prometheus metrics exported for CPU/memory
@@ -1048,12 +1122,14 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
   - Failed trades (any execution error)
 
 #### Documentation
+
 - [ ] User guide on getting Dhan credentials
 - [ ] Troubleshooting guide for common errors
 - [ ] API docs for developers (if releasing API)
 - [ ] SLA document (uptime, latency guarantees)
 
 #### Testing
+
 - [ ] Load test: 100 concurrent users
 - [ ] Chaos testing: Kill one engine, verify failover
 - [ ] Data consistency: Verify orders in Firestore match Dhan
@@ -1063,23 +1139,23 @@ DEBUG_MODE = load_env("DEBUG", EnvVarType.OPTIONAL, "false").lower() == "true"
 
 ## SUMMARY OF FIXES REQUIRED
 
-| Priority | Issue | Fix | Effort | Timeline |
-|----------|-------|-----|--------|----------|
-| P1 | Firebase config mismatch | Unify API key | 1h | Immediate |
-| P1 | Localhost in CORS | Environment-gated CORS | 2h | Immediate |
-| P1 | Plaintext credentials | Encrypt with Cloud KMS | 4h | Immediate |
-| P2 | .env wrong project | Update to galvanic-pulsar | 30m | Today |
-| P2 | Fake Dhan tokens | Remove or gate | 1h | Today |
-| P2 | Mismatched URLs | Use Firebase rewrites | 2h | Today |
-| P3 | No paper trading | Add mode toggle | 8h | 1 week |
-| P3 | No webhook verification | Add HMAC check | 3h | 1 week |
-| P3 | Single broker | Implement broker abstraction | 20h | 2 weeks |
-| P4 | Missing Dhan health | Add dependency checks | 4h | 1 week |
-| P4 | Backtest timeout | Debug container startup | 2h | 1 week |
-| P5 | Inconsistent env loading | Standardize config module | 6h | 2 weeks |
-| P5 | No user docs | Create credential guide | 4h | 1 week |
+| Priority | Issue                    | Fix                          | Effort | Timeline  |
+| -------- | ------------------------ | ---------------------------- | ------ | --------- |
+| P1       | Firebase config mismatch | Unify API key                | 1h     | Immediate |
+| P1       | Localhost in CORS        | Environment-gated CORS       | 2h     | Immediate |
+| P1       | Plaintext credentials    | Encrypt with Cloud KMS       | 4h     | Immediate |
+| P2       | .env wrong project       | Update to galvanic-pulsar    | 30m    | Today     |
+| P2       | Fake Dhan tokens         | Remove or gate               | 1h     | Today     |
+| P2       | Mismatched URLs          | Use Firebase rewrites        | 2h     | Today     |
+| P3       | No paper trading         | Add mode toggle              | 8h     | 1 week    |
+| P3       | No webhook verification  | Add HMAC check               | 3h     | 1 week    |
+| P3       | Single broker            | Implement broker abstraction | 20h    | 2 weeks   |
+| P4       | Missing Dhan health      | Add dependency checks        | 4h     | 1 week    |
+| P4       | Backtest timeout         | Debug container startup      | 2h     | 1 week    |
+| P5       | Inconsistent env loading | Standardize config module    | 6h     | 2 weeks   |
+| P5       | No user docs             | Create credential guide      | 4h     | 1 week    |
 
-**Total Effort**: ~62 hours (1-2 developer-weeks)  
+**Total Effort**: ~62 hours (1-2 developer-weeks)
 **Recommended Timeline**: P1 (2 days) → P2 (1 day) → P3-P5 (2 weeks)
 
 ---
@@ -1091,6 +1167,7 @@ InfinityAI.Pro is a **well-architected, production-grade trading platform** with
 **Key Recommendation**: Fix P1 security issues immediately, P2 data issues today, then schedule P3-P5 features over next 2 weeks before go-live.
 
 **Next Steps**:
+
 1. ✅ This analysis complete
 2. 👉 **Implement P1 fixes** (2 days)
 3. Implement P2 fixes (1 day)
@@ -1100,6 +1177,6 @@ InfinityAI.Pro is a **well-architected, production-grade trading platform** with
 
 ---
 
-**Report Generated**: 2026-01-19  
-**Analyst**: Principal Cloud Solutions Architect  
-**Status**: Ready for Implementation  
+**Report Generated**: 2026-01-19
+**Analyst**: Principal Cloud Solutions Architect
+**Status**: Ready for Implementation

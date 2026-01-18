@@ -11,10 +11,10 @@ import * as crypto from "crypto";
 import axios from "axios";
 
 const db = admin.firestore();
-import { defineSecret } from "firebase-functions/params";
+// Removed defineSecret to fix deployment timeout
+// Using direct env var like Engine C does
 
 // Encryption configuration - Using environment variable for better compatibility
-export const ENCRYPTION_KEY = defineSecret("ENCRYPTION_KEY");
 const PROJECT_ID =
   process.env.GCP_PROJECT ||
   process.env.GCLOUD_PROJECT ||
@@ -23,13 +23,21 @@ const ALGORITHM = "aes-256-gcm";
 const USE_SECRET_MANAGER = false;
 
 /**
+ * Get encryption key from environment
+ */
+function getEncryptionKey(): string {
+  const keyHex = process.env.ENCRYPTION_KEY;
+  if (!keyHex) {
+    throw new Error("ENCRYPTION_KEY not configured");
+  }
+  return keyHex;
+}
+
+/**
  * Encrypts sensitive data using AES-256-GCM
  */
 function encrypt(text: string): string {
-  const keyHex = ENCRYPTION_KEY.value();
-  if (!keyHex) {
-    throw new Error("ENCRYPTION_KEY not configured via params API");
-  }
+  const keyHex = getEncryptionKey();
   const iv = crypto.randomBytes(12);
   const key = Buffer.from(keyHex, "hex");
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -46,10 +54,7 @@ function encrypt(text: string): string {
  * Decrypts encrypted data
  */
 function decrypt(encryptedData: string): string {
-  const keyHex = ENCRYPTION_KEY.value();
-  if (!keyHex) {
-    throw new Error("ENCRYPTION_KEY not configured via params API");
-  }
+  const keyHex = getEncryptionKey();
   const parts = encryptedData.split(":");
   if (parts.length !== 3) {
     throw new Error("Invalid encrypted data format");
@@ -121,11 +126,18 @@ export const submitDhanCredentialsV2 = onCall(
         .doc(uid)
         .set(encryptedData, { merge: true });
 
-      // Update User Profile to reflect connection status
+      // Update User Profile with credential metadata for visibility
       await db.collection("users").doc(uid).set(
         {
           dhanConnected: true,
-          dhanClientId: clientId,
+          dhanCredentials: {
+            clientId: clientId, // Plain text for display/diagnostics
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+            storedInVault: true, // Indicates encrypted creds are in dhan_credentials collection
+            hasApiKey: Boolean(apiKey),
+            hasApiSecret: Boolean(apiSecret),
+            hasAccessToken: Boolean(accessToken),
+          },
           lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }

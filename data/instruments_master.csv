@@ -1,0 +1,16 @@
+symbol,security_id,exchange,name,category,added_date,status
+RELIANCE,2885,NSE_EQ,Reliance Industries,equities,2026-01-16,active
+TCS,11536,NSE_EQ,Tata Consultancy Services,equities,2026-01-16,active
+HDFCBANK,1333,NSE_EQ,HDFC Bank,equities,2026-01-16,active
+INFY,1594,NSE_EQ,Infosys,equities,2026-01-16,active
+ICICIBANK,4963,NSE_EQ,ICICI Bank,equities,2026-01-16,active
+HINDUNILVR,1394,NSE_EQ,Hindustan Unilever,equities,2026-01-16,active
+ITC,5258,NSE_EQ,ITC Limited,equities,2026-01-16,active
+SBIN,3045,NSE_EQ,State Bank of India,equities,2026-01-16,active
+BHARTIARTL,20614,NSE_EQ,Bharti Airtel,equities,2026-01-16,active
+KOTAKBANK,1922,NSE_EQ,Kotak Mahindra Bank,equities,2026-01-16,active
+NIFTY,13,IDX_I,NIFTY 50,indices,2026-01-16,active
+BANKNIFTY,25,IDX_I,Nifty Bank,indices,2026-01-16,active
+FINNIFTY,27,IDX_I,Nifty Financial Services,indices,2026-01-16,active
+NIFTY-FUT,13,NSE_FNO,NIFTY Futures,futures,2026-01-16,active
+BANKNIFTY-FUT,25,NSE_FNO,Bank Nifty Futures,futures,2026-01-16,active

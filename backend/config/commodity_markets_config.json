@@ -1,0 +1,68 @@
+{
+  "mcx_commodities": [
+    {
+      "symbol": "GOLD",
+      "display_name": "Gold",
+      "security_id": "11536",
+      "exchange_segment": "MCX",
+      "trading_hours": {
+        "start": "09:00",
+        "end": "23:30"
+      },
+      "contract_type": "FUTCOM",
+      "lot_size": 100,
+      "tick_size": 1,
+      "enabled": true
+    },
+    {
+      "symbol": "SILVER",
+      "display_name": "Silver",
+      "security_id": "11541",
+      "exchange_segment": "MCX",
+      "trading_hours": {
+        "start": "09:00",
+        "end": "23:30"
+      },
+      "contract_type": "FUTCOM",
+      "lot_size": 30000,
+      "tick_size": 1,
+      "enabled": true
+    },
+    {
+      "symbol": "CRUDEOIL",
+      "display_name": "Crude Oil",
+      "security_id": "11547",
+      "exchange_segment": "MCX",
+      "trading_hours": {
+        "start": "09:00",
+        "end": "23:30"
+      },
+      "contract_type": "FUTCOM",
+      "lot_size": 100,
+      "tick_size": 1,
+      "enabled": true
+    },
+    {
+      "symbol": "NATURALGAS",
+      "display_name": "Natural Gas",
+      "security_id": "11552",
+      "exchange_segment": "MCX",
+      "trading_hours": {
+        "start": "09:00",
+        "end": "23:30"
+      },
+      "contract_type": "FUTCOM",
+      "lot_size": 1250,
+      "tick_size": 0.1,
+      "enabled": true
+    }
+  ],
+  "enabled": true,
+  "scan_interval_minutes": 15,
+  "max_positions_per_commodity": 2,
+  "risk_settings": {
+    "max_commodity_exposure_percent": 30,
+    "commodity_stop_loss_percent": 3,
+    "commodity_margin_buffer": 1.5
+  }
+}

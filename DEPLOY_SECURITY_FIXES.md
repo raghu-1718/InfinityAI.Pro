@@ -1,7 +1,7 @@
 # 🔒 Deploy Security Fixes to Production
 
-**Status**: 3/4 Priority 1 fixes implemented and committed  
-**Git Commit**: `490d8025` - Security fixes pushed to `main`  
+**Status**: 3/4 Priority 1 fixes implemented and committed
+**Git Commit**: `490d8025` - Security fixes pushed to `main`
 **Deployment**: In progress (Engine A building...)
 
 ## ✅ Changes Committed (Git)
@@ -25,6 +25,7 @@
 ## ⚠️ Changes NOT Committed (Local Only)
 
 `.env` file updated (correctly in `.gitignore`):
+
 ```bash
 # BEFORE (WRONG)
 GOOGLE_CLOUD_PROJECT="infinity-ai-pro-dev"
@@ -44,6 +45,7 @@ LOG_LEVEL="INFO"
 ## 🚀 Deployment Commands
 
 ### Prerequisites
+
 ```powershell
 # Verify GCP project context
 gcloud config get-value project
@@ -55,6 +57,7 @@ git status
 ```
 
 ### Engine A (Orchestration & Risk Management)
+
 ```powershell
 cd c:\workspace\InfinityAI.Pro
 
@@ -74,6 +77,7 @@ gcloud run deploy engine-a `
 ```
 
 ### Engine B (AI Signal Generation)
+
 ```powershell
 # Build
 gcloud builds submit `
@@ -91,6 +95,7 @@ gcloud run deploy engine-b `
 ```
 
 ### Engine C (Trade Execution)
+
 ```powershell
 # Build
 gcloud builds submit `
@@ -108,6 +113,7 @@ gcloud run deploy engine-c `
 ```
 
 ### Frontend (Next.js Static Export)
+
 ```powershell
 cd c:\workspace\InfinityAI.Pro\frontend\web-app
 
@@ -123,6 +129,7 @@ firebase deploy --only hosting --project=galvanic-pulsar-482815-h0
 ## ✅ Verification Steps
 
 ### 1. Verify CORS Security (Critical!)
+
 ```powershell
 # Test localhost is BLOCKED (should return 403 or CORS error)
 curl -v -H "Origin: http://localhost:3000" `
@@ -134,10 +141,12 @@ curl -v -H "Origin: https://infinityai.pro" `
 ```
 
 **Expected Results**:
+
 - Localhost origin → **CORS error** or **403 Forbidden** (good!)
 - Production origin → **200 OK** with health data (good!)
 
 ### 2. Verify Environment Variables
+
 ```powershell
 # Check Engine A config
 gcloud run services describe engine-a `
@@ -149,6 +158,7 @@ gcloud run services describe engine-a `
 ```
 
 ### 3. Verify Firebase Config
+
 ```powershell
 # Check frontend build output
 cd c:\workspace\InfinityAI.Pro\frontend\web-app
@@ -158,6 +168,7 @@ npm run build
 ```
 
 ### 4. Verify Service Health
+
 ```powershell
 # Engine A
 curl https://engine-a-228557716858.us-central1.run.app/health
@@ -177,17 +188,19 @@ curl https://engine-c-228557716858.us-central1.run.app/health
 
 ### Credential Encryption with Cloud KMS
 
-**Status**: Not yet implemented  
-**Timeline**: 3-4 hours  
+**Status**: Not yet implemented
+**Timeline**: 3-4 hours
 **Risk Level**: Medium (credentials currently plaintext but user-isolated in Firestore)
 
 #### Steps:
+
 1. **Create KMS Key Ring and Key**
+
    ```powershell
    gcloud kms keyrings create infinityai-credentials `
      --location=us-central1 `
      --project=galvanic-pulsar-482815-h0
-   
+
    gcloud kms keys create dhan-credentials `
      --location=us-central1 `
      --keyring=infinityai-credentials `
@@ -196,6 +209,7 @@ curl https://engine-c-228557716858.us-central1.run.app/health
    ```
 
 2. **Grant IAM Permissions**
+
    ```powershell
    # Cloud Functions service account
    gcloud kms keys add-iam-policy-binding dhan-credentials `
@@ -204,13 +218,13 @@ curl https://engine-c-228557716858.us-central1.run.app/health
      --member="serviceAccount:galvanic-pulsar-482815-h0@appspot.gserviceaccount.com" `
      --role="roles/cloudkms.cryptoKeyEncrypterDecrypter" `
      --project=galvanic-pulsar-482815-h0
-   
+
    # Engine C service account
    ENGINE_C_SA=$(gcloud run services describe engine-c \
      --region=us-central1 \
      --project=galvanic-pulsar-482815-h0 \
      --format="value(spec.template.spec.serviceAccountName)")
-   
+
    gcloud kms keys add-iam-policy-binding dhan-credentials `
      --location=us-central1 `
      --keyring=infinityai-credentials `
@@ -222,35 +236,42 @@ curl https://engine-c-228557716858.us-central1.run.app/health
 3. **Update Cloud Functions (`saveDhanCredentials`)**
    - Location: `infra/firebase/functions/src/index.ts` (or Python equivalent)
    - Add KMS encryption before Firestore write:
+
      ```typescript
-     import { KMSClient, EncryptCommand } from '@google-cloud/kms';
-     
+     import { KMSClient, EncryptCommand } from "@google-cloud/kms";
+
      const kms = new KMSClient();
-     const keyName = 'projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai-credentials/cryptoKeys/dhan-credentials';
-     
+     const keyName =
+       "projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai-credentials/cryptoKeys/dhan-credentials";
+
      // Encrypt client_id
      const encryptedClientId = await kms.encrypt({
        name: keyName,
-       plaintext: Buffer.from(dhanCredentials.client_id)
+       plaintext: Buffer.from(dhanCredentials.client_id),
      });
-     
+
      // Store encrypted version in Firestore
-     await db.collection('user_broker_credentials').doc(uid).set({
-       dhan_client_id_encrypted: encryptedClientId.ciphertext.toString('base64'),
-       encryption_key_version: keyName,
-       last_updated: admin.firestore.FieldValue.serverTimestamp()
-     });
+     await db
+       .collection("user_broker_credentials")
+       .doc(uid)
+       .set({
+         dhan_client_id_encrypted:
+           encryptedClientId.ciphertext.toString("base64"),
+         encryption_key_version: keyName,
+         last_updated: admin.firestore.FieldValue.serverTimestamp(),
+       });
      ```
 
 4. **Update Engine C Decryption**
    - Location: `backend/engine-c/src/main.py`
    - Add KMS decryption when loading credentials:
+
      ```python
      from google.cloud import kms
-     
+
      kms_client = kms.KeyManagementServiceClient()
      key_name = 'projects/galvanic-pulsar-482815-h0/locations/us-central1/keyRings/infinityai-credentials/cryptoKeys/dhan-credentials'
-     
+
      # Decrypt client_id
      ciphertext = base64.b64decode(cred_doc['dhan_client_id_encrypted'])
      response = kms_client.decrypt(request={'name': key_name, 'ciphertext': ciphertext})
@@ -266,6 +287,7 @@ curl https://engine-c-228557716858.us-central1.run.app/health
    - Delete plaintext versions
 
 #### Estimated Timeline
+
 - KMS setup: 30 minutes
 - Cloud Functions update: 1 hour
 - Engine C update: 1 hour
@@ -277,15 +299,16 @@ curl https://engine-c-228557716858.us-central1.run.app/health
 
 ## 📊 Deployment Status
 
-| Component | Build Status | Deploy Status | CORS Security | Notes |
-|-----------|-------------|---------------|---------------|-------|
-| **Engine A** | 🟡 In Progress | ⏳ Pending | ⏳ Pending | Building via Cloud Build |
-| **Engine B** | ⏳ Pending | ⏳ Pending | ⏳ Pending | Awaiting Engine A completion |
-| **Engine C** | ⏳ Pending | ⏳ Pending | ⏳ Pending | Awaiting Engine B completion |
-| **Frontend** | ✅ Tested | ⏳ Pending | N/A | Build verified (2.3min compile) |
-| **KMS Encryption** | ⏳ Not Started | N/A | N/A | Fix #4 - 3-4 hours remaining |
+| Component          | Build Status   | Deploy Status | CORS Security | Notes                           |
+| ------------------ | -------------- | ------------- | ------------- | ------------------------------- |
+| **Engine A**       | 🟡 In Progress | ⏳ Pending    | ⏳ Pending    | Building via Cloud Build        |
+| **Engine B**       | ⏳ Pending     | ⏳ Pending    | ⏳ Pending    | Awaiting Engine A completion    |
+| **Engine C**       | ⏳ Pending     | ⏳ Pending    | ⏳ Pending    | Awaiting Engine B completion    |
+| **Frontend**       | ✅ Tested      | ⏳ Pending    | N/A           | Build verified (2.3min compile) |
+| **KMS Encryption** | ⏳ Not Started | N/A           | N/A           | Fix #4 - 3-4 hours remaining    |
 
 ### Next Actions (In Order)
+
 1. ✅ ~~Complete Engine A build~~ (currently running)
 2. ⏳ Deploy Engine A to Cloud Run with ENVIRONMENT=production
 3. ⏳ Verify CORS blocks localhost
@@ -312,12 +335,13 @@ curl https://engine-c-228557716858.us-central1.run.app/health
 
 ## 📞 Contact
 
-**Deployed by**: Principal Cloud Solutions Architect  
-**GCP Project**: `galvanic-pulsar-482815-h0`  
-**Git Commit**: `490d8025`  
+**Deployed by**: Principal Cloud Solutions Architect
+**GCP Project**: `galvanic-pulsar-482815-h0`
+**Git Commit**: `490d8025`
 **Deployment Date**: 2024-XX-XX (in progress)
 
 For issues or questions, check:
+
 - Cloud Build logs: https://console.cloud.google.com/cloud-build/builds?project=228557716858
 - Cloud Run services: https://console.cloud.google.com/run?project=228557716858
 - Firebase Console: https://console.firebase.google.com/project/galvanic-pulsar-482815-h0

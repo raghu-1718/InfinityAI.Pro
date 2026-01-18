@@ -272,6 +272,15 @@ export const useAppStore = create<AppState>()(
             funds: null,
             positions: [],
             signals: [],
+            riskMetrics: null,
+            tradingSession: {
+              isActive: false,
+              startTime: null,
+              tradesExecuted: 0,
+              totalPnL: 0,
+              winRate: 0,
+              activeInstruments: [],
+            },
           });
         },
 
@@ -326,7 +335,15 @@ export const useAppStore = create<AppState>()(
         skipHydration: true,
         partialize: (state) => ({
           theme: state.theme,
-          userProfile: state.userProfile,
+          // Only persist basic user info, NOT connection status or sensitive data
+          userProfile: state.userProfile ? {
+            userId: state.userProfile.userId,
+            clientId: '', // Never persist client ID
+            name: state.userProfile.name,
+            email: state.userProfile.email,
+            isConnected: false, // Never persist connection state
+            isVerified: false, // Never persist verification state
+          } : null,
           tradingConfig: state.tradingConfig,
         }),
       }

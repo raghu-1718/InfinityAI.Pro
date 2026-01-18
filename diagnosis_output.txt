@@ -1,0 +1,75 @@
+Diagnosing Live User ID: znyNtT2lW3MKHqFrVA6E0A2Iv3N2
+
+--- Checking Engine C Health ---
+URL: https://engine-c-228557716858.us-central1.run.app/health
+Params: {}
+Status: 200
+Response: {
+  "status": "healthy",
+  "service": "engine-c-execution",
+  "broker": "DhanHQ",
+  "version": "3.8-performance-optimized",
+  "ml_capabilities": [
+    "slippage_prediction",
+    "order_timing",
+    "twap_splitting",
+    "vwap_splitting",
+    "execution_analytics"
+  ],
+  "timestamp": "2026-01-17T22:36:48.947848"
+}
+
+--- Checking Funds ---
+URL: https://engine-c-228557716858.us-central1.run.app/api/dhan/funds
+Params: {'user_id': 'znyNtT2lW3MKHqFrVA6E0A2Iv3N2'}
+Status: 200
+Response: {
+  "status": "success",
+  "data": {
+    "dhanClientId": "1101302170",
+    "availabelBalance": 100.25,
+    "sodLimit": 100.25,
+    "collateralAmount": 0.0,
+    "receiveableAmount": 0.0,
+    "utilizedAmount": 0.0,
+    "blockedPayoutAmount": 0.0,
+    "withdrawableBalance": 100.25
+  },
+  "summary": {
+    "available_balance": 100.25,
+    "utilized_margin": 0,
+    "payin_amount": 0,
+    "withdrawal_available": 100.25
+  },
+  "timestamp": "2026-01-17T22:36:50.776961"
+}
+
+--- Checking Holdings ---
+URL: https://engine-c-228557716858.us-central1.run.app/api/dhan/holdings
+Params: {'user_id': 'znyNtT2lW3MKHqFrVA6E0A2Iv3N2'}
+Status: 200
+Response: {
+  "status": "success",
+  "data": {
+    "status": "failure",
+    "remarks": {
+      "error_code": "DH-1111",
+      "error_type": "HOLDING_ERROR",
+      "error_message": "No holdings available"
+    },
+    "data": {
+      "errorType": "HOLDING_ERROR",
+      "errorCode": "DH-1111",
+      "errorMessage": "No holdings available"
+    }
+  }
+}
+
+--- Checking Positions ---
+URL: https://engine-c-228557716858.us-central1.run.app/api/dhan/positions
+Params: {'user_id': 'znyNtT2lW3MKHqFrVA6E0A2Iv3N2'}
+Status: 200
+Response: {
+  "status": "success",
+  "data": []
+}

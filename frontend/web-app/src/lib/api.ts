@@ -4,13 +4,7 @@ import { getUserId } from "@/lib/user";
 
 // Helper to determine Engine A URL based on environment
 export const getEngineAUrl = () => {
-  if (process.env.NODE_ENV === "development") {
-    return (
-      process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-      "https://engine-a-3acobgd3qa-uc.a.run.app"
-    );
-  }
-  // Production defaults to Cloud Run domain if no env override is provided
+  // Always use environment variable or correct production URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
     "https://engine-a-3acobgd3qa-uc.a.run.app"
@@ -19,12 +13,6 @@ export const getEngineAUrl = () => {
 
 // Helper to determine Engine B URL based on environment
 export const getEngineBUrl = () => {
-  if (process.env.NODE_ENV === "development") {
-    return (
-      process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-      "https://engine-b-3acobgd3qa-uc.a.run.app"
-    );
-  }
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
     "https://engine-b-3acobgd3qa-uc.a.run.app"
@@ -32,40 +20,51 @@ export const getEngineBUrl = () => {
 };
 
 // Helper to determine Engine C URL based on environment
-// Prod -> Relative path (uses Firebase Rewrites)
-// Dev -> Absolute path (Direct Cloud Run)
 export const getEngineCUrl = () => {
-  if (process.env.NODE_ENV === "development") {
-    return (
-      process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-      "https://engine-c-3acobgd3qa-uc.a.run.app"
-    );
-  }
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
     "https://engine-c-3acobgd3qa-uc.a.run.app"
   );
 };
 
-// API URLs must be set via environment variables only (fail-fast enforced)
-// API URLs must be set via environment variables only (fail-fast enforced)
+// API URLs from environment variables with correct fallbacks
 const API_CONFIG = {
   ENGINE_A: getEngineAUrl(),
   ENGINE_B: getEngineBUrl(),
   ENGINE_C: getEngineCUrl(),
 };
 
-// Removed legacy FALLBACK_URLS to strictly enforce correct config.
+// Debug logging in development
+if (typeof window !== 'undefined') {
+  console.log('🔧 API Configuration:', {
+    ENGINE_A: API_CONFIG.ENGINE_A,
+    ENGINE_B: API_CONFIG.ENGINE_B,
+    ENGINE_C: API_CONFIG.ENGINE_C,
+  });
+}
 
 async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
-  // Fail-fast: Only use primaryUrl, never fallback to demo/test endpoints
-  const response = await fetch(primaryUrl, {
-    ...options,
-    signal: AbortSignal.timeout(8000),
-  });
-  if (response.ok) return response;
-  throw new Error(`HTTP ${response.status}`);
+  try {
+    const response = await fetch(primaryUrl, {
+      ...options,
+      signal: AbortSignal.timeout(20000), // Increased timeout for reliability
+    });
+    if (response.ok) return response;
+    
+    // Create error with status for better handling
+    const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+    (error as any).status = response.status;
+    throw error;
+  } catch (err: any) {
+    // Re-throw with status if available
+    if (err.status) throw err;
+    
+    // Network or timeout error
+    console.error(`API Error for ${primaryUrl}:`, err.message);
+    throw err;
+  }
 }
+
 
 // Types
 export interface EngineHealth {
@@ -1263,6 +1262,101 @@ export const engineC = {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/session/create/${userId}`,
       { method: "POST" }
+    );
+    return res.json();
+  },
+
+  // ==================== OPTIONS ANALYTICS & MARKET DATA ====================
+
+  async getOptionChain(params: {
+    under_security_id: number;
+    under_exchange_segment: string;
+    expiry: string;
+    user_id: string;
+  }) {
+    const qs = new URLSearchParams({
+      under_security_id: params.under_security_id.toString(),
+      under_exchange_segment: params.under_exchange_segment,
+      expiry: params.expiry,
+      user_id: params.user_id,
+    });
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/market/options/chain?${qs.toString()}`
+    );
+    return res.json();
+  },
+
+  async calculateGreeks(data: {
+    spot_price: number;
+    strike_price: number;
+    time_to_expiry_days: number;
+    implied_volatility: number;
+    risk_free_rate?: number;
+    option_type: "call" | "put";
+  }) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/options/greeks/calculate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async calculatePCR(option_chain: any[]) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/options/analytics/pcr`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(option_chain),
+      }
+    );
+    return res.json();
+  },
+
+  async calculateMaxPain(option_chain: any[]) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/options/analytics/max-pain`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(option_chain),
+      }
+    );
+    return res.json();
+  },
+
+  async analyzeOptionStrategy(data: {
+    strategy_name: string;
+    spot_price: number;
+    params: Record<string, number>;
+  }) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/options/strategies/analyze`,
+      {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify(data),
+      }
+    );
+    return res.json();
+  },
+
+  async getMarketQuotes(
+    userId: string,
+    securityIds: string[],
+    exchangeSegment: string = "NSE_EQ"
+  ) {
+    const qs = new URLSearchParams({
+      security_ids: securityIds.join(","),
+      exchange_segment: exchangeSegment,
+      user_id: userId,
+    });
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/market/quotes?${qs.toString()}`
     );
     return res.json();
   },

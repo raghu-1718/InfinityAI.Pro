@@ -57,9 +57,9 @@ Object.defineProperty(exports, "getDhanOverview", { enumerable: true, get: funct
 // Export new trading setup functions
 var verifyCoupon_1 = require("./verifyCoupon");
 Object.defineProperty(exports, "verifyCoupon", { enumerable: true, get: function () { return verifyCoupon_1.verifyCoupon; } });
-var userCredentials_1 = require("./userCredentials");
-Object.defineProperty(exports, "storeUserCredentials", { enumerable: true, get: function () { return userCredentials_1.storeUserCredentials; } });
-Object.defineProperty(exports, "getUserCredentials", { enumerable: true, get: function () { return userCredentials_1.getUserCredentials; } });
+var storeCredentials_1 = require("./storeCredentials");
+Object.defineProperty(exports, "storeUserCredentials", { enumerable: true, get: function () { return storeCredentials_1.submitDhanCredentialsV2; } });
+Object.defineProperty(exports, "getUserCredentials", { enumerable: true, get: function () { return storeCredentials_1.getDecryptedCredentials; } });
 var accountData_1 = require("./accountData");
 Object.defineProperty(exports, "fetchAccountData", { enumerable: true, get: function () { return accountData_1.fetchAccountData; } });
 //# sourceMappingURL=index.js.map
