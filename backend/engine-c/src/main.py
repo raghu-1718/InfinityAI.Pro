@@ -13,6 +13,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
 import asyncio
+import time
 import aiohttp
 import sys
 
@@ -21,11 +22,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from dhanhq import dhanhq
+from src.dhan_client_wrapper import DhanClient, create_dhan_client, DhanEnvironment
 from google.cloud import secretmanager
 from google.cloud import firestore
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
+
+# Register Dhan Data API router for market data (Phase 2)
+try:
+    from src.dhan_data_api import data_router
+    DATA_ROUTER_AVAILABLE = True
+except ImportError:
+    DATA_ROUTER_AVAILABLE = False
 
 # Import Real-Time Enhancements Module
 try:
@@ -177,9 +186,48 @@ ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://engine-a:8080")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
-    description="DhanHQ Execution with ML-based Slippage Prediction & Order Optimization",
-    version="3.8-performance-optimized"
+    description="Trading Execution, DhanHQ Integration, Market Data APIs, Options Analytics with Greeks",
+    version="3.9-options-analytics"
 )
+
+# Import CORS config from shared module (environment-gated)
+try:
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+except ImportError:
+    # Fallback if shared module not in path
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+
+logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
+    app.include_router(analytics_router)
+    logger.info("✅ Options Analytics API endpoints enabled")
+except ImportError as e:
+    logger.warning(f"⚠️ Options Analytics not available: {e}")
+
+# Register Option Strategies Router (Phase 2: Advanced Strategies)
+try:
+    from src.options_strategy_api import router as strategy_router
+    app.include_router(strategy_router)
+    logger.info("✅ Option Strategy API endpoints enabled")
+except ImportError as e:
+    logger.error(f"⚠️ Option Strategy API not available: {e}")
+
+# Register Super Order Router
+try:
+    from src.super_order_api import super_order_router
+    app.include_router(super_order_router)
+    logger.info("✅ Super Order API endpoints enabled")
+except ImportError as e:
+    logger.warning(f"⚠️ Super Order API not available: {e}")
+
+# Register Frontend WebSocket Router
+try:
+    from src.frontend_websocket import ws_router
+    app.include_router(ws_router)
+    logger.info("✅ Frontend WebSocket endpoints enabled")
+except ImportError as e:
+    logger.warning(f"⚠️ Frontend WebSocket not available: {e}")
 
 
 # --- Health Checks ---
@@ -320,18 +368,16 @@ async def shutdown_event():
             logger.warning(f"Shutdown warning: {e}")
 
 
-# CORS allowed origins for production - RESTRICTED, NOT WILDCARD
-project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'galvanic-pulsar-482815-h0')
-ALLOWED_ORIGINS = [
-    f"https://{project_id}.web.app",
-    f"https://{project_id}.firebaseapp.com",
-    "https://infinityai.pro",
-    "https://www.infinityai.pro",
-    "https://app.infinityai.pro",
-    "http://localhost:3000",  # Dev only
-    "http://localhost:8000",  # Dev only
-]
-# CRITICAL: NEVER use "*" in production
+# Import CORS config from shared module (environment-gated)
+try:
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+except ImportError:
+    # Fallback if shared module not in path
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+
+logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 
 # Add CORS middleware FIRST (added last so it executes first in FastAPI)
 app.add_middleware(
@@ -598,6 +644,7 @@ class OrderRequest(BaseModel):
     order_type: str        # MARKET, LIMIT, STOP_LOSS, etc.
     security_id: str       # Dhan Security ID
     quantity: int
+    validity: Optional[str] = "DAY"  # Default to DAY validity
     price: Optional[float] = 0.0
     trigger_price: Optional[float] = 0.0
     disclosed_quantity: Optional[int] = 0
@@ -712,11 +759,20 @@ class ExecutionAnalyticsRequest(BaseModel):
     orders: List[Dict[str, Any]]
 
 # --- DhanHQ Client Helper ---
-async def get_dhan_client_async(user_id: str) -> dhanhq:
+async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: Optional[float] = None) -> dhanhq:
     """
     Async version: Create authenticated DhanHQ client for a specific user.
     Uses GCP Secret Manager for credentials.
+
+    Adds exponential backoff retries to handle transient Firestore latency
+    immediately after credential updates.
     """
+    if start_time is None:
+        start_time = time.time()
+
+    MAX_RETRIES = 3
+    RETRY_DELAYS = [0.1, 0.2, 0.4]  # seconds
+
     try:
         creds_manager = get_credentials_manager()
         creds = await creds_manager.get_user_credentials(user_id)
@@ -728,21 +784,53 @@ async def get_dhan_client_async(user_id: str) -> dhanhq:
             if creds:
                 resolved_user_id = creds.get("user_id", user_id)
 
+        if not creds:
+             if retry_count < MAX_RETRIES:
+                wait_time = RETRY_DELAYS[retry_count]
+                logger.warning(
+                    f"⚠️ Credentials not found for {user_id}. Retrying in {wait_time * 1000:.0f}ms (attempt {retry_count + 1}/{MAX_RETRIES})"
+                )
+                await asyncio.sleep(wait_time)
+                return await get_dhan_client_async(user_id, retry_count + 1, start_time)
+             
+             # Final failure
+             elapsed_ms = (time.time() - start_time) * 1000
+             logger.error(
+                 f"User credentials not found for user_id/client_id: {user_id} after {retry_count + 1} attempts in {elapsed_ms:.0f}ms"
+             )
+             raise HTTPException(status_code=401, detail="User credentials not found or invalid")
+
         if creds:
             credentials = creds.get("credentials", {})
             client_id = credentials.get("client_id")
             access_token = credentials.get("access_token")
 
             if client_id and access_token:
-                logger.info(f"✅ DhanHQ client created for user {resolved_user_id}")
-                return dhanhq(client_id, access_token)
+                elapsed_ms = (time.time() - start_time) * 1000
+                logger.info(
+                    f"✅ DhanHQ client created for user {resolved_user_id} on attempt {retry_count + 1} in {elapsed_ms:.0f}ms"
+                )
+                # Use wrapper to support sandbox mode
+                return create_dhan_client(client_id, access_token)
 
-        logger.error(f"User credentials not found for user_id/client_id: {user_id}")
+        if retry_count < MAX_RETRIES:
+            wait_time = RETRY_DELAYS[retry_count]
+            logger.warning(
+                f"⚠️ Credentials not found for {user_id}. Retrying in {wait_time * 1000:.0f}ms (attempt {retry_count + 2}/{MAX_RETRIES + 1})"
+            )
+            await asyncio.sleep(wait_time)
+            return await get_dhan_client_async(user_id, retry_count + 1, start_time)
+
+        elapsed_ms = (time.time() - start_time) * 1000
+        logger.error(
+            f"User credentials not found for user_id/client_id: {user_id} after {retry_count + 1} attempts in {elapsed_ms:.0f}ms"
+        )
         raise HTTPException(status_code=401, detail="User credentials not found or invalid")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get user credentials: {e}")
+        elapsed_ms = (time.time() - start_time) * 1000
+        logger.error(f"Failed to get user credentials for {user_id} after {elapsed_ms:.0f}ms: {e}")
         raise HTTPException(status_code=401, detail="User credentials not found or invalid")
 
 
@@ -823,7 +911,7 @@ async def save_user_credentials(request: UserCredentialsRequest):
 
         # Verify the connection immediately
         try:
-            dhan_client = dhanhq(request.client_id, request.access_token)
+            dhan_client = create_dhan_client(request.client_id, request.access_token)
             funds = dhan_client.get_fund_limits()
 
             if isinstance(funds, dict) and funds.get("status") == "success":
@@ -943,7 +1031,7 @@ async def verify_user_connection(request: UserCredentialsVerifyRequest):
 async def verify_dhan_deep(request: DhanCredentialsRequest):
     """Protocol-Level Deep Verification"""
     try:
-        dhan = dhanhq(request.client_id, request.access_token)
+        dhan = create_dhan_client(request.client_id, request.access_token)
 
         # 1. Verify Token Validity (Fund Limits)
         funds = dhan.get_fund_limits()
@@ -1085,7 +1173,7 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         verified = False
         message = "Credentials saved"
         try:
-            dhan = dhanhq(request.client_id, request.access_token)
+            dhan = create_dhan_client(request.client_id, request.access_token)
             # Test API call
             funds = dhan.get_fund_limits()
             if funds and funds.get('status') == 'success':
@@ -1147,7 +1235,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
              # Actually, simpler if frontend sends them for now as it's a 'Verify' action.
              pass
 
-        dhan = dhanhq(client_id, access_token)
+        dhan = create_dhan_client(client_id, access_token)
         funds = dhan.get_fund_limits()
 
         if funds and funds.get('status') == 'success':
@@ -1183,6 +1271,7 @@ async def get_user_account_details(user_id: str):
     Requires user to have configured their Dhan credentials.
     """
     try:
+        request_start = time.time()
         dhan_client = await get_dhan_client_async(user_id=user_id)
 
         # Fetch all account data
@@ -1204,6 +1293,12 @@ async def get_user_account_details(user_id: str):
                 funds_data = {}
         else:
             funds_data = {}
+
+        # Normalize keys in funds_data
+        if "availabelBalance" in funds_data:
+            funds_data["availableBalance"] = funds_data["availabelBalance"]
+        elif "availableBalance" in funds_data:
+            funds_data["availabelBalance"] = funds_data["availableBalance"]
 
         # Process holdings - handle string errors and missing data
         holdings_data = []
@@ -1246,7 +1341,7 @@ async def get_user_account_details(user_id: str):
         available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
         utilized_margin = funds_data.get("utilizedAmount", 0) or funds_data.get("utilizedMargin", 0) or 0
 
-        return {
+        response_payload = {
             "status": "success",
             "user_id": user_id,
             "account_summary": {
@@ -1279,6 +1374,10 @@ async def get_user_account_details(user_id: str):
             },
             "timestamp": datetime.utcnow().isoformat()
         }
+
+        elapsed_ms = (time.time() - request_start) * 1000
+        logger.info(f"✅ get_user_account_details for {user_id} completed in {elapsed_ms:.0f}ms")
+        return response_payload
 
     except HTTPException:
         raise
@@ -1585,6 +1684,16 @@ async def get_funds(user_id: Optional[str] = None):
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }
+        
+        # Normalize keys in the data block
+        if isinstance(response, dict) and response.get("status") == "success":
+             d = response.get("data", {})
+             # Ensure both keys exist for frontend compatibility
+             if "availabelBalance" in d:
+                 d["availableBalance"] = d["availabelBalance"]
+             elif "availableBalance" in d:
+                 d["availabelBalance"] = d["availableBalance"]
+             response["data"] = d
 
         return {"status": "success", "data": response}
 
@@ -1758,8 +1867,9 @@ async def save_user_credentials_simple(request: UserCredentialsRequest):
         )
 
         # Verify the connection immediately
-        try:
-            dhan_client = dhanhq(request.client_id, request.access_token)
+        # We call the low-level get_dhan_client if user_id is NOT in request but WE need quick fetch
+        if request.client_id and request.access_token:
+            dhan_client = create_dhan_client(request.client_id, request.access_token)
             funds = dhan_client.get_fund_limits()
 
             if isinstance(funds, dict) and funds.get("status") == "success":
@@ -1768,8 +1878,7 @@ async def save_user_credentials_simple(request: UserCredentialsRequest):
             else:
                 result["is_verified"] = False
                 result["connection_status"] = "failed"
-        except Exception as verify_error:
-            logger.warning(f"Verification failed: {verify_error}")
+        else:
             result["is_verified"] = False
             result["connection_status"] = "failed"
 
@@ -1895,7 +2004,7 @@ async def verify_user_credentials_simple(user_id: str):
                     "message": "Incomplete credentials"
                 }
 
-            dhan_client = dhanhq(client_id, access_token)
+            dhan_client = create_dhan_client(client_id, access_token)
             funds = dhan_client.get_fund_limits()
 
             if isinstance(funds, dict) and funds.get("status") == "success":
@@ -1935,7 +2044,7 @@ async def get_user_demat_simple(user_id: str):
         if not client_id or not access_token:
             raise HTTPException(status_code=400, detail="Incomplete credentials")
 
-        dhan_client = dhanhq(client_id, access_token)
+        dhan_client = create_dhan_client(client_id, access_token)
 
         # Fetch all account data
         funds = dhan_client.get_fund_limits()
@@ -2198,9 +2307,9 @@ async def update_dhan_token(request: Request):
                 "access_token": access_token
             })
 
-        # Verify the token works
+        # Re-test verification with fetched credentials
         try:
-            dhan = dhanhq(client_id, access_token)
+            dhan = create_dhan_client(client_id, access_token)
             funds = dhan.get_fund_limits()
             verified = isinstance(funds, dict) and funds.get("status") == "success"
         except Exception:
@@ -2574,7 +2683,7 @@ async def get_portfolio(user_id: str = "default"):
         raise HTTPException(status_code=400, detail="Incomplete credentials. Please reconnect your Dhan account.")
 
     try:
-        dhan_client = dhanhq(client_id, access_token)
+        dhan_client = create_dhan_client(client_id, access_token)
 
         # Fetch all data
         funds_resp = dhan_client.get_fund_limits()

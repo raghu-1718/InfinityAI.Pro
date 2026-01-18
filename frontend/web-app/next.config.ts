@@ -26,23 +26,16 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Hardcoded environment variables to ensure they are available at build/runtime
+  // Firebase configuration - matches firebase/config.ts (UNIFIED)
+  // Engine URLs removed - use Firebase Hosting rewrites instead (see firebase.json)
   env: {
-    NEXT_PUBLIC_ENGINE_A_URL:
-      "https://engine-a-228557716858.us-central1.run.app",
-    NEXT_PUBLIC_ENGINE_B_URL:
-      "https://engine-b-228557716858.us-central1.run.app",
-    NEXT_PUBLIC_ENGINE_C_URL:
-      "https://engine-c-228557716858.us-central1.run.app",
-    NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k",
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
-      "galvanic-pulsar-482815-h0.firebaseapp.com",
+    NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyD_y3lIPm7bTEXy3Uy4deGTnZPpjr2A8B8",
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "galvanic-pulsar-482815-h0.firebaseapp.com",
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: "galvanic-pulsar-482815-h0",
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
-      "galvanic-pulsar-482815-h0.firebasestorage.app",
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "429140669077",
-    NEXT_PUBLIC_FIREBASE_APP_ID: "1:429140669077:web:e071ad7a136c74a3ea219c",
-    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-NY37ZKLPBX",
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "galvanic-pulsar-482815-h0.firebasestorage.app",
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "228557716858",
+    NEXT_PUBLIC_FIREBASE_APP_ID: "1:228557716858:web:d3ae59af1254d4b893aac3",
+    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-17NHEMLXDV",
   },
 };
 

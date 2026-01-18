@@ -36,6 +36,7 @@ from pydantic import BaseModel
 from dhanhq import dhanhq
 import uvicorn
 from google.cloud import secretmanager
+from google.cloud import firestore
 
 # Optional OpenTelemetry instrumentation (guarded)
 HAS_OTEL = False
@@ -56,6 +57,9 @@ import logging
 # Initialize logging FIRST (before any logger calls)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Firestore for signal storage
+db = firestore.Client()
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 
@@ -305,22 +309,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Add CORS middleware
-# CORS allowed origins for production
-ALLOWED_ORIGINS = [
-    "https://infinityai.pro",
-    "https://www.infinityai.pro",
-    "https://app.infinityai.pro",
-    "https://engine-a.infinityai.pro",
-    "https://engine-b.infinityai.pro",
-    "https://engine-c.infinityai.pro",
-    f"https://{PROJECT_ID}.web.app",
-    f"https://{PROJECT_ID}.firebaseapp.com",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-]
+# Import CORS config from shared module (environment-gated)
+try:
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+except ImportError:
+    # Fallback if shared module not in path
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from backend.shared.cors_config import ALLOWED_ORIGINS
 
+logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -1948,27 +1948,63 @@ async def get_market_knowledge():
 class BatchSignalsRequest(BaseModel):
     """Request model for batch signals"""
     symbols: List[str]
+    user_id: Optional[str] = None  # User ID for Firestore storage
     fast: bool = True
+
+
+async def store_signal_to_firestore(user_id: str, signal: Any) -> bool:
+    """Store generated signal to Firestore"""
+    try:
+        # Convert signal to dict
+        if hasattr(signal, 'dict'):
+            signal_dict = signal.dict()
+        elif hasattr(signal, '__dict__'):
+            signal_dict = signal.__dict__
+        else:
+            signal_dict = dict(signal)
+        
+        # Add metadata
+        signal_dict['timestamp'] = firestore.SERVER_TIMESTAMP
+        signal_dict['user_id'] = user_id
+        signal_dict['stored_at'] = datetime.utcnow().isoformat()
+        
+        # Store to Firestore: users/{uid}/signals
+        db.collection('users').document(user_id).collection('signals').add(signal_dict)
+        logger.info(f"✓ Stored signal for {signal_dict.get('symbol', 'UNKNOWN')} to Firestore (user: {user_id})")
+        return True
+    except Exception as e:
+        logger.error(f"✗ Failed to store signal to Firestore: {e}")
+        return False
 
 
 @app.post("/api/v1/signal/batch")
 @app.post("/api/v1/signals/batch")  # Alias for frontend compatibility
 async def generate_batch_signals(request: BatchSignalsRequest):
-    """Generate signals for multiple symbols"""
+    """Generate signals for multiple symbols and store to Firestore"""
     if len(request.symbols) > 50:
         raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
 
     signals = []
+    stored_count = 0
+    
     for symbol in request.symbols:
         try:
             signal = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
             signals.append(signal)
+            
+            # Store to Firestore if user_id provided
+            if request.user_id:
+                if await store_signal_to_firestore(request.user_id, signal):
+                    stored_count += 1
+            
         except Exception as e:
             logger.error(f"Batch signal error for {symbol}: {e}")
 
     return {
         "signals": signals,
         "total": len(signals),
+        "stored": stored_count,
+        "user_id": request.user_id,
         "timestamp": datetime.utcnow().isoformat()
     }
 

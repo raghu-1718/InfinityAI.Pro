@@ -77,6 +77,12 @@ async def lifespan(app: FastAPI):
     )
     logger.info("✅ HTTP client pool initialized")
 
+    # Configure Trader with Environment Variables (Fix for User ID Propagation)
+    user_id = os.getenv("USER_ID")
+    if user_id:
+        AUTONOMOUS_TRADER.configure_session({"user_id": user_id})
+        logger.info(f"✅ Configured AutonomousTrader for User: {user_id}")
+
     # Start Autonomous Trader
     await AUTONOMOUS_TRADER.start()
 
@@ -117,20 +123,16 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Environment Context
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
 
-# CORS allowed origins for production
-ALLOWED_ORIGINS = [
-    "https://infinityai.pro",
-    "https://www.infinityai.pro",
-    "https://app.infinityai.pro",
-    "https://engine-a.infinityai.pro",
-    "https://engine-b.infinityai.pro",
-    "https://engine-c.infinityai.pro",
-    f"https://{PROJECT_ID}.web.app",
-    f"https://{PROJECT_ID}.firebaseapp.com",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-]
+# Import CORS config from shared module (environment-gated)
+try:
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+except ImportError:
+    # Fallback if shared module not in path
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from backend.shared.cors_config import ALLOWED_ORIGINS
+
+logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 
 # Add CORS middleware
 app.add_middleware(
@@ -283,6 +285,17 @@ from src.services.session_manager import acquire_session_lock, release_session_l
 from src.services.audit_logger import AuditLogger
 
 audit_logger = AuditLogger()
+
+@app.get("/api/trader/status")
+async def get_trader_status():
+    """Get status of the Autonomous Trader"""
+    return AUTONOMOUS_TRADER.get_status()
+
+@app.post("/api/trader/start")
+async def start_trader():
+    """Manually start the Autonomous Trader"""
+    success, message = await AUTONOMOUS_TRADER.force_start()
+    return {"success": success, "message": message}
 
 @app.post("/api/trading/session/start")
 async def start_trading_session(config: SessionConfig):
@@ -736,7 +749,8 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
 
     # --- RISK MANAGEMENT CHECK (CRITICAL) ---
     # Calculate approximate position value
-    current_price = signal_data.get("entry_price") or 0.0
+    # Calculate approximate position value
+    current_price = signal_data.get("entry_price") or signal_data.get("current_price") or 0.0
     if current_price == 0:
         # Fallback if price is missing (safety)
         logger.warning(f"⚠️ Missing price for {req.symbol}, blocking trade for safety.")
@@ -806,10 +820,13 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
             exec_response = await http_client.post(
                 f"{ENGINE_C_URL}/api/dhan/place-order",
                 json=exec_payload,
+                headers={"X-Engine-Source": "engine-a", "X-User-ID": "B79BqvTlaTZltC8uGO3jLxJBBt93"},
                 timeout=15.0
             )
             exec_response.raise_for_status()
             logger.info(f"✅ Execution successful: {exec_response.json()}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"❌ Execution failed: {str(e)} Response: {e.response.text}")
         except Exception as e:
             logger.error(f"❌ Execution failed: {str(e)}")
 
