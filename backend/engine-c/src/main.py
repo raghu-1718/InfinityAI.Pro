@@ -192,12 +192,12 @@ app = FastAPI(
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
     # Fallback if shared module not in path
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
     app.include_router(analytics_router)
@@ -370,12 +370,12 @@ async def shutdown_event():
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
     # Fallback if shared module not in path
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 

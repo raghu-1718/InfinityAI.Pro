@@ -125,12 +125,12 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
     # Fallback if shared module not in path
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from backend.shared.cors_config import ALLOWED_ORIGINS
+    from shared.cors_config import ALLOWED_ORIGINS
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 
