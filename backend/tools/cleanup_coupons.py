@@ -42,13 +42,13 @@ def cleanup():
     print("=" * 60)
     print("🗑️  COUPON CLEANUP: Removing non-INFAI coupons")
     print("=" * 60)
-    
+
     print(f"\n📋 DELETING {len(COUPONS_TO_DELETE)} coupons:")
     for code in COUPONS_TO_DELETE:
         print(f"   - {code}")
-    
+
     print(f"\n✅ KEEPING {len(COUPONS_TO_KEEP)} INFAI-FAM-* coupons")
-    
+
     # Delete non-INFAI coupons
     deleted_count = 0
     for code in COUPONS_TO_DELETE:
@@ -59,9 +59,9 @@ def cleanup():
             deleted_count += 1
         except Exception as e:
             print(f"  ✗ Failed to delete {code}: {e}")
-    
+
     print(f"\n✅ Deleted {deleted_count}/{len(COUPONS_TO_DELETE)} coupons.")
-    
+
     # Verify KEEP coupons still exist
     print(f"\n🔍 Verifying {len(COUPONS_TO_KEEP)} INFAI-FAM-* coupons remain...")
     verified_count = 0
@@ -76,9 +76,9 @@ def cleanup():
                 print(f"  ✗ {code} NOT FOUND")
         except Exception as e:
             print(f"  ✗ Error checking {code}: {e}")
-    
+
     print(f"\n✅ Verified {verified_count}/{len(COUPONS_TO_KEEP)} INFAI-FAM-* coupons.")
-    
+
     # Final state
     print("\n" + "=" * 60)
     print("CLEANUP COMPLETE")
