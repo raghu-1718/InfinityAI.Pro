@@ -174,10 +174,9 @@ export function useUserProfile() {
 // Helper to get user ID from localStorage
 const getStoredUserId = () => {
   if (typeof window === 'undefined') return null;
-  // First check for stored Dhan client ID (most reliable)
-  const dhanClientId = localStorage.getItem('dhan_client_id');
-  if (dhanClientId) return dhanClientId;
-  // Fallback to generated user ID
+  // NOTE: NEVER use dhan_client_id as user ID for API calls!
+  // Backend credentials are keyed by user email, not client ID
+  // Only use the generated infinityai_user_id or coupon session userId
   return localStorage.getItem('infinityai_user_id');
 };
 
@@ -1149,7 +1148,7 @@ export function useCalculateGreeks() {
 
 export function useIndices(enabled = true) {
   const { userProfile } = useAppStore();
-  const userId = userProfile?.userId || userProfile?.clientId;
+  const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
     queryKey: ['indices', 'market_quotes', userId],
