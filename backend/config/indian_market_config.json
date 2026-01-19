@@ -1,0 +1,304 @@
+{
+  "market_info": {
+    "name": "National Stock Exchange of India (NSE)",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "timezone_offset_utc": "+05:30",
+    "base_currency": "INR",
+    "regulated_by": "SEBI (Securities & Exchange Board of India)"
+  },
+  "trading_hours": {
+    "pre_open_session": {
+      "start": "09:00",
+      "end": "09:15",
+      "type": "pre-market"
+    },
+    "main_session": {
+      "start": "09:15",
+      "end": "15:30",
+      "type": "live-trading"
+    },
+    "post_trading": {
+      "start": "15:30",
+      "end": "16:00",
+      "type": "settlement"
+    },
+    "holidays": [
+      {
+        "date": "2026-01-26",
+        "name": "Republic Day"
+      },
+      {
+        "date": "2026-03-08",
+        "name": "Maha Shivaratri"
+      },
+      {
+        "date": "2026-03-25",
+        "name": "Holi"
+      },
+      {
+        "date": "2026-04-02",
+        "name": "Good Friday"
+      },
+      {
+        "date": "2026-04-14",
+        "name": "Dr. B.R. Ambedkar Jayanti"
+      },
+      {
+        "date": "2026-05-01",
+        "name": "May Day"
+      },
+      {
+        "date": "2026-08-15",
+        "name": "Independence Day"
+      },
+      {
+        "date": "2026-09-02",
+        "name": "Ganesh Chaturthi"
+      },
+      {
+        "date": "2026-10-02",
+        "name": "Gandhi Jayanti"
+      },
+      {
+        "date": "2026-11-19",
+        "name": "Dev Deepavali"
+      },
+      {
+        "date": "2026-11-25",
+        "name": "Thanksgiving (Optional)"
+      },
+      {
+        "date": "2026-12-25",
+        "name": "Christmas"
+      }
+    ]
+  },
+  "regulatory_framework": {
+    "sebi_rules": {
+      "position_limits": {
+        "description": "Maximum open interest position per contract",
+        "limit_percentage": "2-5%",
+        "enforcement": "Automatic position rejection if exceeded"
+      },
+      "circuit_filters": {
+        "description": "Price movement limits before trading halt",
+        "trigger_percentage": "10%",
+        "halt_duration_minutes": 5,
+        "enforcement": "Automatic trading halt"
+      },
+      "large_shareholder_disclosure": {
+        "trigger_threshold": "2%",
+        "disclosure_requirement": "Mandatory filing with SEBI"
+      },
+      "short_selling": {
+        "allowed": true,
+        "margin_requirement": "40%",
+        "buy_back_requirement": "By end of day",
+        "enforcement": "Broker-level controls"
+      }
+    },
+    "settlement": {
+      "cycle": "T+2",
+      "description": "Trade date + 2 business days",
+      "bank_transfers": "Via RTGS/NEFT",
+      "collateral": "Stack Exchange Guarantee Fund"
+    },
+    "market_microstructure": {
+      "order_types": [
+        "Market",
+        "Limit",
+        "Stop (Stoploss)",
+        "Stop Limit",
+        "IOC (Immediate or Cancel)",
+        "GTC (Good Till Cancelled)"
+      ],
+      "lot_size": "1 share (no minimum lot requirement)",
+      "price_bands": "0.05 (±5 paise minimum)",
+      "circuit_breaker_levels": [
+        {
+          "trigger": "10%",
+          "action": "5-minute halt"
+        },
+        {
+          "trigger": "20%",
+          "action": "15-minute halt"
+        },
+        {
+          "trigger": "No further halts",
+          "action": "Market closes"
+        }
+      ]
+    }
+  },
+  "tax_implications": {
+    "capital_gains": {
+      "short_term": {
+        "duration": "Less than 1 year",
+        "tax_rate": "As per income slab (15% to 42%)"
+      },
+      "long_term": {
+        "duration": "1 year or more",
+        "tax_rate": "20% with indexation benefit"
+      }
+    },
+    "securities_transaction_tax": {
+      "buy": "0.1% (on equity trades)",
+      "sell": "0.1%",
+      "options": "5% on premium",
+      "enforcement": "Collected by exchange, deposited with government"
+    },
+    "brokerage": {
+      "typical_rate": "0.05% to 0.1%",
+      "gst": "18%",
+      "example": "0.1% brokerage + 18% GST on brokerage"
+    }
+  },
+  "broker_constraints": {
+    "dhan_broker": {
+      "name": "Dhan (Indian Broker)",
+      "leverage": {
+        "intraday": "2-5x (depending on stock)",
+        "delivery": "1x to 2x (for margin)"
+      },
+      "margin_requirement": {
+        "equity_intraday": "10-20% of trade value",
+        "equity_delivery": "100% (full payment)",
+        "options": "VaR-based calculation"
+      },
+      "position_limits": {
+        "max_quantity_per_stock": "100,000 to 1,000,000 (varies)",
+        "max_daily_orders": "100 to 1,000 (depending on plan)"
+      },
+      "fees": {
+        "trading_flat": "₹20 per trade (approximate)",
+        "trading_percentage": "0.05% to 0.1%",
+        "annual_charges": "₹200 to ₹500"
+      }
+    }
+  },
+  "risk_management": {
+    "volatility_limits": {
+      "intraday_stop_loss": "1-3% (wider than US due to volatility)",
+      "intraday_take_profit": "2-5%",
+      "swing_stop_loss": "3-5%",
+      "swing_take_profit": "5-10%"
+    },
+    "position_sizing": {
+      "max_position_size": "1-5% of portfolio per stock",
+      "max_sector_exposure": "30% of portfolio",
+      "cash_reserve": "20-30% for margin & opportunities"
+    },
+    "volatility_index": {
+      "name": "India VIX",
+      "description": "Volatility index for NSE - similar to VIX for US",
+      "tracking": "Used to adjust position sizing"
+    }
+  },
+  "nse_index_components": {
+    "nifty_50": {
+      "description": "50 large-cap stocks, represents 53% of NSE market cap",
+      "rebalance_frequency": "Quarterly (Mar, Jun, Sep, Dec)",
+      "base_value": "5000 (as of Nov 2015)",
+      "top_sectors": ["IT", "Banking", "FMCG", "Energy"],
+      "recommended_etf": "NIFTYBEES (NSE: NIFTYBEES)"
+    },
+    "nifty_100": {
+      "description": "100 large-cap + mid-cap stocks",
+      "rebalance_frequency": "Quarterly"
+    },
+    "nifty_next_50": {
+      "description": "Next 50 stocks after Nifty 50 (mid-cap focus)",
+      "rebalance_frequency": "Quarterly"
+    }
+  },
+  "sector_performance_tracking": {
+    "sectors": [
+      "IT & ITeS (TCS, Infosys, Wipro, HCL)",
+      "Banking & Finance (HDFC, SBI, Axis, ICICI)",
+      "FMCG (ITC, Nestlé, Britannia)",
+      "Energy & Power (Reliance, NTPC, Coal India)",
+      "Telecom (Airtel, Reliance)",
+      "Auto & Components (Bajaj, Maruti, Hero)",
+      "Pharmaceuticals (Sun Pharma, Dr. Reddy's)",
+      "Construction & Infra (L&T)",
+      "Retail & Consumer (Titan, Reliance)",
+      "Chemicals & Materials (Asian Paints)"
+    ],
+    "sector_rotation": {
+      "note": "Different sectors perform better in different market cycles",
+      "tracking": "Monitor sector-wise index performance for rotation signals"
+    }
+  },
+  "data_points_to_track": {
+    "macro": [
+      "RBI Interest Rates (affects market direction)",
+      "Inflation Data (CPI, WPI)",
+      "GDP Growth Rate",
+      "Currency (Rupee vs Dollar)",
+      "Monsoon Progress (affects farm income, FMCG)",
+      "Oil Prices (affects energy stocks, inflation)"
+    ],
+    "micro": [
+      "Corporate Earnings (Quarterly Q1/Q2/Q3/Q4)",
+      "Dividend Announcements",
+      "Stock Splits",
+      "Mergers & Acquisitions",
+      "Regulatory Changes",
+      "Board Meetings"
+    ],
+    "market": [
+      "India VIX (Volatility)",
+      "FII Flows (Foreign Institutional Investors)",
+      "DII Flows (Domestic Institutional Investors)",
+      "Put-Call Ratio (Options sentiment)",
+      "Advance-Decline Ratio (Breadth)"
+    ]
+  },
+  "news_sources_weight": {
+    "primary": {
+      "economic_times": 0.3,
+      "moneycontrol": 0.25,
+      "livemint": 0.25,
+      "bse_announcements": 0.1,
+      "nse_circulars": 0.1
+    },
+    "sentiment_weights": {
+      "positive_news_impact": "+0.05 to +0.10",
+      "negative_news_impact": "-0.05 to -0.10",
+      "regulatory_news_impact": "+/- 0.15",
+      "earnings_beat_impact": "+0.10 to +0.20",
+      "earnings_miss_impact": "-0.10 to -0.20"
+    }
+  },
+  "seasonal_patterns": {
+    "q1_jan_mar": {
+      "trigger": "Budget announcements, tax planning",
+      "sectors": "Real estate, consumer goods",
+      "pattern": "Often bullish start, weak at year-end"
+    },
+    "q2_apr_jun": {
+      "trigger": "Monsoon onset (June), earnings season starts",
+      "sectors": "FMCG, agriculture-related",
+      "pattern": "Monsoon-dependent, monsoon good = bullish"
+    },
+    "q3_jul_sep": {
+      "trigger": "Monsoon progress, festive season (Diwali prep)",
+      "sectors": "FMCG, retail, auto",
+      "pattern": "Diwali rally if monsoon good"
+    },
+    "q4_oct_dec": {
+      "trigger": "Year-end, results announcement, new year planning",
+      "sectors": "Real estate, autos, consumer",
+      "pattern": "Volatile due to portfolio rebalancing"
+    }
+  },
+  "implementation_notes": {
+    "symbol_mapping": "All internal systems use NSE symbol (e.g., TCS), API calls use TCS.NSE format",
+    "timezone_handling": "All timestamps converted to IST (UTC+5:30) at ingestion",
+    "market_hours_check": "Verify market is open before trading signals (09:15-15:30 IST)",
+    "holiday_handling": "Skip trading signals on NSE holidays",
+    "circuit_breaker": "Monitor for 10%+ price moves, halt trading if triggered",
+    "volatility_adjustment": "Increase position size limits for low-volatility stocks, decrease for high-volatility"
+  }
+}

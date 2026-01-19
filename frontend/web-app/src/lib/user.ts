@@ -43,13 +43,9 @@ export function getUserId(): string {
   // Also check for Firebase Auth UID if available in standard storage locations (if applicable)
   // But for now, we stick to the provided keys.
 
-  // Priority 2: Dhan Client ID (10-digit number) - fallback if not authenticated but connected
-  const dhanClientId = localStorage.getItem(DHAN_CLIENT_ID_KEY);
-  if (dhanClientId && /^\d{10}$/.test(dhanClientId)) {
-    return dhanClientId;
-  }
-
-  // Priority 3: Generated fallback ID (for unauthenticated users)
+  // Priority 2: Generated fallback ID (for unauthenticated users)
+  // NOTE: Dhan Client ID should NOT be used as user ID for API calls
+  // because backend credentials are keyed by user email, not client ID
   let userId = localStorage.getItem(USER_ID_KEY);
   if (!userId) {
     userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;

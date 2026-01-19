@@ -138,10 +138,17 @@ exports.submitDhanCredentialsV2 = (0, https_1.onCall)({
             .collection("dhan_credentials")
             .doc(uid)
             .set(encryptedData, { merge: true });
-        // Update User Profile to reflect connection status
+        // Update User Profile with credential metadata for visibility
         await db.collection("users").doc(uid).set({
             dhanConnected: true,
-            dhanClientId: clientId,
+            dhanCredentials: {
+                clientId: clientId, // Plain text for display/diagnostics
+                lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+                storedInVault: true, // Indicates encrypted creds are in dhan_credentials collection
+                hasApiKey: Boolean(apiKey),
+                hasApiSecret: Boolean(apiSecret),
+                hasAccessToken: Boolean(accessToken),
+            },
             lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
         // Optionally store secrets in Secret Manager for system-level access

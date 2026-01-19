@@ -1,0 +1,275 @@
+{
+  "market": {
+    "exchange": "NSE",
+    "timezone": "Asia/Kolkata",
+    "trading_hours_start": "09:15",
+    "trading_hours_end": "15:30",
+    "settlement_cycle": "T+2",
+    "regulated_by": "SEBI"
+  },
+  "nifty_50_stocks": [
+    {
+      "rank": 1,
+      "name": "Reliance Industries",
+      "nse_symbol": "RELIANCE",
+      "alphavantage_symbol": "RELIANCE.NSE",
+      "isin": "INE002A01018",
+      "sector": "Energy, Telecom, Retail",
+      "market_cap_inr_b": 18500,
+      "liquidity": "Very High",
+      "description": "Energy major - oil, gas, telecom (Jio), retail"
+    },
+    {
+      "rank": 2,
+      "name": "Tata Consultancy Services",
+      "nse_symbol": "TCS",
+      "alphavantage_symbol": "TCS.NSE",
+      "isin": "INE001A01015",
+      "sector": "IT Services",
+      "market_cap_inr_b": 14500,
+      "liquidity": "Very High",
+      "description": "Leading IT services company - outsourcing, software"
+    },
+    {
+      "rank": 3,
+      "name": "HDFC Bank",
+      "nse_symbol": "HDFCBANK",
+      "alphavantage_symbol": "HDFCBANK.NSE",
+      "isin": "INE040A01034",
+      "sector": "Banking & Finance",
+      "market_cap_inr_b": 14200,
+      "liquidity": "Very High",
+      "description": "Largest private sector bank - retail & corporate banking"
+    },
+    {
+      "rank": 4,
+      "name": "Infosys",
+      "nse_symbol": "INFY",
+      "alphavantage_symbol": "INFY.NSE",
+      "isin": "INE009A01021",
+      "sector": "IT Services",
+      "market_cap_inr_b": 8800,
+      "liquidity": "Very High",
+      "description": "IT consulting & software services - global presence"
+    },
+    {
+      "rank": 5,
+      "name": "Bajaj Auto",
+      "nse_symbol": "BAJAJ-AUTO",
+      "alphavantage_symbol": "BAJAJ-AUTO.NSE",
+      "isin": "INE917I01012",
+      "sector": "Automobiles (2-3 wheelers)",
+      "market_cap_inr_b": 3200,
+      "liquidity": "High",
+      "description": "Motorcycle & auto components manufacturer"
+    },
+    {
+      "rank": 6,
+      "name": "Larsen & Toubro",
+      "nse_symbol": "LT",
+      "alphavantage_symbol": "LT.NSE",
+      "isin": "INE018A01030",
+      "sector": "Construction & Engineering",
+      "market_cap_inr_b": 3100,
+      "liquidity": "High",
+      "description": "Engineering, construction, IT services"
+    },
+    {
+      "rank": 7,
+      "name": "State Bank of India",
+      "nse_symbol": "SBIN",
+      "alphavantage_symbol": "SBIN.NSE",
+      "isin": "INE062A01020",
+      "sector": "Banking & Finance",
+      "market_cap_inr_b": 3900,
+      "liquidity": "Very High",
+      "description": "Largest government-owned bank - retail & corporate"
+    },
+    {
+      "rank": 8,
+      "name": "Bharti Airtel",
+      "nse_symbol": "AIRTEL",
+      "alphavantage_symbol": "AIRTEL.NSE",
+      "isin": "INE801G01014",
+      "sector": "Telecommunications",
+      "market_cap_inr_b": 2800,
+      "liquidity": "Very High",
+      "description": "Telecom operator - 2G/3G/4G/5G services"
+    },
+    {
+      "rank": 9,
+      "name": "ITC Limited",
+      "nse_symbol": "ITC",
+      "alphavantage_symbol": "ITC.NSE",
+      "isin": "INE154A01025",
+      "sector": "FMCG, Tobacco, Hotels",
+      "market_cap_inr_b": 3300,
+      "liquidity": "Very High",
+      "description": "FMCG, hotels (ITC), cigarettes, agri"
+    },
+    {
+      "rank": 10,
+      "name": "Axis Bank",
+      "nse_symbol": "AXISBANK",
+      "alphavantage_symbol": "AXISBANK.NSE",
+      "isin": "INE238A01034",
+      "sector": "Banking & Finance",
+      "market_cap_inr_b": 2300,
+      "liquidity": "Very High",
+      "description": "Private sector bank - retail & corporate banking"
+    },
+    {
+      "rank": 11,
+      "name": "Wipro",
+      "nse_symbol": "WIPRO",
+      "alphavantage_symbol": "WIPRO.NSE",
+      "isin": "INE066F01012",
+      "sector": "IT Services",
+      "market_cap_inr_b": 2200,
+      "liquidity": "High",
+      "description": "IT services, consulting, software"
+    },
+    {
+      "rank": 12,
+      "name": "Maruti Suzuki",
+      "nse_symbol": "MARUTI",
+      "alphavantage_symbol": "MARUTI.NSE",
+      "isin": "INE585B01010",
+      "sector": "Automobiles (4-wheelers)",
+      "market_cap_inr_b": 1900,
+      "liquidity": "High",
+      "description": "Car manufacturing - Swift, Alto, Celerio"
+    },
+    {
+      "rank": 13,
+      "name": "Sun Pharmaceutical",
+      "nse_symbol": "SUNPHARMA",
+      "alphavantage_symbol": "SUNPHARMA.NSE",
+      "isin": "INE044H01021",
+      "sector": "Pharmaceuticals",
+      "market_cap_inr_b": 1900,
+      "liquidity": "High",
+      "description": "Pharma manufacturer - generics, API"
+    },
+    {
+      "rank": 14,
+      "name": "Nestlé India",
+      "nse_symbol": "NESTLEIND",
+      "alphavantage_symbol": "NESTLEIND.NSE",
+      "isin": "INE239A01016",
+      "sector": "FMCG (Foods)",
+      "market_cap_inr_b": 2700,
+      "liquidity": "High",
+      "description": "Food & beverages - Nescafé, Maggi, KitKat"
+    },
+    {
+      "rank": 15,
+      "name": "HCL Technologies",
+      "nse_symbol": "HCLTECH",
+      "alphavantage_symbol": "HCLTECH.NSE",
+      "isin": "INE860A01025",
+      "sector": "IT Services",
+      "market_cap_inr_b": 1800,
+      "liquidity": "High",
+      "description": "IT services, software, infrastructure"
+    },
+    {
+      "rank": 16,
+      "name": "Asian Paints",
+      "nse_symbol": "ASIANPAINT",
+      "alphavantage_symbol": "ASIANPAINT.NSE",
+      "isin": "INE021A01025",
+      "sector": "Chemicals & Paints",
+      "market_cap_inr_b": 2200,
+      "liquidity": "High",
+      "description": "Paint manufacturer - decorative & industrial"
+    },
+    {
+      "rank": 17,
+      "name": "Titan Company",
+      "nse_symbol": "TITAN",
+      "alphavantage_symbol": "TITAN.NSE",
+      "isin": "INE280A01028",
+      "sector": "Retail (Jewelry, Watches, Eyewear)",
+      "market_cap_inr_b": 2600,
+      "liquidity": "High",
+      "description": "Retail - Tanishq jewelry, Titan watches"
+    },
+    {
+      "rank": 18,
+      "name": "Tech Mahindra",
+      "nse_symbol": "TECHM",
+      "alphavantage_symbol": "TECHM.NSE",
+      "isin": "INE912B01012",
+      "sector": "IT Services",
+      "market_cap_inr_b": 1600,
+      "liquidity": "High",
+      "description": "IT services, consulting, digital solutions"
+    },
+    {
+      "rank": 19,
+      "name": "NTPC Limited",
+      "nse_symbol": "NTPC",
+      "alphavantage_symbol": "NTPC.NSE",
+      "isin": "INE733E01010",
+      "sector": "Power Generation",
+      "market_cap_inr_b": 1900,
+      "liquidity": "High",
+      "description": "Thermal & hydro power generation"
+    },
+    {
+      "rank": 20,
+      "name": "Coal India",
+      "nse_symbol": "COALIND",
+      "alphavantage_symbol": "COALIND.NSE",
+      "isin": "INE522D01015",
+      "sector": "Mining",
+      "market_cap_inr_b": 1400,
+      "liquidity": "High",
+      "description": "Coal mining & production"
+    }
+  ],
+  "sector_mapping": {
+    "IT": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM"],
+    "Banking": ["HDFCBANK", "SBIN", "AXISBANK", "ICICIBANK"],
+    "Energy": ["RELIANCE", "NTPC", "COALIND"],
+    "Telecom": ["AIRTEL", "RELIANCE"],
+    "Auto": ["BAJAJ-AUTO", "MARUTI", "HEROMOTOCORP"],
+    "FMCG": ["ITC", "NESTLEIND", "BRITANNIA"],
+    "Pharma": ["SUNPHARMA", "DRREDDY", "LUPIN"],
+    "Retail": ["TITAN", "RELIANCE"],
+    "Construction": ["LT"],
+    "Chemicals": ["ASIANPAINT"]
+  },
+  "volatility_tiers": {
+    "low": ["NESTLEIND", "ASIANPAINT", "TITAN"],
+    "medium": ["TCS", "INFY", "HDFC BANK", "HCLTECH", "SBIN"],
+    "high": ["RELIANCE", "AIRTEL", "BAJAJ-AUTO", "MARUTI", "SUNPHARMA"],
+    "very_high": ["COALIND", "NTPC"]
+  },
+  "recommended_focus": {
+    "high_liquidity": [
+      "TCS",
+      "INFY",
+      "HDFC BANK",
+      "RELIANCE",
+      "SBIN",
+      "AIRTEL",
+      "ITC",
+      "WIPRO",
+      "HCLTECH"
+    ],
+    "blue_chip": ["TCS", "INFY", "HDFC BANK", "RELIANCE", "SBIN"],
+    "high_volatility_traders": ["BAJAJ-AUTO", "MARUTI", "COALIND"],
+    "dividend_stocks": ["ITC", "NTPC", "SBIN"],
+    "growth_stocks": ["RELIANCE", "HDFCBANK", "TITAN"]
+  },
+  "trading_notes": {
+    "symbol_format": "Use NSE symbol format without exchange code (e.g., TCS not TCS.NSE for internal use)",
+    "api_format": "For API calls, append .NSE to symbol (e.g., TCS.NSE for AlphaVantage)",
+    "isin_format": "12-digit ISIN code available for settlement and corporate actions",
+    "micro_market_cap": "Some stocks have lower market cap - check liquidity before trading",
+    "etf_option": "Use NIFTYBEES for Nifty 50 ETF (NSE symbol: NIFTYBEES)",
+    "sector_etf": "Use sector-specific ETFs for diversification (e.g., Nifty IT ETF)"
+  }
+}

@@ -44,112 +44,52 @@ const VALID_COUPONS: Record<
   }
 > = {
   "INFAI-FAM-0506": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-1718": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-CHOTU": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-DAD": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-HARSHA": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-KAVI": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-MOM": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-PRI": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-RAJ": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
   "INFAI-FAM-SAI": {
-    features: [
-      "dashboard",
-      "trading",
-      "signals",
-      "ai_analysis",
-      "family_plan",
-    ],
+    features: ["dashboard", "trading", "signals", "ai_analysis", "family_plan"],
     expires_at: "2036-01-03",
     max_uses: 1,
   },
@@ -164,7 +104,7 @@ export const verifyCoupon = onCall(
     if (!coupon_code || !google_user_id || !google_email) {
       throw new HttpsError(
         "invalid-argument",
-        "Missing required fields: coupon_code, google_user_id, google_email"
+        "Missing required fields: coupon_code, google_user_id, google_email",
       );
     }
 
@@ -202,40 +142,45 @@ export const verifyCoupon = onCall(
         // Coupon is bound to a different email
         throw new HttpsError(
           "permission-denied",
-          `This coupon is already bound to ${boundEmail}. Each coupon can only be used by one email address.`
+          `This coupon is already bound to ${boundEmail}. Each coupon can only be used by one email address.`,
         );
       }
     }
 
     if (userCouponSnap.exists) {
       // Allow re-verification: Return existing session instead of blocking
-      const userSessionRef = getDb().collection("user_sessions").doc(google_user_id);
+      const userSessionRef = getDb()
+        .collection("user_sessions")
+        .doc(google_user_id);
       const sessionSnap = await userSessionRef.get();
 
       if (sessionSnap.exists) {
         const sessionData = sessionSnap.data();
         return {
           success: true,
-          session_id: sessionData?.session_id || `session_${google_user_id}_${Date.now()}`,
+          session_id:
+            sessionData?.session_id ||
+            `session_${google_user_id}_${Date.now()}`,
           features: couponConfig.features,
-          expires_at: sessionData?.expires_at?.toDate().toISOString() || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+          expires_at:
+            sessionData?.expires_at?.toDate().toISOString() ||
+            new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
         };
       }
       // If session doesn't exist but redemption does, continue to create new session below
     }
 
     // Check coupon usage limit
-    const couponUsageRef = getDb().collection("coupon_usage").doc(normalizedCode);
+    const couponUsageRef = getDb()
+      .collection("coupon_usage")
+      .doc(normalizedCode);
     const couponUsageSnap = await couponUsageRef.get();
     const currentUsage = couponUsageSnap.exists
       ? couponUsageSnap.data()?.total_uses || 0
       : 0;
 
     if (currentUsage >= couponConfig.max_uses) {
-      throw new HttpsError(
-        "resource-exhausted",
-        "Coupon usage limit reached"
-      );
+      throw new HttpsError("resource-exhausted", "Coupon usage limit reached");
     }
 
     // Generate session ID
@@ -255,7 +200,7 @@ export const verifyCoupon = onCall(
           last_used_by: google_email,
           last_used_at: admin.firestore.Timestamp.now(),
         },
-        { merge: true }
+        { merge: true },
       );
 
       // 2. Record user coupon redemption
@@ -268,15 +213,12 @@ export const verifyCoupon = onCall(
 
       // 3. Create email binding for this coupon (on first use)
       if (!couponEmailBindingSnap.exists) {
-        batch.set(
-          couponEmailBindingRef,
-          {
-            coupon_code: normalizedCode,
-            bound_email: google_email,
-            bound_user_id: google_user_id,
-            bound_at: admin.firestore.Timestamp.now(),
-          }
-        );
+        batch.set(couponEmailBindingRef, {
+          coupon_code: normalizedCode,
+          bound_email: google_email,
+          bound_user_id: google_user_id,
+          bound_at: admin.firestore.Timestamp.now(),
+        });
       }
 
       // 4. Create/update user session
@@ -292,11 +234,13 @@ export const verifyCoupon = onCall(
           expires_at: admin.firestore.Timestamp.fromDate(expiresAt),
           coupon_code: normalizedCode,
         },
-        { merge: true }
+        { merge: true },
       );
 
       // 5. Update user profile with features
-      const userProfileRef = getDb().collection("user_profiles").doc(google_user_id);
+      const userProfileRef = getDb()
+        .collection("user_profiles")
+        .doc(google_user_id);
       batch.set(
         userProfileRef,
         {
@@ -308,7 +252,7 @@ export const verifyCoupon = onCall(
           coupon_expires_at: admin.firestore.Timestamp.fromDate(expiresAt),
           last_login: admin.firestore.Timestamp.now(),
         },
-        { merge: true }
+        { merge: true },
       );
 
       await batch.commit();
@@ -323,8 +267,8 @@ export const verifyCoupon = onCall(
       console.error("Error verifying coupon:", error);
       throw new HttpsError(
         "internal",
-        "Error verifying coupon. Please try again."
+        "Error verifying coupon. Please try again.",
       );
     }
-  }
+  },
 );

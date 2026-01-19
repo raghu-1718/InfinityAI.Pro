@@ -1022,11 +1022,15 @@ class MarketDataEngine:
                 df['SMA_20'] = ta_lib.trend.sma_indicator(df['close'], window=20)
                 df['SMA_50'] = ta_lib.trend.sma_indicator(df['close'], window=50)
 
-                # MACD
-                macd = ta_lib.trend.MACD(df['close'])
-                df['MACD_12_26_9'] = macd.macd()
-                df['MACDh_12_26_9'] = macd.macd_diff()
-                df['MACDs_12_26_9'] = macd.macd_signal()
+                # MACD (Indian market: 10,20,9 instead of 12,26,9 for faster response)
+                macd = ta_lib.trend.MACD(df['close'], window_fast=10, window_slow=20, window_sign=9)
+                df['MACD_10_20_9'] = macd.macd()
+                df['MACDh_10_20_9'] = macd.macd_diff()
+                df['MACDs_10_20_9'] = macd.macd_signal()
+                # Backward compatibility
+                df['MACD_12_26_9'] = df['MACD_10_20_9']
+                df['MACDh_12_26_9'] = df['MACDh_10_20_9']
+                df['MACDs_12_26_9'] = df['MACDs_10_20_9']
 
                 # ADX
                 df['ADX_14'] = ta_lib.trend.adx(df['high'], df['low'], df['close'], window=14)
@@ -1043,11 +1047,16 @@ class MarketDataEngine:
                 df['WILLR_14'] = ta_lib.momentum.williams_r(df['high'], df['low'], df['close'], lbp=14)
                 df['MFI_14'] = ta_lib.volume.money_flow_index(df['high'], df['low'], df['close'], df['volume'], window=14)
 
-                # Volatility - Bollinger Bands
-                bb = ta_lib.volatility.BollingerBands(df['close'], window=20, window_dev=2)
-                df['BBL_20_2.0'] = bb.bollinger_lband()
-                df['BBM_20_2.0'] = bb.bollinger_mavg()
-                df['BBU_20_2.0'] = bb.bollinger_hband()
+                # Volatility - Bollinger Bands (Indian market: 2.5 std dev for wider bands)
+                bb = ta_lib.volatility.BollingerBands(df['close'], window=20, window_dev=2.5)
+                df['BBL_20_2.5'] = bb.bollinger_lband()
+                df['BBM_20_2.5'] = bb.bollinger_mavg()
+                df['BBU_20_2.5'] = bb.bollinger_hband()
+                # Backward compatibility - also calculate 2.0
+                bb2 = ta_lib.volatility.BollingerBands(df['close'], window=20, window_dev=2)
+                df['BBL_20_2.0'] = bb2.bollinger_lband()
+                df['BBM_20_2.0'] = bb2.bollinger_mavg()
+                df['BBU_20_2.0'] = bb2.bollinger_hband()
                 df['ATRr_14'] = ta_lib.volatility.average_true_range(df['high'], df['low'], df['close'], window=14)
 
                 # Volume
@@ -1069,12 +1078,16 @@ class MarketDataEngine:
         df['EMA_21'] = df['close'].ewm(span=21, adjust=False).mean()
         df['EMA_50'] = df['close'].ewm(span=50, adjust=False).mean()
 
-        # MACD
-        ema12 = df['close'].ewm(span=12, adjust=False).mean()
-        ema26 = df['close'].ewm(span=26, adjust=False).mean()
-        df['MACD_12_26_9'] = ema12 - ema26
-        df['MACDs_12_26_9'] = df['MACD_12_26_9'].ewm(span=9, adjust=False).mean()
-        df['MACDh_12_26_9'] = df['MACD_12_26_9'] - df['MACDs_12_26_9']
+        # MACD (Indian market: 10,20,9 for faster response to volatility)
+        ema10 = df['close'].ewm(span=10, adjust=False).mean()
+        ema20 = df['close'].ewm(span=20, adjust=False).mean()
+        df['MACD_10_20_9'] = ema10 - ema20
+        df['MACDs_10_20_9'] = df['MACD_10_20_9'].ewm(span=9, adjust=False).mean()
+        df['MACDh_10_20_9'] = df['MACD_10_20_9'] - df['MACDs_10_20_9']
+        # Backward compatibility
+        df['MACD_12_26_9'] = df['MACD_10_20_9']
+        df['MACDs_12_26_9'] = df['MACDs_10_20_9']
+        df['MACDh_12_26_9'] = df['MACDh_10_20_9']
 
         # RSI
         delta = df['close'].diff()
@@ -1083,12 +1096,17 @@ class MarketDataEngine:
         rs = gain / loss
         df['RSI_14'] = 100 - (100 / (1 + rs))
 
-        # Bollinger Bands
-        df['BBM_20_2.0'] = df['close'].rolling(window=20).mean()
+        # Bollinger Bands (Indian market: 2.5 std dev for wider bands, reducing false signals)
+        df['BBM_20_2.5'] = df['close'].rolling(window=20).mean()
         bb_std = df['close'].rolling(window=20).std()
-        df['BBU_20_2.0'] = df['BBM_20_2.0'] + (bb_std * 2)
-        df['BBL_20_2.0'] = df['BBM_20_2.0'] - (bb_std * 2)
-        df['BBB_20_2.0'] = (df['BBU_20_2.0'] - df['BBL_20_2.0']) / df['BBM_20_2.0']
+        df['BBU_20_2.5'] = df['BBM_20_2.5'] + (bb_std * 2.5)
+        df['BBL_20_2.5'] = df['BBM_20_2.5'] - (bb_std * 2.5)
+        df['BBB_20_2.5'] = (df['BBU_20_2.5'] - df['BBL_20_2.5']) / df['BBM_20_2.5']
+        # Backward compatibility
+        df['BBM_20_2.0'] = df['BBM_20_2.5']
+        df['BBU_20_2.0'] = df['BBM_20_2.5'] + (bb_std * 2)
+        df['BBL_20_2.0'] = df['BBM_20_2.5'] - (bb_std * 2)
+        df['BBB_20_2.0'] = (df['BBU_20_2.0'] - df['BBL_20_2.0']) / df['BBM_20_2.5']
 
         # ATR
         high_low = df['high'] - df['low']
@@ -1747,13 +1765,13 @@ def _analyze_equity(latest, price, df):
     score = 0
     reasons = []
 
-    # RSI (Mean Reversion / Momentum)
+    # RSI (Mean Reversion / Momentum) - Indian market: 25/75 thresholds for higher volatility
     rsi = latest.get('RSI_14')
     if rsi:
-        if rsi < 30: score += 2; reasons.append("RSI Oversold")
-        elif rsi > 70: score -= 2; reasons.append("RSI Overbought")
-        elif 50 < rsi < 70: score += 1; reasons.append("RSI Bullish Momentum")
-        elif 30 < rsi < 50: score -= 1; reasons.append("RSI Bearish Momentum")
+        if rsi < 25: score += 2; reasons.append("RSI Oversold")
+        elif rsi > 75: score -= 2; reasons.append("RSI Overbought")
+        elif 50 < rsi < 75: score += 1; reasons.append("RSI Bullish Momentum")
+        elif 25 < rsi < 50: score -= 1; reasons.append("RSI Bearish Momentum")
 
     # EMA Trend
     ema_50 = latest.get('EMA_50')

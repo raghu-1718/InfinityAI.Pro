@@ -1,0 +1,409 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-01",
+    "description": "Symbol mapping configuration for providers and internal systems",
+    "mapping_rules": {
+      "internal_system": "NSE symbol (e.g., TCS)",
+      "alpha_vantage_api": "NSE.Symbol format (e.g., TCS.NSE)",
+      "marketstack_api": "NSE symbol (e.g., TCS)",
+      "nse_direct_api": "NSE symbol (e.g., TCS)",
+      "display_frontend": "NSE symbol (e.g., TCS)",
+      "database_storage": "NSE symbol",
+      "isin_identifier": "12-digit code (e.g., INE001A01015)"
+    }
+  },
+  "symbol_mappings": {
+    "TCS": {
+      "company_name": "Tata Consultancy Services",
+      "nse_symbol": "TCS",
+      "alpha_vantage_symbol": "TCS.NSE",
+      "marketstack_symbol": "TCS",
+      "bse_symbol": "532540",
+      "isin": "INE001A01015",
+      "sector": "IT & ITeS",
+      "market_cap_billions_inr": 1400,
+      "liquidity": "Very High",
+      "industry": "Information Technology"
+    },
+    "INFY": {
+      "company_name": "Infosys Limited",
+      "nse_symbol": "INFY",
+      "alpha_vantage_symbol": "INFY.NSE",
+      "marketstack_symbol": "INFY",
+      "bse_symbol": "500209",
+      "isin": "INE009A01021",
+      "sector": "IT & ITeS",
+      "market_cap_billions_inr": 550,
+      "liquidity": "Very High",
+      "industry": "Information Technology"
+    },
+    "HDFCBANK": {
+      "company_name": "HDFC Bank Limited",
+      "nse_symbol": "HDFCBANK",
+      "alpha_vantage_symbol": "HDFCBANK.NSE",
+      "marketstack_symbol": "HDFCBANK",
+      "bse_symbol": "500180",
+      "isin": "INE001A01033",
+      "sector": "Banking & Finance",
+      "market_cap_billions_inr": 1250,
+      "liquidity": "Very High",
+      "industry": "Banking"
+    },
+    "RELIANCE": {
+      "company_name": "Reliance Industries Limited",
+      "nse_symbol": "RELIANCE",
+      "alpha_vantage_symbol": "RELIANCE.NSE",
+      "marketstack_symbol": "RELIANCE",
+      "bse_symbol": "500325",
+      "isin": "INE002A01015",
+      "sector": "Energy & Power",
+      "market_cap_billions_inr": 1800,
+      "liquidity": "Very High",
+      "industry": "Oil & Gas, Petrochemicals"
+    },
+    "BAJAJFINSV": {
+      "company_name": "Bajaj Finserv",
+      "nse_symbol": "BAJAJFINSV",
+      "alpha_vantage_symbol": "BAJAJFINSV.NSE",
+      "marketstack_symbol": "BAJAJFINSV",
+      "bse_symbol": "532454",
+      "isin": "INE092A01015",
+      "sector": "Banking & Finance",
+      "market_cap_billions_inr": 320,
+      "liquidity": "High",
+      "industry": "Financial Services"
+    },
+    "LT": {
+      "company_name": "Larsen & Toubro",
+      "nse_symbol": "LT",
+      "alpha_vantage_symbol": "LT.NSE",
+      "marketstack_symbol": "LT",
+      "bse_symbol": "500510",
+      "isin": "INE018A01030",
+      "sector": "Construction & Infrastructure",
+      "market_cap_billions_inr": 280,
+      "liquidity": "Very High",
+      "industry": "Engineering, Procurement, Construction"
+    },
+    "SBIN": {
+      "company_name": "State Bank of India",
+      "nse_symbol": "SBIN",
+      "alpha_vantage_symbol": "SBIN.NSE",
+      "marketstack_symbol": "SBIN",
+      "bse_symbol": "500112",
+      "isin": "INE062A01020",
+      "sector": "Banking & Finance",
+      "market_cap_billions_inr": 720,
+      "liquidity": "Very High",
+      "industry": "Banking"
+    },
+    "BHARTIARTL": {
+      "company_name": "Bharti Airtel Limited",
+      "nse_symbol": "BHARTIARTL",
+      "alpha_vantage_symbol": "BHARTIARTL.NSE",
+      "marketstack_symbol": "BHARTIARTL",
+      "bse_symbol": "532454",
+      "isin": "INE001A01036",
+      "sector": "Telecom",
+      "market_cap_billions_inr": 480,
+      "liquidity": "Very High",
+      "industry": "Telecommunications"
+    },
+    "ITC": {
+      "company_name": "ITC Limited",
+      "nse_symbol": "ITC",
+      "alpha_vantage_symbol": "ITC.NSE",
+      "marketstack_symbol": "ITC",
+      "bse_symbol": "500470",
+      "isin": "INE001A01014",
+      "sector": "FMCG",
+      "market_cap_billions_inr": 420,
+      "liquidity": "Very High",
+      "industry": "FMCG, Tobacco, Hotel"
+    },
+    "AXISBANK": {
+      "company_name": "Axis Bank Limited",
+      "nse_symbol": "AXISBANK",
+      "alpha_vantage_symbol": "AXISBANK.NSE",
+      "marketstack_symbol": "AXISBANK",
+      "bse_symbol": "532215",
+      "isin": "INE238A01016",
+      "sector": "Banking & Finance",
+      "market_cap_billions_inr": 400,
+      "liquidity": "Very High",
+      "industry": "Banking"
+    },
+    "WIPRO": {
+      "company_name": "Wipro Limited",
+      "nse_symbol": "WIPRO",
+      "alpha_vantage_symbol": "WIPRO.NSE",
+      "marketstack_symbol": "WIPRO",
+      "bse_symbol": "507685",
+      "isin": "INE009A01025",
+      "sector": "IT & ITeS",
+      "market_cap_billions_inr": 250,
+      "liquidity": "Very High",
+      "industry": "Information Technology"
+    },
+    "MARUTI": {
+      "company_name": "Maruti Suzuki India Limited",
+      "nse_symbol": "MARUTI",
+      "alpha_vantage_symbol": "MARUTI.NSE",
+      "marketstack_symbol": "MARUTI",
+      "bse_symbol": "532500",
+      "isin": "INE585B01010",
+      "sector": "Auto & Components",
+      "market_cap_billions_inr": 160,
+      "liquidity": "High",
+      "industry": "Automobiles"
+    },
+    "SUNPHARMA": {
+      "company_name": "Sun Pharmaceutical Industries",
+      "nse_symbol": "SUNPHARMA",
+      "alpha_vantage_symbol": "SUNPHARMA.NSE",
+      "marketstack_symbol": "SUNPHARMA",
+      "bse_symbol": "524715",
+      "isin": "INE044A01015",
+      "sector": "Pharmaceuticals",
+      "market_cap_billions_inr": 220,
+      "liquidity": "High",
+      "industry": "Pharmaceuticals"
+    },
+    "NESTLEIND": {
+      "company_name": "Nestlé India Limited",
+      "nse_symbol": "NESTLEIND",
+      "alpha_vantage_symbol": "NESTLEIND.NSE",
+      "marketstack_symbol": "NESTLEIND",
+      "bse_symbol": "500770",
+      "isin": "INE239A01016",
+      "sector": "FMCG",
+      "market_cap_billions_inr": 180,
+      "liquidity": "High",
+      "industry": "FMCG"
+    },
+    "HCLTECH": {
+      "company_name": "HCL Technologies Limited",
+      "nse_symbol": "HCLTECH",
+      "alpha_vantage_symbol": "HCLTECH.NSE",
+      "marketstack_symbol": "HCLTECH",
+      "bse_symbol": "532281",
+      "isin": "INE860A01027",
+      "sector": "IT & ITeS",
+      "market_cap_billions_inr": 200,
+      "liquidity": "Very High",
+      "industry": "Information Technology"
+    },
+    "ASIANPAINT": {
+      "company_name": "Asian Paints (India) Limited",
+      "nse_symbol": "ASIANPAINT",
+      "alpha_vantage_symbol": "ASIANPAINT.NSE",
+      "marketstack_symbol": "ASIANPAINT",
+      "bse_symbol": "500820",
+      "isin": "INE021A01013",
+      "sector": "Construction & Materials",
+      "market_cap_billions_inr": 250,
+      "liquidity": "Very High",
+      "industry": "Paint & Coatings"
+    },
+    "TITAN": {
+      "company_name": "Titan Company Limited",
+      "nse_symbol": "TITAN",
+      "alpha_vantage_symbol": "TITAN.NSE",
+      "marketstack_symbol": "TITAN",
+      "bse_symbol": "500114",
+      "isin": "INE280A01028",
+      "sector": "Retail & Consumer",
+      "market_cap_billions_inr": 280,
+      "liquidity": "Very High",
+      "industry": "Retail, Jewellery, Watches"
+    },
+    "TECHM": {
+      "company_name": "Tech Mahindra Limited",
+      "nse_symbol": "TECHM",
+      "alpha_vantage_symbol": "TECHM.NSE",
+      "marketstack_symbol": "TECHM",
+      "bse_symbol": "532755",
+      "isin": "INE010A01017",
+      "sector": "IT & ITeS",
+      "market_cap_billions_inr": 130,
+      "liquidity": "High",
+      "industry": "Information Technology"
+    },
+    "NTPC": {
+      "company_name": "NTPC Limited",
+      "nse_symbol": "NTPC",
+      "alpha_vantage_symbol": "NTPC.NSE",
+      "marketstack_symbol": "NTPC",
+      "bse_symbol": "532555",
+      "isin": "INE733E01010",
+      "sector": "Energy & Power",
+      "market_cap_billions_inr": 240,
+      "liquidity": "Very High",
+      "industry": "Power Generation"
+    },
+    "COALIND": {
+      "company_name": "Coal India Limited",
+      "nse_symbol": "COALIND",
+      "alpha_vantage_symbol": "COALIND.NSE",
+      "marketstack_symbol": "COALIND",
+      "bse_symbol": "533278",
+      "isin": "INE522D01015",
+      "sector": "Energy & Power",
+      "market_cap_billions_inr": 120,
+      "liquidity": "Medium",
+      "industry": "Coal Mining"
+    }
+  },
+  "format_conversion_rules": {
+    "internal_to_alpha_vantage": {
+      "rule": "symbol + '.NSE'",
+      "examples": [
+        {
+          "internal": "TCS",
+          "api": "TCS.NSE"
+        },
+        {
+          "internal": "INFY",
+          "api": "INFY.NSE"
+        },
+        {
+          "internal": "HDFCBANK",
+          "api": "HDFCBANK.NSE"
+        }
+      ]
+    },
+    "internal_to_marketstack": {
+      "rule": "symbol as-is (no suffix)",
+      "examples": [
+        {
+          "internal": "TCS",
+          "api": "TCS"
+        },
+        {
+          "internal": "INFY",
+          "api": "INFY"
+        },
+        {
+          "internal": "HDFCBANK",
+          "api": "HDFCBANK"
+        }
+      ]
+    },
+    "internal_to_nse_api": {
+      "rule": "symbol as-is (no suffix)",
+      "examples": [
+        {
+          "internal": "TCS",
+          "api": "TCS"
+        },
+        {
+          "internal": "INFY",
+          "api": "INFY"
+        }
+      ]
+    },
+    "isin_to_nse_symbol": {
+      "rule": "Lookup in symbol_mappings using isin",
+      "note": "Some APIs return ISIN; need to convert to NSE symbol"
+    }
+  },
+  "sector_symbol_grouping": {
+    "IT & ITeS": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM"],
+    "Banking & Finance": ["HDFCBANK", "SBIN", "AXISBANK", "BAJAJFINSV"],
+    "Energy & Power": ["RELIANCE", "NTPC", "COALIND"],
+    "Telecom": ["BHARTIARTL"],
+    "FMCG": ["ITC", "NESTLEIND"],
+    "Auto & Components": ["MARUTI"],
+    "Pharmaceuticals": ["SUNPHARMA"],
+    "Construction & Materials": ["LT", "ASIANPAINT"],
+    "Retail & Consumer": ["TITAN"]
+  },
+  "liquidity_classification": {
+    "very_high": [
+      "TCS",
+      "INFY",
+      "HDFCBANK",
+      "RELIANCE",
+      "LT",
+      "SBIN",
+      "BHARTIARTL",
+      "ITC",
+      "AXISBANK",
+      "WIPRO",
+      "HCLTECH",
+      "ASIANPAINT",
+      "TITAN",
+      "NTPC"
+    ],
+    "high": ["BAJAJFINSV", "MARUTI", "SUNPHARMA", "NESTLEIND", "TECHM"],
+    "medium": ["COALIND"],
+    "low": []
+  },
+  "volatility_classification": {
+    "low_volatility": ["HDFCBANK", "SBIN", "NESTLEIND", "NTPC"],
+    "medium_volatility": ["TCS", "INFY", "RELIANCE", "ITC", "AXISBANK"],
+    "high_volatility": ["TITAN", "BAJAJFINSV", "MARUTI", "SUNPHARMA"],
+    "very_high_volatility": ["COALIND", "TECHM"]
+  },
+  "nifty_50_classification": {
+    "tier_1_blue_chips": ["TCS", "INFY", "HDFCBANK", "RELIANCE", "SBIN"],
+    "tier_2_large_cap": ["LT", "AXISBANK", "ITC", "BHARTIARTL"],
+    "tier_3_growth": ["WIPRO", "TITAN", "ASIANPAINT", "SUNPHARMA"],
+    "tier_4_sector_leaders": [
+      "MARUTI",
+      "NESTLEIND",
+      "HCLTECH",
+      "TECHM",
+      "NTPC",
+      "COALIND",
+      "BAJAJFINSV"
+    ]
+  },
+  "etf_mappings": {
+    "niftybees": {
+      "nse_symbol": "NIFTYBEES",
+      "description": "Nifty 50 ETF - tracks top 50 stocks",
+      "expense_ratio": "0.05%",
+      "constituent_symbols": "All Nifty 50 stocks"
+    },
+    "niftyitbees": {
+      "nse_symbol": "NIFTYITBEES",
+      "description": "Nifty IT ETF - tracks IT sector stocks",
+      "expense_ratio": "0.1%",
+      "constituent_symbols": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM"]
+    },
+    "bankbees": {
+      "nse_symbol": "BANKBEES",
+      "description": "Nifty Bank ETF - tracks banking sector stocks",
+      "expense_ratio": "0.1%",
+      "constituent_symbols": ["HDFCBANK", "SBIN", "AXISBANK", "ICICIBANK"]
+    }
+  },
+  "api_endpoint_mapping": {
+    "alpha_vantage": {
+      "base_url": "https://www.alphavantage.co/query",
+      "symbol_param": "symbol",
+      "symbol_format": "TCS.NSE",
+      "function": "TIME_SERIES_DAILY_ADJUSTED"
+    },
+    "marketstack": {
+      "base_url": "http://api.marketstack.com/v1/eod",
+      "symbol_param": "symbols",
+      "symbol_format": "TCS",
+      "exchange_param": "exchanges"
+    },
+    "nse_direct": {
+      "base_url": "https://www.nseindia.com/api",
+      "symbol_param": "symbol",
+      "symbol_format": "TCS",
+      "requires_headers": true
+    }
+  },
+  "recommendations": {
+    "symbol_selection_strategy": "Start with 20 Tier-1 & Tier-2 stocks, expand to full Nifty 50 after validation",
+    "provider_priority": "AlphaVantage (free tier) → MarketStack (backup) → NSE Direct API (official)",
+    "symbol_storage": "Always store NSE symbol internally; convert at API boundary",
+    "display_priority": "Show NSE symbol to user; show ISIN for regulatory reporting"
+  }
+}

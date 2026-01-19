@@ -1,11 +1,35 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b', '-f', 'engine-b/Dockerfile', '.']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c', '-f', 'engine-c/Dockerfile', '.']
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a', '-f', 'engine-a/Dockerfile', '.']
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b",
+        "-f",
+        "engine-b/Dockerfile",
+        ".",
+      ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c",
+        "-f",
+        "engine-c/Dockerfile",
+        ".",
+      ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a",
+        "-f",
+        "engine-a/Dockerfile",
+        ".",
+      ]
 images:
-- 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b'
-- 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c'
-- 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a'
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b"
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c"
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a"
