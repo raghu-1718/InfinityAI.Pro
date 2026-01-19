@@ -760,14 +760,25 @@ async def get_system_status(user_id: Optional[str] = Header(None, alias="X-User-
         try:
             manager = get_credentials_manager()
             creds = await manager.get_user_credentials(user_id)
-            if creds and creds.get("connection_status") == "connected":
-                dhan_connected = True
-                # Get Client ID as the Account Name identity
-                # In future we can fetch real name if Dhan API supports it
-                # creds structure: {'credentials': {'client_id': '...', ...}} or flat
-                c_data = creds.get("credentials", creds)
-                client_id = c_data.get("client_id")
-                account_name = f"Trader ({client_id})" if client_id else "Trader"
+            
+            # Fix: Actually test DhanHQ connectivity by attempting a lightweight API call
+            if creds:
+                try:
+                    # Try to get a DhanHQ client and make a simple API call
+                    dhan_client = await get_dhan_client_async(user_id)
+                    if dhan_client:
+                        # Attempt a lightweight API call to verify connection
+                        # Using funds endpoint as it's fast and requires authentication
+                        fund_limits = dhan_client.get_fund_limits()
+                        if fund_limits:
+                            dhan_connected = True
+                            # Get Client ID from credentials
+                            c_data = creds.get("credentials", creds)
+                            client_id = c_data.get("client_id") or fund_limits.get("dhanClientId")
+                            account_name = f"Trader ({client_id})" if client_id else "Trader"
+                except Exception as conn_err:
+                    logger.warning(f"DhanHQ connection test failed for {user_id}: {conn_err}")
+                    dhan_connected = False
         except Exception as e:
             logger.error(f"Error checking Dhan status for {user_id}: {e}")
             status = "DEGRADED"
