@@ -83,7 +83,7 @@ def publish_to_pubsub(topic_path: str, data: Dict[str, Any]) -> bool:
         return False
 
 @functions_framework.http
-def ingest_market_data(request):
+def market_data_ingestion(request):
     """
     HTTP Cloud Function to fetch and publish live market data
     Can be triggered by Cloud Scheduler every 1-5 seconds during market hours
