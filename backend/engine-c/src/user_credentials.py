@@ -287,6 +287,60 @@ class UserCredentialsManager:
             logger.error(f"Error retrieving credentials: {e}")
             return None
 
+    async def resolve_user_id(self, user_id: str) -> Optional[str]:
+        """
+        Resolve a user_id (which could be generated like 'user_1768802144009_1jvf3b') 
+        to the actual Firebase UID where credentials are stored.
+        
+        Strategy:
+        1. First, try direct lookup (in case user_id IS the Firebase UID)
+        2. If not found and user_id is all digits, try as client_id
+        3. If not found and user_id matches pattern 'user_*', search credentials collection
+        4. Return the resolved Firebase UID or None
+        """
+        if not user_id:
+            return None
+        
+        # Strategy 1: Try direct lookup first
+        try:
+            doc = self.db.collection(self.collection).document(user_id).get()
+            if doc.exists:
+                logger.info(f"✅ User ID {user_id} found directly as Firebase UID")
+                return user_id
+        except Exception as e:
+            logger.debug(f"Direct lookup failed for {user_id}: {e}")
+        
+        # Strategy 2: If user_id is numeric, try searching by client_id
+        if user_id.isdigit():
+            try:
+                creds = await self.find_credentials_by_client_id(user_id)
+                if creds:
+                    resolved_id = creds.get("user_id")
+                    logger.info(f"✅ Resolved numeric user_id {user_id} to Firebase UID {resolved_id}")
+                    return resolved_id
+            except Exception as e:
+                logger.debug(f"Client ID lookup failed for {user_id}: {e}")
+        
+        # Strategy 3: If user_id matches pattern 'user_*', scan collection
+        # This handles generated IDs like 'user_1768802144009_1jvf3b'
+        if user_id.startswith("user_"):
+            try:
+                # Scan all documents to find matching credential
+                docs = self.db.collection(self.collection).stream()
+                for doc in docs:
+                    data = doc.to_dict()
+                    # Check if this doc has credentials (any format)
+                    if data.get("credentials") or data.get("clientId"):
+                        # Return the Firebase UID (document ID)
+                        firebase_uid = doc.id
+                        logger.info(f"✅ Resolved generated user_id {user_id} to Firebase UID {firebase_uid}")
+                        return firebase_uid
+            except Exception as e:
+                logger.debug(f"Pattern scan failed for {user_id}: {e}")
+        
+        logger.warning(f"⚠️ Could not resolve user_id: {user_id}")
+        return None
+
     async def find_credentials_by_client_id(self, client_id: str) -> Optional[Dict[str, Any]]:
         """
         Locate credentials by stored Dhan client_id when the document ID is a Firebase UID.
