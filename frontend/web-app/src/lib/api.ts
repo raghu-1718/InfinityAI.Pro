@@ -21,9 +21,10 @@ export const getEngineBUrl = () => {
 
 // Helper to determine Engine C URL based on environment
 export const getEngineCUrl = () => {
+  // Updated Engine C URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-228557716858.us-central1.run.app"
+    "https://engine-c-3acobgd3qa-uc.a.run.app"
   );
 };
 
