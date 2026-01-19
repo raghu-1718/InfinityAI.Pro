@@ -1,9 +1,9 @@
 # 🟢 DEPLOYMENT FIXED & LIVE - Executive Summary
 
-**Date**: 2026-01-19 00:02 UTC  
-**Status**: ✅ **PRODUCTION READY**  
-**Issue**: Deployment was 2 hours stale (no recent updates to Cloud Run)  
-**Resolution**: Fixed Dockerfile paths, redeployed, verified live  
+**Date**: 2026-01-19 00:02 UTC
+**Status**: ✅ **PRODUCTION READY**
+**Issue**: Deployment was 2 hours stale (no recent updates to Cloud Run)
+**Resolution**: Fixed Dockerfile paths, redeployed, verified live
 
 ---
 
@@ -19,6 +19,7 @@ You noticed the screenshot showed **"2 hours ago"** as the last deployment time,
    - Build IDs: `3893aa35-a539-4805-b5ce-59ebd1541c4a` (FAILED)
 
 2. **Reason**: Dockerfile `COPY` command used incorrect paths:
+
    ```dockerfile
    COPY engine-c/requirements.txt /app/requirements.txt  ❌ WRONG
    # Should be:
@@ -32,9 +33,11 @@ You noticed the screenshot showed **"2 hours ago"** as the last deployment time,
 ## Solution Applied
 
 ### Step 1: Fixed Dockerfile Paths
+
 **File**: `backend/engine-c/Dockerfile`
 
 Changed all `COPY` statements to use full paths from project root:
+
 ```dockerfile
 COPY backend/engine-c/requirements.txt /app/requirements.txt    ✅
 COPY backend/shared /app/shared                                 ✅
@@ -43,13 +46,16 @@ COPY backend/engine-c/src /app/src                              ✅
 ```
 
 ### Step 2: Committed & Pushed
+
 ```bash
 git commit -m "fix(engine-c): correct Dockerfile COPY paths for project root context"
 git push origin main
 ```
+
 Commit: `81aef444`
 
 ### Step 3: Triggered New Deployment
+
 ```bash
 gcloud run deploy engine-c --source . \
   --region us-central1 \
@@ -58,29 +64,31 @@ gcloud run deploy engine-c --source . \
 ```
 
 ### Step 4: Verified Live
-✅ New revision deployed: **engine-c-00074-vsq**  
-✅ Health endpoint responding  
-✅ Coupon verification working  
-✅ All security hardening intact  
+
+✅ New revision deployed: **engine-c-00074-vsq**
+✅ Health endpoint responding
+✅ Coupon verification working
+✅ All security hardening intact
 
 ---
 
 ## Deployment Status Comparison
 
-| Item | Before | After |
-|------|--------|-------|
-| Last Deployment | 2 hours ago (00073-pq5) | ✅ NOW (00074-vsq) |
-| Code Version | Stale fixes not deployed | ✅ Latest (81aef444) |
-| Health Endpoint | Served old code | ✅ Responding healthy |
-| Coupon System | Outdated deployment | ✅ Live and verified |
-| Dockerfile Status | ❌ Build failing | ✅ Fixed & deployed |
-| Service Status | Mixed state | ✅ 100% READY |
+| Item              | Before                   | After                 |
+| ----------------- | ------------------------ | --------------------- |
+| Last Deployment   | 2 hours ago (00073-pq5)  | ✅ NOW (00074-vsq)    |
+| Code Version      | Stale fixes not deployed | ✅ Latest (81aef444)  |
+| Health Endpoint   | Served old code          | ✅ Responding healthy |
+| Coupon System     | Outdated deployment      | ✅ Live and verified  |
+| Dockerfile Status | ❌ Build failing         | ✅ Fixed & deployed   |
+| Service Status    | Mixed state              | ✅ 100% READY         |
 
 ---
 
 ## Live Verification Results
 
 ### ✅ Health Check
+
 ```json
 {
   "status": "healthy",
@@ -92,6 +100,7 @@ gcloud run deploy engine-c --source . \
 ```
 
 ### ✅ Coupon Endpoint (INFAI-FAM-MOM)
+
 ```json
 {
   "success": true,
@@ -103,6 +112,7 @@ gcloud run deploy engine-c --source . \
 ```
 
 ### ✅ Service Status
+
 ```
 Revision:   engine-c-00074-vsq
 URL:        https://engine-c-228557716858.us-central1.run.app
@@ -114,27 +124,27 @@ Traffic:    100% → 00074-vsq
 
 ## Key Commits
 
-| Commit | Message | Status |
-|--------|---------|--------|
-| 81aef444 | fix: correct Dockerfile COPY paths | ✅ Deployed |
+| Commit   | Message                               | Status       |
+| -------- | ------------------------------------- | ------------ |
+| 81aef444 | fix: correct Dockerfile COPY paths    | ✅ Deployed  |
 | c3afcea1 | docs: deployment verification records | ✅ Committed |
-| 1c910fe4 | docs: Phase 6 executive summary | ✅ Deployed |
-| f89e35af | fix: Engine-C import path resilience | ✅ Deployed |
-| a442c4ec | docs: KMS hardening guide | ✅ Deployed |
-| 7d1df247 | fix: resolve import path issues | ✅ Deployed |
+| 1c910fe4 | docs: Phase 6 executive summary       | ✅ Deployed  |
+| f89e35af | fix: Engine-C import path resilience  | ✅ Deployed  |
+| a442c4ec | docs: KMS hardening guide             | ✅ Deployed  |
+| 7d1df247 | fix: resolve import path issues       | ✅ Deployed  |
 
 ---
 
 ## Security & Stability Checklist
 
-✅ **CORS Hardening**: Production-only origins  
-✅ **KMS Rotation**: 90-day schedule enabled  
-✅ **Secret Manager**: Geo-replicated  
-✅ **Coupon Cleanup**: 10 INFAI-FAM-* verified  
-✅ **Import Resilience**: Fallback paths active  
-✅ **Firestore Rules**: Backend write-only enforced  
-✅ **Health Monitoring**: Endpoints responding  
-✅ **Error Logs**: No startup errors on active revision  
+✅ **CORS Hardening**: Production-only origins
+✅ **KMS Rotation**: 90-day schedule enabled
+✅ **Secret Manager**: Geo-replicated
+✅ **Coupon Cleanup**: 10 INFAI-FAM-\* verified
+✅ **Import Resilience**: Fallback paths active
+✅ **Firestore Rules**: Backend write-only enforced
+✅ **Health Monitoring**: Endpoints responding
+✅ **Error Logs**: No startup errors on active revision
 
 ---
 
@@ -156,11 +166,13 @@ Traffic:    100% → 00074-vsq
 ## Deployment Artifacts
 
 📄 **Documentation**:
+
 - [DEPLOYMENT_SUCCESS_2026-01-19.md](DEPLOYMENT_SUCCESS_2026-01-19.md) - Full deployment details
 - [DEPLOYMENT_VERIFICATION_REPORT.md](DEPLOYMENT_VERIFICATION_REPORT.md) - Verification checklist
 - [PHASE6_SECURITY_HARDENING_EXECUTIVE_SUMMARY.md](PHASE6_SECURITY_HARDENING_EXECUTIVE_SUMMARY.md) - Security status
 
 🔧 **Code Changes**:
+
 - Fixed: `backend/engine-c/Dockerfile` (COPY paths corrected)
 - Fixed: `backend/engine-c/src/main.py` (import resilience)
 - Status: All changes deployed to revision 00074-vsq
@@ -171,19 +183,19 @@ Traffic:    100% → 00074-vsq
 
 🟢 **PRODUCTION READY**
 
-✅ Latest code deployed  
-✅ All endpoints operational  
-✅ Security hardening intact  
-✅ Health checks passing  
-✅ Verified end-to-end  
+✅ Latest code deployed
+✅ All endpoints operational
+✅ Security hardening intact
+✅ Health checks passing
+✅ Verified end-to-end
 
 ---
 
-**Next Review**: Monitor logs over next 24 hours for any issues.  
-**KMS Rotation Due**: April 19, 2026 (90-day schedule).  
+**Next Review**: Monitor logs over next 24 hours for any issues.
+**KMS Rotation Due**: April 19, 2026 (90-day schedule).
 **Optional Enhancements**: Automated Secret Manager rotation, HSM migration.
 
 ---
 
-Prepared: 2026-01-19 00:02 UTC  
+Prepared: 2026-01-19 00:02 UTC
 Status: ✅ VERIFIED LIVE

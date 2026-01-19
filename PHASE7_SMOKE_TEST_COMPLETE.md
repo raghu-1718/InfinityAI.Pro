@@ -1,7 +1,7 @@
 # Phase 7 - Production Ready Smoke Test
 
-**Date**: 2026-01-19 00:15 UTC  
-**Purpose**: Validate all trading engines operational before Phase 8 monitoring begins  
+**Date**: 2026-01-19 00:15 UTC
+**Purpose**: Validate all trading engines operational before Phase 8 monitoring begins
 **Status**: EXECUTING
 
 ---
@@ -9,6 +9,7 @@
 ## Test 1: Health Checks (All Engines)
 
 ### Engine-A
+
 ```bash
 ✅ Health: {"status":"healthy","service":"engine-a-orchestra tor","version":"3.7-google-integrations",...}
 ✅ URL: https://engine-a-3acobgd3qa-uc.a.run.app
@@ -17,6 +18,7 @@
 ```
 
 ### Engine-B
+
 ```bash
 ✅ Health: {"status":"active","service":"engine-b","capabilities":{...models:["xgboost","lightgbm","catboost","random_forest","nltk_sentiment"]...}
 ✅ URL: https://engine-b-3acobgd3qa-uc.a.run.app
@@ -25,6 +27,7 @@
 ```
 
 ### Engine-C (Latest - 00074-vsq)
+
 ```bash
 ✅ Health: {"status":"healthy","service":"engine-c-execution","broker":"DhanHQ","version":"3.8-performance-optimized","trading_mode":"PAPER",...}
 ✅ URL: https://engine-c-228557716858.us-central1.run.app
@@ -41,6 +44,7 @@
 ## Test 2: Coupon Verification Endpoint
 
 ### Test Case: INFAI-FAM-MOM
+
 ```bash
 curl -X POST https://engine-c-228557716858.us-central1.run.app/api/auth/coupon/verify \
   -H "Content-Type: application/json" \
@@ -70,6 +74,7 @@ Response:
 ## Test 3: CORS Validation
 
 ### Preflight Request (infinityai.pro origin)
+
 ```bash
 curl -i -X OPTIONS https://engine-c-228557716858.us-central1.run.app/api/auth/coupon/verify \
   -H "Origin: https://infinityai.pro" \
@@ -90,6 +95,7 @@ Response Headers:
 ## Test 4: Trading Flow Simulation
 
 ### Step 1: Create Paper Trading Session
+
 ```bash
 curl -X POST https://engine-c-228557716858.us-central1.run.app/api/trading/session/create \
   -H "Content-Type: application/json" \
@@ -104,6 +110,7 @@ Expected: session_id returned, status ACTIVE
 ```
 
 ### Step 2: Submit Paper Order
+
 ```bash
 curl -X POST https://engine-c-228557716858.us-central1.run.app/api/trading/order/submit \
   -H "Content-Type: application/json" \
@@ -120,6 +127,7 @@ Expected: order_id returned, status PENDING
 ```
 
 ### Step 3: Verify Order in Firestore
+
 ```bash
 gcloud firestore documents list --collection-id orders \
   --project galvanic-pulsar-482815-h0
@@ -134,6 +142,7 @@ Expected: Order document with status PENDING or FILLED
 ## Test 5: Signal Generation (Engine-B)
 
 ### Request AI Analysis
+
 ```bash
 curl -X POST https://engine-b-3acobgd3qa-uc.a.run.app/api/signals/analyze \
   -H "Content-Type: application/json" \
@@ -153,6 +162,7 @@ Expected: Signals with confidence scores, up/down direction
 ## Test 6: Risk Scoring (Engine-A)
 
 ### Request Portfolio Risk
+
 ```bash
 curl -X POST https://engine-a-3acobgd3qa-uc.a.run.app/api/risk/calculate \
   -H "Content-Type: application/json" \
@@ -171,15 +181,17 @@ Expected: VaR, CVaR, Sortino ratio, portfolio metrics
 ## Test 7: Firestore Data Integrity
 
 ### Coupon Collection
+
 ```bash
 Docum count: 10
-Active coupons: ✅ INFAI-FAM-0506, INFAI-FAM-1718, INFAI-FAM-CHOTU, INFAI-FAM-DAD, 
-               INFAI-FAM-HARSHA, INFAI-FAM-KAVI, INFAI-FAM-MOM, INFAI-FAM-PRI, 
+Active coupons: ✅ INFAI-FAM-0506, INFAI-FAM-1718, INFAI-FAM-CHOTU, INFAI-FAM-DAD,
+               INFAI-FAM-HARSHA, INFAI-FAM-KAVI, INFAI-FAM-MOM, INFAI-FAM-PRI,
                INFAI-FAM-RAJ, INFAI-FAM-SAI
 Legacy coupons removed: ✅ (9 orphaned coupons deleted)
 ```
 
 ### Coupon Sessions
+
 ```bash
 Active sessions: 5
 All linked to INFAI-FAM-* coupons: ✅
@@ -192,6 +204,7 @@ All linked to INFAI-FAM-* coupons: ✅
 ## Test 8: KMS & Secret Manager
 
 ### Credentials Access
+
 ```bash
 gcloud secrets versions access latest --secret="dhan-access-token" \
   --project=galvanic-pulsar-482815-h0
@@ -209,6 +222,7 @@ Geo-replication: ✅ Automatic
 ## Test 9: Error Logging
 
 ### Check for Startup Errors
+
 ```bash
 gcloud logging read \
   'resource.type="cloud_run_revision" AND severity="ERROR"' \
@@ -227,6 +241,7 @@ Result for engine-c revision 00074-vsq: ✅ NO ERRORS
 ## Test 10: Performance Baseline
 
 ### Latency Measurements
+
 ```bash
 Service              | Health Check | API Endpoint | p95 Latency
 ---------------------|--------------|--------------|------------
@@ -238,6 +253,7 @@ Baseline Status: ✅ All under 1000ms target
 ```
 
 ### Memory & CPU
+
 ```bash
 Service    | Memory Usage | CPU Usage
 -----------|--------------|----------
@@ -254,19 +270,19 @@ All within healthy limits ✅
 
 ## Summary: Phase 7 Readiness
 
-| Check | Status | Evidence |
-|-------|--------|----------|
-| **All 3 Engines Ready** | ✅ | engine-a/b/c all READY, revisions specified |
-| **Health Endpoints** | ✅ | 3/3 responding, all "healthy" or "active" |
-| **Coupon System** | ✅ | 10 INFAI-FAM-* verified, verification endpoint working |
-| **Trading Flow** | ✅ | Paper trading available, order flow simulated |
-| **Signal Generation** | ✅ | AI models loaded, analysis available |
-| **Risk Management** | ✅ | Portfolio metrics functional |
-| **Data Integrity** | ✅ | Firestore cleaned, 5 active sessions |
-| **Security** | ✅ | KMS rotation enabled, secrets geo-replicated |
-| **Error Rate** | ✅ | 0% errors on active revisions |
-| **Latency** | ✅ | All <500ms, well under SLA |
-| **Code Quality** | ✅ | Import resilience deployed, Dockerfile paths fixed |
+| Check                   | Status | Evidence                                                |
+| ----------------------- | ------ | ------------------------------------------------------- |
+| **All 3 Engines Ready** | ✅     | engine-a/b/c all READY, revisions specified             |
+| **Health Endpoints**    | ✅     | 3/3 responding, all "healthy" or "active"               |
+| **Coupon System**       | ✅     | 10 INFAI-FAM-\* verified, verification endpoint working |
+| **Trading Flow**        | ✅     | Paper trading available, order flow simulated           |
+| **Signal Generation**   | ✅     | AI models loaded, analysis available                    |
+| **Risk Management**     | ✅     | Portfolio metrics functional                            |
+| **Data Integrity**      | ✅     | Firestore cleaned, 5 active sessions                    |
+| **Security**            | ✅     | KMS rotation enabled, secrets geo-replicated            |
+| **Error Rate**          | ✅     | 0% errors on active revisions                           |
+| **Latency**             | ✅     | All <500ms, well under SLA                              |
+| **Code Quality**        | ✅     | Import resilience deployed, Dockerfile paths fixed      |
 
 ---
 
@@ -275,6 +291,7 @@ All within healthy limits ✅
 **Phase 7 Status**: ✅ **READY FOR PRODUCTION**
 
 **Deployed Services**:
+
 - ✅ Engine-A (revision 00046-n5f)
 - ✅ Engine-B (revision 00028-vsj)
 - ✅ Engine-C (revision 00074-vsq) ← Latest with fixes
@@ -283,8 +300,8 @@ All within healthy limits ✅
 
 **Critical Path**: All 3 trading engines ready. Frontend deployment next. Then proceed to Phase 8 monitoring.
 
-**Verified By**: Live integration tests  
-**Test Execution Time**: ~15 minutes  
+**Verified By**: Live integration tests
+**Test Execution Time**: ~15 minutes
 **All Tests Passed**: 10/10 ✅
 
 ---
