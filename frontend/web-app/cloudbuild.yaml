@@ -4,11 +4,11 @@ steps:
     args:
       - "build"
       - "-t"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
       - "-t"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:$SHORT_SHA"
+      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
       - "-f"
-      - "frontend/web-app/Dockerfile"
+      - "Dockerfile"
       - "."
     id: "build-image"
 
@@ -16,17 +16,19 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
     id: "push-image"
     waitFor: ["build-image"]
 
-  # Step 3: Deploy to Cloud Run
-  - name: "gcr.io/cloud-builders/run"
+  # Step 3: Deploy to Cloud Run with Ably Subscribe-Only Key
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
     args:
+      - "run"
       - "deploy"
       - "web-app"
       - "--image"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
+      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
       - "--region"
       - "us-central1"
       - "--platform"
@@ -42,12 +44,16 @@ steps:
       - "3000"
       - "--set-env-vars"
       - "NODE_ENV=production"
+      - "--set-secrets"
+      - "NEXT_PUBLIC_ABLY_API_KEY=ably-api-key-subscribe:latest"
+      - "--project"
+      - "galvanic-pulsar-482815-h0"
     id: "deploy-cloud-run"
     waitFor: ["push-image"]
 
 images:
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:latest"
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/infinityai/web-app:$SHORT_SHA"
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
 
 timeout: "1800s"
 options:
