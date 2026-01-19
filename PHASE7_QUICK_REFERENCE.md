@@ -9,6 +9,7 @@ All infrastructure deployed, verified, and ready for production data ingestion.
 ## 📊 What's Running
 
 ### Pub/Sub Topics (Live)
+
 ```
 ✅ market-data.raw         (real-time quotes streaming)
 ✅ market-data.processed   (validated quotes ready for engines)
@@ -19,6 +20,7 @@ All infrastructure deployed, verified, and ready for production data ingestion.
 ```
 
 ### Credentials Secured
+
 ```
 ✅ 7 provider API keys in Secret Manager
    - Alpha Vantage (stocks/forex/crypto)
@@ -31,6 +33,7 @@ All infrastructure deployed, verified, and ready for production data ingestion.
 ```
 
 ### Data Verified Flowing
+
 ```
 ✅ Test market data: AAPL quote published → received via Pub/Sub
 ✅ Test news data: Article published → received via Pub/Sub
@@ -42,6 +45,7 @@ All infrastructure deployed, verified, and ready for production data ingestion.
 ## 🚀 Deploy Live Data Ingestion (Next)
 
 ### 1. Deploy Services to Cloud Run
+
 ```powershell
 # Deploy ingestion services
 .\scripts\deploy_ingestion_services.ps1
@@ -53,6 +57,7 @@ All infrastructure deployed, verified, and ready for production data ingestion.
 ```
 
 ### 2. Create Cloud Scheduler Jobs
+
 ```bash
 # Market data fetch (every 5 minutes)
 gcloud scheduler jobs create http market-data-fetch \
@@ -70,13 +75,14 @@ gcloud scheduler jobs create http news-fetch \
 ```
 
 ### 3. Wire Engines to Consume
+
 ```python
 # Each engine subscribes to Pub/Sub topic
 from google.cloud import pubsub_v1
 
 subscriber = pubsub_v1.SubscriberClient()
 subscription_path = subscriber.subscription_path(
-    project_id, 
+    project_id,
     "market-data-processed-engine-a"
 )
 
@@ -94,6 +100,7 @@ subscriber.subscribe(subscription_path, callback=process_market_data)
 ## 🔍 Monitor Data Flow
 
 ### View Live Messages
+
 ```bash
 # Market data messages
 gcloud pubsub subscriptions pull market-data-test-sub --auto-ack --limit=10
@@ -106,6 +113,7 @@ gcloud pubsub subscriptions pull engine-a-market-data-sub --auto-ack --limit=10
 ```
 
 ### Check Service Health
+
 ```bash
 # Market data ingestion health
 curl https://market-data-ingestion-<url>.run.app/health
@@ -115,6 +123,7 @@ curl https://news-ingestion-<url>.run.app/health
 ```
 
 ### View Logs
+
 ```bash
 # Service logs
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=market-data-ingestion" --limit=50
@@ -169,29 +178,32 @@ Pub/Sub: trading-signals
 
 ## 🛠️ PowerShell Scripts Available
 
-| Script | Purpose | Status |
-|--------|---------|--------|
-| `setup_provider_secrets.ps1` | Interactive Secret Manager setup | Ready |
-| `create_pubsub_topics.ps1` | Create topics + subscriptions | ✅ Done |
-| `deploy_ingestion_services.ps1` | Deploy to Cloud Run | Ready |
-| `test_pubsub_flow.ps1` | End-to-end verification | Ready |
-| `create_test_secrets.ps1` | Auto-populate test credentials | ✅ Done |
+| Script                          | Purpose                          | Status  |
+| ------------------------------- | -------------------------------- | ------- |
+| `setup_provider_secrets.ps1`    | Interactive Secret Manager setup | Ready   |
+| `create_pubsub_topics.ps1`      | Create topics + subscriptions    | ✅ Done |
+| `deploy_ingestion_services.ps1` | Deploy to Cloud Run              | Ready   |
+| `test_pubsub_flow.ps1`          | End-to-end verification          | Ready   |
+| `create_test_secrets.ps1`       | Auto-populate test credentials   | ✅ Done |
 
 ---
 
 ## 🎓 How Ably Works (Optional Frontend Integration)
 
 ### Without Ably
+
 ```
 Engines → Pub/Sub → Firestore → Frontend polls (1-2 sec latency)
 ```
 
 ### With Ably (Optional)
+
 ```
 Engines → Pub/Sub → ably-bridge → Ably channels → WebSocket → Frontend (<100ms latency)
 ```
 
 **Benefits of Ably:**
+
 - Real-time WebSocket push (no polling)
 - Lower frontend CPU usage
 - Live quote ticker updates
@@ -199,6 +211,7 @@ Engines → Pub/Sub → ably-bridge → Ably channels → WebSocket → Frontend
 - Real-time trading alerts
 
 **Channels:**
+
 ```
 market-data:AAPL      → AAPL quotes in real-time
 news:trending         → Trending stories in real-time
@@ -228,6 +241,7 @@ Before going to production, confirm:
 ## 🆘 Quick Troubleshooting
 
 ### No messages in subscription?
+
 ```bash
 # 1. Publish test message
 gcloud pubsub topics publish market-data.raw --message='{"test":"data"}'
@@ -240,6 +254,7 @@ gcloud logging read "resource.type=cloud_run_revision" --limit=20
 ```
 
 ### Service not starting?
+
 ```bash
 # Check deployment logs
 gcloud builds log <build-id>
@@ -252,6 +267,7 @@ gcloud logging read "severity>=ERROR" --limit=50
 ```
 
 ### Provider API failing?
+
 ```bash
 # Check if secret exists
 gcloud secrets versions access latest --secret=provider-alphavantage-api-key
@@ -327,7 +343,6 @@ Phase 7 Documentation:
 
 ---
 
-**Status:** ✅ READY FOR PRODUCTION  
-**Last Updated:** 2026-01-19 01:12 UTC  
+**Status:** ✅ READY FOR PRODUCTION
+**Last Updated:** 2026-01-19 01:12 UTC
 **Next Action:** Deploy services and configure Cloud Scheduler
-
