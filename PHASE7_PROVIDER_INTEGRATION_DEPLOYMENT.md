@@ -1,25 +1,29 @@
 # Phase 7 Provider Integration - Deployment & Implementation Guide
 
 ## Overview
+
 Phase 7 integrates **7 real-time data and news providers** to replace yfinance as the primary data source. All credentials are managed via GCP Secret Manager; no keys stored in code.
 
 ## Providers Integrated
 
 ### Market Data Providers (3)
-| Provider | Type | Coverage | Rate Limit | Cost | WebSocket |
-|----------|------|----------|-----------|------|-----------|
-| **Alpha Vantage** | REST API | Stocks, Forex, Crypto, Commodities, Options | 5/min free, 600/min premium | Free tier available | No |
-| **MarketStack** | REST API | 170k+ tickers, 50+ countries, EOD + Intraday | 5 req/sec | $9.99/mo | No |
-| **Massive** | REST + WebSocket | Stocks, Options, Futures, Indices, Forex | Variable | Freemium | Yes |
+
+| Provider          | Type             | Coverage                                     | Rate Limit                  | Cost                | WebSocket |
+| ----------------- | ---------------- | -------------------------------------------- | --------------------------- | ------------------- | --------- |
+| **Alpha Vantage** | REST API         | Stocks, Forex, Crypto, Commodities, Options  | 5/min free, 600/min premium | Free tier available | No        |
+| **MarketStack**   | REST API         | 170k+ tickers, 50+ countries, EOD + Intraday | 5 req/sec                   | $9.99/mo            | No        |
+| **Massive**       | REST + WebSocket | Stocks, Options, Futures, Indices, Forex     | Variable                    | Freemium            | Yes       |
 
 ### News Providers (3)
-| Provider | Type | Coverage | Rate Limit | Cost | Features |
-|----------|------|----------|-----------|------|----------|
-| **NewsAPI** | REST API | 40k+ sources | 100/day free | Free tier | Trending, Headlines, Search |
-| **NewsData.io** | REST API | Global, multi-language | 2k/day free | Free tier | Sentiment, Language detection |
-| **NewsAPI.ai** | REST API | Semantic search, Events | 2k tokens/day free | Free tier | Concepts, Events, AI analysis |
+
+| Provider        | Type     | Coverage                | Rate Limit         | Cost      | Features                      |
+| --------------- | -------- | ----------------------- | ------------------ | --------- | ----------------------------- |
+| **NewsAPI**     | REST API | 40k+ sources            | 100/day free       | Free tier | Trending, Headlines, Search   |
+| **NewsData.io** | REST API | Global, multi-language  | 2k/day free        | Free tier | Sentiment, Language detection |
+| **NewsAPI.ai**  | REST API | Semantic search, Events | 2k tokens/day free | Free tier | Concepts, Events, AI analysis |
 
 ### Real-time Platform (Optional)
+
 - **Ably**: Pub/Sub alternative for bridging external feeds into GCP Pub/Sub
 
 ---
@@ -291,7 +295,7 @@ async def startup():
     # Initialize market data providers
     global alpha_vantage_provider
     alpha_vantage_provider = AlphaVantageProvider()
-    
+
     # Start periodic fetch of market data
     asyncio.create_task(periodic_market_data_fetch())
 
@@ -330,18 +334,19 @@ async def get_quotes(symbol: str):
 
 ## Rates & Quotas Reference
 
-| Provider | Free Tier | Cost to Scale |
-|----------|-----------|--------------|
-| Alpha Vantage | 5 req/min | $50-500/mo premium |
-| MarketStack | 100/day | $9.99+/mo |
-| Massive | Freemium | Variable |
-| NewsAPI | 100/day | $49/mo |
-| NewsData.io | 2000/day | Paid plans |
-| NewsAPI.ai | 2000 tokens/day | Paid plans |
+| Provider      | Free Tier       | Cost to Scale      |
+| ------------- | --------------- | ------------------ |
+| Alpha Vantage | 5 req/min       | $50-500/mo premium |
+| MarketStack   | 100/day         | $9.99+/mo          |
+| Massive       | Freemium        | Variable           |
+| NewsAPI       | 100/day         | $49/mo             |
+| NewsData.io   | 2000/day        | Paid plans         |
+| NewsAPI.ai    | 2000 tokens/day | Paid plans         |
 
 ---
 
 ## Next Steps (Phase 8+)
+
 1. Wire Pub/Sub consumers in each engine
 2. Add provider failover logic (try primary → secondary → tertiary)
 3. Implement data quality checks and schema validation

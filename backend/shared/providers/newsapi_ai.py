@@ -8,18 +8,18 @@ from .models import NewsItem
 
 class NewsAPIAIProvider(NewsProvider):
     """NewsAPI.ai (Event Registry) - semantic news search with events and concepts."""
-    
+
     @property
     def name(self) -> str:
         return "newsapi-ai"
-    
+
     def __init__(self):
         self.api_key = os.getenv("PROVIDER_NEWSAPI_AI_API_KEY")
         self.base_url = "https://eventregistry.org/api/v1"
         self.timeout = 30
         if not self.api_key:
             raise RuntimeError("PROVIDER_NEWSAPI_AI_API_KEY not set in environment")
-    
+
     async def fetch_news(self, topics: List[str]) -> List[NewsItem]:
         """
         Fetch articles with semantic understanding.
@@ -58,7 +58,7 @@ class NewsAPIAIProvider(NewsProvider):
                     print(f"Error fetching news for {topic} from NewsAPI.ai: {e}")
                     await asyncio.sleep(1)  # Respect rate limits (5 concurrent max)
         return all_articles
-    
+
     async def fetch_events(self, keywords: List[str]) -> List[Dict[str, Any]]:
         """
         Fetch events (groupings of related articles) with semantic understanding.

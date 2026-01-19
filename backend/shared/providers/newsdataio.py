@@ -8,18 +8,18 @@ from .models import NewsItem
 
 class NewsDataIOProvider(NewsProvider):
     """NewsData.io - real-time global news aggregator with sentiment analysis."""
-    
+
     @property
     def name(self) -> str:
         return "newsdata-io"
-    
+
     def __init__(self):
         self.api_key = os.getenv("PROVIDER_NEWSDATAIO_API_KEY")
         self.base_url = "https://newsdata.io/api/1"
         self.timeout = 30
         if not self.api_key:
             raise RuntimeError("PROVIDER_NEWSDATAIO_API_KEY not set in environment")
-    
+
     async def fetch_news(self, topics: List[str]) -> List[NewsItem]:
         """
         Fetch news by keywords/symbols.
@@ -56,7 +56,7 @@ class NewsDataIOProvider(NewsProvider):
                     print(f"Error fetching news for {topic} from NewsData.io: {e}")
                     await asyncio.sleep(0.5)
         return all_articles
-    
+
     async def fetch_by_country(self, country: str, limit: int = 50) -> List[NewsItem]:
         """Fetch news articles by country code (e.g., 'us', 'in', 'gb')."""
         try:

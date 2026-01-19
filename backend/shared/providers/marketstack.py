@@ -8,18 +8,18 @@ from .models import Quote
 
 class MarketStackProvider(MarketDataProvider):
     """MarketStack real-time and historical stock market data provider."""
-    
+
     @property
     def name(self) -> str:
         return "marketstack"
-    
+
     def __init__(self):
         self.api_key = os.getenv("PROVIDER_MARKETSTACK_API_KEY")
         self.base_url = "https://api.marketstack.com/v1"
         self.timeout = 30
         if not self.api_key:
             raise RuntimeError("PROVIDER_MARKETSTACK_API_KEY not set in environment")
-    
+
     async def fetch_quotes(self, symbols: List[str]) -> List[Quote]:
         """
         Fetch EOD data for given symbols.
@@ -55,7 +55,7 @@ class MarketStackProvider(MarketDataProvider):
                     print(f"Error fetching chunk from MarketStack: {e}")
                     await asyncio.sleep(1)
         return quotes
-    
+
     async def fetch_intraday(self, symbols: List[str], interval: str = "1hour") -> List[Dict[str, Any]]:
         """
         Fetch intraday data for symbols.

@@ -8,18 +8,18 @@ from .models import Quote
 
 class MassiveProvider(MarketDataProvider):
     """Massive (formerly Polygon) real-time market data provider."""
-    
+
     @property
     def name(self) -> str:
         return "massive"
-    
+
     def __init__(self):
         self.api_key = os.getenv("PROVIDER_MASSIVE_API_KEY")
         self.base_url = "https://api.massive.com/v1"
         self.timeout = 30
         if not self.api_key:
             raise RuntimeError("PROVIDER_MASSIVE_API_KEY not set in environment")
-    
+
     async def fetch_quotes(self, symbols: List[str]) -> List[Quote]:
         """
         Fetch latest quotes for stocks via REST API.
@@ -50,7 +50,7 @@ class MassiveProvider(MarketDataProvider):
                     print(f"Error fetching {symbol} from Massive: {e}")
                     await asyncio.sleep(0.5)
         return quotes
-    
+
     async def websocket_stream(self, symbols: List[str], on_message: callable):
         """
         Stream real-time quotes via WebSocket for supported symbols.
@@ -66,7 +66,7 @@ class MassiveProvider(MarketDataProvider):
                         "subscriptions": [f"Q.{sym}" for sym in symbols]
                     }
                     await ws.send_json(subscribe_msg)
-                    
+
                     # Listen for messages
                     async for msg in ws:
                         if msg.type == aiohttp.WSMsgType.TEXT:

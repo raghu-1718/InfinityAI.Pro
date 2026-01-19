@@ -8,18 +8,18 @@ from .models import Quote
 
 class AlphaVantageProvider(MarketDataProvider):
     """Alpha Vantage market data provider - stocks, forex, crypto, commodities."""
-    
+
     @property
     def name(self) -> str:
         return "alpha-vantage"
-    
+
     def __init__(self):
         self.api_key = os.getenv("PROVIDER_ALPHAVANTAGE_API_KEY")
         self.base_url = "https://www.alphavantage.co/query"
         self.timeout = 30
         if not self.api_key:
             raise RuntimeError("PROVIDER_ALPHAVANTAGE_API_KEY not set in environment")
-    
+
     async def fetch_quotes(self, symbols: List[str]) -> List[Quote]:
         """
         Fetch latest quotes for given symbols using GLOBAL_QUOTE endpoint.
@@ -54,7 +54,7 @@ class AlphaVantageProvider(MarketDataProvider):
                     print(f"Error fetching {symbol} from AlphaVantage: {e}")
                     await asyncio.sleep(0.5)  # Backoff
         return quotes
-    
+
     async def fetch_intraday(self, symbol: str, interval: str = "5min") -> List[Dict[str, Any]]:
         """
         Fetch intraday data for a symbol.
