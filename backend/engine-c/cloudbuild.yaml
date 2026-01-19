@@ -7,7 +7,7 @@ steps:
         "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
         "-f",
         "backend/engine-c/Dockerfile.monorepo",
-        "."
+        ".",
       ]
   - name: "gcr.io/cloud-builders/docker"
     args:

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, engineA, engineB, engineC } from '@/lib/api';
-import { useAppStore } from '@/lib/store';
-import { useEffect, useCallback } from 'react';
-import { getUserId } from '@/lib/user';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, engineA, engineB, engineC } from "@/lib/api";
+import { useAppStore } from "@/lib/store";
+import { useEffect, useCallback } from "react";
+import { getUserId } from "@/lib/user";
 
 // Lightweight types for holdings/positions used by hooks (avoid explicit `any`)
 export type Holding = {
@@ -16,13 +16,12 @@ export type Holding = {
   [key: string]: unknown;
 };
 
-
 // Engine Health Hooks
 export function useEngineHealth() {
   const updateEngineStatus = useAppStore((s) => s.updateEngineStatus);
 
   const query = useQuery({
-    queryKey: ['engines', 'health'],
+    queryKey: ["engines", "health"],
     queryFn: () => api.checkAllEngines(),
     refetchInterval: 30000, // 30 seconds
     staleTime: 10000,
@@ -35,31 +34,38 @@ export function useEngineHealth() {
       const { engineA, engineB, engineC } = query.data;
 
       // Debug logging for health checks
-      console.log('🏥 Engine Health Check:', { engineA, engineB, engineC });
+      console.log("🏥 Engine Health Check:", { engineA, engineB, engineC });
 
-      updateEngineStatus('engineA', {
-        status: engineA && (engineA.status !== 'offline') ? 'online' : 'offline',
+      updateEngineStatus("engineA", {
+        status: engineA && engineA.status !== "offline" ? "online" : "offline",
         version: engineA?.version || null,
-        capabilities: Array.isArray(engineA?.ml_capabilities) ? engineA.ml_capabilities : [],
+        capabilities: Array.isArray(engineA?.ml_capabilities)
+          ? engineA.ml_capabilities
+          : [],
         lastChecked: new Date(),
       });
 
-      updateEngineStatus('engineB', {
-        status: engineB && (engineB.status !== 'offline') ? 'online' : 'offline',
+      updateEngineStatus("engineB", {
+        status: engineB && engineB.status !== "offline" ? "online" : "offline",
         version: engineB?.version || null,
-        capabilities: engineB?.capabilities ? Object.keys(engineB.capabilities) : (Array.isArray(engineB?.ml_capabilities) ? engineB.ml_capabilities : []),
+        capabilities: engineB?.capabilities
+          ? Object.keys(engineB.capabilities)
+          : Array.isArray(engineB?.ml_capabilities)
+            ? engineB.ml_capabilities
+            : [],
         lastChecked: new Date(),
       });
 
-      updateEngineStatus('engineC', {
-        status: engineC && (engineC.status !== 'offline') ? 'online' : 'offline',
+      updateEngineStatus("engineC", {
+        status: engineC && engineC.status !== "offline" ? "online" : "offline",
         version: engineC?.version || null,
-        capabilities: Array.isArray(engineC?.ml_capabilities) ? engineC.ml_capabilities : [],
+        capabilities: Array.isArray(engineC?.ml_capabilities)
+          ? engineC.ml_capabilities
+          : [],
         lastChecked: new Date(),
       });
     }
   }, [query.data, updateEngineStatus]);
-
 
   return query;
 }
@@ -67,7 +73,7 @@ export function useEngineHealth() {
 // System State Hook (Unified Status)
 export function useSystemState() {
   return useQuery({
-    queryKey: ['system', 'state'],
+    queryKey: ["system", "state"],
     queryFn: () => engineA.getSystemState(),
     refetchInterval: 10000, // 10 seconds polling for responsiveness
     staleTime: 5000,
@@ -75,13 +81,17 @@ export function useSystemState() {
   });
 }
 
-
 // User Profile Hook - Fetches user's Dhan credentials status
 export function useUserProfile() {
-  const { setUserProfile, setDematData, setFunds, userProfile: currentProfile } = useAppStore();
+  const {
+    setUserProfile,
+    setDematData,
+    setFunds,
+    userProfile: currentProfile,
+  } = useAppStore();
 
   return useQuery({
-    queryKey: ['userProfile', getUserId()],
+    queryKey: ["userProfile", getUserId()],
     queryFn: async () => {
       const userId = getUserId();
 
@@ -102,7 +112,7 @@ export function useUserProfile() {
               });
             }
           } catch (e) {
-            console.error('Failed to fetch demat data:', e);
+            console.error("Failed to fetch demat data:", e);
           }
 
           // Set the user profile as connected
@@ -110,13 +120,13 @@ export function useUserProfile() {
             userId,
             clientId: res.client_id,
             name: res.name || res.user_name || `User ${res.client_id}`,
-            email: '',
+            email: "",
             isConnected: true,
             isVerified: true,
           };
-          
-          if (typeof window !== 'undefined') {
-             localStorage.setItem('dhan_client_id', res.client_id);
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("dhan_client_id", res.client_id);
           }
 
           setUserProfile(newProfile);
@@ -124,40 +134,47 @@ export function useUserProfile() {
         } else {
           // API says not configured. Check if we *think* we are connected.
           if (currentProfile?.isConnected) {
-             // If passing a check, we should trust the API if it successfully returned "configured: false"
-             // But we need to distinguish between "not found/not configured" and "network error".
-             // This block runs if API returned 200 OK but configured=false.
+            // If passing a check, we should trust the API if it successfully returned "configured: false"
+            // But we need to distinguish between "not found/not configured" and "network error".
+            // This block runs if API returned 200 OK but configured=false.
 
-             // WE MUST DISCONNECT LOCALLY TO MATCH BACKEND
-             console.log('Backend reports not configured. Syncing local state.');
-             setUserProfile({
-                 ...currentProfile,
-                 isConnected: false,
-                 isVerified: false,
-                 clientId: '',
-             });
-             return { ...res, userProfile: { ...currentProfile, isConnected: false } };
+            // WE MUST DISCONNECT LOCALLY TO MATCH BACKEND
+            console.log("Backend reports not configured. Syncing local state.");
+            setUserProfile({
+              ...currentProfile,
+              isConnected: false,
+              isVerified: false,
+              clientId: "",
+            });
+            return {
+              ...res,
+              userProfile: { ...currentProfile, isConnected: false },
+            };
           }
           return res;
         }
       } catch (error: any) {
-        console.error('Failed to fetch user credentials:', error);
+        console.error("Failed to fetch user credentials:", error);
 
         // Only if it's a 404, we treat as "User Not Found" -> Disconnected
         if (error?.status === 404) {
-             if (currentProfile?.isConnected) {
-                 setUserProfile({
-                     ...currentProfile,
-                     isConnected: false,
-                     isVerified: false
-                 });
-             }
-             return { configured: false, is_verified: false };
+          if (currentProfile?.isConnected) {
+            setUserProfile({
+              ...currentProfile,
+              isConnected: false,
+              isVerified: false,
+            });
+          }
+          return { configured: false, is_verified: false };
         }
 
         // For other errors (network), keep existing state to avoid flickering
         if (currentProfile?.isConnected) {
-          return { configured: true, is_verified: true, userProfile: currentProfile };
+          return {
+            configured: true,
+            is_verified: true,
+            userProfile: currentProfile,
+          };
         }
         throw error;
       }
@@ -173,11 +190,11 @@ export function useUserProfile() {
 
 // Helper to get user ID from localStorage
 const getStoredUserId = () => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   // NOTE: NEVER use dhan_client_id as user ID for API calls!
   // Backend credentials are keyed by user email, not client ID
   // Only use the generated infinityai_user_id or coupon session userId
-  return localStorage.getItem('infinityai_user_id');
+  return localStorage.getItem("infinityai_user_id");
 };
 
 // Complete User Account Hook - Fetches funds, positions, holdings, orders in one call
@@ -186,28 +203,32 @@ export function useUserAccount() {
   const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['userAccount', userId],
+    queryKey: ["userAccount", userId],
     queryFn: async () => {
       if (!userId) {
-        throw new Error('No user ID available');
+        throw new Error("No user ID available");
       }
 
       const res = await engineC.getUserAccount(userId);
 
-      if (res.status === 'success') {
+      if (res.status === "success") {
         // CRITICAL: Validate that returned data belongs to the requested userId
         const returnedUserId = res.user_id || res.funds?.dhanClientId;
         if (returnedUserId && returnedUserId !== userId) {
-          console.error(`Data mismatch: requested ${userId}, received ${returnedUserId}`);
-          throw new Error('User ID mismatch - data belongs to different user');
+          console.error(
+            `Data mismatch: requested ${userId}, received ${returnedUserId}`,
+          );
+          throw new Error("User ID mismatch - data belongs to different user");
         }
 
         // Update funds in store
         if (res.funds) {
           setFunds({
-            availableBalance: res.funds.availabelBalance || res.funds.availableBalance || 0,
+            availableBalance:
+              res.funds.availabelBalance || res.funds.availableBalance || 0,
             sodLimit: res.funds.sodLimit || 0,
-            collateralAmount: res.funds.collateralAmount || res.funds.utilizedAmount || 0,
+            collateralAmount:
+              res.funds.collateralAmount || res.funds.utilizedAmount || 0,
             dhanClientId: res.funds.dhanClientId || userId,
           });
         }
@@ -218,7 +239,7 @@ export function useUserAccount() {
             userId: userId,
             clientId: res.user_id || userId,
             name: res.name || res.user_name || `User ${res.user_id || userId}`,
-            email: '',
+            email: "",
             isConnected: true,
             isVerified: true,
           });
@@ -232,21 +253,27 @@ export function useUserAccount() {
             items: Array.isArray(res.holdings?.data) ? res.holdings.data : [],
           },
           positions: {
-            totalPnl: res.positions?.total_pnl || res.account_summary?.total_positions_pnl || 0,
+            totalPnl:
+              res.positions?.total_pnl ||
+              res.account_summary?.total_positions_pnl ||
+              0,
             count: res.positions?.count || 0,
             items: Array.isArray(res.positions?.data) ? res.positions.data : [],
           },
           funds: {
-            availableBalance: res.funds?.availabelBalance || res.funds?.availableBalance || 0,
+            availableBalance:
+              res.funds?.availabelBalance || res.funds?.availableBalance || 0,
             utilisedMargin: res.funds?.utilizedAmount || 0,
-            totalBalance: (res.funds?.availabelBalance || 0) + (res.funds?.collateralAmount || 0),
+            totalBalance:
+              (res.funds?.availabelBalance || 0) +
+              (res.funds?.collateralAmount || 0),
           },
         });
 
         return res;
       }
 
-      throw new Error(res.detail || 'Failed to fetch user account');
+      throw new Error(res.detail || "Failed to fetch user account");
     },
     refetchInterval: 15000, // 15 seconds for real-time updates
     staleTime: 10000,
@@ -268,7 +295,7 @@ export function useUserAccount() {
       return failureCount < 2;
     },
     onError: (error: any) => {
-      console.warn('useUserAccount error', error);
+      console.warn("useUserAccount error", error);
 
       // Keep connected state for transient issues; only disconnect on 401
       if (error?.status === 401 && userProfile?.isConnected) {
@@ -287,7 +314,7 @@ export function useFunds() {
   const { userProfile, setFunds, setUserProfile } = useAppStore();
 
   return useQuery({
-    queryKey: ['funds', userProfile?.userId || getStoredUserId()],
+    queryKey: ["funds", userProfile?.userId || getStoredUserId()],
     queryFn: async () => {
       // Determine the user ID to use
       const userId = userProfile?.userId || getStoredUserId();
@@ -297,7 +324,7 @@ export function useFunds() {
         try {
           // Use the user-specific funds endpoint
           const res = await engineC.getFunds(userId);
-          if (res.status === 'success' && res.data) {
+          if (res.status === "success" && res.data) {
             const fundsData = res.data as {
               dhanClientId?: string;
               availabelBalance?: number;
@@ -313,33 +340,35 @@ export function useFunds() {
                 userId: fundsData.dhanClientId,
                 clientId: fundsData.dhanClientId,
                 name: `User ${fundsData.dhanClientId}`,
-                email: '',
+                email: "",
                 isConnected: true,
                 isVerified: true,
               });
             }
 
             setFunds({
-              availableBalance: fundsData.availabelBalance || fundsData.availableBalance || 0,
+              availableBalance:
+                fundsData.availabelBalance || fundsData.availableBalance || 0,
               sodLimit: fundsData.sodLimit || 0,
-              collateralAmount: fundsData.collateralAmount || fundsData.utilizedAmount || 0,
+              collateralAmount:
+                fundsData.collateralAmount || fundsData.utilizedAmount || 0,
               dhanClientId: fundsData.dhanClientId || userId,
             });
             return res;
           }
         } catch (e) {
-          console.error('Failed to fetch user funds:', e);
+          console.error("Failed to fetch user funds:", e);
         }
       }
 
       // Fallback to default funds (no user_id)
       const res = await engineC.getFunds();
-      if (res.status === 'success' && res.data) {
+      if (res.status === "success" && res.data) {
         setFunds({
           availableBalance: res.data.availabelBalance || 0,
           sodLimit: res.data.sodLimit || 0,
           collateralAmount: res.data.collateralAmount || 0,
-          dhanClientId: res.data.dhanClientId || 'default',
+          dhanClientId: res.data.dhanClientId || "default",
         });
       }
       return res;
@@ -356,7 +385,7 @@ export function usePositions() {
   const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['positions', userId],
+    queryKey: ["positions", userId],
     queryFn: async () => {
       // Pass user_id to get user-specific positions
       const res = await engineC.getPositions(userId || undefined);
@@ -379,7 +408,7 @@ export function useHoldings() {
   const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['holdings', userId],
+    queryKey: ["holdings", userId],
     queryFn: async () => {
       // Pass user_id to get user-specific holdings
       const res = await engineC.getHoldings(userId || undefined);
@@ -402,7 +431,7 @@ export function useOrders() {
   const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['orders', userId],
+    queryKey: ["orders", userId],
     queryFn: () => engineC.getOrders(userId || undefined),
     refetchInterval: 5000,
     staleTime: 2000,
@@ -415,7 +444,7 @@ export function useSignal(symbol: string, enabled = true) {
   const addSignal = useAppStore((s) => s.addSignal);
 
   return useQuery({
-    queryKey: ['signal', symbol],
+    queryKey: ["signal", symbol],
     queryFn: async () => {
       const res = await engineB.getSignal({ symbol, use_gemini: true });
       addSignal({
@@ -433,10 +462,21 @@ export function useSignal(symbol: string, enabled = true) {
 
 // All Signals Hook (for auto-trading)
 export function useSignals() {
-  const defaultSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'LT'];
+  const defaultSymbols = [
+    "RELIANCE",
+    "TCS",
+    "INFY",
+    "HDFCBANK",
+    "ICICIBANK",
+    "SBIN",
+    "BHARTIARTL",
+    "ITC",
+    "KOTAKBANK",
+    "LT",
+  ];
 
   return useQuery({
-    queryKey: ['signals', 'all'],
+    queryKey: ["signals", "all"],
     queryFn: () => engineB.getBatchSignals(defaultSymbols),
     staleTime: 30000,
     refetchInterval: 60000, // Refresh every minute
@@ -446,7 +486,7 @@ export function useSignals() {
 // Batch Signals Hook
 export function useBatchSignals(symbols: string[]) {
   return useQuery({
-    queryKey: ['signals', 'batch', symbols],
+    queryKey: ["signals", "batch", symbols],
     queryFn: () => engineB.getBatchSignals(symbols),
     enabled: symbols.length > 0,
     staleTime: 30000,
@@ -456,7 +496,7 @@ export function useBatchSignals(symbols: string[]) {
 // Gemini Analysis Hook
 export function useGeminiAnalysis(symbol: string, context?: string) {
   return useQuery({
-    queryKey: ['gemini', symbol, context],
+    queryKey: ["gemini", symbol, context],
     queryFn: () => engineB.getGeminiAnalysis({ symbol, context }),
     staleTime: 300000, // 5 minutes
   });
@@ -467,7 +507,7 @@ export function useRiskMetrics(returns: number[]) {
   const setRiskMetrics = useAppStore((s) => s.setRiskMetrics);
 
   return useQuery({
-    queryKey: ['risk', 'comprehensive', returns.length],
+    queryKey: ["risk", "comprehensive", returns.length],
     queryFn: async () => {
       const res = await engineA.getComprehensiveRisk({ returns });
       setRiskMetrics(res);
@@ -479,9 +519,13 @@ export function useRiskMetrics(returns: number[]) {
 }
 
 // VaR Hook
-export function useVaR(returns: number[], confidence = 0.95, method: 'historical' | 'parametric' | 'cornish-fisher' = 'historical') {
+export function useVaR(
+  returns: number[],
+  confidence = 0.95,
+  method: "historical" | "parametric" | "cornish-fisher" = "historical",
+) {
   return useQuery({
-    queryKey: ['risk', 'var', returns.length, confidence, method],
+    queryKey: ["risk", "var", returns.length, confidence, method],
     queryFn: () => engineA.calculateVaR({ returns, confidence, method }),
     enabled: returns.length > 0,
     staleTime: 60000,
@@ -489,19 +533,32 @@ export function useVaR(returns: number[], confidence = 0.95, method: 'historical
 }
 
 // Kelly Criterion Hook
-export function useKellyCriterion(winRate: number, avgWin: number, avgLoss: number) {
+export function useKellyCriterion(
+  winRate: number,
+  avgWin: number,
+  avgLoss: number,
+) {
   return useQuery({
-    queryKey: ['risk', 'kelly', winRate, avgWin, avgLoss],
-    queryFn: () => engineA.calculateKelly({ win_rate: winRate, avg_win: avgWin, avg_loss: avgLoss }),
+    queryKey: ["risk", "kelly", winRate, avgWin, avgLoss],
+    queryFn: () =>
+      engineA.calculateKelly({
+        win_rate: winRate,
+        avg_win: avgWin,
+        avg_loss: avgLoss,
+      }),
     enabled: winRate > 0 && avgWin > 0 && avgLoss !== 0,
     staleTime: 60000,
   });
 }
 
 // Position Size Hook
-export function usePositionSize(capital: number, riskPerTrade = 0.02, stopLossPct = 0.05) {
+export function usePositionSize(
+  capital: number,
+  riskPerTrade = 0.02,
+  stopLossPct = 0.05,
+) {
   return useQuery({
-    queryKey: ['risk', 'position-size', capital, riskPerTrade, stopLossPct],
+    queryKey: ["risk", "position-size", capital, riskPerTrade, stopLossPct],
     queryFn: () =>
       engineA.calculatePositionSize({
         capital,
@@ -516,7 +573,7 @@ export function usePositionSize(capital: number, riskPerTrade = 0.02, stopLossPc
 // Execution Analytics Hook
 export function useExecutionAnalytics() {
   return useQuery({
-    queryKey: ['execution', 'analytics'],
+    queryKey: ["execution", "analytics"],
     queryFn: () => engineC.getExecutionAnalytics(),
     staleTime: 30000,
   });
@@ -525,7 +582,7 @@ export function useExecutionAnalytics() {
 // Model Status Hook
 export function useModelStatus() {
   return useQuery({
-    queryKey: ['models', 'status'],
+    queryKey: ["models", "status"],
     queryFn: () => engineB.getModelStatus(),
     staleTime: 60000,
   });
@@ -538,9 +595,9 @@ export function usePlaceOrder() {
   return useMutation({
     mutationFn: engineC.placeOrder,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['positions'] });
-      queryClient.invalidateQueries({ queryKey: ['funds'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
+      queryClient.invalidateQueries({ queryKey: ["funds"] });
     },
   });
 }
@@ -551,7 +608,7 @@ export function useCancelOrder() {
   return useMutation({
     mutationFn: engineC.cancelOrder,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 }
@@ -562,8 +619,8 @@ export function useStartTrade() {
   return useMutation({
     mutationFn: engineA.startTrade,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['positions'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
     },
   });
 }
@@ -575,9 +632,9 @@ export function useStartInstrumentTrade() {
   return useMutation({
     mutationFn: engineA.startInstrumentTrade,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['positions'] });
-      queryClient.invalidateQueries({ queryKey: ['signals'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
     },
   });
 }
@@ -589,10 +646,10 @@ export function useStartAutoTrading() {
   return useMutation({
     mutationFn: engineA.startAutoTrading,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['positions'] });
-      queryClient.invalidateQueries({ queryKey: ['signals'] });
-      queryClient.invalidateQueries({ queryKey: ['auto-trade-status'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      queryClient.invalidateQueries({ queryKey: ["auto-trade-status"] });
     },
   });
 }
@@ -604,7 +661,7 @@ export function useStopAutoTrading() {
   return useMutation({
     mutationFn: engineA.stopAutoTrading,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auto-trade-status'] });
+      queryClient.invalidateQueries({ queryKey: ["auto-trade-status"] });
     },
   });
 }
@@ -612,7 +669,7 @@ export function useStopAutoTrading() {
 // Get auto-trading status
 export function useAutoTradingStatus() {
   return useQuery({
-    queryKey: ['auto-trade-status'],
+    queryKey: ["auto-trade-status"],
     queryFn: engineA.getAutoTradingStatus,
     refetchInterval: 10000, // Refresh every 10 seconds
   });
@@ -627,7 +684,13 @@ export function useCalculateRiskScore() {
 // Portfolio Analysis Hook - Analyze user's holdings with AI
 export function usePortfolioAnalysis(holdings: Holding[], enabled = true) {
   return useQuery({
-    queryKey: ['portfolio', 'analysis', holdings.map((h) => (h.tradingSymbol as string) || (h.securityId as string)).join(',')],
+    queryKey: [
+      "portfolio",
+      "analysis",
+      holdings
+        .map((h) => (h.tradingSymbol as string) || (h.securityId as string))
+        .join(","),
+    ],
     queryFn: () => engineB.analyzePortfolio(holdings),
     enabled: enabled && holdings.length > 0,
     staleTime: 300000, // 5 minutes
@@ -635,9 +698,13 @@ export function usePortfolioAnalysis(holdings: Holding[], enabled = true) {
 }
 
 // Holding-specific AI recommendation
-export function useHoldingRecommendation(symbol: string, holding: Holding | Record<string, unknown>, enabled = true) {
+export function useHoldingRecommendation(
+  symbol: string,
+  holding: Holding | Record<string, unknown>,
+  enabled = true,
+) {
   return useQuery({
-    queryKey: ['holding', 'recommendation', symbol],
+    queryKey: ["holding", "recommendation", symbol],
     queryFn: () => engineB.getHoldingRecommendation(symbol, holding),
     enabled: enabled && !!symbol,
     staleTime: 300000,
@@ -648,10 +715,12 @@ export function useHoldingRecommendation(symbol: string, holding: Holding | Reco
 export function usePortfolioSignals() {
   const { data: holdingsData } = useHoldings();
   const holdings = Array.isArray(holdingsData?.data) ? holdingsData.data : [];
-  const symbols = holdings.map((h: any) => h.tradingSymbol || h.securityId).filter(Boolean);
+  const symbols = holdings
+    .map((h: any) => h.tradingSymbol || h.securityId)
+    .filter(Boolean);
 
   return useQuery({
-    queryKey: ['portfolio', 'signals', symbols.join(',')],
+    queryKey: ["portfolio", "signals", symbols.join(",")],
     queryFn: () => engineB.getBatchSignals(symbols),
     enabled: symbols.length > 0,
     staleTime: 60000,
@@ -660,9 +729,12 @@ export function usePortfolioSignals() {
 }
 
 // Portfolio Optimization Hook
-export function usePortfolioOptimization(holdings: Holding[], riskTolerance: 'low' | 'medium' | 'high' = 'medium') {
+export function usePortfolioOptimization(
+  holdings: Holding[],
+  riskTolerance: "low" | "medium" | "high" = "medium",
+) {
   return useQuery({
-    queryKey: ['portfolio', 'optimize', riskTolerance, holdings.length],
+    queryKey: ["portfolio", "optimize", riskTolerance, holdings.length],
     queryFn: () => engineB.optimizePortfolio(holdings, riskTolerance),
     enabled: holdings.length > 0,
     staleTime: 300000, // 5 minutes
@@ -670,9 +742,11 @@ export function usePortfolioOptimization(holdings: Holding[], riskTolerance: 'lo
 }
 
 // Market Prediction Hook
-export function useMarketPrediction(timeframe: 'day' | 'week' | 'month' = 'day') {
+export function useMarketPrediction(
+  timeframe: "day" | "week" | "month" = "day",
+) {
   return useQuery({
-    queryKey: ['market', 'prediction', timeframe],
+    queryKey: ["market", "prediction", timeframe],
     queryFn: () => engineB.getMarketPrediction(timeframe),
     staleTime: 300000,
     refetchInterval: 600000, // 10 minutes
@@ -682,7 +756,7 @@ export function useMarketPrediction(timeframe: 'day' | 'week' | 'month' = 'day')
 // Sector Analysis Hook
 export function useSectorAnalysis() {
   return useQuery({
-    queryKey: ['sector', 'analysis'],
+    queryKey: ["sector", "analysis"],
     queryFn: () => engineB.getSectorAnalysis(),
     staleTime: 300000,
   });
@@ -692,11 +766,11 @@ export function useSectorAnalysis() {
 export function useStockScreener(criteria: {
   minMarketCap?: number;
   sector?: string;
-  signalType?: 'BUY' | 'SELL' | 'HOLD';
+  signalType?: "BUY" | "SELL" | "HOLD";
   minConfidence?: number;
 }) {
   return useQuery({
-    queryKey: ['screener', JSON.stringify(criteria)],
+    queryKey: ["screener", JSON.stringify(criteria)],
     queryFn: () => engineB.screenStocks(criteria),
     staleTime: 120000,
   });
@@ -705,7 +779,7 @@ export function useStockScreener(criteria: {
 // Technical Indicators Hook
 export function useTechnicalIndicators(symbol: string, enabled = true) {
   return useQuery({
-    queryKey: ['technical', symbol],
+    queryKey: ["technical", symbol],
     queryFn: () => engineB.getTechnicalIndicators(symbol),
     enabled: enabled && !!symbol,
     staleTime: 60000,
@@ -715,7 +789,7 @@ export function useTechnicalIndicators(symbol: string, enabled = true) {
 // Sentiment Analysis Hook
 export function useSentimentAnalysis(symbol: string, enabled = true) {
   return useQuery({
-    queryKey: ['sentiment', symbol],
+    queryKey: ["sentiment", symbol],
     queryFn: () => engineB.getSentimentAnalysis(symbol),
     enabled: enabled && !!symbol,
     staleTime: 300000,
@@ -725,7 +799,7 @@ export function useSentimentAnalysis(symbol: string, enabled = true) {
 // Correlation Analysis Hook
 export function useCorrelationAnalysis(symbols: string[]) {
   return useQuery({
-    queryKey: ['correlation', symbols.join(',')],
+    queryKey: ["correlation", symbols.join(",")],
     queryFn: () => engineB.getCorrelationAnalysis(symbols),
     enabled: symbols.length >= 2,
     staleTime: 300000,
@@ -733,9 +807,12 @@ export function useCorrelationAnalysis(symbols: string[]) {
 }
 
 // Trade Ideas Hook
-export function useTradeIdeas(budget?: number, riskLevel?: 'conservative' | 'moderate' | 'aggressive') {
+export function useTradeIdeas(
+  budget?: number,
+  riskLevel?: "conservative" | "moderate" | "aggressive",
+) {
   return useQuery({
-    queryKey: ['trade-ideas', budget, riskLevel],
+    queryKey: ["trade-ideas", budget, riskLevel],
     queryFn: () => engineB.getTradeIdeas(budget, riskLevel),
     staleTime: 300000,
     refetchInterval: 600000,
@@ -746,13 +823,20 @@ export function useTradeIdeas(budget?: number, riskLevel?: 'conservative' | 'mod
 // Position Analysis Hooks - AI/ML Analysis of Positions
 // =====================================================
 
-import type { PositionAnalysisRequest, PositionAnalysisResponse } from '@/lib/api';
+import type {
+  PositionAnalysisRequest,
+  PositionAnalysisResponse,
+} from "@/lib/api";
 
 // Single Position Analysis Hook
-export function usePositionAnalysis(position: PositionAnalysisRequest | null, enabled = true) {
+export function usePositionAnalysis(
+  position: PositionAnalysisRequest | null,
+  enabled = true,
+) {
   return useQuery<PositionAnalysisResponse | null>({
-    queryKey: ['position', 'analysis', position?.symbol],
-    queryFn: () => (position ? engineB.analyzePosition(position) : Promise.resolve(null)),
+    queryKey: ["position", "analysis", position?.symbol],
+    queryFn: () =>
+      position ? engineB.analyzePosition(position) : Promise.resolve(null),
     enabled: enabled && !!position,
     staleTime: 60000, // 1 minute
     refetchInterval: 120000, // Refresh every 2 minutes
@@ -764,39 +848,65 @@ export function useAllPositionsAnalysis(enabled = true) {
   const { data: positionsData, isLoading: positionsLoading } = usePositions();
 
   // Extract positions array from response
-  const positions = Array.isArray(positionsData?.data) ? positionsData.data : [];
+  const positions = Array.isArray(positionsData?.data)
+    ? positionsData.data
+    : [];
 
   // Transform Dhan positions to PositionAnalysisRequest format
   // Note: Dhan API uses camelCase with 'drv' prefix for derivative fields
-  const positionDataList: PositionAnalysisRequest[] = positions.map((p: Record<string, unknown>) => ({
-    symbol: (p.tradingSymbol as string | undefined)?.split('-')[0] || (p.securityId as string | undefined) || '',
-    trading_symbol: (p.tradingSymbol as string) || '',
-    security_id: (p.securityId as string) || '',
-    position_type: ((p.netQty as number) || 0) > 0 ? 'LONG' : 'SHORT',
-    exchange_segment: (p.exchangeSegment as string) || 'NSE_EQ',
-    product_type: (p.productType as string) || 'CNC',
-    buy_avg: (p.buyAvg as number) || 0,
-    cost_price: (p.costPrice as number) || (p.buyAvg as number) || 0,
-    buy_qty: (p.buyQty as number) || 0,
-    sell_qty: (p.sellQty as number) || 0,
-    net_qty: (p.netQty as number) || ((p.buyQty as number) || 0) - ((p.sellQty as number) || 0),
-    realized_profit: (p.realizedProfit as number) || 0,
-    unrealized_profit: (p.unrealizedProfit as number) || 0,
-    // Dhan uses drvExpiryDate, drvOptionType, drvStrikePrice for derivatives
-    expiry_date: (p.drvExpiryDate as string) || (p.expiryDate as string) || undefined,
-    option_type: (p.drvOptionType as string) === 'PUT' ? 'PUT' : (p.drvOptionType as string) === 'CALL' ? 'CALL' : (p.optionType as string | undefined),
-    strike_price: (p.drvStrikePrice as number) || (p.strikePrice as number) || undefined,
-    current_price: (p.dayClosePrice as number) || (p.lastTradedPrice as number) || undefined,
-  }));
+  const positionDataList: PositionAnalysisRequest[] = positions.map(
+    (p: Record<string, unknown>) => ({
+      symbol:
+        (p.tradingSymbol as string | undefined)?.split("-")[0] ||
+        (p.securityId as string | undefined) ||
+        "",
+      trading_symbol: (p.tradingSymbol as string) || "",
+      security_id: (p.securityId as string) || "",
+      position_type: ((p.netQty as number) || 0) > 0 ? "LONG" : "SHORT",
+      exchange_segment: (p.exchangeSegment as string) || "NSE_EQ",
+      product_type: (p.productType as string) || "CNC",
+      buy_avg: (p.buyAvg as number) || 0,
+      cost_price: (p.costPrice as number) || (p.buyAvg as number) || 0,
+      buy_qty: (p.buyQty as number) || 0,
+      sell_qty: (p.sellQty as number) || 0,
+      net_qty:
+        (p.netQty as number) ||
+        ((p.buyQty as number) || 0) - ((p.sellQty as number) || 0),
+      realized_profit: (p.realizedProfit as number) || 0,
+      unrealized_profit: (p.unrealizedProfit as number) || 0,
+      // Dhan uses drvExpiryDate, drvOptionType, drvStrikePrice for derivatives
+      expiry_date:
+        (p.drvExpiryDate as string) || (p.expiryDate as string) || undefined,
+      option_type:
+        (p.drvOptionType as string) === "PUT"
+          ? "PUT"
+          : (p.drvOptionType as string) === "CALL"
+            ? "CALL"
+            : (p.optionType as string | undefined),
+      strike_price:
+        (p.drvStrikePrice as number) || (p.strikePrice as number) || undefined,
+      current_price:
+        (p.dayClosePrice as number) ||
+        (p.lastTradedPrice as number) ||
+        undefined,
+    }),
+  );
 
   return useQuery<PositionAnalysisResponse[]>({
-    queryKey: ['positions', 'analysis', 'all', positionDataList.map((p) => p.symbol).join(',')],
+    queryKey: [
+      "positions",
+      "analysis",
+      "all",
+      positionDataList.map((p) => p.symbol).join(","),
+    ],
     queryFn: async () => {
-      const response = await engineB.analyzePortfolioPositions(positionDataList);
+      const response =
+        await engineB.analyzePortfolioPositions(positionDataList);
       // Ensure we always return an array (API might wrap in {data: [...]})
       if (Array.isArray(response)) return response;
       if (response?.data && Array.isArray(response.data)) return response.data;
-      if (response?.results && Array.isArray(response.results)) return response.results;
+      if (response?.results && Array.isArray(response.results))
+        return response.results;
       return [];
     },
     enabled: enabled && !positionsLoading && positionDataList.length > 0,
@@ -812,24 +922,48 @@ export function usePositionRiskSummary() {
   // Ensure analysisData is always an array for safe operations
   const safeAnalysisData = Array.isArray(analysisData) ? analysisData : [];
 
-  const summary = safeAnalysisData.length > 0 ? {
-    totalPositions: safeAnalysisData.length,
-    totalUnrealizedPnL: safeAnalysisData.reduce((sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0), 0),
-    averageRiskScore: safeAnalysisData.reduce((sum, a) => sum + (a.ai_recommendation?.score || 50), 0) / safeAnalysisData.length,
-    highRiskCount: safeAnalysisData.filter((a) => (a.ai_recommendation?.score || 50) > 70).length,
-    buyRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'HOLD').length,
-    sellRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'EXIT_CONSIDERATION').length,
-    holdRecommendations: safeAnalysisData.filter((a) => a.ai_recommendation?.action === 'MONITOR').length,
-    totalMaxLoss: safeAnalysisData.reduce((sum, a) => {
-      const maxLoss = a.risk_metrics?.max_loss;
-      return sum + (typeof maxLoss === 'number' ? maxLoss : 0);
-    }, 0),
-    positionsByConfidence: {
-      high: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'HIGH').length,
-      medium: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'MEDIUM').length,
-      low: safeAnalysisData.filter((a) => a.ai_recommendation?.confidence === 'LOW').length,
-    },
-  } : null;
+  const summary =
+    safeAnalysisData.length > 0
+      ? {
+          totalPositions: safeAnalysisData.length,
+          totalUnrealizedPnL: safeAnalysisData.reduce(
+            (sum, a) => sum + (a.risk_metrics?.unrealized_pnl || 0),
+            0,
+          ),
+          averageRiskScore:
+            safeAnalysisData.reduce(
+              (sum, a) => sum + (a.ai_recommendation?.score || 50),
+              0,
+            ) / safeAnalysisData.length,
+          highRiskCount: safeAnalysisData.filter(
+            (a) => (a.ai_recommendation?.score || 50) > 70,
+          ).length,
+          buyRecommendations: safeAnalysisData.filter(
+            (a) => a.ai_recommendation?.action === "HOLD",
+          ).length,
+          sellRecommendations: safeAnalysisData.filter(
+            (a) => a.ai_recommendation?.action === "EXIT_CONSIDERATION",
+          ).length,
+          holdRecommendations: safeAnalysisData.filter(
+            (a) => a.ai_recommendation?.action === "MONITOR",
+          ).length,
+          totalMaxLoss: safeAnalysisData.reduce((sum, a) => {
+            const maxLoss = a.risk_metrics?.max_loss;
+            return sum + (typeof maxLoss === "number" ? maxLoss : 0);
+          }, 0),
+          positionsByConfidence: {
+            high: safeAnalysisData.filter(
+              (a) => a.ai_recommendation?.confidence === "HIGH",
+            ).length,
+            medium: safeAnalysisData.filter(
+              (a) => a.ai_recommendation?.confidence === "MEDIUM",
+            ).length,
+            low: safeAnalysisData.filter(
+              (a) => a.ai_recommendation?.confidence === "LOW",
+            ).length,
+          },
+        }
+      : null;
 
   return { summary, analysisData: safeAnalysisData, isLoading, error };
 }
@@ -867,14 +1001,14 @@ interface BackgroundTradingStatus {
 // Get Background Trading Status
 export function useBackgroundTradingStatus(userId: string | undefined) {
   return useQuery<BackgroundTradingStatus>({
-    queryKey: ['background-trading', 'status', userId],
+    queryKey: ["background-trading", "status", userId],
     queryFn: async () => {
       const data = await engineC.getBackgroundTradingStatus(userId!);
       // Normalize API response - API returns 'active', frontend expects 'is_active'
       return {
         ...data,
         is_active: data.active ?? data.is_active ?? false,
-        strategy: data.config?.strategy || data.strategy || 'auto_options',
+        strategy: data.config?.strategy || data.strategy || "auto_options",
       };
     },
     enabled: !!userId,
@@ -891,25 +1025,26 @@ export function useStartBackgroundTrading() {
   return useMutation({
     mutationFn: ({
       userId,
-      strategy = 'auto_options',
+      strategy = "auto_options",
       config = {},
     }: {
       userId: string;
       strategy?: string;
       config?: Record<string, unknown>;
-    }) => engineC.startBackgroundTrading({
-      user_id: userId,
-      strategy,
-      ...config,
-    }),
+    }) =>
+      engineC.startBackgroundTrading({
+        user_id: userId,
+        strategy,
+        ...config,
+      }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['background-trading', 'status', variables.userId],
+        queryKey: ["background-trading", "status", variables.userId],
       });
       // Log activity
       engineC.logActivity({
         user_id: variables.userId,
-        type: 'BACKGROUND_TRADING_STARTED',
+        type: "BACKGROUND_TRADING_STARTED",
         details: { strategy: variables.strategy },
       });
     },
@@ -924,12 +1059,12 @@ export function useStopBackgroundTrading() {
     mutationFn: (userId: string) => engineC.stopBackgroundTrading(userId),
     onSuccess: (_data, userId) => {
       queryClient.invalidateQueries({
-        queryKey: ['background-trading', 'status', userId],
+        queryKey: ["background-trading", "status", userId],
       });
       // Log activity
       engineC.logActivity({
         user_id: userId,
-        type: 'BACKGROUND_TRADING_STOPPED',
+        type: "BACKGROUND_TRADING_STOPPED",
         details: {},
       });
     },
@@ -980,10 +1115,10 @@ export function useActivityLogs(
     limit?: number;
     date?: string;
     activityType?: string;
-  }
+  },
 ) {
   return useQuery<ActivityLogsResponse>({
-    queryKey: ['activity', 'logs', userId, options],
+    queryKey: ["activity", "logs", userId, options],
     queryFn: () =>
       engineC.getActivityLog(userId!, {
         limit: options?.limit,
@@ -999,7 +1134,7 @@ export function useActivityLogs(
 // Get Activity Summary
 export function useActivitySummary(userId: string | undefined, days = 7) {
   return useQuery<ActivitySummary>({
-    queryKey: ['activity', 'summary', userId, days],
+    queryKey: ["activity", "summary", userId, days],
     queryFn: async () => {
       // Fetch logs for the period and compute summary
       const response = await engineC.getActivityLog(userId!, { limit: 1000 });
@@ -1017,20 +1152,19 @@ export function useActivitySummary(userId: string | undefined, days = 7) {
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       });
 
-      const mostCommonAction = Object.entries(actionCounts).sort(
-        (a, b) => b[1] - a[1]
-      )[0]?.[0] || 'NONE';
+      const mostCommonAction =
+        Object.entries(actionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+        "NONE";
 
-      const peakActivityHour = Object.entries(hourCounts).sort(
-        (a, b) => b[1] - a[1]
-      )[0]?.[0] || 0;
+      const peakActivityHour =
+        Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 0;
 
       return {
         user_id: userId!,
         total_actions: logs.length,
         actions_by_type: actionCounts,
-        first_activity: logs[logs.length - 1]?.timestamp || '',
-        last_activity: logs[0]?.timestamp || '',
+        first_activity: logs[logs.length - 1]?.timestamp || "",
+        last_activity: logs[0]?.timestamp || "",
         most_common_action: mostCommonAction,
         active_hours: Object.keys(hourCounts).map(Number),
         peak_activity_hour: Number(peakActivityHour),
@@ -1055,32 +1189,36 @@ export function useLogActivity() {
       userId: string;
       action: string;
       details?: Record<string, unknown>;
-    }) => engineC.logActivity({
-      user_id: userId,
-      type: action,
-      details,
-    }),
+    }) =>
+      engineC.logActivity({
+        user_id: userId,
+        type: action,
+        details,
+      }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['activity', 'logs', variables.userId],
+        queryKey: ["activity", "logs", variables.userId],
       });
     },
   });
 }
 
 // Hook to automatically log page visits
-export function usePageActivityLogger(userId: string | undefined, pageName: string) {
+export function usePageActivityLogger(
+  userId: string | undefined,
+  pageName: string,
+) {
   const logActivity = useLogActivity();
 
   useEffect(() => {
     if (userId) {
       logActivity.mutate({
         userId,
-        action: 'PAGE_VISIT',
+        action: "PAGE_VISIT",
         details: {
           page: pageName,
           timestamp: new Date().toISOString(),
-          url: typeof window !== 'undefined' ? window.location.href : '',
+          url: typeof window !== "undefined" ? window.location.href : "",
         },
       });
     }
@@ -1104,7 +1242,7 @@ export function useTradingActivityLogger(userId: string | undefined) {
         });
       }
     },
-    [userId, logActivity]
+    [userId, logActivity],
   );
 
   return { logTrade };
@@ -1115,20 +1253,25 @@ export function useTradingActivityLogger(userId: string | undefined) {
 // ==========================================
 
 export function useOptionChain(
-  params: { under_security_id: number; under_exchange_segment: string; expiry: string },
-  enabled = true
+  params: {
+    under_security_id: number;
+    under_exchange_segment: string;
+    expiry: string;
+  },
+  enabled = true,
 ) {
   const { userProfile } = useAppStore();
   const userId = userProfile?.userId || userProfile?.clientId;
 
   return useQuery({
-    queryKey: ['option-chain', params.under_security_id, params.expiry],
+    queryKey: ["option-chain", params.under_security_id, params.expiry],
     queryFn: async () => {
-      if (!userId) throw new Error('User ID required');
+      if (!userId) throw new Error("User ID required");
       const res = await engineC.getOptionChain({ ...params, user_id: userId });
       return res;
     },
-    enabled: enabled && !!userId && !!params.expiry && params.under_security_id > 0,
+    enabled:
+      enabled && !!userId && !!params.expiry && params.under_security_id > 0,
     staleTime: 30000,
   });
 }
@@ -1151,15 +1294,15 @@ export function useIndices(enabled = true) {
   const userId = userProfile?.userId || getStoredUserId();
 
   return useQuery({
-    queryKey: ['indices', 'market_quotes', userId],
+    queryKey: ["indices", "market_quotes", userId],
     queryFn: async () => {
       if (!userId) return null;
       // 13: NIFTY 50, 25: NIFTY BANK
-      const res = await engineC.getMarketQuotes(userId, ['13', '25'], 'IDX_I');
+      const res = await engineC.getMarketQuotes(userId, ["13", "25"], "IDX_I");
       return res;
     },
     enabled: enabled && !!userId,
-    refetchInterval: 10000, 
+    refetchInterval: 10000,
     staleTime: 5000,
   });
 }

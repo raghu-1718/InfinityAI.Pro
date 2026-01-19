@@ -814,8 +814,8 @@ async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: 
 
     Adds exponential backoff retries to handle transient Firestore latency
     immediately after credential updates.
-    
-    CRITICAL FIX: Resolves generated user_ids (like 'user_1768802144009_1jvf3b') 
+
+    CRITICAL FIX: Resolves generated user_ids (like 'user_1768802144009_1jvf3b')
     to actual Firebase UIDs where credentials are stored in Firestore.
     """
     if start_time is None:
@@ -826,14 +826,14 @@ async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: 
 
     try:
         creds_manager = get_credentials_manager()
-        
+
         # CRITICAL: Resolve the user_id to the correct Firebase UID
         # Frontend sends generated IDs like 'user_1768802144009_1jvf3b' but credentials
         # are stored under Firebase UID in Firestore dhan_credentials collection
         resolved_user_id = user_id
-        
+
         creds = await creds_manager.get_user_credentials(user_id)
-        
+
         # If direct lookup fails, use the new resolver to find the correct user ID
         if not creds:
             resolved_user_id = await creds_manager.resolve_user_id(user_id)
