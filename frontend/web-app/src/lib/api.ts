@@ -23,7 +23,7 @@ export const getEngineBUrl = () => {
 export const getEngineCUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-3acobgd3qa-uc.a.run.app"
+    "https://engine-c-228557716858.us-central1.run.app"
   );
 };
 
