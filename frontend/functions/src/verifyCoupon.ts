@@ -8,7 +8,14 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
-const db = admin.firestore();
+// Lazy-initialize Firestore to prevent module load hangs during deployment
+let db: FirebaseFirestore.Firestore | null = null;
+function getDb() {
+  if (!db) {
+    db = admin.firestore();
+  }
+  return db;
+}
 
 // @ts-ignore-next-line
 interface VerifyCouponRequest {
@@ -36,93 +43,114 @@ const VALID_COUPONS: Record<
     max_uses: number;
   }
 > = {
-  INFINITY_DAD: {
+  "INFAI-FAM-0506": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    // 1 year expiry from 2026-01-11
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_MOM: {
+  "INFAI-FAM-1718": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_RAJ: {
+  "INFAI-FAM-CHOTU": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_SAI: {
+  "INFAI-FAM-DAD": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_PRIYA: {
+  "INFAI-FAM-HARSHA": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_RAGHU: {
+  "INFAI-FAM-KAVI": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_KAVI: {
+  "INFAI-FAM-MOM": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
-  INFINITY_HARSHA: {
+  "INFAI-FAM-PRI": {
     features: [
-      "live_trading",
-      "portfolio_analysis",
-      "ai_signals",
-      "vertex_ai",
-      "engine_c_access",
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
     ],
-    expires_at: "2027-01-11",
+    expires_at: "2036-01-03",
+    max_uses: 1,
+  },
+  "INFAI-FAM-RAJ": {
+    features: [
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
+    ],
+    expires_at: "2036-01-03",
+    max_uses: 1,
+  },
+  "INFAI-FAM-SAI": {
+    features: [
+      "dashboard",
+      "trading",
+      "signals",
+      "ai_analysis",
+      "family_plan",
+    ],
+    expires_at: "2036-01-03",
     max_uses: 1,
   },
 };
@@ -156,13 +184,13 @@ export const verifyCoupon = onCall(
     }
 
     // Check if user has already used this coupon
-    const userCouponRef = db
+    const userCouponRef = getDb()
       .collection("user_coupons")
       .doc(`${google_user_id}_${normalizedCode}`);
     const userCouponSnap = await userCouponRef.get();
 
     // Check email binding for this coupon (dynamic binding on first use)
-    const couponEmailBindingRef = db
+    const couponEmailBindingRef = getDb()
       .collection("coupon_email_bindings")
       .doc(normalizedCode);
     const couponEmailBindingSnap = await couponEmailBindingRef.get();
@@ -181,7 +209,7 @@ export const verifyCoupon = onCall(
 
     if (userCouponSnap.exists) {
       // Allow re-verification: Return existing session instead of blocking
-      const userSessionRef = db.collection("user_sessions").doc(google_user_id);
+      const userSessionRef = getDb().collection("user_sessions").doc(google_user_id);
       const sessionSnap = await userSessionRef.get();
 
       if (sessionSnap.exists) {
@@ -197,7 +225,7 @@ export const verifyCoupon = onCall(
     }
 
     // Check coupon usage limit
-    const couponUsageRef = db.collection("coupon_usage").doc(normalizedCode);
+    const couponUsageRef = getDb().collection("coupon_usage").doc(normalizedCode);
     const couponUsageSnap = await couponUsageRef.get();
     const currentUsage = couponUsageSnap.exists
       ? couponUsageSnap.data()?.total_uses || 0
@@ -217,7 +245,7 @@ export const verifyCoupon = onCall(
 
     try {
       // Atomically update Firestore collections
-      const batch = db.batch();
+      const batch = getDb().batch();
 
       // 1. Increment coupon usage counter
       batch.set(
@@ -252,7 +280,7 @@ export const verifyCoupon = onCall(
       }
 
       // 4. Create/update user session
-      const userSessionRef = db
+      const userSessionRef = getDb()
         .collection("user_sessions")
         .doc(google_user_id);
       batch.set(
@@ -268,7 +296,7 @@ export const verifyCoupon = onCall(
       );
 
       // 5. Update user profile with features
-      const userProfileRef = db.collection("user_profiles").doc(google_user_id);
+      const userProfileRef = getDb().collection("user_profiles").doc(google_user_id);
       batch.set(
         userProfileRef,
         {
