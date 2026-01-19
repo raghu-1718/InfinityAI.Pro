@@ -760,7 +760,7 @@ async def get_system_status(user_id: Optional[str] = Header(None, alias="X-User-
         try:
             manager = get_credentials_manager()
             creds = await manager.get_user_credentials(user_id)
-            
+
             # Fix: Actually test DhanHQ connectivity by attempting a lightweight API call
             if creds:
                 try:

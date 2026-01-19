@@ -36,8 +36,8 @@ const API_CONFIG = {
 };
 
 // Debug logging in development
-if (typeof window !== 'undefined') {
-  console.log('🔧 API Configuration:', {
+if (typeof window !== "undefined") {
+  console.log("🔧 API Configuration:", {
     ENGINE_A: API_CONFIG.ENGINE_A,
     ENGINE_B: API_CONFIG.ENGINE_B,
     ENGINE_C: API_CONFIG.ENGINE_C,
@@ -51,7 +51,7 @@ async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
       signal: AbortSignal.timeout(20000), // Increased timeout for reliability
     });
     if (response.ok) return response;
-    
+
     // Create error with status for better handling
     const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
     (error as any).status = response.status;
@@ -59,13 +59,12 @@ async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
   } catch (err: any) {
     // Re-throw with status if available
     if (err.status) throw err;
-    
+
     // Network or timeout error
     console.error(`API Error for ${primaryUrl}:`, err.message);
     throw err;
   }
 }
-
 
 // Types
 export interface EngineHealth {
@@ -311,7 +310,7 @@ export const engineA = {
 
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_A}/api/system/state`,
-      { headers }
+      { headers },
     );
     return res.json() as Promise<SystemStateResponse>;
   },
@@ -329,7 +328,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
-      }
+      },
     );
     if (!res.ok) {
       const err = await res.json();
@@ -344,7 +343,7 @@ export const engineA = {
       `${API_CONFIG.ENGINE_A}/api/trading/session/stop`,
       {
         method: "POST",
-      }
+      },
     );
     if (!res.ok) {
       throw new Error("Failed to stop session");
@@ -355,7 +354,7 @@ export const engineA = {
   async health(): Promise<EngineHealth> {
     // Engine A Health Check - Uses /api/system/state as the reliable endpoint
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_A}/api/system/state`
+      `${API_CONFIG.ENGINE_A}/api/system/state`,
     );
     return res.json();
   },
@@ -367,7 +366,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -379,7 +378,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -391,7 +390,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -403,7 +402,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -415,7 +414,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -427,7 +426,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -442,7 +441,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -454,7 +453,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -475,7 +474,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -493,7 +492,7 @@ export const engineA = {
   }) {
     // Phase 5: Mapping to Backend SessionConfig
     const assetClass = data.instruments.some(
-      (i) => i.includes("NIFTY") || i.includes("BANK")
+      (i) => i.includes("NIFTY") || i.includes("BANK"),
     )
       ? "fno"
       : "equities";
@@ -519,7 +518,7 @@ export const engineA = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      }
+      },
     );
     return res.json();
   },
@@ -533,7 +532,7 @@ export const engineA = {
           "Content-Type": "application/json",
           "X-User-ID": userId,
         },
-      }
+      },
     );
     return res.json();
   },
@@ -545,7 +544,7 @@ export const engineA = {
     // For safety, let's point to a health check or similar if specific status missing.
     // actually, let's leave it pointing to old V1 for now as I didn't remove V1 routers (if they exist).
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`
+      `${API_CONFIG.ENGINE_A}/api/v1/auto-trade/status`,
     );
     return res.json();
   },
@@ -595,7 +594,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -607,14 +606,14 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbols }),
-      }
+      },
     );
     return res.json();
   },
 
   async getModelStatus() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/models/status`
+      `${API_CONFIG.ENGINE_B}/api/v1/models/status`,
     );
     return res.json();
   },
@@ -627,7 +626,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ holdings }),
-      }
+      },
     );
     return res.json();
   },
@@ -640,7 +639,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, holding }),
-      }
+      },
     );
     return res.json();
   },
@@ -648,7 +647,7 @@ export const engineB = {
   // Portfolio Optimization - Get optimal allocation
   async optimizePortfolio(
     holdings: any[],
-    riskTolerance: "low" | "medium" | "high" = "medium"
+    riskTolerance: "low" | "medium" | "high" = "medium",
   ) {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/portfolio/optimize`,
@@ -656,7 +655,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ holdings, risk_tolerance: riskTolerance }),
-      }
+      },
     );
     return res.json();
   },
@@ -669,7 +668,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ timeframe }),
-      }
+      },
     );
     return res.json();
   },
@@ -677,7 +676,7 @@ export const engineB = {
   // Sector Analysis - AI analysis of sectors
   async getSectorAnalysis() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/sector/analysis`
+      `${API_CONFIG.ENGINE_B}/api/v1/sector/analysis`,
     );
     return res.json();
   },
@@ -695,7 +694,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(criteria),
-      }
+      },
     );
     return res.json();
   },
@@ -703,7 +702,7 @@ export const engineB = {
   // Technical Indicators - Get indicators for a symbol
   async getTechnicalIndicators(symbol: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/technical/${symbol}`
+      `${API_CONFIG.ENGINE_B}/api/v1/technical/${symbol}`,
     );
     return res.json();
   },
@@ -711,7 +710,7 @@ export const engineB = {
   // Sentiment Analysis - News and social media sentiment
   async getSentimentAnalysis(symbol: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/sentiment/${symbol}`
+      `${API_CONFIG.ENGINE_B}/api/v1/sentiment/${symbol}`,
     );
     return res.json();
   },
@@ -724,7 +723,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbols }),
-      }
+      },
     );
     return res.json();
   },
@@ -732,7 +731,7 @@ export const engineB = {
   // AI Trade Ideas - Get trade recommendations
   async getTradeIdeas(
     budget?: number,
-    riskLevel?: "conservative" | "moderate" | "aggressive"
+    riskLevel?: "conservative" | "moderate" | "aggressive",
   ) {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/trade-ideas`,
@@ -740,14 +739,14 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ budget, risk_level: riskLevel }),
-      }
+      },
     );
     return res.json();
   },
 
   // Position Analysis - AI-powered analysis of individual positions
   async analyzePosition(
-    position: PositionAnalysisRequest
+    position: PositionAnalysisRequest,
   ): Promise<PositionAnalysisResponse> {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_B}/api/v1/position/analyze`,
@@ -755,7 +754,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(position),
-      }
+      },
     );
     return res.json();
   },
@@ -768,7 +767,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(positions),
-      }
+      },
     );
     return res.json();
   },
@@ -781,7 +780,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, text }),
-      }
+      },
     );
     return res.json();
   },
@@ -789,7 +788,7 @@ export const engineB = {
   // Market Status
   async getMarketStatus() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/market/status`
+      `${API_CONFIG.ENGINE_B}/api/v1/market/status`,
     );
     return res.json();
   },
@@ -801,7 +800,7 @@ export const engineB = {
   // Finance AI Status - Check if Finance AI is available
   async getFinanceAIStatus() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`
+      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`,
     );
     return res.json();
   },
@@ -825,7 +824,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -843,7 +842,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -862,7 +861,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -883,7 +882,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -896,7 +895,7 @@ export const engineB = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -912,7 +911,7 @@ export const engineC = {
   async getFunds(userId?: string): Promise<FundsResponse> {
     const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/funds${queryParam}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/funds${queryParam}`,
     );
     return res.json();
   },
@@ -920,7 +919,7 @@ export const engineC = {
   async getPositions(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/positions${queryParam}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/positions${queryParam}`,
     );
     return res.json();
   },
@@ -928,7 +927,7 @@ export const engineC = {
   async getHoldings(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/holdings${queryParam}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/holdings${queryParam}`,
     );
     return res.json();
   },
@@ -936,7 +935,7 @@ export const engineC = {
   async getOrders(userId?: string) {
     const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/orders${queryParam}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/orders${queryParam}`,
     );
     return res.json();
   },
@@ -944,7 +943,7 @@ export const engineC = {
   // Get complete user account with funds, positions, holdings
   async getUserAccount(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/v1/user/${userId}/account`
+      `${API_CONFIG.ENGINE_C}/api/v1/user/${userId}/account`,
     );
     return res.json();
   },
@@ -956,7 +955,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -968,14 +967,14 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ order_id: orderId }),
-      }
+      },
     );
     return res.json();
   },
 
   async getExecutionAnalytics() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/v1/execution/analytics`
+      `${API_CONFIG.ENGINE_C}/api/v1/execution/analytics`,
     );
     return res.json();
   },
@@ -983,7 +982,7 @@ export const engineC = {
   // User Credentials API
   async getUserCredentials(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`
+      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
     );
     return res.json();
   },
@@ -1000,21 +999,21 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
 
   async verifyUserCredentials(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`
+      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`,
     );
     return res.json();
   },
 
   async getUserDemat(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`
+      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`,
     );
     return res.json();
   },
@@ -1022,7 +1021,7 @@ export const engineC = {
   async deleteUserCredentials(userId: string) {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     return res.json();
   },
@@ -1031,14 +1030,14 @@ export const engineC = {
 
   async getTradingSettings(userId: string): Promise<TradingSettingsResponse> {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`
+      `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
     );
     return res.json();
   },
 
   async saveTradingSettings(
     userId: string,
-    settings: Partial<TradingSettings>
+    settings: Partial<TradingSettings>,
   ): Promise<TradingSettingsResponse> {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
@@ -1046,7 +1045,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
-      }
+      },
     );
     return res.json();
   },
@@ -1054,14 +1053,14 @@ export const engineC = {
   async resetTradingSettings(userId: string) {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/trading-settings/${userId}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
     return res.json();
   },
 
   async getTradingSettingsSchema(): Promise<TradingSettingsSchema> {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`
+      `${API_CONFIG.ENGINE_C}/api/trading-settings-schema`,
     );
     return res.json();
   },
@@ -1085,7 +1084,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1097,14 +1096,14 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId }),
-      }
+      },
     );
     return res.json();
   },
 
   async getBackgroundTradingStatus(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/background-trading/status/${userId}`
+      `${API_CONFIG.ENGINE_C}/api/background-trading/status/${userId}`,
     );
     return res.json();
   },
@@ -1124,7 +1123,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1135,7 +1134,7 @@ export const engineC = {
       date?: string;
       activity_type?: string;
       limit?: number;
-    }
+    },
   ) {
     const params = new URLSearchParams();
     if (options?.date) params.append("date", options.date);
@@ -1145,7 +1144,7 @@ export const engineC = {
 
     const queryString = params.toString() ? `?${params.toString()}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/activity/log/${userId}${queryString}`
+      `${API_CONFIG.ENGINE_C}/api/activity/log/${userId}${queryString}`,
     );
     return res.json();
   },
@@ -1153,14 +1152,14 @@ export const engineC = {
   async getActivitySummary(userId: string, date?: string) {
     const queryString = date ? `?date=${date}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/activity/summary/${userId}${queryString}`
+      `${API_CONFIG.ENGINE_C}/api/activity/summary/${userId}${queryString}`,
     );
     return res.json();
   },
 
   async getTodayActivity(userId: string) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/activity/today/${userId}`
+      `${API_CONFIG.ENGINE_C}/api/activity/today/${userId}`,
     );
     return res.json();
   },
@@ -1171,7 +1170,7 @@ export const engineC = {
 
   async getAgentStatus() {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/agent/status`
+      `${API_CONFIG.ENGINE_C}/api/agent/status`,
     );
     return res.json();
   },
@@ -1187,7 +1186,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1205,7 +1204,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1213,10 +1212,10 @@ export const engineC = {
   async getRealtimeSignal(
     userId: string,
     symbol: string,
-    timeframe: string = "intraday"
+    timeframe: string = "intraday",
   ) {
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`
+      `${API_CONFIG.ENGINE_C}/api/agent/signal/${userId}/${symbol}?timeframe=${timeframe}`,
     );
     return res.json();
   },
@@ -1233,7 +1232,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1254,7 +1253,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1262,7 +1261,7 @@ export const engineC = {
   async createAgentSession(userId: string) {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/agent/session/create/${userId}`,
-      { method: "POST" }
+      { method: "POST" },
     );
     return res.json();
   },
@@ -1282,7 +1281,7 @@ export const engineC = {
       user_id: params.user_id,
     });
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/market/options/chain?${qs.toString()}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/market/options/chain?${qs.toString()}`,
     );
     return res.json();
   },
@@ -1301,7 +1300,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }
+      },
     );
     return res.json();
   },
@@ -1313,7 +1312,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(option_chain),
-      }
+      },
     );
     return res.json();
   },
@@ -1325,7 +1324,7 @@ export const engineC = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(option_chain),
-      }
+      },
     );
     return res.json();
   },
@@ -1338,10 +1337,10 @@ export const engineC = {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/dhan/options/strategies/analyze`,
       {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify(data),
-      }
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      },
     );
     return res.json();
   },
@@ -1349,7 +1348,7 @@ export const engineC = {
   async getMarketQuotes(
     userId: string,
     securityIds: string[],
-    exchangeSegment: string = "NSE_EQ"
+    exchangeSegment: string = "NSE_EQ",
   ) {
     const qs = new URLSearchParams({
       security_ids: securityIds.join(","),
@@ -1357,7 +1356,7 @@ export const engineC = {
       user_id: userId,
     });
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/market/quotes?${qs.toString()}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/market/quotes?${qs.toString()}`,
     );
     return res.json();
   },

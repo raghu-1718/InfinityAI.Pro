@@ -802,7 +802,9 @@ class MarketDataEngine:
     def __init__(self):
         self.dhan = None
         self.cache: Dict[str, tuple] = {}
-        self.data_source_stats = {"dhan": 0, "yahoo": 0, "synthetic": 0}
+        self.data_source_stats = {"dhan": 0, "yahoo": 0, "synthetic": 0, "engine_c": 0}
+        self.engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-3acobgd3qa-uc.a.run.app")
+        self.default_user_id = os.getenv("DEFAULT_USER_ID", "user_1768804393712_idm50j")
         self._init_dhan_client()
 
     def _init_dhan_client(self):
@@ -840,14 +842,36 @@ class MarketDataEngine:
         except Exception as e:
             logger.warning(f"⚠️ DhanHQ init failed: {e}")
 
+    def _fetch_live_data_from_engine_c(self):
+        """Fetch live account data from Engine-C to keep real-time connection active"""
+        try:
+            import requests
+            response = requests.get(
+                f"{self.engine_c_url}/api/dhan/funds",
+                params={"user_id": self.default_user_id},
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "success":
+                    logger.info(f"✅ Live data from Engine-C: Balance=₹{data.get('data', {}).get('availabelBalance', 0)}")
+                    self.data_source_stats["engine_c"] += 1
+                    return data
+        except Exception as e:
+            logger.debug(f"Engine-C live data fetch: {e}")
+        return None
+
     async def fetch_data(self, symbol: str, days: int = 365) -> tuple:
         """
         Smart Fetch with source tracking:
+        0. Ping Engine-C for live connection status
         1. Try DhanHQ Historical API
         2. Fallback to Yahoo Finance
         3. Generate synthetic data as last resort
         Returns: (DataFrame, source_name)
         """
+        # NEW: Keep live connection warm by pinging Engine-C
+        self._fetch_live_data_from_engine_c()
         symbol = symbol.upper()
         cache_key = f"{symbol}_{days}"
 
