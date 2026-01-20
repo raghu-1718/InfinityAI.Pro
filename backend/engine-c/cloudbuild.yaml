@@ -16,6 +16,23 @@ steps:
         "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
       ]
 
+  # Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    args:
+      [
+        "gcloud",
+        "run",
+        "deploy",
+        "engine-c",
+        "--image",
+        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+      ]
+
   # --- Automated E2E/Smoke Test Steps ---
   # - name: "python:3.11-slim"
   #   id: "smoke-check-firestore-collections"
