@@ -254,6 +254,13 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Options Analytics not available: {e}")
 
+# Register Dhan Market Data Router (fixes /api/dhan/market/* 404)
+if DATA_ROUTER_AVAILABLE:
+    app.include_router(data_router)
+    logger.info("✅ Dhan Market Data API endpoints enabled")
+else:
+    logger.warning("⚠️ Dhan Market Data API router not available; market data endpoints disabled")
+
 # Register Option Strategies Router (Phase 2: Advanced Strategies)
 try:
     from src.options_strategy_api import router as strategy_router
@@ -1574,6 +1581,11 @@ async def execution_analytics(req: ExecutionAnalyticsRequest):
     """Calculate execution quality analytics"""
     return EXECUTION_OPTIMIZER.calculate_execution_analytics(req.orders)
 
+# Backward-compatible alias for frontend path `/api/v1/execution/analytics`
+@app.post("/api/v1/execution/analytics")
+async def execution_analytics_alias(req: ExecutionAnalyticsRequest):
+    return await execution_analytics(req)
+
 # --- Order Placement Endpoint ---
 @app.post("/api/dhan/place-order")
 async def place_order(order: OrderRequest, request: Request):
@@ -1753,6 +1765,9 @@ async def get_orders(user_id: Optional[str] = None):
 
         return {"status": "success", "data": response}
 
+    except HTTPException:
+        # Preserve credential errors so caller can re-auth
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch orders: {str(e)}")
 
@@ -1786,6 +1801,8 @@ async def get_positions(user_id: Optional[str] = None):
 
         return {"status": "success", "data": response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch positions: {str(e)}")
 
@@ -1804,6 +1821,8 @@ async def get_holdings(user_id: Optional[str] = None):
 
         return {"status": "success", "data": response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch holdings: {str(e)}")
 
@@ -1846,6 +1865,8 @@ async def get_funds(user_id: Optional[str] = None):
 
         return {"status": "success", "data": response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to fetch funds: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch funds: {str(e)}")

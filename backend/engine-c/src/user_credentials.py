@@ -332,6 +332,21 @@ class UserCredentialsManager:
             except Exception as e:
                 logger.debug(f"Client ID lookup failed for {user_id}: {e}")
 
+        # Strategy 3: If credentials were saved under a different document ID but have matching user_id field
+        try:
+            query = (
+                self.db.collection(self.collection)
+                .where("user_id", "==", user_id)
+                .limit(1)
+            )
+            docs = list(query.stream())
+            doc = docs[0] if docs else None
+            if doc:
+                logger.info(f"✅ Resolved user_id {user_id} via user_id field on document {doc.id}")
+                return doc.id
+        except Exception as e:
+            logger.debug(f"user_id field lookup failed for {user_id}: {e}")
+
         logger.warning(f"⚠️ Could not resolve user_id: {user_id} in collection {self.collection}")
         return None
 
