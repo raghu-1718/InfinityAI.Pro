@@ -1605,6 +1605,29 @@ async def place_order(order: OrderRequest, request: Request):
     if engine_source != ALLOWED_EXECUTION_SOURCE:
         raise HTTPException(status_code=403, detail="Forbidden: Only Engine-A may execute real trades.")
 
+    # --- Live Mode: Enforce trading guardrails (market hours, symbols whitelist, order caps) ---
+    if ENGINE_C_MODE == "live":
+        from src.trading_guardrails import validate_order_guardrails, log_order_attempt
+        
+        user_id = request.headers.get("user_id", "unknown")
+        symbol = order.security_id or getattr(order, 'symbol', 'UNKNOWN')
+        
+        guardrail_result = validate_order_guardrails(
+            symbol=symbol,
+            quantity=order.quantity,
+            price=order.price or 0,
+            order_type=order.order_type
+        )
+        
+        log_order_attempt(symbol, order.quantity, order.price or 0, user_id, guardrail_result)
+        
+        if not guardrail_result["valid"]:
+            logger.warning(f"🚫 Order rejected by guardrails: {guardrail_result}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"Order rejected by trading guardrails: {guardrail_result['reason']}"
+            )
+
     try:
         # Route based on trading mode
         if ENGINE_C_MODE == "paper":
