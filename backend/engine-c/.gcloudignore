@@ -1,0 +1,26 @@
+# Ignore patterns for gcloud source build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+.env
+.venv
+venv/
+ENV/
+node_modules/
+tests/
+test_*.py
+*_test.py
+debug_*.txt
+*.md
+!README.md

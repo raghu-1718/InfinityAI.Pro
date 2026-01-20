@@ -1,6 +1,6 @@
 # =====================================================================
 # InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)
-# ML: Scikit-learn, StatsModels, ARCH (Slippage & Volatility)
+# Standalone Dockerfile for Cloud Run deployment from backend/engine-c
 # =====================================================================
 FROM python:3.11-slim
 
@@ -11,21 +11,23 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY engine-c/requirements.txt /app/requirements.txt
-
+# Copy requirements and install dependencies
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY shared /app/shared
-COPY options /app/backend/options
-COPY engine-c/src /app/src
-COPY config /app/config
+# Copy shared modules from parent directory
+COPY ../shared /app/shared
+
+# Copy engine-c source code
+COPY src /app/src
 
 # Environment variables
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 EXPOSE 8080
 
-# Use the PORT environment variable set by Cloud Run (default to 8080 if not set)
+# Use the PORT environment variable set by Cloud Run
 CMD exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}
