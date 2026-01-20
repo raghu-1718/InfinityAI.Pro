@@ -3,14 +3,16 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy root tsconfig and package.json
+COPY tsconfig.base.json ./
+COPY frontend/web-app/tsconfig.json ./
+COPY frontend/web-app/package*.json ./
 
 # Install dependencies with retry logic for Cloud Build
-RUN npm install --legacy-peer-deps || npm install --legacy-peer-deps --force
+RUN npm install --legacy-peer-deps 2>&1 | tail -20 || npm install --legacy-peer-deps --force 2>&1 | tail -20
 
 # Copy source code
-COPY . .
+COPY frontend/web-app/ .
 
 # Build the Next.js app
 RUN npm run build
@@ -23,9 +25,11 @@ WORKDIR /app
 # Install dumb-init to handle signals properly
 RUN apk add --no-cache dumb-init
 
-# Install production dependencies only
-COPY package*.json ./
-RUN npm install --legacy-peer-deps --production || npm install --legacy-peer-deps --production --force
+# Copy package.json for production dependencies
+COPY frontend/web-app/package*.json ./
+
+# Install only production dependencies
+RUN npm install --legacy-peer-deps --production 2>&1 | tail -20 || npm install --legacy-peer-deps --production --force 2>&1 | tail -20
 
 # Copy built app from builder
 COPY --from=builder /app/.next ./.next
