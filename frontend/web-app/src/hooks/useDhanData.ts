@@ -6,6 +6,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { engineC } from '@/lib/api';
+import { getUserId } from '@/lib/user';
 
 // Type definitions
 export interface MarketQuote {
@@ -48,13 +49,20 @@ export interface OptionData {
  * Hook to fetch real-time market quotes
  */
 export function useMarketQuotes(symbols: string[], enabled: boolean = true) {
+  const userId = getUserId();
+  
   return useQuery({
-    queryKey: ['market', 'quotes', symbols.join(',')],
+    queryKey: ['market', 'quotes', symbols.join(','), userId],
     queryFn: async () => {
-      const response = await engineC.getMarketQuotes(symbols);
+      if (!userId) throw new Error('User ID not available');
+      const response = await engineC.getMarketQuotes(
+        userId,
+        symbols,
+        'NSE_EQ'
+      );
       return response;
     },
-    enabled: enabled && symbols.length > 0,
+    enabled: enabled && symbols.length > 0 && !!userId,
     refetchInterval: 5000, // Refresh every 5 seconds for real-time data
     staleTime: 3000,
   });

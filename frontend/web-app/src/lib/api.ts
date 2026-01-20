@@ -7,7 +7,7 @@ export const getEngineAUrl = () => {
   // Always use environment variable or correct production URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-3acobgd3qa-uc.a.run.app"
+    "https://engine-a-228557716858.us-central1.run.app"
   );
 };
 
@@ -15,7 +15,7 @@ export const getEngineAUrl = () => {
 export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-3acobgd3qa-uc.a.run.app"
+    "https://engine-b-228557716858.us-central1.run.app"
   );
 };
 
@@ -24,7 +24,7 @@ export const getEngineCUrl = () => {
   // Updated Engine C URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-3acobgd3qa-uc.a.run.app"
+    "https://engine-c-228557716858.us-central1.run.app"
   );
 };
 
