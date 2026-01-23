@@ -1,6 +1,6 @@
 # End-to-End Test & 24-Hour Monitoring Report
 
-**Generated**: 2026-01-19 11:35 IST  
+**Generated**: 2026-01-19 11:35 IST
 **Status**: ✅ **ALL SYSTEMS OPERATIONAL**
 
 ---
@@ -9,11 +9,12 @@
 
 ### ✅ Deployment Complete
 
-**Timestamp**: 2026-01-19 11:22:34 IST  
-**Duration**: ~15-20 minutes  
+**Timestamp**: 2026-01-19 11:22:34 IST
+**Duration**: ~15-20 minutes
 **Result**: **ALL 11 FUNCTIONS DEPLOYED SUCCESSFULLY**
 
 **Functions Deployed**:
+
 1. ✅ `startTrading` - Node.js 20 (2nd Gen)
 2. ✅ `stopTrading` - Node.js 20 (2nd Gen)
 3. ✅ `getBatchAiSignals` - Node.js 20 (2nd Gen)
@@ -27,6 +28,7 @@
 11. ✅ `fetchAccountData` - Node.js 20 (2nd Gen)
 
 **Deployment Logs** (Final):
+
 ```
 +  functions[verifyCoupon(us-central1)] Successful update operation.
 +  functions[fetchAccountData(us-central1)] Successful update operation.
@@ -49,13 +51,14 @@
 
 ### TEST 1: market-data-ingestion ✅ PASS
 
-**Test**: HTTP POST to Cloud Function  
-**Endpoint**: `https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/market-data-ingestion`  
-**Method**: POST  
-**Headers**: Content-Type: application/json  
+**Test**: HTTP POST to Cloud Function
+**Endpoint**: `https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/market-data-ingestion`
+**Method**: POST
+**Headers**: Content-Type: application/json
 **Body**: `{}`
 
 **Response**:
+
 ```json
 {
   "status": "success",
@@ -66,6 +69,7 @@
 ```
 
 **Metrics**:
+
 - ✅ HTTP 200 OK
 - ✅ Response Time: ~500ms
 - ✅ Success Rate: 100%
@@ -77,10 +81,11 @@
 
 ### TEST 2: Engine-C /api/health ✅ PASS
 
-**Test**: GET Engine-C health endpoint  
+**Test**: GET Engine-C health endpoint
 **Endpoint**: `https://engine-c-3acobgd3qa-uc.a.run.app/api/health`
 
 **Response**:
+
 ```json
 {
   "status": "ok"
@@ -88,6 +93,7 @@
 ```
 
 **Metrics**:
+
 - ✅ HTTP 200 OK
 - ✅ Health: OPERATIONAL
 - ✅ Service Ready: YES
@@ -98,10 +104,11 @@
 
 ### TEST 3: Engine-C /api/system/status ✅ PASS
 
-**Test**: GET Engine-C system status (endpoint fixed in previous session)  
+**Test**: GET Engine-C system status (endpoint fixed in previous session)
 **Endpoint**: `https://engine-c-3acobgd3qa-uc.a.run.app/api/system/status`
 
 **Response**:
+
 ```json
 {
   "status": "NORMAL",
@@ -112,6 +119,7 @@
 ```
 
 **Metrics**:
+
 - ✅ HTTP 200 OK
 - ✅ Trading Mode: LIVE
 - ✅ Market Hours: Active (9 AM - 11 PM IST)
@@ -125,23 +133,25 @@
 
 ### All 7 Schedulers ENABLED ✅
 
-| Scheduler Name | State | Last Execution | Next Execution | Frequency |
-|---|---|---|---|---|
-| market-data-fetch | ENABLED ✅ | 2026-01-19 11:25 | 2026-01-19 11:30 | Every 5 minutes |
-| realtime-data-poller | ENABLED ✅ | 2026-01-19 11:24 | 2026-01-19 11:29 | Every 5 minutes |
-| news-fetch | ENABLED ✅ | 2026-01-19 11:20 | 2026-01-19 11:25 | Every 5 minutes |
-| realtime-positions-poller | ENABLED ✅ | 2026-01-19 11:23 | 2026-01-19 11:28 | Every 1 minute |
-| market-data-publisher | ENABLED ✅ | 2026-01-19 11:24 | 2026-01-19 11:29 | Every 5 seconds |
-| realtime-orders-poller | ENABLED ✅ | 2026-01-19 11:22 | 2026-01-19 11:27 | Every 1 minute |
+| Scheduler Name                | State      | Last Execution   | Next Execution   | Frequency       |
+| ----------------------------- | ---------- | ---------------- | ---------------- | --------------- |
+| market-data-fetch             | ENABLED ✅ | 2026-01-19 11:25 | 2026-01-19 11:30 | Every 5 minutes |
+| realtime-data-poller          | ENABLED ✅ | 2026-01-19 11:24 | 2026-01-19 11:29 | Every 5 minutes |
+| news-fetch                    | ENABLED ✅ | 2026-01-19 11:20 | 2026-01-19 11:25 | Every 5 minutes |
+| realtime-positions-poller     | ENABLED ✅ | 2026-01-19 11:23 | 2026-01-19 11:28 | Every 1 minute  |
+| market-data-publisher         | ENABLED ✅ | 2026-01-19 11:24 | 2026-01-19 11:29 | Every 5 seconds |
+| realtime-orders-poller        | ENABLED ✅ | 2026-01-19 11:22 | 2026-01-19 11:27 | Every 1 minute  |
 | live-data-ingestion-scheduler | ENABLED ✅ | 2026-01-19 11:21 | 2026-01-19 11:26 | Every 5 minutes |
 
 **Total Execution Rate**:
+
 - market-data-publisher: 12 executions/minute (every 5 seconds)
 - realtime-positions-poller: 1 execution/minute
 - realtime-orders-poller: 1 execution/minute
 - Others: 0.2 executions/minute
 
 **Daily Volume** (Market Hours 9 AM - 11 PM IST = 14 hours):
+
 - market-data-publisher: 10,080 executions/day
 - Total executions: ~10,200+/day
 
@@ -154,22 +164,26 @@
 ### Production Services Active: 22 ✅
 
 **Data Pipeline**:
+
 - ✅ market-data-ingestion (Gen2, Python 3.12, 256MB, 120s timeout) - Ready
 - ✅ websocket-streamer (Cloud Run service) - Connected to DhanHQ
 - ✅ live-data-ingestion (Cloud Function) - Active
 
 **Trading Engines**:
+
 - ✅ engine-a (Replicas: 1-5, Latest Revision: 00050-vwg)
 - ✅ engine-b (Replicas: 1-5, Latest Revision: 00034-ljj)
 - ✅ engine-c (Replicas: 1-5, Latest Revision: 00080-nxt) - Broker integration
 
 **AI/ML Services**:
+
 - ✅ detect-momentum-signals (Revision: 00001-wav)
 - ✅ get-latest-signals (Revision: 00001-suw)
 - ✅ get-live-prices (Revision: 00001-quh)
 - ✅ get-price-history (Revision: 00001-vim)
 
 **Firebase Functions** (via Cloud Run):
+
 - ✅ analyzeportfolio (Revision: 00009-zen)
 - ✅ fetchaccountdata (Revision: 00009-mev)
 - ✅ getaisignals (Revision: 00009-fal)
@@ -182,7 +196,7 @@
 - ✅ storeUserCredentials (Revision: 00009-pqr)
 - ✅ verifyCoupon (Revision: 00009-stu)
 
-**All Services**: ✅ READY state  
+**All Services**: ✅ READY state
 **Deletion Note**: ❌ backtest-orchestrator successfully removed (no longer in list)
 
 ---
@@ -257,6 +271,7 @@ LIVE MARKET DATA FLOW:
 ```
 
 **Data Flow Status**: ✅ OPERATIONAL
+
 - ✅ WebSocket connected and streaming
 - ✅ Cloud Scheduler triggering correctly
 - ✅ market-data-ingestion calling correct endpoint (NO 404 ERRORS)
@@ -273,10 +288,12 @@ LIVE MARKET DATA FLOW:
 **Time Period**: 2026-01-19 00:00 - 11:35 IST
 
 **Critical Errors (SEVERITY >= ERROR)**:
+
 - ✅ NONE in last hour
 - ✅ Previous 404 errors: **RESOLVED** (market-data-ingestion endpoint fixed)
 
 **Sample Log Query**:
+
 ```bash
 gcloud logging read "severity>=ERROR AND timestamp>='2026-01-19T00:00:00Z'" \
   --limit=20 \
@@ -295,6 +312,7 @@ gcloud logging read "severity>=ERROR AND timestamp>='2026-01-19T00:00:00Z'" \
 ### Monitoring Dashboard Commands
 
 **Command 1: Real-Time Error Monitoring** (Every 5 minutes)
+
 ```bash
 # Monitor for errors in last hour
 gcloud logging read \
@@ -307,6 +325,7 @@ watch -n 300 'gcloud logging read "severity>=ERROR AND timestamp>=\"$(date -u -d
 ```
 
 **Command 2: Cloud Scheduler Execution Monitoring**
+
 ```bash
 # Check last execution of market-data-publisher
 gcloud scheduler jobs describe market-data-publisher \
@@ -319,6 +338,7 @@ watch -n 600 'gcloud scheduler jobs describe market-data-publisher --location=us
 ```
 
 **Command 3: Cloud Run Service Status**
+
 ```bash
 # Check market-data-ingestion latest revision
 gcloud run services describe market-data-ingestion \
@@ -331,6 +351,7 @@ watch -n 900 'gcloud run services describe market-data-ingestion --region=us-cen
 ```
 
 **Command 4: Pub/Sub Message Throughput**
+
 ```bash
 # Count messages received in last hour
 gcloud pubsub subscriptions pull market-data-raw-sub \
@@ -342,6 +363,7 @@ gcloud pubsub subscriptions pull market-data-raw-sub \
 ```
 
 **Command 5: Function Invocation Metrics**
+
 ```bash
 # Get market-data-ingestion execution count (last hour)
 gcloud logging read \
@@ -357,16 +379,16 @@ gcloud logging read \
 
 ### Monitoring Metrics to Track (24 Hours)
 
-| Metric | Threshold | Alert Trigger | Check Interval |
-|--------|-----------|----------------|-----------------|
-| market-data-ingestion Errors | <1% | Any ERROR in logs | Every 5 min |
-| market-data-ingestion Response Time | <2 sec | >2000ms p99 | Every 5 min |
-| Cloud Scheduler Execution | Must Run | Missed execution | Every 10 min |
-| Engine-C Health | HTTP 200 | Not responding | Every 5 min |
-| Pub/Sub Queue Depth | <1000 msgs | Backlog building | Every 10 min |
-| Firebase Functions | All Active | Any OFFLINE | Every 15 min |
-| Cloud Run Revisions | Latest | Downgrade detected | Every 15 min |
-| 404 Errors | Zero | Any 404 from ingestion | Every 5 min |
+| Metric                              | Threshold  | Alert Trigger          | Check Interval |
+| ----------------------------------- | ---------- | ---------------------- | -------------- |
+| market-data-ingestion Errors        | <1%        | Any ERROR in logs      | Every 5 min    |
+| market-data-ingestion Response Time | <2 sec     | >2000ms p99            | Every 5 min    |
+| Cloud Scheduler Execution           | Must Run   | Missed execution       | Every 10 min   |
+| Engine-C Health                     | HTTP 200   | Not responding         | Every 5 min    |
+| Pub/Sub Queue Depth                 | <1000 msgs | Backlog building       | Every 10 min   |
+| Firebase Functions                  | All Active | Any OFFLINE            | Every 15 min   |
+| Cloud Run Revisions                 | Latest     | Downgrade detected     | Every 15 min   |
+| 404 Errors                          | Zero       | Any 404 from ingestion | Every 5 min    |
 
 ---
 
@@ -375,6 +397,7 @@ gcloud logging read \
 **Create Cloud Monitoring Alerts**:
 
 **Alert 1: market-data-ingestion HTTP 404**
+
 ```bash
 gcloud alpha monitoring policies create \
   --notification-channels=<CHANNEL_ID> \
@@ -385,6 +408,7 @@ gcloud alpha monitoring policies create \
 ```
 
 **Alert 2: Function Execution Time > 2s**
+
 ```bash
 # Alert if p99 execution time exceeds 2 seconds
 gcloud alpha monitoring policies create \
@@ -393,6 +417,7 @@ gcloud alpha monitoring policies create \
 ```
 
 **Alert 3: Cloud Scheduler Missed Run**
+
 ```bash
 # Alert if market-data-publisher doesn't execute for 10 minutes
 gcloud alpha monitoring policies create \
@@ -407,6 +432,7 @@ gcloud alpha monitoring policies create \
 ### Baseline Metrics (Current)
 
 **market-data-ingestion Function**:
+
 - Execution Frequency: Every 5 seconds
 - Daily Executions: ~17,280 (14 hours × 60 × 60 ÷ 5)
 - Success Rate: 100% ✅
@@ -416,16 +442,19 @@ gcloud alpha monitoring policies create \
 - Timeout: 120 seconds ✅
 
 **Pub/Sub Throughput**:
+
 - Messages/Execution: 2 (NIFTY, BANKNIFTY)
 - Daily Messages: ~34,560 ✅
 - Queue Latency: <100ms ✅
 
 **Cloud Scheduler**:
+
 - Jobs Enabled: 7/7 ✅
 - Total Daily Executions: 10,200+ ✅
 - Failure Rate: 0% ✅
 
 **Trading Engines**:
+
 - engine-a: Ready ✅
 - engine-b: Ready ✅
 - engine-c: Ready ✅
@@ -437,25 +466,25 @@ gcloud alpha monitoring policies create \
 
 ### 🔧 Fix #1: market-data-ingestion Endpoint ✅ COMPLETE
 
-**Issue**: Calling `/api/dhan/market/quotes` (404 endpoint)  
-**Solution**: Changed to `/api/system/status` (200 endpoint)  
-**Status**: ✅ Deployed and tested  
-**Error Rate Before**: 20%  
+**Issue**: Calling `/api/dhan/market/quotes` (404 endpoint)
+**Solution**: Changed to `/api/system/status` (200 endpoint)
+**Status**: ✅ Deployed and tested
+**Error Rate Before**: 20%
 **Error Rate After**: 0%
 
 ### 🔧 Fix #2: Backtest Code Removal ✅ COMPLETE
 
-**Issue**: backtest-orchestrator service (status: FALSE)  
-**Solution**: Deleted service + all backtest code  
-**Files Removed**: 16 files + 1 service  
-**Cost Savings**: ~$15-20/month  
+**Issue**: backtest-orchestrator service (status: FALSE)
+**Solution**: Deleted service + all backtest code
+**Files Removed**: 16 files + 1 service
+**Cost Savings**: ~$15-20/month
 **Status**: ✅ Verified deleted
 
 ### 🔧 Fix #3: Firebase Functions Deployment ✅ COMPLETE
 
-**Issue**: Deployment timed out  
-**Solution**: Retried deployment successfully  
-**Functions Deployed**: 11 functions  
+**Issue**: Deployment timed out
+**Solution**: Retried deployment successfully
+**Functions Deployed**: 11 functions
 **Status**: ✅ All operational
 
 ---
@@ -467,6 +496,7 @@ gcloud alpha monitoring policies create \
 **Frequency**: Every 5 minutes
 
 **Checks**:
+
 - [ ] market-data-ingestion error count: 0
 - [ ] Cloud Scheduler executions: On schedule
 - [ ] Engine-C health: OK
@@ -482,6 +512,7 @@ gcloud alpha monitoring policies create \
 **Frequency**: Every 30 minutes
 
 **Checks**:
+
 - [ ] Cumulative error rate: <0.1%
 - [ ] Average response time: <1 second
 - [ ] No service restarts
@@ -497,6 +528,7 @@ gcloud alpha monitoring policies create \
 **Frequency**: Every 1 hour
 
 **Checks**:
+
 - [ ] 24-hour error count: <10
 - [ ] Market hours coverage: Complete (9 AM - 11 PM)
 - [ ] Off-hours behavior: Stable
@@ -532,6 +564,7 @@ gcloud alpha monitoring policies create \
 **Symptom**: 404 or 500 errors in logs
 
 **Diagnostic**:
+
 ```bash
 # Check if calling correct endpoint
 curl https://engine-c-3acobgd3qa-uc.a.run.app/api/system/status
@@ -541,6 +574,7 @@ gcloud logging read "resource.labels.service_name=market-data-ingestion" --limit
 ```
 
 **Resolution**:
+
 ```bash
 # Redeploy if needed
 cd functions/market-data-ingestion
@@ -552,6 +586,7 @@ gcloud functions deploy market-data-ingestion --gen2 --runtime=python312 ...
 **Symptom**: No Pub/Sub messages for >10 minutes
 
 **Diagnostic**:
+
 ```bash
 gcloud scheduler jobs describe market-data-publisher \
   --location=us-central1 \
@@ -559,6 +594,7 @@ gcloud scheduler jobs describe market-data-publisher \
 ```
 
 **Resolution**:
+
 ```bash
 # Resume if paused
 gcloud scheduler jobs resume market-data-publisher --location=us-central1
@@ -571,7 +607,7 @@ gcloud scheduler jobs run market-data-publisher --location=us-central1
 
 **Symptom**: "Deadline exceeded" errors
 
-**Diagnostic**: Check function logs for which step is slow  
+**Diagnostic**: Check function logs for which step is slow
 **Resolution**: Increase timeout or optimize code
 
 ---
@@ -581,6 +617,7 @@ gcloud scheduler jobs run market-data-publisher --location=us-central1
 **Status**: ✅ **PRODUCTION READY - ALL FIXES VERIFIED**
 
 **End-to-End Test Results**:
+
 - ✅ market-data-ingestion: SUCCESS
 - ✅ Engine-C health: OK
 - ✅ Engine-C system status: NORMAL
@@ -597,4 +634,3 @@ All critical issues have been resolved and the platform is ready for continuous 
 **Next Action**: Begin 24-hour monitoring and observation. No further manual interventions needed unless errors are detected.
 
 **Contact**: Raise alert if error rate exceeds 1% or market-data-ingestion function fails.
-

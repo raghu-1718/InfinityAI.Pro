@@ -1,16 +1,24 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from 'firebase/auth';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { User } from "firebase/auth";
 import {
   onAuthChange,
   signInWithGoogle,
   logOut,
   getUserProfile,
-  UserProfile
-} from '@/lib/firebase';
-import { useAppStore } from '@/lib/store';
-import { engineC } from '@/lib/api';
+  UserProfile,
+} from "@/lib/firebase";
+import { useAppStore } from "@/lib/store";
+import { engineC } from "@/lib/api";
+import { db } from "@/lib/firebase/config";
+import { doc, onSnapshot } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
@@ -28,7 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { setUserProfile: setStoreUserProfile, clearUserData } = useAppStore();
+  const {
+    setUserProfile: setStoreUserProfile,
+    setDhanConnected,
+    clearUserData,
+  } = useAppStore();
 
   // Listen to auth state changes
   useEffect(() => {
@@ -44,15 +56,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profile) {
           setStoreUserProfile({
             userId: profile.uid,
-            clientId: profile.dhanClientId || '',
-            name: profile.displayName || 'User',
-            email: profile.email || '',
+            clientId: profile.dhanClientId || "",
+            name: profile.displayName || "User",
+            email: profile.email || "",
             isConnected: profile.dhanConnected,
             isVerified: profile.dhanConnected,
           });
         }
+
+        // Listen to Dhan Credentials changes in real-time
+        const credentialsRef = doc(db, "dhan_credentials", firebaseUser.uid);
+        const unsubscribeCreds = onSnapshot(
+          credentialsRef,
+          (credSnapshot) => {
+            if (credSnapshot.exists()) {
+              const credData = credSnapshot.data();
+              const isConnected = !!(
+                credData.client_id && credData.access_token
+              );
+
+              // Update global state when credentials change
+              setDhanConnected(isConnected);
+              setStoreUserProfile((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      isConnected,
+                      isVerified: isConnected,
+                    }
+                  : null,
+              );
+            } else {
+              // No credentials document means disconnected
+              setDhanConnected(false);
+              setStoreUserProfile((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      isConnected: false,
+                      isVerified: false,
+                    }
+                  : null,
+              );
+            }
+          },
+          (error) => {
+            console.warn("Error listening to credentials:", error);
+            // Silently continue - not a fatal error
+          },
+        );
+
+        return () => {
+          unsubscribeCreds();
+        };
       } else {
         setUserProfile(null);
+        setDhanConnected(false);
         clearUserData();
       }
 
@@ -60,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [setStoreUserProfile, clearUserData]);
+  }, [setStoreUserProfile, setDhanConnected, clearUserData]);
 
   const signIn = async () => {
     setLoading(true);
@@ -74,9 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) {
         setStoreUserProfile({
           userId: profile.uid,
-          clientId: profile.dhanClientId || '',
-          name: profile.displayName || 'User',
-          email: profile.email || '',
+          clientId: profile.dhanClientId || "",
+          name: profile.displayName || "User",
+          email: profile.email || "",
           isConnected: profile.dhanConnected,
           isVerified: profile.dhanConnected,
         });
@@ -95,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await engineC.deleteUserCredentials(user.uid);
       } catch (e) {
-        console.error('Failed to delete Dhan credentials:', e);
+        console.error("Failed to delete Dhan credentials:", e);
       }
     }
 
@@ -119,9 +178,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) {
         setStoreUserProfile({
           userId: profile.uid,
-          clientId: profile.dhanClientId || '',
-          name: profile.displayName || 'User',
-          email: profile.email || '',
+          clientId: profile.dhanClientId || "",
+          name: profile.displayName || "User",
+          email: profile.email || "",
           isConnected: profile.dhanConnected,
           isVerified: profile.dhanConnected,
         });
@@ -138,17 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
@@ -160,7 +215,7 @@ export function useRequireAuth() {
   useEffect(() => {
     if (!loading && !user) {
       // Could redirect to login page if needed
-      console.log('User not authenticated');
+      console.log("User not authenticated");
     }
   }, [user, loading]);
 

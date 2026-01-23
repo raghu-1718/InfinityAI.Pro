@@ -46,7 +46,13 @@ interface DhanCredentials {
 
 export default function SettingsPage() {
   // Global state
-  const { userProfile } = useAppStore();
+  const {
+    userProfile,
+    dhanConnected,
+    setDhanConnected,
+    disconnectDhan,
+    setUserProfile,
+  } = useAppStore();
   const { session, refreshSession } = useCouponAuth();
 
   // Dhan Credentials State
@@ -59,12 +65,6 @@ export default function SettingsPage() {
   });
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "disconnected" | "connected" | "error"
-  >(userProfile?.isConnected ? "connected" : "disconnected");
-
-  // Trading Settings State Wrapper
-  // Risk Profile moved to /trading page
 
   // Load credentials on mount
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
       try {
         const response = await fetch(
-          `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`
+          `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`,
         );
 
         if (response.ok) {
@@ -88,9 +88,8 @@ export default function SettingsPage() {
               access_token: "", // masked on server; keep empty locally
               is_verified: Boolean(data.is_verified),
             });
-            setConnectionStatus(
-              data.is_verified ? "connected" : "disconnected"
-            );
+            // Update global state with connection status
+            setDhanConnected(Boolean(data.is_verified));
           }
         }
       } catch (error) {
@@ -99,7 +98,7 @@ export default function SettingsPage() {
     };
 
     loadCredentials();
-  }, [session]);
+  }, [session, setDhanConnected]);
 
   const handleSaveCredentials = async () => {
     if (!session?.userId) {
@@ -135,26 +134,40 @@ export default function SettingsPage() {
         throw new Error(data.message || "Save failed");
       }
 
-      setConnectionStatus(isVerified ? "connected" : "error");
+      // Update global state FIRST
+      setDhanConnected(isVerified);
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          isConnected: isVerified,
+          isVerified: isVerified,
+        });
+      }
+
       setDhanCredentials({
         ...dhanCredentials,
         is_verified: isVerified,
       });
 
       if (isVerified) {
-        toast.success("Credentials saved and verified!");
+        toast.success(
+          `✅ Credentials saved & verified!\nClient ID: ${dhanCredentials.client_id}`,
+        );
         // REFRESH GLOBAL SESSION STATE
         await refreshSession();
       } else {
+        // Show detailed reason from backend if available
+        const errorDetail = data.error || data.message || "Verification failed";
         toast.warning(
-          "Credentials saved but verification failed. Check your token."
+          `⚠️ Credentials saved but not verified\n${errorDetail}\n\nPlease check your DhanHQ access token.`,
+          { duration: 6000 },
         );
       }
 
       setDhanClientId(dhanCredentials.client_id);
     } catch (error: any) {
-      toast.error(`Save failed: ${error.message}`);
-      setConnectionStatus("error");
+      toast.error(`❌ Save failed: ${error.message}`);
+      setDhanConnected(false);
     } finally {
       setIsConnecting(false);
     }
@@ -166,25 +179,44 @@ export default function SettingsPage() {
     setIsConnecting(true);
     try {
       const response = await fetch(
-        `${ENGINE_C_URL}/api/user/credentials/verify?user_id=${session.userId}`
+        `${ENGINE_C_URL}/api/user/credentials/verify?user_id=${session.userId}`,
       );
 
       const data = await response.json();
 
       if (data.is_verified) {
-        setConnectionStatus("connected");
+        // Update global state
+        setDhanConnected(true);
+        if (userProfile) {
+          setUserProfile({
+            ...userProfile,
+            isConnected: true,
+            isVerified: true,
+          });
+        }
+
         setDhanCredentials({ ...dhanCredentials, is_verified: true });
-        toast.success("Connection verified successfully!");
+        toast.success(
+          `✅ Connection verified successfully!\nDhanHQ API responding normally.`,
+        );
         // REFRESH GLOBAL SESSION STATE
         await refreshSession();
       } else {
-        setConnectionStatus("error");
+        setDhanConnected(false);
         setDhanCredentials({ ...dhanCredentials, is_verified: false });
-        toast.error(`Verification failed: ${data.message}`);
+        
+        // Extract detailed error message
+        const errorMsg = data.error || data.message || "Unknown error";
+        toast.error(
+          `❌ Verification failed\n${errorMsg}\n\nPlease regenerate your access token in DhanHQ.`,
+          { duration: 7000 },
+        );
       }
     } catch (error: any) {
-      toast.error(`Verification error: ${error.message}`);
-      setConnectionStatus("error");
+      toast.error(
+        `❌ Verification error: ${error.message}\n\nCheck your network connection.`,
+      );
+      setDhanConnected(false);
     } finally {
       setIsConnecting(false);
     }
@@ -195,43 +227,53 @@ export default function SettingsPage() {
 
     setIsConnecting(true);
     try {
+      // Call backend to delete credentials
       const response = await fetch(
         `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
-      const data = await response.json();
-
-      if (data.deleted || response.ok) {
-        setConnectionStatus("disconnected");
-        setDhanCredentials({
-          client_id: "",
-          api_key: "",
-          api_secret: "",
-          access_token: "",
-          is_verified: false,
-        });
-        clearDhanClientId();
-
-        // Clear global store immediately
-        if (userProfile) {
-          useAppStore.getState().setUserProfile({
-            ...userProfile,
-            isConnected: false,
-            isVerified: false,
-            clientId: "",
-          });
-        }
-
-        // REFRESH GLOBAL SESSION STATE
-        await refreshSession();
-
-        toast.success("Disconnected from Dhan");
-      } else {
-        throw new Error(data.message || "Disconnect failed");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to disconnect");
       }
+
+      // Clear local state FIRST
+      setDhanCredentials({
+        client_id: "",
+        api_key: "",
+        api_secret: "",
+        access_token: "",
+        is_verified: false,
+      });
+      
+      // Clear global state
+      setDhanConnected(false);
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          isConnected: false,
+          isVerified: false,
+        });
+      }
+      
+      clearDhanClientId();
+
+      // REFRESH SESSION to update NavBar and other components
+      await refreshSession();
+
+      toast.success("✅ Disconnected from DhanHQ\nCredentials removed from Secret Manager");
     } catch (error: any) {
-      toast.error(`Disconnect failed: ${error.message}`);
+      toast.error(`❌ Disconnect failed: ${error.message}`);
+      // Still clear local state even if API fails
+      setDhanConnected(false);
+      setDhanCredentials({
+        client_id: "",
+        api_key: "",
+        api_secret: "",
+        access_token: "",
+        is_verified: false,
+      });
     } finally {
       setIsConnecting(false);
     }
@@ -278,16 +320,14 @@ export default function SettingsPage() {
                 <span
                   className={cn(
                     "px-2 py-0.5 rounded text-xs font-bold uppercase",
-                    connectionStatus === "connected"
+                    dhanConnected
                       ? "bg-green-500/20 text-green-500"
-                      : connectionStatus === "error"
-                        ? "bg-red-500/20 text-red-500"
-                        : "bg-slate-500/20 text-slate-400"
+                      : "bg-slate-500/20 text-slate-400",
                   )}
                 >
-                  {connectionStatus}
+                  {dhanConnected ? "connected" : "disconnected"}
                 </span>
-                {connectionStatus === "connected" && (
+                {dhanConnected && (
                   <span className="flex items-center gap-1 text-[10px] text-green-400">
                     <CheckCircle className="w-3 h-3" /> Verified
                   </span>
@@ -411,7 +451,7 @@ export default function SettingsPage() {
                     )}
                     Verify Connection
                   </Button>
-                  {connectionStatus !== "disconnected" && (
+                  {dhanConnected && (
                     <Button
                       variant="destructive"
                       onClick={handleDisconnect}
@@ -442,7 +482,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              `${ENGINE_C_URL}/api/dhan/postback`
+                              `${ENGINE_C_URL}/api/dhan/postback`,
                             );
                             toast.success("Copied Postback URL");
                           }}
@@ -469,7 +509,7 @@ export default function SettingsPage() {
                           className="h-8 w-8"
                           onClick={() => {
                             navigator.clipboard.writeText(
-                              `${ENGINE_C_URL}/auth/dhan/success`
+                              `${ENGINE_C_URL}/auth/dhan/success`,
                             );
                             toast.success("Copied Redirect URL");
                           }}

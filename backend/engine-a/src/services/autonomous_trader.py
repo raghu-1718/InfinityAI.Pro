@@ -233,16 +233,16 @@ class AutonomousTrader:
 
             # Using the batch signal endpoint verified in Engine B
             url = f"{ENGINE_B_URL}/api/v1/signals/batch"
-            
+
             # Using configured user_id (fixed bug #4)
             uid = self.config.get("user_id", "active_trader")
-            
+
             payload = {
                 "symbols": symbols,
                 "fast": True,
                 "user_id": uid
             }
-            
+
             logger.info(f"📡 Fetching signals from Engine B for user {uid}...")
 
             headers = {"X-Trace-ID": trace_id} if trace_id else {}
@@ -375,11 +375,16 @@ class AutonomousTrader:
             }
 
             url = f"{ENGINE_C_URL}/api/dhan/place-order"
+
+            # Build headers safely - avoid None values
             headers = {
                 "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
-                "X-User-ID": uid,
                 "X-Engine-Source": "engine-a"
             }
+            # Only add X-User-ID if uid is not None
+            if uid is not None and uid != "system":
+                headers["X-User-ID"] = str(uid)
+
             resp = await self.http_client.post(url, json=payload, headers=headers)
 
             if resp.status_code == 200:

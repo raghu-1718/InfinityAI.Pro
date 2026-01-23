@@ -4198,6 +4198,311 @@ async def get_finance_ai_status():
     }
 
 
+# --- Options Trading Endpoints ---
+class GreeksRequest(BaseModel):
+    symbol: str
+    spot: float
+    strike: float
+    expiry: str  # YYYY-MM-DD
+    volatility: float = 0.18
+    option_type: str = "CE"  # CE or PE
+
+class OptionsStrategyRequest(BaseModel):
+    strategy_type: str  # iron_condor, bull_call_spread, covered_call
+    symbol: str
+    spot_price: float
+    expiry: str
+    parameters: Dict[str, Any]  # Strategy-specific params
+
+@app.post("/api/v1/options/greeks")
+async def calculate_greeks(req: GreeksRequest):
+    """Calculate Black-Scholes Greeks for an option"""
+    try:
+        from shared.analytics.greeks_calculator import BlackScholesGreeks
+        from datetime import datetime
+
+        # Calculate time to expiry
+        expiry_date = datetime.strptime(req.expiry, "%Y-%m-%d")
+        days_to_expiry = (expiry_date - datetime.now()).days
+        time_to_expiry = max(0, days_to_expiry) / 365.0
+
+        # Calculate Greeks
+        greeks = BlackScholesGreeks.calculate_greeks(
+            spot=req.spot,
+            strike=req.strike,
+            time_to_expiry=time_to_expiry,
+            volatility=req.volatility,
+            option_type=req.option_type
+        )
+
+        # Calculate option price
+        option_price = BlackScholesGreeks.calculate_option_price(
+            spot=req.spot,
+            strike=req.strike,
+            time_to_expiry=time_to_expiry,
+            volatility=req.volatility,
+            option_type=req.option_type
+        )
+
+        return {
+            "status": "success",
+            "symbol": req.symbol,
+            "strike": req.strike,
+            "expiry": req.expiry,
+            "option_type": req.option_type,
+            "theoretical_price": round(option_price, 2),
+            "greeks": greeks,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Greeks calculation error: {e}")
+        raise HTTPException(500, f"Greeks calculation failed: {str(e)}")
+
+@app.post("/api/v1/options/strategy")
+async def execute_strategy(req: OptionsStrategyRequest):
+    """Execute options strategy and return P&L analysis"""
+    try:
+        from shared.analytics.options_strategies import create_strategy
+
+        # Create strategy
+        strategy = create_strategy(
+            strategy_type=req.strategy_type,
+            symbol=req.symbol,
+            spot_price=req.spot_price,
+            expiry=req.expiry,
+            **req.parameters
+        )
+
+        # Get strategy summary
+        summary = strategy.summary()
+
+        # Calculate P&L range
+        price_range_min = req.spot_price * 0.9  # -10%
+        price_range_max = req.spot_price * 1.1  # +10%
+        pnl_data = strategy.calculate_pnl_range(
+            min_price=price_range_min,
+            max_price=price_range_max,
+            steps=50
+        )
+
+        # Find breakeven points
+        breakevens = strategy.breakeven_points(price_range_min, price_range_max)
+
+        return {
+            "status": "success",
+            "strategy": summary,
+            "pnl_chart": pnl_data,
+            "breakeven_points": breakevens,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Strategy execution error: {e}")
+        raise HTTPException(500, f"Strategy execution failed: {str(e)}")
+
+
+# --- Deep Learning Endpoints ---
+class LSTMPredictRequest(BaseModel):
+    symbol: str
+    recent_data: List[Dict[str, Any]]  # Last 60 days of OHLCV + indicators
+
+class DQNActionRequest(BaseModel):
+    symbol: str
+    current_state: List[float]  # State vector
+
+@app.post("/api/v1/lstm/predict")
+async def lstm_forecast(req: LSTMPredictRequest):
+    """Generate 30-day price forecast using LSTM"""
+    try:
+        from src.models.lstm_model import get_lstm_forecast
+        import pandas as pd
+
+        # Convert recent_data to DataFrame
+        df = pd.DataFrame(req.recent_data)
+
+        # Get forecast
+        forecast = get_lstm_forecast(req.symbol, df)
+
+        if "error" in forecast:
+            raise HTTPException(404, forecast["error"])
+
+        return {
+            "status": "success",
+            **forecast
+        }
+    except Exception as e:
+        logger.error(f"LSTM prediction error: {e}")
+        raise HTTPException(500, f"LSTM prediction failed: {str(e)}")
+
+@app.post("/api/v1/dqn/action")
+async def dqn_recommendation(req: DQNActionRequest):
+    """Get trading action recommendation from DQN agent"""
+    try:
+        from src.models.dqn_agent import get_dqn_action
+        import numpy as np
+
+        # Convert state to numpy array
+        state = np.array(req.current_state, dtype=np.float32)
+
+        # Get action
+        action = get_dqn_action(req.symbol, state)
+
+        if "error" in action:
+            raise HTTPException(404, action["error"])
+
+        return {
+            "status": "success",
+            **action
+        }
+    except Exception as e:
+        logger.error(f"DQN action error: {e}")
+        raise HTTPException(500, f"DQN recommendation failed: {str(e)}")
+
+@app.get("/api/v1/models/deep-learning")
+async def deep_learning_status():
+    """Get status of deep learning models (LSTM + DQN)"""
+    try:
+        import os
+        from pathlib import Path
+
+        lstm_dir = Path("models/lstm")
+        dqn_dir = Path("models/dqn")
+
+        # Check LSTM models
+        lstm_models = []
+        if lstm_dir.exists():
+            lstm_models = [f.stem for f in lstm_dir.glob("*.h5")]
+
+        # Check DQN models
+        dqn_models = []
+        if dqn_dir.exists():
+            dqn_models = [f.stem.replace("_dqn", "") for f in dqn_dir.glob("*_dqn.h5")]
+
+        return {
+            "status": "success",
+            "lstm_models": {
+                "count": len(lstm_models),
+                "symbols": lstm_models,
+                "lookback_days": 60,
+                "forecast_days": 30
+            },
+            "dqn_models": {
+                "count": len(dqn_models),
+                "symbols": dqn_models,
+                "actions": ["HOLD", "BUY", "SELL"]
+            },
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Deep learning status error: {e}")
+        raise HTTPException(500, f"Status check failed: {str(e)}")
+
+
+# --- Model Training Endpoints (Admin) ---
+class TrainingRequest(BaseModel):
+    symbol: str = "NIFTY"
+    days: int = 730
+    upload_gcs: bool = True
+    gcs_bucket: str = "galvanic-pulsar-482815-h0-models"
+    gcs_prefix: str = "trained_models"
+
+
+class LSTMTrainingRequest(TrainingRequest):
+    epochs: int = 100
+    batch_size: int = 32
+
+
+class DQNTrainingRequest(TrainingRequest):
+    episodes: int = 200
+
+
+@app.post("/admin/train-models")
+async def train_all_models_endpoint(req: TrainingRequest, background_tasks: BackgroundTasks):
+    """
+    Trigger training for both LSTM and DQN models.
+    This is a long-running operation (20-45 minutes).
+    Use background_tasks to avoid timeout.
+    """
+    try:
+        from src.training.train_all import train_all_models
+
+        # Run training in background
+        background_tasks.add_task(
+            train_all_models,
+            symbol=req.symbol,
+            days=req.days,
+            lstm_epochs=100,
+            dqn_episodes=200,
+            model_dir="/app/models",
+            upload_gcs=req.upload_gcs,
+            gcs_bucket=req.gcs_bucket,
+            gcs_prefix=req.gcs_prefix
+        )
+
+        return {
+            "status": "training_started",
+            "symbol": req.symbol,
+            "message": "Training started in background. Check logs for progress.",
+            "estimated_duration_minutes": "20-45",
+            "started_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Training initiation failed: {e}")
+        raise HTTPException(500, f"Failed to start training: {str(e)}")
+
+
+@app.post("/admin/train-lstm")
+async def train_lstm_endpoint(req: LSTMTrainingRequest, background_tasks: BackgroundTasks):
+    """Train only LSTM model"""
+    try:
+        from src.training.train_lstm import train_lstm_model
+
+        background_tasks.add_task(
+            train_lstm_model,
+            symbol=req.symbol,
+            days=req.days,
+            lookback_days=60,
+            forecast_days=30,
+            epochs=req.epochs,
+            batch_size=req.batch_size,
+            model_dir="/app/models/lstm"
+        )
+
+        return {
+            "status": "lstm_training_started",
+            "symbol": req.symbol,
+            "epochs": req.epochs,
+            "started_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"LSTM training failed: {e}")
+        raise HTTPException(500, f"LSTM training failed: {str(e)}")
+
+
+@app.post("/admin/train-dqn")
+async def train_dqn_endpoint(req: DQNTrainingRequest, background_tasks: BackgroundTasks):
+    """Train only DQN agent"""
+    try:
+        from src.training.train_dqn import train_dqn_agent
+
+        background_tasks.add_task(
+            train_dqn_agent,
+            symbol=req.symbol,
+            days=req.days,
+            episodes=req.episodes,
+            model_dir="/app/models/dqn"
+        )
+
+        return {
+            "status": "dqn_training_started",
+            "symbol": req.symbol,
+            "episodes": req.episodes,
+            "started_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"DQN training failed: {e}")
+        raise HTTPException(500, f"DQN training failed: {str(e)}")
+
+
 # --- Agent Consultation Endpoint ---
 class AgentConsultRequest(BaseModel):
     query: str

@@ -39,21 +39,21 @@ MAX_ORDERS_PER_DAY = int(os.getenv("MAX_ORDERS_PER_DAY", "100"))
 def is_market_open() -> bool:
     """Check if market is currently open (9:15 - 15:30 IST, weekdays only)."""
     now = datetime.now(IST)
-    
+
     # Check if weekday (0-4 = Mon-Fri)
     if now.weekday() >= 5:  # Saturday=5, Sunday=6
         logger.warning(f"⚠️ Market closed: Weekend ({now.strftime('%A')})")
         return False
-    
+
     # Check trading hours
     market_open = time(MARKET_OPEN_HOUR, MARKET_OPEN_MIN)
     market_close = time(MARKET_CLOSE_HOUR, MARKET_CLOSE_MIN)
     current_time = now.time()
-    
+
     is_open = market_open <= current_time <= market_close
     if not is_open:
         logger.warning(f"⚠️ Market closed: Current time {current_time} outside {market_open}-{market_close} IST")
-    
+
     return is_open
 
 def get_symbols_whitelist() -> set:
@@ -63,7 +63,7 @@ def get_symbols_whitelist() -> set:
         symbols = set(s.strip().upper() for s in env_symbols.split(","))
         logger.info(f"✅ Using env-defined symbols whitelist: {symbols}")
         return symbols
-    
+
     logger.info(f"✅ Using default symbols whitelist: {DEFAULT_SYMBOLS_WHITELIST}")
     return DEFAULT_SYMBOLS_WHITELIST
 
@@ -75,31 +75,31 @@ def validate_order_guardrails(
 ) -> Dict[str, Any]:
     """
     Validate order against guardrails.
-    
+
     Returns: {"valid": bool, "reason": str, "guardrails_violated": List[str]}
     """
     violations = []
-    
+
     # Check 1: Market hours
     if not is_market_open():
         violations.append(f"Market closed: Orders only allowed 9:15-15:30 IST weekdays")
-    
+
     # Check 2: Symbol whitelist
     whitelist = get_symbols_whitelist()
     if symbol.upper() not in whitelist:
         violations.append(f"Symbol '{symbol}' not in approved whitelist: {whitelist}")
-    
+
     # Check 3: Order quantity
     if quantity > MAX_ORDER_QUANTITY:
         violations.append(f"Quantity {quantity} exceeds max {MAX_ORDER_QUANTITY}")
-    
+
     # Check 4: Notional value (price * quantity)
     # For MARKET orders, use last price if available; otherwise allow
     if order_type != "MARKET" and price > 0:
         notional = price * quantity
         if notional > MAX_ORDER_NOTIONAL:
             violations.append(f"Notional value ₹{notional:,.0f} exceeds max ₹{MAX_ORDER_NOTIONAL:,.0f}")
-    
+
     return {
         "valid": len(violations) == 0,
         "reason": "; ".join(violations) if violations else "Order passed all guardrails",

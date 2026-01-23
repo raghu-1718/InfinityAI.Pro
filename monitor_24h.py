@@ -52,7 +52,7 @@ class MonitoringMetrics:
         self.scheduler_executions = []
         self.engine_c_health_checks = []
         self.pub_sub_message_counts = []
-    
+
     def record_error(self, error_type: str, message: str):
         """Record an error"""
         self.errors.append({
@@ -60,7 +60,7 @@ class MonitoringMetrics:
             "type": error_type,
             "message": message
         })
-        
+
         if "404" in str(message):
             self.errors_404 += 1
         elif "500" in str(message):
@@ -69,18 +69,18 @@ class MonitoringMetrics:
             self.errors_timeout += 1
         else:
             self.errors_other += 1
-    
+
     def record_latency(self, latency_ms: float):
         """Record function latency"""
         self.latencies.append(latency_ms)
-    
+
     def get_summary(self) -> Dict[str, Any]:
         """Get metrics summary"""
         elapsed = (datetime.utcnow() - self.start_time).total_seconds()
         avg_latency = sum(self.latencies) / len(self.latencies) if self.latencies else 0
         p99_latency = sorted(self.latencies)[int(len(self.latencies) * 0.99)] if self.latencies else 0
         error_rate = (len(self.errors) / self.checks_performed * 100) if self.checks_performed > 0 else 0
-        
+
         return {
             "elapsed_seconds": elapsed,
             "checks_performed": self.checks_performed,
@@ -120,7 +120,7 @@ def run_gcloud_command(command: List[str]) -> Dict[str, Any]:
 def test_function_health() -> tuple[bool, float, str]:
     """Test market-data-ingestion function"""
     import requests
-    
+
     start = time.time()
     try:
         response = requests.post(
@@ -130,7 +130,7 @@ def test_function_health() -> tuple[bool, float, str]:
             timeout=5
         )
         latency = (time.time() - start) * 1000
-        
+
         if response.status_code == 200:
             data = response.json()
             return True, latency, f"Success: {data.get('message', 'OK')}"
@@ -146,7 +146,7 @@ def test_function_health() -> tuple[bool, float, str]:
 def test_engine_c_health() -> Dict[str, Any]:
     """Test Engine-C health endpoint"""
     import requests
-    
+
     try:
         response = requests.get(ENGINE_C_HEALTH, timeout=5)
         if response.status_code == 200:
@@ -163,7 +163,7 @@ def test_engine_c_health() -> Dict[str, Any]:
 def test_engine_c_status() -> Dict[str, Any]:
     """Test Engine-C system status endpoint (the fixed endpoint)"""
     import requests
-    
+
     try:
         response = requests.get(ENGINE_C_STATUS, timeout=5)
         if response.status_code == 200:
@@ -189,7 +189,7 @@ def check_scheduler_status() -> Dict[str, Any]:
         "--format", "json"
     ]
     result = run_gcloud_command(command)
-    
+
     if result["success"]:
         try:
             data = json.loads(result["stdout"])
@@ -207,7 +207,7 @@ def check_scheduler_status() -> Dict[str, Any]:
 def check_function_errors() -> Dict[str, Any]:
     """Check for errors in function logs"""
     one_hour_ago = (datetime.utcnow() - timedelta(hours=1)).isoformat() + "Z"
-    
+
     command = [
         "gcloud", "logging", "read",
         f"resource.type=cloud_run_revision AND resource.labels.service_name={FUNCTION_NAME} AND severity>=ERROR AND timestamp>='{one_hour_ago}'",
@@ -215,15 +215,15 @@ def check_function_errors() -> Dict[str, Any]:
         "--format", "json",
         "--project", PROJECT_ID
     ]
-    
+
     result = run_gcloud_command(command)
-    
+
     if result["success"]:
         try:
             logs = json.loads(result["stdout"] or "[]")
             error_count = len(logs)
             error_messages = [log.get("jsonPayload", {}).get("message", "") for log in logs[:5]]
-            
+
             return {
                 "error_count": error_count,
                 "latest_errors": error_messages,
@@ -240,7 +240,7 @@ def perform_check(metrics: MonitoringMetrics) -> Dict[str, Any]:
         "timestamp": datetime.utcnow().isoformat(),
         "checks": {}
     }
-    
+
     # Check 1: Function health
     try:
         success, latency, message = test_function_health()
@@ -255,7 +255,7 @@ def perform_check(metrics: MonitoringMetrics) -> Dict[str, Any]:
     except Exception as e:
         check_result["checks"]["function_health"] = {"error": str(e)}
         metrics.record_error("function_health", str(e))
-    
+
     # Check 2: Engine-C health
     try:
         engine_health = test_engine_c_health()
@@ -264,14 +264,14 @@ def perform_check(metrics: MonitoringMetrics) -> Dict[str, Any]:
             metrics.engine_c_health_checks.append(engine_health)
     except Exception as e:
         check_result["checks"]["engine_c_health"] = {"error": str(e)}
-    
+
     # Check 3: Engine-C status (the fixed endpoint)
     try:
         engine_status = test_engine_c_status()
         check_result["checks"]["engine_c_status"] = engine_status
     except Exception as e:
         check_result["checks"]["engine_c_status"] = {"error": str(e)}
-    
+
     # Check 4: Scheduler status
     try:
         scheduler_status = check_scheduler_status()
@@ -280,7 +280,7 @@ def perform_check(metrics: MonitoringMetrics) -> Dict[str, Any]:
             metrics.scheduler_executions.append(scheduler_status)
     except Exception as e:
         check_result["checks"]["scheduler"] = {"error": str(e)}
-    
+
     # Check 5: Function errors in logs
     try:
         errors_check = check_function_errors()
@@ -289,7 +289,7 @@ def perform_check(metrics: MonitoringMetrics) -> Dict[str, Any]:
             metrics.record_error("log_errors", f"{errors_check.get('error_count')} errors in logs")
     except Exception as e:
         check_result["checks"]["function_errors"] = {"error": str(e)}
-    
+
     metrics.checks_performed += 1
     return check_result
 
@@ -298,7 +298,7 @@ def run_continuous_monitoring(duration_seconds: int = 86400):
     metrics = MonitoringMetrics()
     start_time = time.time()
     check_count = 0
-    
+
     logger.info("=" * 80)
     logger.info("STARTING 24-HOUR CONTINUOUS MONITORING")
     logger.info(f"Project: {PROJECT_ID}")
@@ -306,19 +306,19 @@ def run_continuous_monitoring(duration_seconds: int = 86400):
     logger.info(f"Check Interval: Every {CHECK_INTERVAL} seconds")
     logger.info(f"Duration: {duration_seconds} seconds (~{duration_seconds // 3600} hours)")
     logger.info("=" * 80)
-    
+
     while (time.time() - start_time) < duration_seconds:
         try:
             check_result = perform_check(metrics)
             check_count += 1
-            
+
             # Log check result
             logger.info(f"\n[CHECK #{check_count}] {check_result['timestamp']}")
             logger.info(f"Function Health: {check_result['checks'].get('function_health', {}).get('message', 'N/A')}")
             logger.info(f"Engine-C Health: {check_result['checks'].get('engine_c_health', {}).get('status', 'N/A')}")
             logger.info(f"Scheduler: {check_result['checks'].get('scheduler', {}).get('state', 'N/A')}")
             logger.info(f"Function Errors (1hr): {check_result['checks'].get('function_errors', {}).get('error_count', 'N/A')}")
-            
+
             # Log metrics summary every 6 checks (30 minutes)
             if check_count % 6 == 0:
                 summary = metrics.get_summary()
@@ -327,14 +327,14 @@ def run_continuous_monitoring(duration_seconds: int = 86400):
                 logger.info(f"Avg Latency: {summary['avg_latency_ms']:.0f}ms | P99: {summary['p99_latency_ms']:.0f}ms")
                 logger.info(f"404 Errors: {summary['errors_404']} | 500 Errors: {summary['errors_500']} | Timeouts: {summary['errors_timeout']}")
                 logger.info(f"Scheduler Executions: {summary['scheduler_executions']} | Engine-C OK: {summary['engine_c_health_ok']}/6")
-            
+
             # Wait before next check
             time.sleep(CHECK_INTERVAL)
-        
+
         except Exception as e:
             logger.error(f"Check failed with error: {e}")
             time.sleep(CHECK_INTERVAL)
-    
+
     # Final summary
     final_summary = metrics.get_summary()
     logger.info(f"\n" + "=" * 80)
@@ -348,14 +348,14 @@ def run_continuous_monitoring(duration_seconds: int = 86400):
     logger.info(f"P99 Latency: {final_summary['p99_latency_ms']:.0f}ms")
     logger.info(f"Scheduler Executions: {final_summary['scheduler_executions']}")
     logger.info(f"Engine-C Health OK: {final_summary['engine_c_health_ok']}/{final_summary['checks_performed']}")
-    
+
     # Write final report
     with open('24hour_monitoring_report.json', 'w') as f:
         json.dump({
             "summary": final_summary,
             "errors": metrics.errors[:100]  # Last 100 errors
         }, f, indent=2)
-    
+
     logger.info(f"\nReport written to: 24hour_monitoring_report.json")
 
 if __name__ == "__main__":
@@ -365,7 +365,7 @@ if __name__ == "__main__":
     except ImportError:
         logger.warning("Installing requests library...")
         subprocess.run([sys.executable, "-m", "pip", "install", "requests"], check=True)
-    
+
     # Run monitoring for 24 hours (or custom duration)
     duration = int(sys.argv[1]) if len(sys.argv) > 1 else 86400
     run_continuous_monitoring(duration)

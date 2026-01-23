@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { subscribeWithSelector, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { subscribeWithSelector, persist } from "zustand/middleware";
 
 // Types
 export interface EngineStatus {
-  status: 'online' | 'offline' | 'loading';
+  status: "online" | "offline" | "loading";
   version: string | null;
   lastChecked: Date | null;
   capabilities?: string[];
@@ -66,7 +66,7 @@ export interface Position {
 
 export interface Signal {
   symbol: string;
-  signal: 'BUY' | 'SELL' | 'HOLD';
+  signal: "BUY" | "SELL" | "HOLD";
   confidence: number;
   timestamp: string;
 }
@@ -83,18 +83,18 @@ export interface RiskMetrics {
 
 // Trading instrument types
 export type TradingInstrument =
-  | 'equities'
-  | 'nifty-options'
-  | 'banknifty-options'
-  | 'finnifty-options'
-  | 'sensex-options'
-  | 'crude-options'
-  | 'gold-options'
-  | 'silver-options';
+  | "equities"
+  | "nifty-options"
+  | "banknifty-options"
+  | "finnifty-options"
+  | "sensex-options"
+  | "crude-options"
+  | "gold-options"
+  | "silver-options";
 
 export interface TradingConfig {
   selectedInstruments: TradingInstrument[];
-  riskLevel: 'conservative' | 'moderate' | 'aggressive';
+  riskLevel: "conservative" | "moderate" | "aggressive";
   stopLossPercent: number;
   takeProfitPercent: number;
   maxTradesPerDay: number;
@@ -107,7 +107,7 @@ export interface TradingConfig {
   maxRiskPerTrade: number;
   minConfidence: number;
   trailingStopLoss: boolean;
-  positionSizingMethod: 'fixed' | 'percentage' | 'kelly';
+  positionSizingMethod: "fixed" | "percentage" | "kelly";
 }
 
 export interface TradingSession {
@@ -121,12 +121,17 @@ export interface TradingSession {
 
 interface AppState {
   // Theme
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   toggleTheme: () => void;
 
   // User Profile
   userProfile: UserProfile | null;
   setUserProfile: (profile: UserProfile | null) => void;
+
+  // DhanHQ Connection Management
+  dhanConnected: boolean;
+  setDhanConnected: (connected: boolean) => void;
+  disconnectDhan: (userId: string) => Promise<void>;
 
   // Demat Data (from connected user's account)
   dematData: DematData | null;
@@ -152,7 +157,10 @@ interface AppState {
     engineB: EngineStatus;
     engineC: EngineStatus;
   };
-  updateEngineStatus: (engine: 'engineA' | 'engineB' | 'engineC', status: Partial<EngineStatus>) => void;
+  updateEngineStatus: (
+    engine: "engineA" | "engineB" | "engineC",
+    status: Partial<EngineStatus>,
+  ) => void;
 
   // Funds & Portfolio
   funds: FundsData | null;
@@ -185,12 +193,53 @@ export const useAppStore = create<AppState>()(
     persist(
       (set) => ({
         // Theme
-        theme: 'dark',
-        toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+        theme: "dark",
+        toggleTheme: () =>
+          set((state) => ({
+            theme: state.theme === "dark" ? "light" : "dark",
+          })),
 
         // User Profile
         userProfile: null,
         setUserProfile: (userProfile) => set({ userProfile }),
+
+        // DhanHQ Connection Management
+        dhanConnected: false,
+        setDhanConnected: (dhanConnected) => set({ dhanConnected }),
+        disconnectDhan: async (userId: string) => {
+          try {
+            const ENGINE_C_URL =
+              typeof window !== "undefined"
+                ? (window as any).__ENGINE_C_URL || "http://localhost:8000"
+                : "http://localhost:8000";
+
+            const response = await fetch(
+              `${ENGINE_C_URL}/api/user/credentials/${userId}`,
+              { method: "DELETE" },
+            );
+
+            if (response.ok) {
+              // Update global state
+              set((state) => ({
+                userProfile: state.userProfile
+                  ? { ...state.userProfile, isConnected: false }
+                  : null,
+                dhanConnected: false,
+              }));
+            } else {
+              throw new Error(`Failed to disconnect: ${response.statusText}`);
+            }
+          } catch (error) {
+            console.error("Error disconnecting DhanHQ:", error);
+            // Still update local state even if API fails
+            set((state) => ({
+              userProfile: state.userProfile
+                ? { ...state.userProfile, isConnected: false }
+                : null,
+              dhanConnected: false,
+            }));
+          }
+        },
 
         // Demat Data
         dematData: null,
@@ -198,8 +247,8 @@ export const useAppStore = create<AppState>()(
 
         // Trading Configuration (with defaults)
         tradingConfig: {
-          selectedInstruments: ['equities'] as TradingInstrument[],
-          riskLevel: 'moderate',
+          selectedInstruments: ["equities"] as TradingInstrument[],
+          riskLevel: "moderate",
           stopLossPercent: 2,
           takeProfitPercent: 4,
           maxTradesPerDay: 10,
@@ -212,7 +261,7 @@ export const useAppStore = create<AppState>()(
           maxRiskPerTrade: 0.02,
           minConfidence: 0.75,
           trailingStopLoss: false,
-          positionSizingMethod: 'fixed',
+          positionSizingMethod: "fixed",
         },
         setTradingConfig: (config) =>
           set((state) => ({
@@ -222,9 +271,12 @@ export const useAppStore = create<AppState>()(
           set((state) => ({
             tradingConfig: {
               ...state.tradingConfig,
-              selectedInstruments: state.tradingConfig.selectedInstruments.includes(instrument)
-                ? state.tradingConfig.selectedInstruments.filter((i) => i !== instrument)
-                : [...state.tradingConfig.selectedInstruments, instrument],
+              selectedInstruments:
+                state.tradingConfig.selectedInstruments.includes(instrument)
+                  ? state.tradingConfig.selectedInstruments.filter(
+                      (i) => i !== instrument,
+                    )
+                  : [...state.tradingConfig.selectedInstruments, instrument],
             },
           })),
 
@@ -263,8 +315,8 @@ export const useAppStore = create<AppState>()(
         // Clear all user data (for logout)
         clearUserData: () => {
           // Clear localStorage userId
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('userId');
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("userId");
           }
           set({
             userProfile: null,
@@ -286,9 +338,9 @@ export const useAppStore = create<AppState>()(
 
         // Engine Status
         engines: {
-          engineA: { status: 'loading', version: null, lastChecked: null },
-          engineB: { status: 'loading', version: null, lastChecked: null },
-          engineC: { status: 'loading', version: null, lastChecked: null },
+          engineA: { status: "loading", version: null, lastChecked: null },
+          engineB: { status: "loading", version: null, lastChecked: null },
+          engineC: { status: "loading", version: null, lastChecked: null },
         },
         updateEngineStatus: (engine, status) =>
           set((state) => ({
@@ -312,7 +364,10 @@ export const useAppStore = create<AppState>()(
         signals: [],
         addSignal: (signal) =>
           set((state) => ({
-            signals: [signal, ...(Array.isArray(state.signals) ? state.signals : [])].slice(0, 50), // Keep last 50
+            signals: [
+              signal,
+              ...(Array.isArray(state.signals) ? state.signals : []),
+            ].slice(0, 50), // Keep last 50
           })),
         setSignals: (signals) => set({ signals }),
 
@@ -323,7 +378,7 @@ export const useAppStore = create<AppState>()(
         // UI State
         sidebarOpen: true,
         setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-        selectedSymbol: 'NIFTY',
+        selectedSymbol: "NIFTY",
         setSelectedSymbol: (selectedSymbol) => set({ selectedSymbol }),
 
         // WebSocket
@@ -331,22 +386,25 @@ export const useAppStore = create<AppState>()(
         setWsConnected: (wsConnected) => set({ wsConnected }),
       }),
       {
-        name: 'infinityai-storage',
+        name: "infinityai-storage",
         skipHydration: true,
         partialize: (state) => ({
           theme: state.theme,
           // Only persist basic user info, NOT connection status or sensitive data
-          userProfile: state.userProfile ? {
-            userId: state.userProfile.userId,
-            clientId: '', // Never persist client ID
-            name: state.userProfile.name,
-            email: state.userProfile.email,
-            isConnected: false, // Never persist connection state
-            isVerified: false, // Never persist verification state
-          } : null,
+          userProfile: state.userProfile
+            ? {
+                userId: state.userProfile.userId,
+                clientId: "", // Never persist client ID
+                name: state.userProfile.name,
+                email: state.userProfile.email,
+                isConnected: false, // Always reset on hydration
+                isVerified: false, // Always reset on hydration
+              }
+            : null,
           tradingConfig: state.tradingConfig,
+          dhanConnected: false, // Never persist connection state
         }),
-      }
-    )
-  )
+      },
+    ),
+  ),
 );

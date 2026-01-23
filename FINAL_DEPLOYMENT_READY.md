@@ -1,7 +1,7 @@
 # FINAL DEPLOYMENT & VERIFICATION PLAN
 
-**Date:** January 20, 2026  
-**Project:** InfinityAI.Pro | galvanic-pulsar-482815-h0  
+**Date:** January 20, 2026
+**Project:** InfinityAI.Pro | galvanic-pulsar-482815-h0
 **Status:** Ready for Go-Live
 
 ---
@@ -9,12 +9,14 @@
 ## ✅ WHAT IS VERIFIED & WORKING
 
 ### Backend Services (100% Operational)
+
 - ✅ **Engine-A** (Orchestrator): https://engine-a-228557716858.us-central1.run.app
 - ✅ **Engine-B** (AI/ML): https://engine-b-228557716858.us-central1.run.app
 - ✅ **Engine-C** (Broker): https://engine-c-228557716858.us-central1.run.app
 - ✅ All endpoints responding HTTP 200
 
 ### Database (100% Verified)
+
 - ✅ **Firestore**: galvanic-pulsar-482815-h0 (us-central1)
 - ✅ 6 Collections active: dhan_credentials, user_credentials, trading_sessions, trade_audit, market_data, coupons
 - ✅ 6 Composite indexes deployed
@@ -22,6 +24,7 @@
 - ✅ User isolation implemented
 
 ### Cloud Functions (8/8 Deployed)
+
 - ✅ storeCredentials
 - ✅ verifyCoupon
 - ✅ startTrading
@@ -32,6 +35,7 @@
 - ✅ getVertexAiAnalysis
 
 ### Live Market Data (Real-time from DhanHQ)
+
 - ✅ NIFTY 50: Real-time quotes
 - ✅ Bank Nifty: Real-time quotes
 - ✅ Account Balance: ₹10,00,000+
@@ -39,6 +43,7 @@
 - ✅ Today's P&L: Real-time calculation
 
 ### Data Providers (All Configured)
+
 - ✅ **Primary**: DhanHQ Broker (NSE live feed) - VERIFIED
 - ✅ **Secondary**: NSE Direct API - Ready
 - ✅ **Tertiary**: Alpha Vantage - Ready
@@ -46,12 +51,14 @@
 - ✅ **News**: NewsData.io, Indian RSS, NewsAPI - Ready
 
 ### Security & Authentication
+
 - ✅ Firebase Auth: raghuyuvi10@gmail.com (verified)
 - ✅ Credential encryption: AES-256
 - ✅ Multi-strategy credential lookup: 4-retry with exponential backoff
 - ✅ Secret Manager integration: Active
 
 ### Frontend Code (All Fixed)
+
 - ✅ api.ts: All 3 engine URLs corrected (lines 9, 16, 27)
 - ✅ useDhanData.ts: Market quotes hook includes userId
 - ✅ useRealtimeTrading.ts: ENGINE_C_URL corrected
@@ -63,11 +70,13 @@
 ## 🚀 REMAINING DEPLOYMENT STEPS
 
 ### Step 1: Resolve Frontend Build Issues
+
 **Status:** In Progress
 
 **Issue:** Cloud Build npm install timing out in container environment
 
 **Resolution:**
+
 ```bash
 # Option A: Build locally first (if npm install works locally)
 cd frontend/web-app
@@ -82,6 +91,7 @@ gcloud builds submit --config cloudbuild.yaml --project=galvanic-pulsar-482815-h
 **cloudbuild.yaml:** Already configured for proper gcloud substitution
 
 ### Step 2: Deploy Frontend
+
 ```bash
 cd C:\workspace\InfinityAI.Pro\frontend\web-app
 
@@ -99,22 +109,26 @@ gcloud run deploy web-app \
 ```
 
 **Expected Output:**
+
 ```
 Service [web-app] revision [00001-xyz] has been deployed
 URL: https://web-app-XXXX.us-central1.run.app
 ```
 
 ### Step 3: Deploy Cloud Functions
+
 ```bash
 firebase deploy --only functions --project=galvanic-pulsar-482815-h0
 ```
 
 **Expected Output:**
+
 ```
 ✔ functions: Deployed 8 functions
 ```
 
 ### Step 4: Verify All Services
+
 ```bash
 # Test backend health
 curl https://engine-c-228557716858.us-central1.run.app/api/health
@@ -128,6 +142,7 @@ curl "https://engine-c-228557716858.us-central1.run.app/api/dhan/market/quotes?s
 ```
 
 ### Step 5: Final Smoke Tests
+
 ```
 Test Matrix:
 ✅ Frontend loads without errors
@@ -144,39 +159,40 @@ Test Matrix:
 
 ## 📊 PRODUCTION READINESS CHECKLIST
 
-| Component | Status | Ready |
-|-----------|--------|-------|
-| **BACKEND** | | |
-| Engine-A Deployed | ✅ LIVE | ✅ |
-| Engine-B Deployed | ✅ LIVE | ✅ |
-| Engine-C Deployed | ✅ LIVE | ✅ |
-| Firestore DB | ✅ CONFIGURED | ✅ |
-| Cloud Functions | ✅ 8/8 DEPLOYED | ✅ |
-| API Endpoints | ✅ ALL TESTED | ✅ |
-| **DATA PROVIDERS** | | |
-| DhanHQ Integration | ✅ VERIFIED | ✅ |
-| Market Data | ✅ LIVE | ✅ |
-| News Data | ✅ CONFIGURED | ✅ |
-| **SECURITY** | | |
-| Firebase Auth | ✅ ACTIVE | ✅ |
-| Encryption | ✅ AES-256 | ✅ |
-| Credential Lookup | ✅ WORKING | ✅ |
-| **FRONTEND** | | |
-| URL Configuration | ✅ FIXED | ✅ |
-| React Hooks | ✅ INTEGRATED | ✅ |
-| Dashboard UI | ✅ READY | ✅ |
-| Deployment | 🔄 IN PROGRESS | ⏳ |
-| **VERIFICATION** | | |
-| Health Checks | ✅ PASSING | ✅ |
-| Load Testing | ✅ READY | ✅ |
-| Smoke Tests | 🔄 PENDING | ⏳ |
-| Go-Live | ⏳ READY | ⏳ |
+| Component          | Status          | Ready |
+| ------------------ | --------------- | ----- |
+| **BACKEND**        |                 |       |
+| Engine-A Deployed  | ✅ LIVE         | ✅    |
+| Engine-B Deployed  | ✅ LIVE         | ✅    |
+| Engine-C Deployed  | ✅ LIVE         | ✅    |
+| Firestore DB       | ✅ CONFIGURED   | ✅    |
+| Cloud Functions    | ✅ 8/8 DEPLOYED | ✅    |
+| API Endpoints      | ✅ ALL TESTED   | ✅    |
+| **DATA PROVIDERS** |                 |       |
+| DhanHQ Integration | ✅ VERIFIED     | ✅    |
+| Market Data        | ✅ LIVE         | ✅    |
+| News Data          | ✅ CONFIGURED   | ✅    |
+| **SECURITY**       |                 |       |
+| Firebase Auth      | ✅ ACTIVE       | ✅    |
+| Encryption         | ✅ AES-256      | ✅    |
+| Credential Lookup  | ✅ WORKING      | ✅    |
+| **FRONTEND**       |                 |       |
+| URL Configuration  | ✅ FIXED        | ✅    |
+| React Hooks        | ✅ INTEGRATED   | ✅    |
+| Dashboard UI       | ✅ READY        | ✅    |
+| Deployment         | 🔄 IN PROGRESS  | ⏳    |
+| **VERIFICATION**   |                 |       |
+| Health Checks      | ✅ PASSING      | ✅    |
+| Load Testing       | ✅ READY        | ✅    |
+| Smoke Tests        | 🔄 PENDING      | ⏳    |
+| Go-Live            | ⏳ READY        | ⏳    |
 
 ---
 
 ## 🎯 CRITICAL INFORMATION FOR DEPLOYMENT
 
 ### Service URLs (Confirmed Correct)
+
 ```
 Engine-A:  https://engine-a-228557716858.us-central1.run.app
 Engine-B:  https://engine-b-228557716858.us-central1.run.app
@@ -186,6 +202,7 @@ Region:    us-central1
 ```
 
 ### User Test Account
+
 ```
 Email:        raghuyuvi10@gmail.com
 Password:     [Set via Firebase Auth]
@@ -195,6 +212,7 @@ Status:       ✅ Verified working
 ```
 
 ### Broker Integration
+
 ```
 Provider:     DhanHQ (NSE broker)
 Credentials:  Encrypted in Firestore
@@ -204,6 +222,7 @@ Status:       ✅ Verified live
 ```
 
 ### Database Configuration
+
 ```
 Project:      galvanic-pulsar-482815-h0
 Database:     Native Mode Firestore
@@ -217,37 +236,41 @@ Backup:       ✅ Enabled
 
 ## ⚠️ DEPLOYMENT RISKS & MITIGATIONS
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Frontend build timeout | Medium | Increase Cloud Build timeout or build locally first |
-| Firestore quota exceeded | High | Monitor RU usage; auto-scaling enabled |
-| Cold start latency | Medium | Services warming up within 5s; acceptable for trading |
-| Network connectivity | High | Multiple data provider tiers; failover configured |
-| Broker API downtime | Critical | Primary: DhanHQ, Secondary: NSE Direct, Tertiary: Alpha Vantage |
-| Credential lookup failures | High | 4-retry exponential backoff (100ms→800ms) |
-| Market data stale | Medium | 5-second refresh + WebSocket streaming |
+| Risk                       | Impact   | Mitigation                                                      |
+| -------------------------- | -------- | --------------------------------------------------------------- |
+| Frontend build timeout     | Medium   | Increase Cloud Build timeout or build locally first             |
+| Firestore quota exceeded   | High     | Monitor RU usage; auto-scaling enabled                          |
+| Cold start latency         | Medium   | Services warming up within 5s; acceptable for trading           |
+| Network connectivity       | High     | Multiple data provider tiers; failover configured               |
+| Broker API downtime        | Critical | Primary: DhanHQ, Secondary: NSE Direct, Tertiary: Alpha Vantage |
+| Credential lookup failures | High     | 4-retry exponential backoff (100ms→800ms)                       |
+| Market data stale          | Medium   | 5-second refresh + WebSocket streaming                          |
 
 ---
 
 ## 📞 POST-DEPLOYMENT SUPPORT
 
 ### Health Check URL
+
 ```
 https://engine-c-228557716858.us-central1.run.app/api/health
 ```
 
 ### Monitor Dashboard Logs
+
 ```bash
 gcloud run services describe web-app --region=us-central1 --project=galvanic-pulsar-482815-h0
 gcloud run logs read web-app --limit=100 --region=us-central1 --project=galvanic-pulsar-482815-h0
 ```
 
 ### Check Cloud Build Status
+
 ```bash
 gcloud builds log [BUILD_ID] --project=galvanic-pulsar-482815-h0
 ```
 
 ### Verify Firestore Data
+
 ```bash
 gcloud firestore documents list --collection=dhan_credentials --project=galvanic-pulsar-482815-h0
 ```
@@ -261,6 +284,7 @@ gcloud firestore documents list --collection=dhan_credentials --project=galvanic
 All backend services are fully operational and verified. Live market data is confirmed working. All critical paths tested and verified.
 
 ### Final Checklist Before Go-Live:
+
 - ✅ Backend services deployed and healthy
 - ✅ Firestore configured and secured
 - ✅ Cloud Functions deployed
@@ -272,6 +296,7 @@ All backend services are fully operational and verified. Live market data is con
 - ⏳ Enable trading mode
 
 ### Timeline:
+
 - **Immediate:** Complete frontend deployment
 - **Within 15 minutes:** Deploy Cloud Functions
 - **Within 30 minutes:** Run final verification tests
@@ -279,6 +304,6 @@ All backend services are fully operational and verified. Live market data is con
 
 ---
 
-**Version:** 1.0  
-**Last Updated:** January 20, 2026  
+**Version:** 1.0
+**Last Updated:** January 20, 2026
 **Status:** DEPLOYMENT READY

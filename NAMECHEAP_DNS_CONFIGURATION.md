@@ -1,9 +1,10 @@
 # INFINITYAI.PRO NAMECHEAP DNS CONFIGURATION
+
 ## Complete DNS Records to Add/Update
 
-**Domain:** infinityai.pro  
-**Registrar:** Namecheap  
-**Update Method:** Namecheap Dashboard → Domain Management → Advanced DNS  
+**Domain:** infinityai.pro
+**Registrar:** Namecheap
+**Update Method:** Namecheap Dashboard → Domain Management → Advanced DNS
 **Generated:** 2026-01-21T10:40:00Z
 
 ---
@@ -11,6 +12,7 @@
 ## 📋 DNS RECORDS TO ADD IN NAMECHEAP
 
 ### Record 1: Root Domain A Record (Firebase Hosting)
+
 ```
 Type:       A
 Host:       @
@@ -20,6 +22,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 2: WWW Subdomain A Record (Firebase Hosting)
+
 ```
 Type:       A
 Host:       www
@@ -29,6 +32,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 3: Firebase Domain Verification TXT Record
+
 ```
 Type:       TXT
 Host:       @
@@ -38,6 +42,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 4: CNAME for Cloud Run Engine-C (API)
+
 ```
 Type:       CNAME
 Host:       api
@@ -47,6 +52,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 5: CNAME for Cloud Run Engine-A (Orchestrator)
+
 ```
 Type:       CNAME
 Host:       orchestrator
@@ -56,6 +62,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 6: CNAME for Cloud Run Engine-B (Signals)
+
 ```
 Type:       CNAME
 Host:       signals
@@ -65,6 +72,7 @@ Priority:   (leave blank)
 ```
 
 ### Record 7: MX Records (Email - Optional, if needed)
+
 ```
 Type:       MX
 Host:       @
@@ -102,6 +110,7 @@ TTL:        3600
 ## 🔍 DNS PROPAGATION & VERIFICATION
 
 **After adding records, DNS should propagate within:**
+
 - Immediate (some regions): < 5 minutes
 - Standard: 15-30 minutes
 - Full propagation: 24-48 hours
@@ -128,36 +137,40 @@ dig www.infinityai.pro
 
 ## 📊 DNS RECORD SUMMARY TABLE
 
-| Record Type | Host | Value | TTL | Purpose |
-|-------------|------|-------|-----|---------|
-| A | @ | 199.36.158.100 | 3600 | Firebase Hosting root domain |
-| A | www | 199.36.158.100 | 3600 | Firebase Hosting www subdomain |
-| TXT | @ | firebase=galvanic-pulsar-482815-h0 | 3600 | Firebase domain verification |
-| CNAME | api | engine-c-228557716858.us-central1.run.app.c.appspot.com | 3600 | Cloud Run Engine-C (LIVE trading) |
-| CNAME | orchestrator | engine-a-3acobgd3qa-uc.a.run.app.c.appspot.com | 3600 | Cloud Run Engine-A (Orchestrator) |
-| CNAME | signals | engine-b-3acobgd3qa-uc.a.run.app.c.appspot.com | 3600 | Cloud Run Engine-B (ML Signals) |
-| MX | @ | aspmx.l.google.com (priority 10) | 3600 | Google Workspace email (optional) |
+| Record Type | Host         | Value                                                   | TTL  | Purpose                           |
+| ----------- | ------------ | ------------------------------------------------------- | ---- | --------------------------------- |
+| A           | @            | 199.36.158.100                                          | 3600 | Firebase Hosting root domain      |
+| A           | www          | 199.36.158.100                                          | 3600 | Firebase Hosting www subdomain    |
+| TXT         | @            | firebase=galvanic-pulsar-482815-h0                      | 3600 | Firebase domain verification      |
+| CNAME       | api          | engine-c-228557716858.us-central1.run.app.c.appspot.com | 3600 | Cloud Run Engine-C (LIVE trading) |
+| CNAME       | orchestrator | engine-a-3acobgd3qa-uc.a.run.app.c.appspot.com          | 3600 | Cloud Run Engine-A (Orchestrator) |
+| CNAME       | signals      | engine-b-3acobgd3qa-uc.a.run.app.c.appspot.com          | 3600 | Cloud Run Engine-B (ML Signals)   |
+| MX          | @            | aspmx.l.google.com (priority 10)                        | 3600 | Google Workspace email (optional) |
 
 ---
 
 ## 🚀 WHAT EACH RECORD DOES
 
 ### A Records (Root + WWW)
+
 - Route all traffic to `infinityai.pro` and `www.infinityai.pro` to Firebase Hosting
 - Firebase serves Next.js frontend from Firebase Hosting
 - SSL automatically provisioned and managed by Firebase
 
 ### CNAME Records (API Subdomains)
+
 - `api.infinityai.pro` → Engine-C (Live Trading API, DhanHQ broker integration)
 - `orchestrator.infinityai.pro` → Engine-A (AI risk scoring and orchestration)
 - `signals.infinityai.pro` → Engine-B (ML signal generation)
 - Each CNAME routes to respective Cloud Run service
 
 ### TXT Record (Firebase Verification)
+
 - Required by Firebase to verify domain ownership
 - Firebase checks for this record before issuing SSL certificate
 
 ### MX Records (Email - Optional)
+
 - Only needed if using Google Workspace for email at infinityai.pro
 - Skip if not using email service
 
@@ -222,13 +235,14 @@ Real-Time Orders & Trades
 
 ## 📧 HTTPS/SSL STATUS
 
-**Certificate:** infinityai-pro-ssl (GCP Managed Certificate)  
-**Status:** PROVISIONING (will complete after DNS records added)  
-**Domains:** infinityai.pro, www.infinityai.pro  
-**Auto-Renewal:** Enabled  
-**Certificate Provider:** Google Cloud SSL  
+**Certificate:** infinityai-pro-ssl (GCP Managed Certificate)
+**Status:** PROVISIONING (will complete after DNS records added)
+**Domains:** infinityai.pro, www.infinityai.pro
+**Auto-Renewal:** Enabled
+**Certificate Provider:** Google Cloud SSL
 
 **Current URL Status:**
+
 - ❌ https://infinityai.pro → Will work after DNS propagation
 - ❌ https://www.infinityai.pro → Will work after DNS propagation
 - ✅ https://galvanic-pulsar-482815-h0-web-app.web.app → Works now (Firebase default)
@@ -268,6 +282,7 @@ Real-Time Orders & Trades
 ## 🔧 TROUBLESHOOTING
 
 **DNS Not Resolving?**
+
 ```bash
 # Flush DNS cache (Windows)
 ipconfig /flushdns
@@ -280,27 +295,31 @@ dig infinityai.pro @8.8.8.8
 ```
 
 **SSL Certificate Not Provisioning?**
+
 - Wait 5-10 minutes after DNS records added
 - Check GCP Console → Compute → SSL Certificates
 - Verify TXT record is correctly added to Namecheap
 
 **CNAME Records Not Working?**
+
 - Ensure no A records exist for the same host (CNAME conflict)
 - Use `nslookup -type=CNAME` to verify CNAME records
 
 **Subdomain Redirects Not Working?**
-- Update firebase.json with rewrites for api.*, orchestrator.*, signals.*
+
+- Update firebase.json with rewrites for api._, orchestrator._, signals.\*
 - Deploy updated firebase.json: `firebase deploy --only hosting`
 
 ---
 
 ## 📞 SUPPORT
 
-**GCP Support:** https://cloud.google.com/support  
-**Firebase Support:** https://firebase.google.com/support  
-**Namecheap Support:** https://www.namecheap.com/support/  
+**GCP Support:** https://cloud.google.com/support
+**Firebase Support:** https://firebase.google.com/support
+**Namecheap Support:** https://www.namecheap.com/support/
 
 **Project Details:**
+
 - GCP Project ID: galvanic-pulsar-482815-h0
 - Firebase Project: galvanic-pulsar-482815-h0
 - Domain: infinityai.pro
@@ -308,6 +327,6 @@ dig infinityai.pro @8.8.8.8
 
 ---
 
-**Configuration Date:** 2026-01-21  
-**Last Updated:** 2026-01-21T10:40:00Z  
+**Configuration Date:** 2026-01-21
+**Last Updated:** 2026-01-21T10:40:00Z
 **Status:** ✅ Ready for Namecheap DNS Update

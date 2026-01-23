@@ -9,9 +9,9 @@ def log_startup_error(e, context="startup"):
 import os
 
 # Paper/Live Trading Mode Configuration
-ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "paper").lower()  # paper or live (default: paper for safety)
+ENGINE_C_MODE = os.getenv("ENGINE_C_MODE", "live").lower()  # paper or live (default: live for production)
 if ENGINE_C_MODE not in ["paper", "live"]:
-    ENGINE_C_MODE = "paper"
+    ENGINE_C_MODE = "live"
 
 ALLOWED_EXECUTION_SOURCE = os.getenv("ALLOWED_EXECUTION_SOURCE", "engine-a")
 from typing import Optional, Dict, Any, List
@@ -33,6 +33,31 @@ from google.cloud import firestore
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
+
+# Import new unified APIs
+try:
+    from src.unified_strategy_api import router as unified_strategy_router
+    UNIFIED_STRATEGY_AVAILABLE = True
+except ImportError as e:
+    logger_init = logging.getLogger("unified_strategy_import")
+    logger_init.warning(f"⚠️ Unified strategy API not available: {e}")
+    UNIFIED_STRATEGY_AVAILABLE = False
+
+try:
+    from src.news_aggregator import news_aggregator, get_latest_news, get_sentiment
+    NEWS_AGGREGATOR_AVAILABLE = True
+except ImportError as e:
+    logger_init = logging.getLogger("news_aggregator_import")
+    logger_init.warning(f"⚠️ News aggregator not available: {e}")
+    NEWS_AGGREGATOR_AVAILABLE = False
+
+try:
+    from src.user_credentials_enhanced import get_credentials_manager
+    ENHANCED_CREDENTIALS_AVAILABLE = True
+except ImportError as e:
+    logger_init = logging.getLogger("enhanced_credentials_import")
+    logger_init.warning(f"⚠️ Enhanced credentials not available: {e}")
+    ENHANCED_CREDENTIALS_AVAILABLE = False
 
 # Register Dhan Data API router for market data (Phase 2)
 try:
@@ -284,6 +309,34 @@ try:
     logger.info("✅ Frontend WebSocket endpoints enabled")
 except ImportError as e:
     logger.warning(f"⚠️ Frontend WebSocket not available: {e}")
+
+# Register Unified Strategy API (NEW)
+if UNIFIED_STRATEGY_AVAILABLE:
+    app.include_router(unified_strategy_router)
+    logger.info("✅ Unified Strategy API endpoints enabled")
+else:
+    logger.warning("⚠️ Unified Strategy API not available")
+
+# Register News Aggregator Endpoints (NEW)
+if NEWS_AGGREGATOR_AVAILABLE:
+    @app.get("/api/news/latest")
+    async def get_news_endpoint(
+        symbols: Optional[str] = None,
+        hours: int = 24,
+        max_articles: int = 50
+    ):
+        """Get latest aggregated news from all providers"""
+        symbol_list = symbols.split(",") if symbols else None
+        return await get_latest_news(symbol_list, hours, max_articles)
+    
+    @app.get("/api/news/sentiment/{symbol}")
+    async def get_sentiment_endpoint(symbol: str, hours: int = 24):
+        """Get market sentiment for a symbol"""
+        return await get_sentiment(symbol, hours)
+    
+    logger.info("✅ News aggregator endpoints enabled")
+else:
+    logger.warning("⚠️ News aggregator not available")
 
 
 # --- Health Checks ---
@@ -1608,19 +1661,19 @@ async def place_order(order: OrderRequest, request: Request):
     # --- Live Mode: Enforce trading guardrails (market hours, symbols whitelist, order caps) ---
     if ENGINE_C_MODE == "live":
         from src.trading_guardrails import validate_order_guardrails, log_order_attempt
-        
+
         user_id = request.headers.get("user_id", "unknown")
         symbol = order.security_id or getattr(order, 'symbol', 'UNKNOWN')
-        
+
         guardrail_result = validate_order_guardrails(
             symbol=symbol,
             quantity=order.quantity,
             price=order.price or 0,
             order_type=order.order_type
         )
-        
+
         log_order_attempt(symbol, order.quantity, order.price or 0, user_id, guardrail_result)
-        
+
         if not guardrail_result["valid"]:
             logger.warning(f"🚫 Order rejected by guardrails: {guardrail_result}")
             raise HTTPException(

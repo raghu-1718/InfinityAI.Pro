@@ -1,8 +1,9 @@
 # Credential Architecture - InfinityAI.Pro
+
 ## Multi-Tenant Per-User DhanHQ Credentials
 
-**Last Updated:** January 20, 2026  
-**Project:** galvanic-pulsar-482815-h0  
+**Last Updated:** January 20, 2026
+**Project:** galvanic-pulsar-482815-h0
 **Architecture:** Multi-tenant with per-user broker accounts
 
 ---
@@ -12,6 +13,7 @@
 **Chosen Model:** Each user has their own DhanHQ broker account
 
 **Rationale:**
+
 - Supports multiple users trading independently
 - Each user's funds/positions isolated to their broker account
 - Regulatory compliance (trading in user's name, not platform)
@@ -24,8 +26,9 @@
 
 ### Storage: Firestore
 
-**Collection:** `dhan_credentials`  
+**Collection:** `dhan_credentials`
 **Document Structure:**
+
 ```
 dhan_credentials/{user_firebase_uid}
   ├─ user_id: string (Firebase UID)
@@ -42,6 +45,7 @@ dhan_credentials/{user_firebase_uid}
 ```
 
 **Encryption:**
+
 - **Algorithm:** AES-256-GCM
 - **Format:** `iv:tag:ciphertext` (hex-encoded, colon-separated)
 - **Key Source:** Environment variable `USER_CREDENTIALS_KEY` (32 bytes / 64 hex chars)
@@ -149,10 +153,12 @@ dhan_credentials/{user_firebase_uid}
 ## 🔧 Key Components
 
 ### UserCredentialsManager
-**File:** `backend/engine-c/src/user_credentials.py`  
+
+**File:** `backend/engine-c/src/user_credentials.py`
 **Purpose:** Manages encrypted per-user credentials in Firestore
 
 **Key Methods:**
+
 - `save_user_credentials(user_id, client_id, access_token, ...)` - Encrypts and stores
 - `get_user_credentials(user_id)` - Retrieves and decrypts
 - `resolve_user_id(user_id)` - Handles generated user IDs → Firebase UID
@@ -161,6 +167,7 @@ dhan_credentials/{user_firebase_uid}
 - `delete_user_credentials(user_id)` - Removes credentials from Firestore
 
 **Encryption Details:**
+
 ```python
 def _encrypt(self, data: str) -> str:
     nonce = os.urandom(12)  # 12-byte IV for GCM
@@ -174,10 +181,12 @@ def _encrypt(self, data: str) -> str:
 ```
 
 ### Config (Platform Defaults)
-**File:** `backend/engine-c/src/core/config.py`  
+
+**File:** `backend/engine-c/src/core/config.py`
 **Purpose:** Optional platform-wide defaults (NOT used for trading)
 
 **Values (all optional):**
+
 - `DHAN_API_BASE` - DhanHQ API base URL
 - `WEBSOCKET_URL` - DhanHQ WebSocket URL
 - `DHAN_ACCESS_TOKEN` - Platform default (unused in trading)
@@ -190,9 +199,10 @@ def _encrypt(self, data: str) -> str:
 ## 🚫 Removed Components
 
 ### dhan_credentials_manager.py
-**Status:** DEPRECATED (marked as unused)  
-**Previous Purpose:** Secret Manager integration for platform-wide credentials  
-**Removal Reason:** Architecture chose per-user credentials; platform-wide credentials not needed  
+
+**Status:** DEPRECATED (marked as unused)
+**Previous Purpose:** Secret Manager integration for platform-wide credentials
+**Removal Reason:** Architecture chose per-user credentials; platform-wide credentials not needed
 **Action:** File kept for reference with deprecation notice
 
 ---
@@ -200,7 +210,9 @@ def _encrypt(self, data: str) -> str:
 ## ✅ Security Best Practices
 
 ### 1. Encryption Key Management
+
 **Environment Variable:** `USER_CREDENTIALS_KEY`
+
 ```bash
 # Generate 32-byte key (64 hex characters)
 openssl rand -hex 32
@@ -208,6 +220,7 @@ openssl rand -hex 32
 ```
 
 **Cloud Run Setup:**
+
 ```bash
 gcloud run services update engine-c \
   --region=us-central1 \
@@ -216,6 +229,7 @@ gcloud run services update engine-c \
 ```
 
 **Alternative (Secret Manager):**
+
 ```bash
 # Store key in Secret Manager
 echo "<your-64-char-hex-key>" | gcloud secrets create user-credentials-key \
@@ -237,6 +251,7 @@ gcloud run services update engine-c \
 ```
 
 ### 2. Firestore Security Rules
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -251,6 +266,7 @@ service cloud.firestore {
 ```
 
 ### 3. API Endpoint Security
+
 - All endpoints require valid `user_id` parameter
 - Credentials retrieved only for authenticated user
 - No cross-user credential access
@@ -258,6 +274,7 @@ service cloud.firestore {
 - Decrypted only in memory (never logged)
 
 ### 4. Credential Validation
+
 ```python
 # All credentials stripped of whitespace to prevent JWT parsing errors
 access_token = access_token.strip()
@@ -273,6 +290,7 @@ api_secret = api_secret.strip() if api_secret else None
 ### For End Users
 
 **Step 1: Get DhanHQ Credentials**
+
 1. Log in to [DhanHQ Dashboard](https://dhan.co)
 2. Navigate to API Settings
 3. Copy:
@@ -282,6 +300,7 @@ api_secret = api_secret.strip() if api_secret else None
    - API Secret
 
 **Step 2: Save in InfinityAI.Pro**
+
 1. Log in to InfinityAI.Pro
 2. Go to Settings → DhanHQ Integration
 3. Paste credentials
@@ -289,6 +308,7 @@ api_secret = api_secret.strip() if api_secret else None
 5. Wait for verification ✅
 
 **Step 3: Start Trading**
+
 - Credentials are now active
 - All trading operations use your DhanHQ account
 - Funds/positions reflect your broker account
@@ -298,6 +318,7 @@ api_secret = api_secret.strip() if api_secret else None
 ## 🧪 Testing & Verification
 
 ### Test Credential Save
+
 ```bash
 curl -X POST https://engine-c-<hash>.run.app/api/v1/user/credentials \
   -H "Content-Type: application/json" \
@@ -311,6 +332,7 @@ curl -X POST https://engine-c-<hash>.run.app/api/v1/user/credentials \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "status": "success",
@@ -321,11 +343,13 @@ curl -X POST https://engine-c-<hash>.run.app/api/v1/user/credentials \
 ```
 
 ### Test Credential Retrieval
+
 ```bash
 curl https://engine-c-<hash>.run.app/api/v1/user/credentials/firebase_uid_here
 ```
 
 **Expected Response:**
+
 ```json
 {
   "status": "success",
@@ -337,11 +361,13 @@ curl https://engine-c-<hash>.run.app/api/v1/user/credentials/firebase_uid_here
 ```
 
 ### Test Trading Endpoint
+
 ```bash
 curl https://engine-c-<hash>.run.app/api/dhan/funds?user_id=firebase_uid_here
 ```
 
 **Expected Response:**
+
 ```json
 {
   "status": "success",
@@ -360,23 +386,28 @@ curl https://engine-c-<hash>.run.app/api/dhan/funds?user_id=firebase_uid_here
 ### Common Issues
 
 **Issue 1: "Credentials not found" (HTTP 401)**
+
 - **Cause:** User hasn't saved credentials in Settings page
 - **Fix:** User must input credentials via frontend Settings
 
 **Issue 2: "Credential decryption error" (HTTP 500)**
+
 - **Cause:** `USER_CREDENTIALS_KEY` mismatch or missing
 - **Fix:** Ensure same encryption key used for encrypt/decrypt
 
 **Issue 3: "DhanHQ authentication failed" (HTTP 401)**
+
 - **Cause:** Invalid/expired DhanHQ access token
 - **Fix:** User must regenerate token from DhanHQ dashboard
 
 **Issue 4: Generated user IDs not resolving**
+
 - **Cause:** Frontend sends `user_1768802144009_1jvf3b` instead of Firebase UID
 - **Fix:** `resolve_user_id()` method handles this automatically
 - **Verify:** Check Firestore document exists with Firebase UID
 
 ### Check Firestore Documents
+
 ```bash
 # List all credential documents
 gcloud firestore documents list dhan_credentials --project=galvanic-pulsar-482815-h0
@@ -386,6 +417,7 @@ gcloud firestore documents get dhan_credentials/firebase_uid_here --project=galv
 ```
 
 ### Check Logs
+
 ```bash
 # Engine-C logs
 gcloud logging read 'resource.type=cloud_run_revision AND resource.labels.service_name="engine-c"' \
@@ -449,11 +481,11 @@ gcloud logging read 'resource.type=cloud_run_revision AND resource.labels.servic
 
 ## 🎓 Summary
 
-**Architecture:** Multi-tenant per-user credentials  
-**Storage:** Firestore with AES-256-GCM encryption  
-**Flow:** Frontend Settings → Engine-C API → Firestore → Trading Endpoints  
-**Security:** User-isolated, encrypted at rest, decrypted in memory only  
-**Onboarding:** Users save their own DhanHQ credentials via Settings page  
-**Removed:** Secret Manager platform-wide credential system (deprecated)  
+**Architecture:** Multi-tenant per-user credentials
+**Storage:** Firestore with AES-256-GCM encryption
+**Flow:** Frontend Settings → Engine-C API → Firestore → Trading Endpoints
+**Security:** User-isolated, encrypted at rest, decrypted in memory only
+**Onboarding:** Users save their own DhanHQ credentials via Settings page
+**Removed:** Secret Manager platform-wide credential system (deprecated)
 
 **Result:** Clean, secure, multi-tenant trading platform with per-user broker accounts. ✅

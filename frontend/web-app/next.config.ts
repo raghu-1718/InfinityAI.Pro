@@ -17,13 +17,35 @@ const nextConfig = {
   // Remove trailing slash for API route compatibility
   // trailingSlash: true,  // REMOVED - causes issues with API routes
 
-  // Set turbopack root to resolve workspace warning
-  turbopack: {
-    root: path.resolve(__dirname, "../../"),
-  },
+  // Set turbopack root - use process.cwd() for better Docker compatibility
+  turbopack:
+    process.env.NODE_ENV === "production"
+      ? {}
+      : {
+          root: path.resolve(__dirname, "../../"),
+        },
 
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  // Webpack alias for @ -> ./src (ensures path resolution in Docker/Cloud Build)
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": path.resolve(__dirname, "src"),
+    };
+    return config;
+  },
+
+  // Turbopack experimental alias (Next.js 15+)
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        "@": "./src",
+      },
+    },
   },
 
   // Firebase configuration - matches firebase/config.ts (UNIFIED)
@@ -38,6 +60,9 @@ const nextConfig = {
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "228557716858",
     NEXT_PUBLIC_FIREBASE_APP_ID: "1:228557716858:web:d3ae59af1254d4b893aac3",
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-17NHEMLXDV",
+    // Ably Real-Time Configuration
+    // Set via Secret Manager at deployment time
+    NEXT_PUBLIC_ABLY_API_KEY: process.env.NEXT_PUBLIC_ABLY_API_KEY || "",
   },
 };
 

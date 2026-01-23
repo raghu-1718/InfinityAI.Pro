@@ -64,7 +64,7 @@ export function useRealtimeTrading(
     maxEvents?: number;
     autoReconnect?: boolean;
     reconnectDelay?: number;
-  }
+  },
 ): UseRealtimeTradingResult {
   const {
     maxEvents = 100,
@@ -204,10 +204,10 @@ export function useRealtimeTrading(
         if (autoReconnect && reconnectAttemptsRef.current < 10) {
           const delay = Math.min(
             reconnectDelay * Math.pow(2, reconnectAttemptsRef.current),
-            30000
+            30000,
           );
           console.log(
-            `🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/10)...`
+            `🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/10)...`,
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -271,7 +271,7 @@ export function useRealtimeConnectionStatus(userId: string) {
     userId,
     {
       maxEvents: 1, // Don't store events
-    }
+    },
   );
 
   return { connected, connecting, error, lastHeartbeat };

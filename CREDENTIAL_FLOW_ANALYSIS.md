@@ -1,8 +1,9 @@
 # End-to-End Credential Flow Analysis
+
 ## InfinityAI.Pro - Complete Verification Report
 
-**Date:** January 20, 2026  
-**Project:** galvanic-pulsar-482815-h0  
+**Date:** January 20, 2026
+**Project:** galvanic-pulsar-482815-h0
 **Status:** ⚠️ CRITICAL ARCHITECTURE ISSUES IDENTIFIED
 
 ---
@@ -14,12 +15,14 @@
 There are **TWO SEPARATE** credential management systems operating independently:
 
 #### System A: User-Specific Credentials (Firestore)
+
 - **Purpose:** Per-user DhanHQ credentials for multi-tenant trading
 - **Storage:** Firestore collection `dhan_credentials`
 - **Encryption:** AES-256-GCM
 - **Used By:** Frontend → Cloud Functions → Firestore → Backend API
 
-#### System B: Global Credentials (Secret Manager)  
+#### System B: Global Credentials (Secret Manager)
+
 - **Purpose:** Platform-wide DhanHQ credentials
 - **Storage:** Google Secret Manager
 - **Used By:** `dhan_credentials_manager.py` → Backend services
@@ -150,6 +153,7 @@ There are **TWO SEPARATE** credential management systems operating independently
 
 **File:** `frontend/web-app/src/app/(dashboard)/settings/page.tsx`
 **Lines:** 116-126
+
 ```tsx
 const response = await fetch(`${ENGINE_C_URL}/api/user/credentials`, {
   method: "POST",
@@ -166,8 +170,9 @@ const response = await fetch(`${ENGINE_C_URL}/api/user/credentials`, {
 
 ### 2. Backend Saves to Firestore
 
-**File:** `backend/engine-c/src/user_credentials.py`  
+**File:** `backend/engine-c/src/user_credentials.py`
 **Lines:** 135-204 (save_user_credentials method)
+
 ```python
 # Encrypt sensitive credentials
 encrypted_credentials = {
@@ -181,38 +186,41 @@ encrypted_credentials = {
 doc_ref = self.db.collection(self.collection).document(user_id)
 doc_ref.set(doc_data, merge=True)
 ```
-**Collection:** `dhan_credentials`  
+
+**Collection:** `dhan_credentials`
 **Document ID:** `user_id` (Firebase UID)
 
 ### 3. Backend Retrieves from Firestore for Trading
 
-**File:** `backend/engine-c/src/user_credentials.py`  
+**File:** `backend/engine-c/src/user_credentials.py`
 **Lines:** 206-297 (get_user_credentials method)
+
 ```python
 async def get_user_credentials(self, user_id: str) -> Optional[Dict[str, Any]]:
     doc_ref = self.db.collection(self.collection).document(user_id)
     doc = doc_ref.get()
-    
+
     if not doc.exists:
         return None
-    
+
     data = doc.to_dict()
     # Decrypt and return credentials
 ```
 
-**File:** `backend/engine-c/src/user_credentials.py`  
+**File:** `backend/engine-c/src/user_credentials.py`
 **Lines:** 440-506 (get_dhan_client_async method)
+
 ```python
 async def get_dhan_client_async(user_id: str):
     """Get DhanHQ client for specific user from Firestore credentials"""
     manager = UserCredentialsManager()
-    
+
     # Resolve user ID (handles generated IDs)
     resolved_user_id = await manager.resolve_user_id(user_id)
-    
+
     # Get credentials from Firestore
     creds = await manager.get_user_credentials(resolved_user_id)
-    
+
     # Create authenticated client
     client = create_dhan_client(
         client_id=creds["credentials"]["client_id"],
@@ -223,8 +231,9 @@ async def get_dhan_client_async(user_id: str):
 
 ### 4. Secret Manager System (Created but Unused)
 
-**File:** `backend/engine-c/src/dhan_credentials_manager.py`  
+**File:** `backend/engine-c/src/dhan_credentials_manager.py`
 **Lines:** 1-161 (entire file)
+
 ```python
 class DhanCredentialsManager:
     def get_api_key(self) -> str:
@@ -235,13 +244,14 @@ class DhanCredentialsManager:
         return os.getenv("DHAN_API_KEY")
 ```
 
-**File:** `backend/engine-c/src/core/config.py`  
+**File:** `backend/engine-c/src/core/config.py`
 **Lines:** 23-41
+
 ```python
 try:
     from ..dhan_credentials_manager import get_credentials_manager
     _creds_mgr = get_credentials_manager()
-    
+
     Config.DHAN_ACCESS_TOKEN = _creds_mgr.get_access_token()
     Config.CLIENT_ID = _creds_mgr.get_client_id()
     Config.DHAN_API_KEY = _creds_mgr.get_api_key()
@@ -257,8 +267,9 @@ except Exception as e:
 ## 🔐 Encryption & Security Analysis
 
 ### Firestore User Credentials
+
 - **Algorithm:** AES-256-GCM
-- **Key Source:** 
+- **Key Source:**
   1. Environment variable `USER_CREDENTIALS_KEY` (64-char hex = 32 bytes)
   2. Secret Manager `user-credentials-key`
   3. Fallback: Insecure derived key
@@ -267,6 +278,7 @@ except Exception as e:
 - **Access:** Backend has Firestore admin access
 
 ### Secret Manager Credentials
+
 - **Storage:** Google Secret Manager
 - **Secrets:**
   - `dhan-api-key`
@@ -283,12 +295,14 @@ except Exception as e:
 ### Problem 1: Credentials You Provided Are Not Being Used
 
 **You provided:**
+
 - API Key: b76a41e2
 - API Secret: 3b27c08e-797c-40e4-8e80-0498ea853236
 - Client ID: 1101302170
 - Access Token: eyJ0eXAi...
 
 **Current System Behavior:**
+
 1. If stored in Secret Manager → Config loads them → **UNUSED** (no endpoint reads Config for trading)
 2. If NOT stored in Firestore per-user → **Error 808** when user tries to trade
 3. System expects **each user** to input their own credentials in Settings page
@@ -313,6 +327,7 @@ except Exception as e:
 ### Problem 4: Error 808 Will Persist
 
 **Current Flow:**
+
 ```
 User logs in → Settings page loads
 User tries to trade → Backend calls get_dhan_client_async(user_id)
@@ -322,6 +337,7 @@ Trading endpoints fail → Error 808 "Client ID or Token invalid"
 ```
 
 **Even if you store credentials in Secret Manager:**
+
 ```
 Secrets created → Config.py loads them
 User tries to trade → get_dhan_client_async(user_id)
@@ -337,6 +353,7 @@ Config values ignored → Error 808
 ### Solution 1: Use Firestore User Credentials (Current Architecture)
 
 **For Your Account:**
+
 1. Log into frontend with your Firebase UID
 2. Go to Settings page
 3. Input your DhanHQ credentials:
@@ -359,6 +376,7 @@ Config values ignored → Error 808
 **Modify:** `user_credentials.py::get_dhan_client_async()`
 
 **Current Code (Lines 440-506):**
+
 ```python
 async def get_dhan_client_async(user_id: str):
     manager = UserCredentialsManager()
@@ -368,17 +386,18 @@ async def get_dhan_client_async(user_id: str):
 ```
 
 **New Code (with Secret Manager fallback):**
+
 ```python
 async def get_dhan_client_async(user_id: str):
     manager = UserCredentialsManager()
     resolved_user_id = await manager.resolve_user_id(user_id)
     creds = await manager.get_user_credentials(resolved_user_id)
-    
+
     # NEW: Fallback to platform credentials if user credentials missing
     if not creds or not creds.get("credentials"):
         from .dhan_credentials_manager import get_credentials_manager
         platform_creds = get_credentials_manager()
-        
+
         creds = {
             "credentials": {
                 "client_id": platform_creds.get_client_id(),
@@ -388,7 +407,7 @@ async def get_dhan_client_async(user_id: str):
             }
         }
         logger.info(f"Using platform credentials for user {user_id}")
-    
+
     # Create client
     client = create_dhan_client(
         client_id=creds["credentials"]["client_id"],
@@ -397,7 +416,8 @@ async def get_dhan_client_async(user_id: str):
     return client
 ```
 
-**Result:** 
+**Result:**
+
 - Users with their own credentials → Use their credentials
 - Users without credentials → Use platform credentials from Secret Manager
 - **YOUR** credentials work for all users (single DhanHQ account)
@@ -407,6 +427,7 @@ async def get_dhan_client_async(user_id: str):
 ### Solution 3: Migrate Firestore to Secret Manager (Advanced)
 
 **Steps:**
+
 1. Retrieve all documents from `dhan_credentials` collection
 2. For each user:
    - Decrypt Firestore credentials
@@ -414,7 +435,7 @@ async def get_dhan_client_async(user_id: str):
 3. Update `get_user_credentials()` to read from Secret Manager
 4. Deprecate Firestore storage
 
-**Pros:** Centralized secret management, better security  
+**Pros:** Centralized secret management, better security
 **Cons:** Complexity, IAM management per user
 
 ---
@@ -422,6 +443,7 @@ async def get_dhan_client_async(user_id: str):
 ## 📋 Verification Checklist
 
 ### Current State (As-Is)
+
 - ✅ Frontend saves credentials to Firestore via Engine-C API
 - ✅ Backend encrypts credentials with AES-256-GCM
 - ✅ Firestore collection `dhan_credentials` stores encrypted data
@@ -434,12 +456,14 @@ async def get_dhan_client_async(user_id: str):
 - ❌ Error 808 persists if user credentials missing in Firestore
 
 ### What Works
+
 - Users can save credentials via Settings page
 - Backend stores in Firestore securely
 - Backend retrieves for trading operations
 - Encryption/decryption working (AES-256-GCM)
 
 ### What Doesn't Work
+
 - Platform-wide credentials from Secret Manager (not integrated)
 - Error 808 if user hasn't saved credentials in Settings
 - `dhan_credentials_manager.py` is dead code
@@ -449,8 +473,10 @@ async def get_dhan_client_async(user_id: str):
 ## 🎯 Recommended Action Plan
 
 ### Option A: Quick Fix (Use Firestore for Your Account)
-**Time:** 2 minutes  
+
+**Time:** 2 minutes
 **Steps:**
+
 1. Open frontend Settings page
 2. Input your credentials
 3. Click Save
@@ -461,8 +487,10 @@ async def get_dhan_client_async(user_id: str):
 ---
 
 ### Option B: Integrate Secret Manager (Platform-Wide)
-**Time:** 15 minutes  
+
+**Time:** 15 minutes
 **Steps:**
+
 1. Store credentials in Secret Manager (your provided values)
 2. Grant IAM access to Cloud Run service account
 3. Modify `get_dhan_client_async()` to fallback to platform credentials
@@ -474,8 +502,10 @@ async def get_dhan_client_async(user_id: str):
 ---
 
 ### Option C: Verify Current Flow (No Changes)
-**Time:** 10 minutes  
+
+**Time:** 10 minutes
 **Steps:**
+
 1. Check Firestore: `dhan_credentials/{your_firebase_uid}`
 2. Verify encryption key: `USER_CREDENTIALS_KEY` env var
 3. Test save credentials API endpoint
@@ -488,13 +518,13 @@ async def get_dhan_client_async(user_id: str):
 
 ## 📊 Summary Table
 
-| Component | Purpose | Storage | Used By | Status |
-|-----------|---------|---------|---------|--------|
-| **UserCredentialsManager** | Per-user credentials | Firestore `dhan_credentials` | All trading endpoints | ✅ Active |
-| **DhanCredentialsManager** | Platform credentials | Secret Manager | Config.py only | ❌ Unused |
-| **Frontend Settings** | Credential input UI | → Engine-C API → Firestore | Users | ✅ Active |
-| **Config.py values** | Startup config | Memory (from Secret Manager) | None | ❌ Orphaned |
-| **Error 808 Issue** | Missing credentials | Firestore lookup failure | Users without saved creds | 🔴 Active Bug |
+| Component                  | Purpose              | Storage                      | Used By                   | Status        |
+| -------------------------- | -------------------- | ---------------------------- | ------------------------- | ------------- |
+| **UserCredentialsManager** | Per-user credentials | Firestore `dhan_credentials` | All trading endpoints     | ✅ Active     |
+| **DhanCredentialsManager** | Platform credentials | Secret Manager               | Config.py only            | ❌ Unused     |
+| **Frontend Settings**      | Credential input UI  | → Engine-C API → Firestore   | Users                     | ✅ Active     |
+| **Config.py values**       | Startup config       | Memory (from Secret Manager) | None                      | ❌ Orphaned   |
+| **Error 808 Issue**        | Missing credentials  | Firestore lookup failure     | Users without saved creds | 🔴 Active Bug |
 
 ---
 

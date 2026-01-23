@@ -1,5 +1,5 @@
 steps:
-  # Step 1: Build Docker image
+  # Step 1: Build Docker image from root context to include tsconfig.base.json
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
@@ -8,16 +8,24 @@ steps:
       - "-t"
       - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
       - "-f"
-      - "Dockerfile"
+      - "frontend/web-app/Dockerfile"
       - "."
     id: "build-image"
 
-  # Step 2: Push to Artifact Registry
+  # Step 2: Push to Artifact Registry (latest)
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
       - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
-    id: "push-image"
+    id: "push-image-latest"
+    waitFor: ["build-image"]
+
+  # Step 2b: Push to Artifact Registry (SHA)
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+    id: "push-image-sha"
     waitFor: ["build-image"]
 
   # Step 3: Deploy to Cloud Run with Ably Subscribe-Only Key
@@ -49,7 +57,7 @@ steps:
       - "--project"
       - "galvanic-pulsar-482815-h0"
     id: "deploy-cloud-run"
-    waitFor: ["push-image"]
+    waitFor: ["push-image-latest"]
 
 images:
   - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"

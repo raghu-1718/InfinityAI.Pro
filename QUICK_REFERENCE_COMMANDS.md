@@ -1,6 +1,6 @@
 # Quick Reference: Production Verification Commands
 
-**Last Updated**: 2026-01-19 11:45 IST  
+**Last Updated**: 2026-01-19 11:45 IST
 **Project**: InfinityAI.Pro (galvanic-pulsar-482815-h0)
 
 ---
@@ -69,9 +69,10 @@ cd C:\workspace\InfinityAI.Pro
 python monitor_24h.py
 ```
 
-**Runs**: Continuously for 24 hours  
-**Checks**: Every 5 minutes  
-**Output**: 
+**Runs**: Continuously for 24 hours
+**Checks**: Every 5 minutes
+**Output**:
+
 - `24hour_monitoring.log` (live logs)
 - `24hour_monitoring_report.json` (final report)
 
@@ -266,6 +267,7 @@ git log --oneline -5
 ```
 
 Expected last 2 commits:
+
 ```
 92e979a7 docs: Add end-to-end test results and 24-hour monitoring setup
 cea438a7 fix: Remove backtest features and fix market-data-ingestion endpoint
@@ -343,6 +345,7 @@ gcloud logging read "resource.labels.job_name=market-data-publisher" --limit=20
 ## Success Indicators
 
 ✅ **System is healthy when**:
+
 - market-data-ingestion returns HTTP 200
 - Engine-C /api/system/status returns "NORMAL"
 - Cloud Schedulers all ENABLED
@@ -351,6 +354,7 @@ gcloud logging read "resource.labels.job_name=market-data-publisher" --limit=20
 - Pub/Sub messages flowing
 
 ❌ **Alert when**:
+
 - HTTP 404 errors detected
 - Error rate >1%
 - Response time >2 seconds
@@ -375,12 +379,11 @@ gcloud logging read "resource.labels.job_name=market-data-publisher" --limit=20
 
 ## Emergency Contacts
 
-**Issues**: Check logs first, then escalate  
-**Documentation**: See README files  
-**Monitoring**: Run `python monitor_24h.py`  
+**Issues**: Check logs first, then escalate
+**Documentation**: See README files
+**Monitoring**: Run `python monitor_24h.py`
 **Support**: Review troubleshooting section above
 
 ---
 
 **Next Review**: 2026-01-20 11:45 IST (24-hour check)
-

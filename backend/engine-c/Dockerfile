@@ -1,6 +1,6 @@
 # =====================================================================
 # InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)
-# Standalone Dockerfile for Cloud Run deployment from backend/engine-c
+# Fixed Dockerfile for Cloud Run deployment from backend/engine-c
 # =====================================================================
 FROM python:3.11-slim
 
@@ -16,16 +16,18 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy shared modules from parent directory
-COPY ../shared /app/shared
-
 # Copy engine-c source code
 COPY src /app/src
+
+# Copy shared modules if they exist (optional)
+# Note: Cloud Build will handle this from the build context
+RUN mkdir -p /app/shared
 
 # Environment variables
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/src:/app/shared
+ENV ENGINE_C_MODE=live
 
 EXPOSE 8080
 

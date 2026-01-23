@@ -1,7 +1,7 @@
 # Frontend Integration Status & Configuration Analysis
 
-**Date:** January 20, 2026  
-**User:** raghuyuvi10@gmail.com  
+**Date:** January 20, 2026
+**User:** raghuyuvi10@gmail.com
 **Engine-C Revision:** engine-c-00084-j9h
 
 ---
@@ -9,6 +9,7 @@
 ## 1. Configuration Status
 
 ### ✅ Environment Variables (.env.local)
+
 ```env
 NEXT_PUBLIC_ENGINE_A_URL=https://engine-a-228557716858.us-central1.run.app
 NEXT_PUBLIC_ENGINE_B_URL=https://engine-b-228557716858.us-central1.run.app
@@ -18,19 +19,21 @@ NEXT_PUBLIC_ENGINE_C_URL=https://engine-c-228557716858.us-central1.run.app ✅ C
 ### ⚠️ Hardcoded Fallback URLs in api.ts
 
 **Current State:**
+
 ```typescript
 // Line 27 in src/lib/api.ts
 export const getEngineCUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-3acobgd3qa-uc.a.run.app"  // ❌ OLD URL
+    "https://engine-c-3acobgd3qa-uc.a.run.app" // ❌ OLD URL
   );
 };
 ```
 
 **Issue:** Fallback URL points to old service instance that may not exist or have outdated code.
 
-**Impact:** 
+**Impact:**
+
 - If environment variable not loaded properly, frontend will call wrong backend
 - Development builds might use old URL
 - Production deployments without proper env vars will fail
@@ -41,18 +44,18 @@ export const getEngineCUrl = () => {
 
 ### Engine-C Endpoints Called by Frontend
 
-| Endpoint | Method | Hook/Component | Purpose |
-|----------|--------|----------------|---------|
-| `/api/health` | GET | useEngineHealth | Health check |
-| `/api/dhan/funds` | GET | engineC.getDhanFunds | Fetch user funds |
-| `/api/dhan/positions` | GET | engineC.getDhanPositions | Fetch positions |
-| `/api/dhan/orders` | GET | engineC.getDhanOrders | Fetch orders |
-| `/api/dhan/holdings` | GET | engineC.getDhanHoldings | Fetch holdings |
-| `/api/dhan/market/quotes` | GET | engineC.getMarketQuotes | Live market data |
-| `/api/v1/execution/analytics` | POST | useExecutionAnalytics | Execution stats |
-| `/api/user/credentials` | POST/DELETE | Settings page | Save/delete credentials |
-| `/api/trading-settings/{userId}` | GET/POST | Auto-trading settings | Trading config |
-| `/api/background-trading/start` | POST | Auto-trading | Start persistent trading |
+| Endpoint                         | Method      | Hook/Component           | Purpose                  |
+| -------------------------------- | ----------- | ------------------------ | ------------------------ |
+| `/api/health`                    | GET         | useEngineHealth          | Health check             |
+| `/api/dhan/funds`                | GET         | engineC.getDhanFunds     | Fetch user funds         |
+| `/api/dhan/positions`            | GET         | engineC.getDhanPositions | Fetch positions          |
+| `/api/dhan/orders`               | GET         | engineC.getDhanOrders    | Fetch orders             |
+| `/api/dhan/holdings`             | GET         | engineC.getDhanHoldings  | Fetch holdings           |
+| `/api/dhan/market/quotes`        | GET         | engineC.getMarketQuotes  | Live market data         |
+| `/api/v1/execution/analytics`    | POST        | useExecutionAnalytics    | Execution stats          |
+| `/api/user/credentials`          | POST/DELETE | Settings page            | Save/delete credentials  |
+| `/api/trading-settings/{userId}` | GET/POST    | Auto-trading settings    | Trading config           |
+| `/api/background-trading/start`  | POST        | Auto-trading             | Start persistent trading |
 
 ---
 
@@ -75,6 +78,7 @@ Live Market Data & Account Info
 ```
 
 ### Current User ID Used
+
 - **Frontend:** `raghuyuvi10@gmail.com` (Firebase Auth email)
 - **Backend Firestore Lookup:** Searches by:
   1. Document ID = `raghuyuvi10@gmail.com`
@@ -98,6 +102,7 @@ useExpiredOptions(symbol, date)           // Expired options data
 ```
 
 **Configuration:**
+
 - Uses `engineC.getMarketQuotes()` from `lib/api.ts`
 - Auto-refresh intervals:
   - Market Quotes: 5 seconds
@@ -114,7 +119,7 @@ export function LiveMarketQuotes() {
   const { connectionState, error } = useMarketData((data) => {
     // Updates quotes via Ably real-time streaming
   });
-  
+
   // Shows: Symbol, LTP, Bid, Ask, Change%, Trend
 }
 ```
@@ -128,16 +133,18 @@ export function LiveMarketQuotes() {
 ### Main Dashboard (app/(dashboard)/page.tsx)
 
 **Data Sources:**
+
 ```typescript
-const { data: systemState } = useSystemState();        // Engine health
-const { data: engineHealth } = useEngineHealth();      // Engine status
-const { data: userAccount } = useUserAccount();        // Funds & holdings
-const { data: positionsRes } = usePositions();         // Active positions
-const { data: signalsRes } = useSignals();             // AI signals
+const { data: systemState } = useSystemState(); // Engine health
+const { data: engineHealth } = useEngineHealth(); // Engine status
+const { data: userAccount } = useUserAccount(); // Funds & holdings
+const { data: positionsRes } = usePositions(); // Active positions
+const { data: signalsRes } = useSignals(); // AI signals
 const { data: executionStats } = useExecutionAnalytics(); // Performance stats
 ```
 
 **Displayed Metrics:**
+
 - Portfolio Value (Funds + Holdings)
 - Today's P&L (Realized + Unrealized)
 - Active Positions Count (Options vs Equity)
@@ -146,6 +153,7 @@ const { data: executionStats } = useExecutionAnalytics(); // Performance stats
 - Trading Engine Status
 
 **Current Status:**
+
 - ✅ Health checks working
 - ✅ Funds endpoint returning data (verified with raghuyuvi10@gmail.com)
 - ✅ Positions endpoint working
@@ -161,18 +169,21 @@ const { data: executionStats } = useExecutionAnalytics(); // Performance stats
 **File:** `src/hooks/useRealtimeTrading.ts`
 
 ```typescript
-const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL ||
+const ENGINE_C_URL =
+  process.env.NEXT_PUBLIC_ENGINE_C_URL ||
   "https://engine-c-3acobgd3qa-uc.a.run.app"; // ⚠️ OLD FALLBACK
 
 // SSE Endpoint: ${ENGINE_C_URL}/api/realtime/stream/${userId}
 ```
 
 **Streams:**
+
 - `useMarketData()` - Live market quotes
 - `usePortfolioUpdates()` - Position/order updates
 - `useRealtimeTrading()` - Trade execution events
 
 **Configuration Required:**
+
 - Ably API key in environment (already configured)
 - Engine-C SSE endpoint for streaming
 
@@ -183,6 +194,7 @@ const ENGINE_C_URL = process.env.NEXT_PUBLIC_ENGINE_C_URL ||
 ### Dashboard View (When Logged In as raghuyuvi10@gmail.com)
 
 #### Top Section
+
 ```
 Welcome back, [Name from profile or clientId]
 [Date] • [Time]
@@ -190,6 +202,7 @@ Welcome back, [Name from profile or clientId]
 ```
 
 #### Quick Stats Cards
+
 ```
 ┌─────────────────────┐  ┌─────────────────────┐
 │ Portfolio Value     │  │ Today's P&L         │
@@ -205,15 +218,17 @@ Welcome back, [Name from profile or clientId]
 ```
 
 #### Trading Engine Control Panel
+
 ```
 🧠 Trading Engine
    AI-Powered Automated Trading
-   
+
    Status: [Active / Inactive]
    [Start Engine] / [Stop Engine] button
 ```
 
 #### Live Market Quotes (if enabled)
+
 ```
 ┌─────────────────────┐
 │ NIFTY 50            │
@@ -224,6 +239,7 @@ Welcome back, [Name from profile or clientId]
 ```
 
 #### Active Positions Table
+
 ```
 Symbol | Type    | Qty | Entry | Current | P&L      | Action
 -------|---------|-----|-------|---------|----------|--------
@@ -232,6 +248,7 @@ BANKNIF| PUT     | 25  | 200   | 195     | -₹125    | [Exit]
 ```
 
 #### AI Signals Panel
+
 ```
 📡 Latest AI Signals
 
@@ -249,13 +266,15 @@ HOLD RELIANCE Confidence: 60% [Ignore]
 **File:** `frontend/web-app/src/lib/api.ts` (Line 27)
 
 **Problem:**
+
 ```typescript
-"https://engine-c-3acobgd3qa-uc.a.run.app"  // Wrong fallback
+"https://engine-c-3acobgd3qa-uc.a.run.app"; // Wrong fallback
 ```
 
 **Should Be:**
+
 ```typescript
-"https://engine-c-228557716858.us-central1.run.app"  // Correct production URL
+"https://engine-c-228557716858.us-central1.run.app"; // Correct production URL
 ```
 
 **Fix Required:** Update all three engine fallback URLs to match actual deployed services.
@@ -265,6 +284,7 @@ HOLD RELIANCE Confidence: 60% [Ignore]
 **File:** `frontend/web-app/src/lib/api.ts` (Line 1348)
 
 **Current:**
+
 ```typescript
 async getMarketQuotes(
   userId: string,
@@ -284,6 +304,7 @@ async getMarketQuotes(
 ```
 
 **Hook Usage:**
+
 ```typescript
 // File: src/hooks/useDhanData.ts
 export function useMarketQuotes(symbols: string[], enabled: boolean = true) {
@@ -329,6 +350,7 @@ GET /api/dhan/market/quotes?security_ids=13&exchange_segment=IDX_I&user_id=raghu
 ### ⏳ Frontend Tests Pending
 
 **Need to verify:**
+
 1. Dashboard loads without errors
 2. Portfolio metrics display correct values
 3. Market quotes auto-refresh every 5 seconds
@@ -346,26 +368,27 @@ GET /api/dhan/market/quotes?security_ids=13&exchange_segment=IDX_I&user_id=raghu
 **File:** `frontend/web-app/src/lib/api.ts`
 
 **Change Lines 9, 16, 27:**
+
 ```typescript
 // OLD (WRONG)
 export const getEngineAUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-3acobgd3qa-uc.a.run.app"  // ❌
+    "https://engine-a-3acobgd3qa-uc.a.run.app" // ❌
   );
 };
 
 export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-3acobgd3qa-uc.a.run.app"  // ❌
+    "https://engine-b-3acobgd3qa-uc.a.run.app" // ❌
   );
 };
 
 export const getEngineCUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-3acobgd3qa-uc.a.run.app"  // ❌
+    "https://engine-c-3acobgd3qa-uc.a.run.app" // ❌
   );
 };
 
@@ -373,21 +396,21 @@ export const getEngineCUrl = () => {
 export const getEngineAUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-228557716858.us-central1.run.app"  // ✅
+    "https://engine-a-228557716858.us-central1.run.app" // ✅
   );
 };
 
 export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-228557716858.us-central1.run.app"  // ✅
+    "https://engine-b-228557716858.us-central1.run.app" // ✅
   );
 };
 
 export const getEngineCUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-228557716858.us-central1.run.app"  // ✅
+    "https://engine-c-228557716858.us-central1.run.app" // ✅
   );
 };
 ```
@@ -397,6 +420,7 @@ export const getEngineCUrl = () => {
 **File:** `frontend/web-app/src/hooks/useDhanData.ts`
 
 **Change Line 52:**
+
 ```typescript
 // OLD
 export function useMarketQuotes(symbols: string[], enabled: boolean = true) {
@@ -415,7 +439,7 @@ import { getUserId } from '@/lib/user';
 
 export function useMarketQuotes(symbols: string[], enabled: boolean = true) {
   const userId = getUserId(); // ✅ Get from context
-  
+
   return useQuery({
     queryKey: ['market', 'quotes', symbols.join(','), userId],
     queryFn: async () => {
@@ -471,6 +495,7 @@ gcloud run deploy web-app \
 ## 11. Summary
 
 ### ✅ What's Working
+
 - Backend engine-c deployed and tested (revision 00084-j9h)
 - All API endpoints returning HTTP 200 with valid data
 - Credentials stored and resolved correctly
@@ -478,6 +503,7 @@ gcloud run deploy web-app \
 - Environment variables configured in .env.local
 
 ### ⚠️ What Needs Fixing
+
 - **CRITICAL:** Hardcoded fallback URLs in api.ts point to old/wrong services
 - **HIGH:** Market quotes hook missing userId parameter
 - **MEDIUM:** Frontend not yet redeployed with latest env vars

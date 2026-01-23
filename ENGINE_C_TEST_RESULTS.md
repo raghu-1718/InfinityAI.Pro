@@ -1,8 +1,8 @@
 # Engine-C Deployment & Test Results
 
-**Date:** January 20, 2026  
-**Time:** 15:47 IST  
-**Revision:** engine-c-00084-j9h  
+**Date:** January 20, 2026
+**Time:** 15:47 IST
+**Revision:** engine-c-00084-j9h
 **Status:** ✅ DEPLOYED SUCCESSFULLY
 
 ---
@@ -27,51 +27,57 @@
 ## 🧪 Smoke Test Results
 
 ### Test 1: Health Check
+
 - **Endpoint:** `/api/health`
 - **Result:** ✅ PASS
 - **Status:** `ok`
 - **Trading Mode:** `paper`
 
 ### Test 2: Execution Analytics Alias
+
 - **Endpoint:** `/api/v1/execution/analytics` (POST)
 - **Before:** HTTP 404
 - **After:** ✅ HTTP 200
 - **Result:** ✅ PASS - Route successfully registered
 
 ### Test 3: Market Quotes (Data Router)
+
 - **Endpoint:** `/api/dhan/market/quotes`
 - **Before:** HTTP 404
 - **After:** ✅ HTTP 401 (credentials missing)
 - **Result:** ✅ PASS - Router mounted, proper auth check
 
 ### Test 4: Funds Endpoint
+
 - **Endpoint:** `/api/dhan/funds`
 - **Before:** HTTP 500 (masking credential errors)
 - **After:** ✅ HTTP 401 (User credentials not found or invalid)
 - **Result:** ✅ PASS - Proper error propagation
 
 ### Test 5: Positions Endpoint
+
 - **Endpoint:** `/api/dhan/positions`
 - **Expected:** HTTP 401 for missing credentials
 - **Result:** ✅ PASS
 
 ### Test 6: Orders Endpoint
+
 - **Endpoint:** `/api/dhan/orders`
-- **Expected:** HTTP 401 for missing credentials  
+- **Expected:** HTTP 401 for missing credentials
 - **Result:** ✅ PASS
 
 ---
 
 ## 📊 Summary
 
-| Test | Before | After | Status |
-|------|--------|-------|--------|
-| Health | N/A | 200 OK | ✅ |
-| Analytics Alias | 404 | 200 OK | ✅ |
-| Market Quotes | 404 | 401 | ✅ |
-| Funds | 500 | 401 | ✅ |
-| Positions | 500 | 401 | ✅ |
-| Orders | 500 | 401 | ✅ |
+| Test            | Before | After  | Status |
+| --------------- | ------ | ------ | ------ |
+| Health          | N/A    | 200 OK | ✅     |
+| Analytics Alias | 404    | 200 OK | ✅     |
+| Market Quotes   | 404    | 401    | ✅     |
+| Funds           | 500    | 401    | ✅     |
+| Positions       | 500    | 401    | ✅     |
+| Orders          | 500    | 401    | ✅     |
 
 **Overall:** 6/6 tests passing ✅
 
@@ -80,6 +86,7 @@
 ## 🔍 Logs Verification
 
 Checked Cloud Run logs - confirming:
+
 - ✅ Data router registration message present
 - ✅ Analytics alias route registered
 - ✅ Credential resolution attempts logged
@@ -122,8 +129,7 @@ Checked Cloud Run logs - confirming:
 - `a5122499` - Update Dockerfile and add gcloudignore
 - `28576270` - Add Cloud Run deployment step to cloudbuild.yaml
 
-**Deployed Revision:** engine-c-00084-j9h  
-**Deployment Time:** 2026-01-20 15:47:00 IST  
-**Build Duration:** ~4 minutes  
+**Deployed Revision:** engine-c-00084-j9h
+**Deployment Time:** 2026-01-20 15:47:00 IST
+**Build Duration:** ~4 minutes
 **Test Duration:** ~2 minutes
-

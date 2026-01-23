@@ -201,82 +201,100 @@ class UserCredentialsManager:
     async def get_user_credentials(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
         Retrieve and decrypt user's Dhan credentials.
-        Handles both Backend (snake_case, nested) and Frontend (CamelCase, flat) formats.
+        PRIORITY: Frontend's flat CamelCase format (clientId, accessToken, apiKey, apiSecret)
+        All fields are encrypted with AES-256-GCM using ENCRYPTION_KEY env var.
         """
         try:
             doc_ref = self.db.collection(self.collection).document(user_id)
             doc = doc_ref.get()
 
             if not doc.exists:
+                logger.warning(f"No credentials document found for user: {user_id}")
                 return None
 
             data = doc.to_dict()
+            logger.info(f"Retrieved credentials document for {user_id}, fields: {list(data.keys())}")
 
-            # 1. Try Nested Backend Format
-            encrypted_creds = data.get("credentials", {})
-
+            # Frontend format (PRIORITY): clientId, accessToken, apiKey, apiSecret (all encrypted)
+            # This is what submitDhanCredentialsV2 Cloud Function writes
             client_id = None
             access_token = None
             api_key = None
             api_secret = None
 
-            if encrypted_creds:
-                client_id_enc = encrypted_creds.get("client_id")
-                # Check if client_id is encrypted (frontend does encrypt it, backend usually doesn't)
-                # If it looks like iv:tag:ciphertext, decrypt it.
-                if client_id_enc and ":" in client_id_enc:
-                     try:
-                         client_id = self._decrypt(client_id_enc)
-                     except:
-                         client_id = client_id_enc
-                else:
-                     client_id = client_id_enc
-
+            # Try Frontend Format First (CamelCase, all encrypted)
+            if data.get("clientId"):
                 try:
-                    access_token = self._decrypt(encrypted_creds.get("access_token"))
-                except Exception:
-                    access_token = encrypted_creds.get("access_token")
+                    client_id = self._decrypt(data.get("clientId"))
+                    logger.info(f"✅ Decrypted clientId for {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to decrypt clientId: {e}")
 
+            if data.get("accessToken"):
                 try:
-                    api_key = self._decrypt(encrypted_creds.get("api_key"))
-                except Exception:
-                    api_key = encrypted_creds.get("api_key")
+                    access_token = self._decrypt(data.get("accessToken"))
+                    logger.info(f"✅ Decrypted accessToken for {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to decrypt accessToken: {e}")
 
+            if data.get("apiKey"):
                 try:
-                    api_secret = self._decrypt(encrypted_creds.get("api_secret"))
-                except Exception:
-                    api_secret = encrypted_creds.get("api_secret")
+                    api_key = self._decrypt(data.get("apiKey"))
+                    logger.info(f"✅ Decrypted apiKey for {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to decrypt apiKey: {e}")
 
-            # 2. Fallback to Flat Frontend Format (CamelCase)
-            if not client_id or not access_token:
-                 # Frontend: clientId, accessToken, apiKey, apiSecret
-                 # All are encrypted by frontend
-                 try:
-                     if not client_id and data.get("clientId"):
-                         client_id = self._decrypt(data.get("clientId"))
+            if data.get("apiSecret"):
+                try:
+                    api_secret = self._decrypt(data.get("apiSecret"))
+                    logger.info(f"✅ Decrypted apiSecret for {user_id}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to decrypt apiSecret: {e}")
 
-                     if not access_token and data.get("accessToken"):
-                         access_token = self._decrypt(data.get("accessToken"))
+            # Fallback: Try nested backend format (credentials.client_id) if frontend format not found
+            if not client_id:
+                encrypted_creds = data.get("credentials", {})
+                if encrypted_creds:
+                    logger.info(f"Trying nested backend format for {user_id}")
+                    try:
+                        # Backend format may or may not encrypt client_id
+                        client_id_val = encrypted_creds.get("client_id")
+                        if client_id_val and ":" in str(client_id_val):
+                            client_id = self._decrypt(client_id_val)
+                        else:
+                            client_id = client_id_val
+                        
+                        if encrypted_creds.get("access_token"):
+                            access_token = self._decrypt(encrypted_creds.get("access_token"))
+                        if encrypted_creds.get("api_key"):
+                            api_key = self._decrypt(encrypted_creds.get("api_key"))
+                        if encrypted_creds.get("api_secret"):
+                            api_secret = self._decrypt(encrypted_creds.get("api_secret"))
+                    except Exception as e:
+                        logger.warning(f"Backend format decryption failed: {e}")
 
-                     if not api_key and data.get("apiKey"):
-                         api_key = self._decrypt(data.get("apiKey"))
-
-                     if not api_secret and data.get("apiSecret"):
-                         api_secret = self._decrypt(data.get("apiSecret"))
-                 except Exception as dec_err:
-                     logger.warning(f"Frontend format decryption failed: {dec_err}")
-
-            if not client_id or not access_token:
-                 logger.warning(f"Incomplete credentials for {user_id}")
-                 # Return something indicating config mismatch if partial data found
-                 return {
+            # Validate we have minimum required credentials
+            if not client_id:
+                logger.error(f"❌ No client_id found for {user_id}")
+                return {
                     "user_id": user_id,
                     "connection_status": "incomplete",
                     "is_active": False,
-                    "credentials": {}
-                 }
+                    "credentials": {},
+                    "error": "Missing client_id"
+                }
 
-            # Decrypt credentials
+            if not access_token and not api_key:
+                logger.error(f"❌ No access_token or api_key found for {user_id}")
+                return {
+                    "user_id": user_id,
+                    "connection_status": "incomplete",
+                    "is_active": False,
+                    "credentials": {"client_id": client_id},
+                    "error": "Missing access_token and api_key"
+                }
+
+            # Return decrypted credentials
             decrypted = {
                 "client_id": client_id,
                 "access_token": access_token,
@@ -284,16 +302,20 @@ class UserCredentialsManager:
                 "api_secret": api_secret,
             }
 
+            logger.info(f"✅ Successfully retrieved and decrypted credentials for {user_id}")
+
             return {
                 "user_id": user_id,
                 "credentials": decrypted,
                 "is_active": data.get("is_active", True),
-                "connection_status": data.get("connection_status", "connected" if client_id else "unknown"),
+                "connection_status": "connected",
                 "updated_at": data.get("updated_at") or data.get("lastUpdatedAt")
             }
 
         except Exception as e:
-            logger.error(f"Error retrieving credentials: {e}")
+            logger.error(f"❌ Error retrieving credentials for {user_id}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
 
     async def resolve_user_id(self, user_id: str) -> Optional[str]:

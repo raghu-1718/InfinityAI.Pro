@@ -1,7 +1,7 @@
 # Engine-C Deployment Status & Next Steps
 
-**Date:** January 20, 2026  
-**Status:** DEPLOYMENT IN PROGRESS  
+**Date:** January 20, 2026
+**Status:** DEPLOYMENT IN PROGRESS
 **Build:** Cloud Build running (monorepo Dockerfile)
 
 ---
@@ -9,21 +9,25 @@
 ## ✅ Code Fixes Completed
 
 ### 1. Market Data Router (404 Fix)
+
 - **File:** `backend/engine-c/src/main.py`
 - **Change:** Registered `data_router` to mount `/api/dhan/market/*` endpoints
 - **Impact:** Eliminates 404 errors on market quotes endpoint
 
 ### 2. Execution Analytics Alias (404 Fix)
+
 - **File:** `backend/engine-c/src/main.py`
 - **Change:** Added `/api/v1/execution/analytics` alias pointing to optimizer
 - **Impact:** Frontend can now call analytics endpoint without 404
 
 ### 3. Credential Error Propagation (500→401 Fix)
+
 - **Files:** `backend/engine-c/src/main.py` (orders, positions, holdings, funds endpoints)
 - **Change:** Added `except HTTPException: raise` before generic exception handler
 - **Impact:** 401 errors from credential lookup now surface to frontend instead of becoming 500s
 
 ### 4. Enhanced User ID Resolution
+
 - **File:** `backend/engine-c/src/user_credentials.py`
 - **Change:** Added Strategy 3 in `resolve_user_id()` to query by `user_id` field
 - **Impact:** Better credential lookup for frontend-generated IDs like `user_1768893783541_3n0uc`
@@ -32,9 +36,10 @@
 
 ## 🔄 Current Deployment
 
-**Method:** Cloud Build with `backend/engine-c/cloudbuild.yaml`  
-**Dockerfile:** `backend/engine-c/Dockerfile.monorepo`  
+**Method:** Cloud Build with `backend/engine-c/cloudbuild.yaml`
+**Dockerfile:** `backend/engine-c/Dockerfile.monorepo`
 **Command:**
+
 ```bash
 gcloud builds submit . \
   --project=galvanic-pulsar-482815-h0 \
@@ -78,13 +83,13 @@ Invoke-RestMethod -Uri "$ENGINE_C/api/dhan/orders?user_id=$USER_ID"
 
 ## ✅ Expected Results
 
-| Endpoint | Before | After |
-|----------|--------|-------|
-| `/api/v1/execution/analytics` | 404 | 200 |
-| `/api/dhan/market/quotes` | 404 | 200 or 401 |
-| `/api/dhan/funds` (no creds) | 500 | 401 |
-| `/api/dhan/positions` (no creds) | 500 | 401 |
-| `/api/dhan/orders` (no creds) | 500 | 401 |
+| Endpoint                         | Before | After      |
+| -------------------------------- | ------ | ---------- |
+| `/api/v1/execution/analytics`    | 404    | 200        |
+| `/api/dhan/market/quotes`        | 404    | 200 or 401 |
+| `/api/dhan/funds` (no creds)     | 500    | 401        |
+| `/api/dhan/positions` (no creds) | 500    | 401        |
+| `/api/dhan/orders` (no creds)    | 500    | 401        |
 
 ---
 
@@ -105,6 +110,7 @@ Invoke-RestMethod -Uri "$ENGINE_C/api/dhan/orders?user_id=$USER_ID"
 ## 🐛 If Tests Still Fail
 
 ### Market Quotes or Analytics still 404:
+
 - Check Cloud Run logs for router registration messages:
   ```
   ✅ Dhan Market Data API endpoints enabled
@@ -112,11 +118,13 @@ Invoke-RestMethod -Uri "$ENGINE_C/api/dhan/orders?user_id=$USER_ID"
   ```
 
 ### Funds/Positions/Orders still return 500:
+
 - Check logs for credential resolution errors
 - Verify Firestore `dhan_credentials` collection has document for user
 - Check document structure (flat CamelCase vs nested snake_case)
 
 ### Credentials still not found (401):
+
 1. Re-save credentials in frontend settings
 2. Check Firestore directly:
    ```bash
@@ -148,5 +156,5 @@ Invoke-RestMethod -Uri "$ENGINE_C/api/dhan/orders?user_id=$USER_ID"
 
 ---
 
-**Last Updated:** During Cloud Build execution  
+**Last Updated:** During Cloud Build execution
 **Cloud Build ID:** TBD (check with `gcloud builds list`)

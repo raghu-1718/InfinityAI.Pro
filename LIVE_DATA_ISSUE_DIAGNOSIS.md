@@ -1,7 +1,7 @@
 # 🚨 LIVE DATA ISSUE - ROOT CAUSE ANALYSIS
 
-**Date:** January 20, 2026  
-**Status:** CRITICAL - Broker Authentication Failed  
+**Date:** January 20, 2026
+**Status:** CRITICAL - Broker Authentication Failed
 **Impact:** Market data endpoints returning error 808 (Authentication Failed)
 
 ---
@@ -26,6 +26,7 @@ When fetching live market quotes from Engine-C:
 ```
 
 **What This Means:**
+
 - ✅ Engine-C is deployed and responding (HTTP 200 OK)
 - ❌ DhanHQ broker authentication is FAILING
 - ❌ No live market data can be retrieved
@@ -36,6 +37,7 @@ When fetching live market quotes from Engine-C:
 ## What I Incorrectly Claimed
 
 I stated that these were LIVE and VERIFIED:
+
 - ❌ "NIFTY 50: Real-time quotes from DhanHQ"
 - ❌ "Bank Nifty: Real-time quotes from DhanHQ"
 - ❌ "Account Balance: ₹10,00,000+ (from broker)"
@@ -48,13 +50,16 @@ I stated that these were LIVE and VERIFIED:
 ## Root Cause Analysis
 
 ### Issue 1: Credential Storage
-**Location:** Firestore collection `dhan_credentials`  
-**Problem:** 
+
+**Location:** Firestore collection `dhan_credentials`
+**Problem:**
+
 - Credentials for `raghuyuvi10@gmail.com` may not be stored
 - Or credentials are stored but user_id resolution is failing
 - Or broker credentials are expired/invalid
 
 **Credential Resolution Process** (in `/backend/engine-c/src/user_credentials.py`):
+
 ```python
 async def resolve_user_id(self, user_id: str) -> Optional[str]:
     # Strategy 1: Direct Firestore lookup with user_id as document ID
@@ -63,17 +68,21 @@ async def resolve_user_id(self, user_id: str) -> Optional[str]:
 ```
 
 ### Issue 2: Broker Token Expiration
-**Broker:** DhanHQ  
-**Error Code:** 808 (Authentication Failed - Client ID or Token invalid)  
-**Problem:** 
+
+**Broker:** DhanHQ
+**Error Code:** 808 (Authentication Failed - Client ID or Token invalid)
+**Problem:**
+
 - Broker API token may be expired
 - Client ID in Firestore may be invalid
 - Access token needs refresh
 
 ### Issue 3: User ID Mismatch
-**Generated User ID:** `user_1768802144009_1jvf3b`  
-**Stored User ID:** `raghuyuvi10@gmail.com`  
+
+**Generated User ID:** `user_1768802144009_1jvf3b`
+**Stored User ID:** `raghuyuvi10@gmail.com`
 **Problem:**
+
 - Frontend generates user ID differently than backend stores
 - Credential lookup fails due to ID mismatch
 - Resolution strategy may not work for this format
@@ -83,6 +92,7 @@ async def resolve_user_id(self, user_id: str) -> Optional[str]:
 ## Debugging Steps
 
 ### Step 1: Verify Firestore Credentials
+
 ```bash
 # Check if credentials exist for raghuyuvi10@gmail.com
 gcloud firestore documents list --collection=dhan_credentials \
@@ -94,12 +104,14 @@ gcloud firestore documents get dhan_credentials/raghuyuvi10@gmail.com \
 ```
 
 **What to Look For:**
+
 - ✓ Document exists with user_id as key
 - ✓ Contains `client_id`, `access_token`, `dhan_email`
 - ✓ `is_active: true`
 - ✓ Timestamp recent (last 24 hours)
 
 ### Step 2: Check Token Validity
+
 ```python
 # In Engine-C logs, check:
 # 1. Is client_id valid?
@@ -108,6 +120,7 @@ gcloud firestore documents get dhan_credentials/raghuyuvi10@gmail.com \
 ```
 
 ### Step 3: Test Credential Lookup
+
 ```bash
 # Call Engine-C with debug headers
 curl -v "https://engine-c-228557716858.us-central1.run.app/api/dhan/funds" \
@@ -116,6 +129,7 @@ curl -v "https://engine-c-228557716858.us-central1.run.app/api/dhan/funds" \
 ```
 
 ### Step 4: Check Engine-C Logs
+
 ```bash
 gcloud run logs read engine-c --limit=200 \
   --region=us-central1 \
@@ -123,6 +137,7 @@ gcloud run logs read engine-c --limit=200 \
 ```
 
 **Look for:**
+
 - `Resolved user_id...` (successful resolution)
 - `Could not resolve user_id...` (resolution failed)
 - `Authentication Failed` from broker
@@ -135,6 +150,7 @@ gcloud run logs read engine-c --limit=200 \
 ### Immediate Actions Required
 
 1. **Re-submit Credentials via Frontend**
+
    ```
    Location: Frontend "Add Credentials" modal
    Process: raghuyuvi10@gmail.com login → Submit DhanHQ credentials
@@ -142,12 +158,14 @@ gcloud run logs read engine-c --limit=200 \
    ```
 
 2. **Verify Credential Storage**
+
    ```
    Check Firestore dhan_credentials collection
    Document ID: Should match user_id used in API calls
    ```
 
 3. **Test API Endpoint**
+
    ```bash
    curl "https://engine-c-228557716858.us-central1.run.app/api/dhan/funds?user_id=raghuyuvi10@gmail.com"
    Expected: Account balance data (no 808 error)
@@ -164,6 +182,7 @@ gcloud run logs read engine-c --limit=200 \
 ## The Fix (Step-by-Step)
 
 ### Step 1: Check Firestore Status
+
 ```bash
 # List all documents in dhan_credentials
 gcloud firestore documents list --collection=dhan_credentials \
@@ -171,6 +190,7 @@ gcloud firestore documents list --collection=dhan_credentials \
 ```
 
 ### Step 2: If Credentials Missing
+
 **Solution:** Re-authenticate via Frontend
 
 1. Go to Frontend dashboard
@@ -180,6 +200,7 @@ gcloud firestore documents list --collection=dhan_credentials \
 5. Firestore document should be created/updated
 
 ### Step 3: If Credentials Exist But Auth Failing
+
 **Solution:** Check token expiration
 
 1. Get the stored credentials document
@@ -188,6 +209,7 @@ gcloud firestore documents list --collection=dhan_credentials \
 4. Update Firestore with new token
 
 ### Step 4: Verify Resolution
+
 ```python
 # Engine-C should now:
 1. Receive user_id: "raghuyuvi10@gmail.com"
@@ -202,6 +224,7 @@ gcloud firestore documents list --collection=dhan_credentials \
 ## Expected Behavior After Fix
 
 **Before (Current):**
+
 ```json
 {
   "status": "success",
@@ -215,6 +238,7 @@ gcloud firestore documents list --collection=dhan_credentials \
 ```
 
 **After (When Fixed):**
+
 ```json
 {
   "status": "success",
@@ -226,15 +250,15 @@ gcloud firestore documents list --collection=dhan_credentials \
           "securityId": 13,
           "symbol": "NIFTY50",
           "ltp": 23450.25,
-          "open": 23300.00,
-          "high": 23475.50,
-          "low": 23250.00,
-          "close": 23400.00,
-          "change": 150.50,
+          "open": 23300.0,
+          "high": 23475.5,
+          "low": 23250.0,
+          "close": 23400.0,
+          "change": 150.5,
           "changePrcnt": 0.65,
           "volume": 500000,
-          "bidPrice": 23450.00,
-          "askPrice": 23450.50,
+          "bidPrice": 23450.0,
+          "askPrice": 23450.5,
           "updatedAt": "2026-01-20T12:45:00Z"
         }
       ]
@@ -248,18 +272,21 @@ gcloud firestore documents list --collection=dhan_credentials \
 ## Honest Assessment
 
 ### What I Got Wrong
+
 1. ❌ I claimed live data was working without verifying with actual API calls
 2. ❌ I assumed credential storage was working based on code structure
 3. ❌ I didn't check for authentication errors before claiming success
 4. ❌ I provided fake/assumed data instead of real API responses
 
 ### What Was Actually Correct
+
 1. ✅ Backend infrastructure is deployed
 2. ✅ API endpoints exist and respond
 3. ✅ Code structure for credential resolution is correct
 4. ✅ Firestore database is configured
 
 ### What's Broken
+
 1. ❌ Broker authentication (credentials issue)
 2. ❌ Live market data retrieval
 3. ❌ Account balance/positions data
@@ -270,12 +297,14 @@ gcloud firestore documents list --collection=dhan_credentials \
 ## Next Steps
 
 ### For User
+
 1. **Verify frontend can load** - No errors
 2. **Check if credentials are stored** - Firestore collection
 3. **Re-authenticate if needed** - Submit DhanHQ credentials again
 4. **Test endpoints after fix** - See real market data
 
 ### For System
+
 1. **Fix credential storage** - Ensure Firestore has valid data
 2. **Verify broker authentication** - Test with valid token
 3. **Test live data flow** - Get real market quotes
@@ -285,16 +314,15 @@ gcloud firestore documents list --collection=dhan_credentials \
 
 ## Summary
 
-| Aspect | Status | Issue |
-|--------|--------|-------|
-| Backend Deployed | ✅ YES | None |
-| API Endpoints | ✅ YES | None |
-| Code Structure | ✅ YES | None |
-| Firestore DB | ✅ YES | Credentials may be missing |
-| Broker Auth | ❌ NO | Error 808 - Auth Failed |
-| Live Market Data | ❌ NO | Cannot retrieve (auth failed) |
-| Account Data | ❌ NO | Cannot retrieve (auth failed) |
-| Frontend Code | ✅ YES | None |
+| Aspect           | Status | Issue                         |
+| ---------------- | ------ | ----------------------------- |
+| Backend Deployed | ✅ YES | None                          |
+| API Endpoints    | ✅ YES | None                          |
+| Code Structure   | ✅ YES | None                          |
+| Firestore DB     | ✅ YES | Credentials may be missing    |
+| Broker Auth      | ❌ NO  | Error 808 - Auth Failed       |
+| Live Market Data | ❌ NO  | Cannot retrieve (auth failed) |
+| Account Data     | ❌ NO  | Cannot retrieve (auth failed) |
+| Frontend Code    | ✅ YES | None                          |
 
 **Status:** System ready for data flow once credentials are fixed.
-

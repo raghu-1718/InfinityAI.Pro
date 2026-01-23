@@ -1,8 +1,9 @@
 # CUSTOM DOMAIN INTEGRATION COMPLETE - INFINITYAI.PRO
+
 ## Step-by-Step Implementation Guide
 
-**Generated:** 2026-01-21T10:40:00Z  
-**Status:** Ready for Namecheap DNS Configuration  
+**Generated:** 2026-01-21T10:40:00Z
+**Status:** Ready for Namecheap DNS Configuration
 **Project:** galvanic-pulsar-482815-h0 (GCP/Firebase)
 
 ---
@@ -26,6 +27,7 @@
 ### ACTION 1: Update DNS in Namecheap (5 minutes)
 
 **What to do:**
+
 1. Login to Namecheap dashboard (https://www.namecheap.com/dashboard/)
 2. Select domain "infinityai.pro"
 3. Click "Advanced DNS" tab
@@ -61,6 +63,7 @@ dig api.infinityai.pro
 ```
 
 **Expected output:**
+
 ```
 Non-authoritative answer:
 infinityai.pro      3600    IN  A  199.36.158.100
@@ -92,13 +95,13 @@ gcloud compute ssl-certificates describe infinityai-pro-ssl \
 
 Once DNS propagates, the following URLs will be operational:
 
-| URL | Purpose | Backend |
-|-----|---------|---------|
-| https://infinityai.pro | Frontend (Next.js) | Firebase Hosting |
-| https://www.infinityai.pro | Frontend (www redirect) | Firebase Hosting |
-| https://api.infinityai.pro | Live Trading API | Engine-C (DhanHQ) |
-| https://orchestrator.infinityai.pro | Risk Orchestration | Engine-A |
-| https://signals.infinityai.pro | ML Signals | Engine-B |
+| URL                                 | Purpose                 | Backend           |
+| ----------------------------------- | ----------------------- | ----------------- |
+| https://infinityai.pro              | Frontend (Next.js)      | Firebase Hosting  |
+| https://www.infinityai.pro          | Frontend (www redirect) | Firebase Hosting  |
+| https://api.infinityai.pro          | Live Trading API        | Engine-C (DhanHQ) |
+| https://orchestrator.infinityai.pro | Risk Orchestration      | Engine-A          |
+| https://signals.infinityai.pro      | ML Signals              | Engine-B          |
 
 ---
 
@@ -116,11 +119,11 @@ API LAYER (Cloud Run):
     • POST /api/dhan/place-order
     • GET /api/dhan/open-orders
     • DELETE /api/dhan/cancel-order
-    
+
   - orchestrator.infinityai.pro → Engine-A (Risk/Execution)
     • POST /api/orchestrate
     • GET /api/risk-score
-    
+
   - signals.infinityai.pro → Engine-B (ML Signals)
     • POST /api/predict
     • GET /api/signal-history
@@ -144,18 +147,21 @@ DATA PERSISTENCE (Firestore):
 ## 🛡️ SECURITY & COMPLIANCE
 
 ### SSL/TLS
+
 - ✅ Managed SSL certificate (infinityai-pro-ssl)
 - ✅ Auto-renewal enabled
 - ✅ Domains: infinityai.pro, www.infinityai.pro
 - ✅ Provider: Google Cloud SSL
 
 ### Firestore Security
+
 - ✅ Per-user data isolation
 - ✅ Role-based access control (Firestore rules)
 - ✅ Encrypted credentials in Secret Manager
 - ✅ Audit logging enabled
 
 ### Broker Integration
+
 - ✅ DhanHQ credentials encrypted (AES-256-GCM)
 - ✅ Live trading only (paper mode eliminated)
 - ✅ Trading guardrails enforced:
@@ -168,14 +174,14 @@ DATA PERSISTENCE (Firestore):
 
 ## 📊 COMPONENT STATUS
 
-| Component | Service | Status | URL |
-|-----------|---------|--------|-----|
-| Frontend | Firebase Hosting | ✅ Ready | https://infinityai.pro |
-| Trading API | Engine-C (Cloud Run) | ✅ Live | https://api.infinityai.pro |
-| Orchestrator | Engine-A (Cloud Run) | ✅ Active | https://orchestrator.infinityai.pro |
-| Signals | Engine-B (Cloud Run) | ✅ Active | https://signals.infinityai.pro |
-| SSL Cert | Google Cloud | ⏳ PROVISIONING | (auto-completes) |
-| DNS Records | Namecheap | ⏳ Pending | (manual update needed) |
+| Component    | Service              | Status          | URL                                 |
+| ------------ | -------------------- | --------------- | ----------------------------------- |
+| Frontend     | Firebase Hosting     | ✅ Ready        | https://infinityai.pro              |
+| Trading API  | Engine-C (Cloud Run) | ✅ Live         | https://api.infinityai.pro          |
+| Orchestrator | Engine-A (Cloud Run) | ✅ Active       | https://orchestrator.infinityai.pro |
+| Signals      | Engine-B (Cloud Run) | ✅ Active       | https://signals.infinityai.pro      |
+| SSL Cert     | Google Cloud         | ⏳ PROVISIONING | (auto-completes)                    |
+| DNS Records  | Namecheap            | ⏳ Pending      | (manual update needed)              |
 
 ---
 
@@ -188,7 +194,7 @@ After completing the 3 actions above:
 - [ ] SSL certificate provisioned (status = ACTIVE in GCP)
 - [ ] https://infinityai.pro loads without SSL warning
 - [ ] https://api.infinityai.pro responds with API
-- [ ] Subdomain routing working (api.*, orchestrator.*, signals.*)
+- [ ] Subdomain routing working (api._, orchestrator._, signals.\*)
 - [ ] Live trading engine active (Engine-C logs show orders)
 - [ ] Guardrails enforced (market hours, symbols, caps)
 - [ ] Firestore records persisting correctly
@@ -199,11 +205,13 @@ After completing the 3 actions above:
 ## 📝 FILE REFERENCES
 
 **Configuration Files Generated:**
+
 - `NAMECHEAP_DNS_CONFIGURATION.md` ← **USE THIS FOR NAMECHEAP**
 - `CUSTOM_DOMAIN_INTEGRATION_GUIDE.md` (this file)
 - `LIVE_TRADING_DEPLOYMENT_VERIFICATION.md` (previous session)
 
 **Related Documentation:**
+
 - GCP Project: https://console.cloud.google.com/welcome?project=galvanic-pulsar-482815-h0
 - Firebase Console: https://console.firebase.google.com/project/galvanic-pulsar-482815-h0
 - Namecheap Domain: https://www.namecheap.com/dashboard/
@@ -212,20 +220,21 @@ After completing the 3 actions above:
 
 ## ⏱️ TIMELINE TO PRODUCTION
 
-| Step | Time | Status |
-|------|------|--------|
-| Firebase site creation | Done | ✅ |
-| SSL certificate creation | Done | ✅ |
-| Namecheap DNS setup | 5 min | ⏳ |
-| DNS propagation | 5-30 min | ⏳ |
-| SSL auto-provisioning | 5-15 min | ⏳ |
-| Full production ready | ~40 min | 🎯 |
+| Step                     | Time     | Status |
+| ------------------------ | -------- | ------ |
+| Firebase site creation   | Done     | ✅     |
+| SSL certificate creation | Done     | ✅     |
+| Namecheap DNS setup      | 5 min    | ⏳     |
+| DNS propagation          | 5-30 min | ⏳     |
+| SSL auto-provisioning    | 5-15 min | ⏳     |
+| Full production ready    | ~40 min  | 🎯     |
 
 ---
 
 ## 🚀 PRODUCTION READINESS SUMMARY
 
 **Green Lights (Ready for Production):**
+
 - ✅ Live trading engine active (Engine-C MODE=LIVE)
 - ✅ Trading guardrails enforced (market hours, symbols, order caps)
 - ✅ Broker connectivity verified (DhanHQ API working)
@@ -238,12 +247,14 @@ After completing the 3 actions above:
 - ✅ Custom domain DNS records ready
 
 **Yellow Lights (Pending):**
+
 - ⏳ Namecheap DNS records update (user action required)
 - ⏳ DNS propagation (5-30 minutes typical)
 - ⏳ SSL certificate provisioning (will complete after DNS)
 - ⏳ Domain ownership verification (auto-completes)
 
 **System Ready For:**
+
 - ✅ Live trading operations
 - ✅ Real-time market data streaming
 - ✅ ML-based signal generation
@@ -279,18 +290,21 @@ After completing the 3 actions above:
 ## 📞 SUPPORT & TROUBLESHOOTING
 
 **DNS Issues?**
+
 - Check NAMECHEAP_DNS_CONFIGURATION.md for exact records
 - Verify no typos in Namecheap dashboard
 - Allow 5-30 minutes for propagation
 - Use `nslookup` to verify resolution
 
 **SSL Certificate Not Provisioning?**
+
 - Ensure TXT record added to Namecheap
 - Wait 5-10 minutes after DNS propagation
 - Check GCP Console: Compute → SSL Certificates
 - Certificate should move from PROVISIONING → ACTIVE
 
 **Custom Domain Not Resolving?**
+
 - Verify A records point to 199.36.158.100
 - Check CNAME records for subdomains
 - Use online DNS checker (whatsmydns.net)
@@ -298,7 +312,7 @@ After completing the 3 actions above:
 
 ---
 
-**Status:** ✅ Configuration Complete, Awaiting Namecheap Update  
-**Project:** galvanic-pulsar-482815-h0  
-**Domain:** infinityai.pro  
+**Status:** ✅ Configuration Complete, Awaiting Namecheap Update
+**Project:** galvanic-pulsar-482815-h0
+**Domain:** infinityai.pro
 **Generated:** 2026-01-21T10:40:00Z

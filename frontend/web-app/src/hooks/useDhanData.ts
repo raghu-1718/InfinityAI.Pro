@@ -1,12 +1,12 @@
 /**
  * Dhan Market Data Hooks (Phase 3)
- * 
+ *
  * React Query hooks for consuming Dhan Data API endpoints
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { engineC } from '@/lib/api';
-import { getUserId } from '@/lib/user';
+import { useQuery } from "@tanstack/react-query";
+import { engineC } from "@/lib/api";
+import { getUserId } from "@/lib/user";
 
 // Type definitions
 export interface MarketQuote {
@@ -50,16 +50,12 @@ export interface OptionData {
  */
 export function useMarketQuotes(symbols: string[], enabled: boolean = true) {
   const userId = getUserId();
-  
+
   return useQuery({
-    queryKey: ['market', 'quotes', symbols.join(','), userId],
+    queryKey: ["market", "quotes", symbols.join(","), userId],
     queryFn: async () => {
-      if (!userId) throw new Error('User ID not available');
-      const response = await engineC.getMarketQuotes(
-        userId,
-        symbols,
-        'NSE_EQ'
-      );
+      if (!userId) throw new Error("User ID not available");
+      const response = await engineC.getMarketQuotes(userId, symbols, "NSE_EQ");
       return response;
     },
     enabled: enabled && symbols.length > 0 && !!userId,
@@ -75,13 +71,18 @@ export function useHistoricalData(
   symbol: string,
   fromDate: string,
   toDate: string,
-  interval: string = '1D',
-  enabled: boolean = true
+  interval: string = "1D",
+  enabled: boolean = true,
 ) {
   return useQuery({
-    queryKey: ['market', 'historical', symbol, fromDate, toDate, interval],
+    queryKey: ["market", "historical", symbol, fromDate, toDate, interval],
     queryFn: async () => {
-      const response = await engineC.getHistoricalData(symbol, fromDate, toDate, interval);
+      const response = await engineC.getHistoricalData(
+        symbol,
+        fromDate,
+        toDate,
+        interval,
+      );
       return response;
     },
     enabled: enabled && !!symbol,
@@ -92,9 +93,13 @@ export function useHistoricalData(
 /**
  * Hook to fetch market depth (order book)
  */
-export function useMarketDepth(symbol: string, levels: number = 20, enabled: boolean = true) {
+export function useMarketDepth(
+  symbol: string,
+  levels: number = 20,
+  enabled: boolean = true,
+) {
   return useQuery({
-    queryKey: ['market', 'depth', symbol, levels],
+    queryKey: ["market", "depth", symbol, levels],
     queryFn: async () => {
       const response = await engineC.getMarketDepth(symbol, levels);
       return response;
@@ -108,9 +113,13 @@ export function useMarketDepth(symbol: string, levels: number = 20, enabled: boo
 /**
  * Hook to fetch option chain data
  */
-export function useOptionChain(symbol: string, expiry: string, enabled: boolean = true) {
+export function useOptionChain(
+  symbol: string,
+  expiry: string,
+  enabled: boolean = true,
+) {
   return useQuery({
-    queryKey: ['market', 'options', 'chain', symbol, expiry],
+    queryKey: ["market", "options", "chain", symbol, expiry],
     queryFn: async () => {
       const response = await engineC.getOptionChain(symbol, expiry);
       return response;
@@ -124,9 +133,13 @@ export function useOptionChain(symbol: string, expiry: string, enabled: boolean 
 /**
  * Hook to fetch expired options data
  */
-export function useExpiredOptions(symbol: string, date: string, enabled: boolean = true) {
+export function useExpiredOptions(
+  symbol: string,
+  date: string,
+  enabled: boolean = true,
+) {
   return useQuery({
-    queryKey: ['market', 'options', 'expired', symbol, date],
+    queryKey: ["market", "options", "expired", symbol, date],
     queryFn: async () => {
       const response = await engineC.getExpiredOptions(symbol, date);
       return response;

@@ -1,0 +1,337 @@
+```mermaid
+graph TB
+    %% InfinityAI.Pro - System Architecture Diagram
+    %% Generated: 2026-01-22
+
+    subgraph "CLIENT LAYER"
+        Browser["🌐 Web Browser<br/>(Chrome, Firefox, Safari)"]
+        MobileApp["📱 Mobile App<br/>(Future - PWA)"]
+    end
+
+    subgraph "FRONTEND - infinityai.pro"
+        NextJS["⚛️ Next.js 16 SPA<br/>React 19 | TypeScript<br/>Firebase Hosting<br/>199.36.158.100"]
+
+        subgraph "Frontend Components"
+            Dashboard["📊 Dashboard"]
+            Trading["💹 Trading UI"]
+            Portfolio["💼 Portfolio"]
+            Signals["🎯 AI Signals"]
+            Analytics["📈 Analytics"]
+            Options["📉 Options Trading"]
+            Settings["⚙️ Settings"]
+        end
+
+        subgraph "Frontend Services"
+            AuthCtx["🔐 Auth Context<br/>(Firebase Auth + Coupon)"]
+            AblyCtx["📡 Ably Context<br/>(Real-time subscriptions)"]
+            ApiClient["🔌 API Client<br/>(HTTP + WebSocket)"]
+            StateStore["💾 Zustand Store<br/>(Local state)"]
+        end
+    end
+
+    subgraph "LOAD BALANCER - 34.107.213.171"
+        LB["☁️ Google Cloud Load Balancer<br/>HTTPS Proxy<br/>SSL: infinityai-apis-ssl"]
+
+        subgraph "Serverless NEGs"
+            NEG_A["engine-c-neg"]
+            NEG_B["engine-a-neg"]
+            NEG_C["engine-b-neg"]
+        end
+    end
+
+    subgraph "FIREBASE FUNCTIONS (Cloud Run)"
+        FF_Auth["🔑 verifyCoupon<br/>storeUserCredentials"]
+        FF_Account["👤 fetchAccountData<br/>getDhanOverview"]
+        FF_Trading["⚡ startTrading<br/>stopTrading"]
+        FF_AI["🤖 getAiSignals<br/>getGeminiAnalysis<br/>getVertexAiAnalysis"]
+        FF_Portfolio["📊 analyzePortfolio<br/>getBatchAiSignals"]
+    end
+
+    subgraph "ENGINE-A - orchestrator.infinityai.pro"
+        EngineA["🎯 Engine-A: Risk Orchestrator<br/>FastAPI | Python 3.11<br/>Cloud Run us-central1"]
+
+        subgraph "Engine-A Services"
+            RiskMgr["⚖️ Risk Manager<br/>(Position limits, VaR)"]
+            AuditLog["📝 Audit Logger<br/>(Compliance tracking)"]
+            SessionMgr["🔄 Session Manager<br/>(Active trading sessions)"]
+            CircuitBreaker["🛑 Circuit Breaker<br/>(Auto-pause on anomaly)"]
+            AutoTrader["🤖 Autonomous Trader<br/>(Strategy execution)"]
+        end
+
+        subgraph "Engine-A Integrations"
+            GeminiA["✨ Gemini Pro<br/>(Trade analysis)"]
+            DhanA["🔗 DhanHQ Client<br/>(Market data)"]
+        end
+    end
+
+    subgraph "ENGINE-B - signals.infinityai.pro"
+        EngineB["🧠 Engine-B: ML Signals<br/>FastAPI | Python 3.11<br/>Cloud Run us-central1"]
+
+        subgraph "Engine-B ML Stack"
+            LightGBM["🌲 LightGBM Model<br/>(Primary predictor)"]
+            LSTM["🔮 LSTM<br/>(Time series forecast)"]
+            Ensemble["🎲 Ensemble Service<br/>(Multi-model fusion)"]
+            FeatureEng["⚙️ Feature Engineer<br/>(70+ indicators)"]
+            Sentiment["💭 Sentiment Service<br/>(News NLP)"]
+        end
+
+        subgraph "Engine-B Data"
+            ModelStore["💾 Model Store<br/>(lightgbm_model.pkl<br/>scaler.pkl)"]
+            TAUtils["📊 TA Utils<br/>(RSI, MACD, Bollinger)"]
+        end
+    end
+
+    subgraph "ENGINE-C - api.infinityai.pro"
+        EngineC["💰 Engine-C: Execution<br/>FastAPI | Python 3.11<br/>Cloud Run us-central1<br/>🔴 LIVE TRADING MODE"]
+
+        subgraph "Engine-C Core"
+            OrderMgr["📋 Order Manager<br/>(Place/Modify/Cancel)"]
+            PortfolioRec["🔄 Portfolio Reconciler<br/>(Sync DhanHQ state)"]
+            Guardrails["🛡️ Trading Guardrails<br/>(₹500k cap, hours 9:15-15:30)"]
+            PaperEngine["📄 Paper Trading<br/>(Sandbox mode)"]
+            WebhookVerif["✅ Webhook Verifier<br/>(DhanHQ postbacks)"]
+        end
+
+        subgraph "Engine-C Providers"
+            DhanREST["🔗 DhanHQ REST API<br/>(dhanhq==2.0.2)"]
+            DhanWS["📡 DhanHQ WebSocket<br/>(Live quotes)"]
+            SuperOrder["⚡ Super Order API<br/>(TWAP, VWAP, Iceberg)"]
+        end
+
+        subgraph "Engine-C Analytics"
+            MLForecaster["🔮 ML Forecaster<br/>(Slippage prediction)"]
+            RiskOpt["📊 Risk Optimizer<br/>(Position sizing)"]
+            AISignalModel["🤖 AI Signal Model<br/>(Execution timing)"]
+        end
+    end
+
+    subgraph "BROKER LAYER"
+        DhanHQ["🏦 DhanHQ Broker<br/>REST API v2.2.0<br/>WebSocket Streaming"]
+
+        subgraph "DhanHQ Services"
+            MarketData["📊 Market Data<br/>(NSE, BSE, MCX)"]
+            OrderExec["⚡ Order Execution<br/>(Live trading)"]
+            PortfolioAPI["💼 Portfolio API<br/>(Positions, Holdings)"]
+            WebhookPost["📮 Postback Webhooks<br/>(Order updates)"]
+        end
+    end
+
+    subgraph "DATA LAYER"
+        subgraph "Google Firestore"
+            FS_Users["👥 users/<br/>(email, coupon, tier)"]
+            FS_Creds["🔐 credentials/<br/>(encrypted AES-256-GCM)"]
+            FS_Sessions["🔄 sessions/<br/>(status, risk_profile)"]
+            FS_Orders["📋 orders/<br/>(history, status)"]
+            FS_Signals["🎯 signals/<br/>(ML predictions)"]
+            FS_Portfolio["💼 portfolio/<br/>(positions, PnL)"]
+            FS_Audit["📝 audit_logs/<br/>(compliance trail)"]
+        end
+
+        subgraph "Google Cloud Storage"
+            GCS_Historical["📂 Historical Data<br/>(Yahoo, Dhan)"]
+            GCS_Backtest["📊 Backtest Results<br/>(1Y, 3Y runs)"]
+            GCS_Models["🤖 ML Models<br/>(Trained artifacts)"]
+        end
+
+        subgraph "Google Secret Manager"
+            SM_Dhan["🔑 DHAN_CLIENT_ID<br/>DHAN_ACCESS_TOKEN"]
+            SM_Keys["🔐 API Keys<br/>(Ably, Gemini, News)"]
+            SM_Encrypt["🔒 ENCRYPTION_KEY<br/>(AES-256 master)"]
+        end
+    end
+
+    subgraph "REAL-TIME LAYER"
+        Ably["📡 Ably Realtime<br/>WebSocket Pub/Sub<br/>Multi-region CDN"]
+
+        subgraph "Ably Channels"
+            CH_Portfolio["💼 portfolio:{userId}"]
+            CH_Orders["📋 orders:{userId}"]
+            CH_Signals["🎯 signals:{userId}"]
+            CH_System["⚙️ system:alerts"]
+        end
+    end
+
+    subgraph "EXTERNAL DATA SOURCES"
+        Yahoo["📈 Yahoo Finance<br/>(Historical data)"]
+        NewsAPI["📰 NewsAPI.org<br/>(Market news)"]
+        NSE["🏛️ NSE Direct API<br/>(India equities)"]
+        AlphaVantage["📊 Alpha Vantage<br/>(Backup data)"]
+    end
+
+    subgraph "AI/ML SERVICES"
+        VertexAI["🧠 Google Vertex AI<br/>(Gemini Pro LLM)"]
+        CustomML["🤖 Custom ML Pipeline<br/>(Training jobs)"]
+    end
+
+    subgraph "MONITORING & LOGGING"
+        CloudLog["📋 Cloud Logging<br/>(Structured logs)"]
+        CloudMon["📊 Cloud Monitoring<br/>(Metrics, Dashboards)"]
+        ErrorTrack["❌ Error Tracking<br/>(Firestore + Logging)"]
+    end
+
+    subgraph "CI/CD"
+        GitHub["🐙 GitHub Actions<br/>(deploy-production.yml)"]
+        CloudBuild["🏗️ Cloud Build<br/>(Docker builds)"]
+        ArtifactReg["📦 Artifact Registry<br/>(Container images)"]
+    end
+
+    %% User Interactions
+    Browser --> NextJS
+    MobileApp -.-> NextJS
+
+    %% Frontend Internal Flow
+    NextJS --> Dashboard
+    NextJS --> Trading
+    NextJS --> Portfolio
+    NextJS --> Signals
+    NextJS --> Analytics
+    NextJS --> Options
+    NextJS --> Settings
+
+    Dashboard --> AuthCtx
+    Trading --> AuthCtx
+    Portfolio --> AuthCtx
+    Settings --> AuthCtx
+
+    NextJS --> AblyCtx
+    NextJS --> ApiClient
+    NextJS --> StateStore
+
+    %% Frontend to Firebase Functions
+    ApiClient --> FF_Auth
+    ApiClient --> FF_Account
+    ApiClient --> FF_Trading
+    ApiClient --> FF_AI
+    ApiClient --> FF_Portfolio
+
+    %% Frontend to Load Balancer
+    ApiClient --> LB
+
+    %% Load Balancer Routing
+    LB --> NEG_A
+    LB --> NEG_B
+    LB --> NEG_C
+
+    NEG_A --> EngineC
+    NEG_B --> EngineA
+    NEG_C --> EngineB
+
+    %% Engine-A Internal
+    EngineA --> RiskMgr
+    EngineA --> AuditLog
+    EngineA --> SessionMgr
+    EngineA --> CircuitBreaker
+    EngineA --> AutoTrader
+    RiskMgr --> GeminiA
+    AutoTrader --> DhanA
+
+    %% Engine-B Internal
+    EngineB --> LightGBM
+    EngineB --> LSTM
+    EngineB --> Ensemble
+    EngineB --> FeatureEng
+    EngineB --> Sentiment
+    LightGBM --> ModelStore
+    Ensemble --> TAUtils
+
+    %% Engine-C Internal
+    EngineC --> OrderMgr
+    EngineC --> PortfolioRec
+    EngineC --> Guardrails
+    EngineC --> PaperEngine
+    EngineC --> WebhookVerif
+    OrderMgr --> DhanREST
+    PortfolioRec --> DhanREST
+    OrderMgr --> SuperOrder
+    EngineC --> MLForecaster
+    EngineC --> RiskOpt
+    EngineC --> AISignalModel
+
+    %% Engine-C to Broker
+    DhanREST --> DhanHQ
+    DhanWS --> DhanHQ
+
+    %% DhanHQ Services
+    DhanHQ --> MarketData
+    DhanHQ --> OrderExec
+    DhanHQ --> PortfolioAPI
+    DhanHQ --> WebhookPost
+
+    %% Broker Webhooks back to Engine-C
+    WebhookPost -.->|Postback| EngineC
+
+    %% All Engines to Firestore
+    EngineA --> FS_Sessions
+    EngineA --> FS_Audit
+    EngineB --> FS_Signals
+    EngineC --> FS_Users
+    EngineC --> FS_Creds
+    EngineC --> FS_Orders
+    EngineC --> FS_Portfolio
+
+    %% All Engines to Secret Manager
+    EngineA --> SM_Keys
+    EngineB --> SM_Keys
+    EngineC --> SM_Dhan
+    EngineC --> SM_Encrypt
+
+    %% Cloud Storage
+    EngineB --> GCS_Historical
+    EngineB --> GCS_Backtest
+    EngineB --> GCS_Models
+
+    %% Real-time Flow
+    EngineC -.->|Publish| Ably
+    EngineB -.->|Publish| Ably
+    Ably --> CH_Portfolio
+    Ably --> CH_Orders
+    Ably --> CH_Signals
+    Ably --> CH_System
+    AblyCtx -.->|Subscribe| Ably
+
+    %% External Data Sources
+    EngineB --> Yahoo
+    EngineB --> NewsAPI
+    EngineB --> NSE
+    EngineB --> AlphaVantage
+
+    %% AI/ML Services
+    FF_AI --> VertexAI
+    EngineA --> VertexAI
+    EngineB --> CustomML
+
+    %% Monitoring
+    EngineA -.->|Logs| CloudLog
+    EngineB -.->|Logs| CloudLog
+    EngineC -.->|Logs| CloudLog
+    EngineA -.->|Metrics| CloudMon
+    EngineB -.->|Metrics| CloudMon
+    EngineC -.->|Metrics| CloudMon
+    EngineC -.->|Errors| ErrorTrack
+
+    %% CI/CD
+    GitHub --> CloudBuild
+    CloudBuild --> ArtifactReg
+    ArtifactReg -.->|Deploy| EngineA
+    ArtifactReg -.->|Deploy| EngineB
+    ArtifactReg -.->|Deploy| EngineC
+
+    %% Styling
+    classDef frontend fill:#4CAF50,stroke:#2E7D32,color:#fff
+    classDef engine fill:#2196F3,stroke:#1565C0,color:#fff
+    classDef broker fill:#FF9800,stroke:#E65100,color:#fff
+    classDef data fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    classDef realtime fill:#F44336,stroke:#C62828,color:#fff
+    classDef external fill:#607D8B,stroke:#37474F,color:#fff
+    classDef ai fill:#E91E63,stroke:#AD1457,color:#fff
+    classDef infra fill:#795548,stroke:#4E342E,color:#fff
+
+    class NextJS,Dashboard,Trading,Portfolio,Signals,Analytics,Options,Settings,AuthCtx,AblyCtx,ApiClient,StateStore frontend
+    class EngineA,EngineB,EngineC,RiskMgr,AuditLog,SessionMgr,CircuitBreaker,AutoTrader,LightGBM,LSTM,Ensemble,FeatureEng,Sentiment,OrderMgr,PortfolioRec,Guardrails,PaperEngine,WebhookVerif,DhanREST,DhanWS,SuperOrder,MLForecaster,RiskOpt,AISignalModel engine
+    class DhanHQ,MarketData,OrderExec,PortfolioAPI,WebhookPost broker
+    class FS_Users,FS_Creds,FS_Sessions,FS_Orders,FS_Signals,FS_Portfolio,FS_Audit,GCS_Historical,GCS_Backtest,GCS_Models,SM_Dhan,SM_Keys,SM_Encrypt data
+    class Ably,CH_Portfolio,CH_Orders,CH_Signals,CH_System realtime
+    class Yahoo,NewsAPI,NSE,AlphaVantage external
+    class VertexAI,CustomML,GeminiA,DhanA,ModelStore,TAUtils ai
+    class LB,NEG_A,NEG_B,NEG_C,FF_Auth,FF_Account,FF_Trading,FF_AI,FF_Portfolio,CloudLog,CloudMon,ErrorTrack,GitHub,CloudBuild,ArtifactReg infra
+```

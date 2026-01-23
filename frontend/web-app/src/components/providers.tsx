@@ -5,6 +5,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CouponAuthProvider } from "@/contexts/DualAuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AblyProvider } from "@/contexts/AblyContext";
 import { useAppStore } from "@/lib/store";
 import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
@@ -20,7 +22,7 @@ function StoreHydration() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
         // User logged out, clear all user data from Zustand
-        console.log('User logged out, clearing local state');
+        console.log("User logged out, clearing local state");
         clearUserData();
       }
     });
@@ -42,13 +44,17 @@ export function Providers({ children }: { children: ReactNode }) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
   return (
     <QueryClientProvider client={queryClient}>
       <StoreHydration />
-      <CouponAuthProvider>{children}</CouponAuthProvider>
+      <AuthProvider>
+        <AblyProvider>
+          <CouponAuthProvider>{children}</CouponAuthProvider>
+        </AblyProvider>
+      </AuthProvider>
       <Toaster position="top-right" richColors />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

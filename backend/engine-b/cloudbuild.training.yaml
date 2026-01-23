@@ -1,0 +1,77 @@
+# Cloud Build configuration for ML model training
+# Runs training in Docker container with TensorFlow
+
+steps:
+  # Step 1: Pull latest engine-b image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "pull-image"
+    args:
+      - "pull"
+      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+
+  # Step 2: Run LSTM training with volume mount
+  - name: "gcr.io/cloud-builders/docker"
+    id: "train-lstm"
+    args:
+      - "run"
+      - "--rm"
+      - "--network=host"
+      - "-v"
+      - "/workspace/models:/app/models"
+      - "-e"
+      - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+      - "python"
+      - "-m"
+      - "training.train_lstm"
+      - "--symbol=${_SYMBOL}"
+      - "--days=${_DAYS}"
+      - "--epochs=${_LSTM_EPOCHS}"
+      - "--model-dir=/app/models/lstm"
+    timeout: 1800s # 30 minutes
+
+  # Step 3: Run DQN training with volume mount
+  - name: "gcr.io/cloud-builders/docker"
+    id: "train-dqn"
+    args:
+      - "run"
+      - "--rm"
+      - "--network=host"
+      - "-v"
+      - "/workspace/models:/app/models"
+      - "-e"
+      - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+      - "python"
+      - "-m"
+      - "training.train_dqn"
+      - "--symbol=${_SYMBOL}"
+      - "--days=${_DAYS}"
+      - "--episodes=${_DQN_EPISODES}"
+      - "--model-dir=/app/models/dqn"
+    timeout: 2400s # 40 minutes
+
+  # Step 4: Upload models to GCS
+  - name: "gcr.io/cloud-builders/gsutil"
+    id: "upload-models"
+    args:
+      - "-m"
+      - "cp"
+      - "-r"
+      - "/workspace/models/*"
+      - "gs://${_GCS_BUCKET}/trained_models/"
+
+substitutions:
+  _SYMBOL: "NIFTY"
+  _DAYS: "730"
+  _LSTM_EPOCHS: "100"
+  _DQN_EPISODES: "200"
+  _GCS_BUCKET: "galvanic-pulsar-482815-h0-models"
+
+timeout: 3600s # 1 hour total
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_HIGHCPU_8" # 8 vCPU for faster training
+
+tags: ["ml-training", "lstm", "dqn"]

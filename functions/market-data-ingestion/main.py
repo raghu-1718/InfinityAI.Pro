@@ -30,7 +30,7 @@ def fetch_live_quotes_from_engine_c(user_id: str, security_ids: List[int] = None
 
         # Call Engine-C health and status endpoint (verifies connection and trading mode)
         url = f"{ENGINE_C_URL}/api/system/status"
-        
+
         logger.info(f"📡 Checking Engine-C system status and market data availability")
         response = requests.get(url, timeout=15)
 

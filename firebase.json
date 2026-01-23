@@ -8,11 +8,7 @@
   },
   "hosting": {
     "public": "frontend/web-app/out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "/api/system/**",
@@ -37,6 +33,34 @@
       },
       {
         "source": "/engine-b/health",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/v1/options/**",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/v1/lstm/**",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/v1/dqn/**",
+        "run": {
+          "serviceId": "engine-b",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/v1/models/**",
         "run": {
           "serviceId": "engine-b",
           "region": "us-central1"
