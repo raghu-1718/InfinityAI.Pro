@@ -8,10 +8,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def require_env(var_name: str, example: str = "", optional: bool = False):
-    """Get environment variable with optional fallback"""
+def require_env(var_name: str, example: str = "", optional: bool = False) -> str:
+    """Get environment variable with optional fallback. For GOOGLE_CLOUD_PROJECT, provide a default for testing."""
     value = os.getenv(var_name)
     if value is None or value == "":
+        if var_name == "GOOGLE_CLOUD_PROJECT":
+            default = "dev-project"
+            logger = logging.getLogger(__name__)
+            logger.warning(f"⚠️ {var_name} not set; using default '{default}' for testing.")
+            return default
         if optional:
             return ""
         msg = f"[FATAL] Required environment variable '{var_name}' is missing."

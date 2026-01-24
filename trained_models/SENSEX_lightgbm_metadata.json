@@ -1,0 +1,33 @@
+{
+  "symbol": "SENSEX",
+  "model_type": "lightgbm",
+  "trained_at": "2026-01-24T13:41:41.755167",
+  "metrics": {
+    "rmse": 1342.65563132366,
+    "mae": 1027.9695026473503,
+    "r2": 0.38872357261295365
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/SENSEX_lightgbm_model.pkl"
+}

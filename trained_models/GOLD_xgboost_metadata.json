@@ -1,0 +1,33 @@
+{
+  "symbol": "GOLD",
+  "model_type": "xgboost",
+  "trained_at": "2026-01-24T13:42:30.655384",
+  "metrics": {
+    "rmse": 764.4665212357366,
+    "mae": 667.9472568271397,
+    "r2": -3.2097045794989327
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/GOLD_xgboost_model.pkl"
+}

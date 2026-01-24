@@ -1,0 +1,84 @@
+{
+  "displayName": "Trading Operations Dashboard",
+  "gridLayout": {
+    "columns": "2",
+    "widgets": [
+      {
+        "title": "Engine C Latency (Broker Integration)",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_run_revision\" resource.label.service_name=\"engine-c\" metric.type=\"run.googleapis.com/request_latencies\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_DELTA",
+                    "crossSeriesReducer": "REDUCE_PERCENTILE_99",
+                    "alignmentPeriod": "60s"
+                  }
+                }
+              },
+              "plotType": "LINE"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Order Execution Errors (Engine C)",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_run_revision\" resource.label.service_name=\"engine-c\" metric.type=\"run.googleapis.com/request_count\" metric.label.response_code_class=\"5xx\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "alignmentPeriod": "60s"
+                  }
+                }
+              },
+              "plotType": "STACKED_BAR"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1",
+            "scale": "LINEAR"
+          }
+        }
+      },
+      {
+        "title": "Active Instances (All Engines)",
+        "xyChart": {
+          "dataSets": [
+             {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/instance_count\"",
+                  "aggregation": {
+                     "perSeriesAligner": "ALIGN_MEAN",
+                     "crossSeriesReducer": "REDUCE_SUM",
+                     "alignmentPeriod": "60s",
+                     "groupByFields": ["resource.label.service_name"]
+                  }
+                }
+              },
+              "plotType": "LINE"
+             }
+          ],
+           "timeshiftDuration": "0s",
+           "yAxis": {
+             "label": "y1",
+             "scale": "LINEAR"
+           }
+        }
+      }
+    ]
+  }
+}

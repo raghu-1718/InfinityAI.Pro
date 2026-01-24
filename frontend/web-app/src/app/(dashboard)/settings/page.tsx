@@ -204,7 +204,7 @@ export default function SettingsPage() {
       } else {
         setDhanConnected(false);
         setDhanCredentials({ ...dhanCredentials, is_verified: false });
-        
+
         // Extract detailed error message
         const errorMsg = data.error || data.message || "Unknown error";
         toast.error(
@@ -246,7 +246,7 @@ export default function SettingsPage() {
         access_token: "",
         is_verified: false,
       });
-      
+
       // Clear global state
       setDhanConnected(false);
       if (userProfile) {
@@ -256,13 +256,15 @@ export default function SettingsPage() {
           isVerified: false,
         });
       }
-      
+
       clearDhanClientId();
 
       // REFRESH SESSION to update NavBar and other components
       await refreshSession();
 
-      toast.success("✅ Disconnected from DhanHQ\nCredentials removed from Secret Manager");
+      toast.success(
+        "✅ Disconnected from DhanHQ\nCredentials removed from Secret Manager",
+      );
     } catch (error: any) {
       toast.error(`❌ Disconnect failed: ${error.message}`);
       // Still clear local state even if API fails
@@ -501,7 +503,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          {ENGINE_C_URL}/auth/dhan/success
+                          https://galvanic-pulsar-482815-h0-web-app.web.app/trading
                         </code>
                         <Button
                           variant="outline"

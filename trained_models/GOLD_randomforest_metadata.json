@@ -1,0 +1,33 @@
+{
+  "symbol": "GOLD",
+  "model_type": "randomforest",
+  "trained_at": "2026-01-24T13:43:20.121829",
+  "metrics": {
+    "rmse": 752.3096318187185,
+    "mae": 656.3943688788098,
+    "r2": -3.0768799428899634
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/GOLD_randomforest_model.pkl"
+}

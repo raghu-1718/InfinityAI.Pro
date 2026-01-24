@@ -1,0 +1,33 @@
+{
+  "symbol": "GOLD",
+  "model_type": "lightgbm",
+  "trained_at": "2026-01-24T13:42:46.300878",
+  "metrics": {
+    "rmse": 750.2306217700595,
+    "mae": 654.904844997226,
+    "r2": -3.054378136565459
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/GOLD_lightgbm_model.pkl"
+}

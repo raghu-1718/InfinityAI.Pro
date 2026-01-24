@@ -82,7 +82,7 @@ class SecretManagerCredentials:
                         "secret": {
                             "replication": {"automatic": {}},
                             "labels": {
-                                "user_id": user_id,
+                                "user_id": user_id.lower(),
                                 "type": "dhan_credentials"
                             }
                         }

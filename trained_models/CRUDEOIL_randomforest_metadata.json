@@ -1,0 +1,33 @@
+{
+  "symbol": "CRUDEOIL",
+  "model_type": "randomforest",
+  "trained_at": "2026-01-24T13:44:30.903576",
+  "metrics": {
+    "rmse": 2.5368030832819333,
+    "mae": 2.0610095959373913,
+    "r2": -0.05250245906250561
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/CRUDEOIL_randomforest_model.pkl"
+}

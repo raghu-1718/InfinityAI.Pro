@@ -1,0 +1,192 @@
+{
+  "timestamp": "2026-01-24T15:28:53.791338",
+  "services_tested": 9,
+  "services_healthy": 9,
+  "services_unhealthy": 0,
+  "average_response_time_ms": 937.14,
+  "details": [
+    {
+      "service": "engine-a",
+      "url": "https://engine-a-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 399.98,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "healthy",
+        "service": "engine-a-orchestrator",
+        "version": "3.7-google-integrations",
+        "ml_capabilities": [
+          "risk_scoring",
+          "position_sizing",
+          "var_calculation",
+          "cvar_calculation",
+          "sortino_ratio",
+          "kelly_criterion",
+          "portfolio_risk",
+          "max_drawdown"
+        ],
+        "google_integrations": {
+          "genai": false,
+          "cloud_logging": false,
+          "cloud_storage": false,
+          "agent_orchestrator": false
+        },
+        "timestamp": "2026-01-24T09:58:54.177386"
+      }
+    },
+    {
+      "service": "engine-b",
+      "url": "https://engine-b-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 3530.54,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "active",
+        "service": "engine-b",
+        "timestamp": "2026-01-24T09:58:57.706408",
+        "capabilities": {
+          "version": "v3.6-instrument-signals",
+          "models": [
+            "xgboost",
+            "lightgbm",
+            "catboost",
+            "random_forest",
+            "nltk_sentiment"
+          ],
+          "frameworks": {
+            "xgboost": true,
+            "lightgbm": true,
+            "catboost": true,
+            "random_forest": true,
+            "transformers": true,
+            "nltk_sentiment": true,
+            "ta_lib": true,
+            "yfinance": true,
+            "weighted_voting": true
+          },
+          "trained_symbols": [],
+          "ensemble_weights": {
+            "xgboost": 0.4,
+            "lightgbm": 0.3,
+            "catboost": 0.15,
+            "random_forest": 0.15
+          }
+        }
+      }
+    },
+    {
+      "service": "engine-c",
+      "url": "https://engine-c-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 383.32,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "healthy",
+        "service": "engine-c-execution",
+        "broker": "DhanHQ",
+        "version": "3.8-performance-optimized",
+        "trading_mode": "LIVE",
+        "mode_badge": "\ud83d\udcb0 LIVE TRADING",
+        "ml_capabilities": [
+          "slippage_prediction",
+          "order_timing",
+          "twap_splitting",
+          "vwap_splitting",
+          "execution_analytics"
+        ],
+        "paper_trading_available": true,
+        "webhook_verification_available": true,
+        "timestamp": "2026-01-24T09:58:58.093826"
+      }
+    },
+    {
+      "service": "detect-momentum-signals",
+      "url": "https://detect-momentum-signals-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 645.86,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "success",
+        "timestamp": "2026-01-24T09:58:58.741342",
+        "signals": [],
+        "count": 0
+      }
+    },
+    {
+      "service": "get-latest-signals",
+      "url": "https://get-latest-signals-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 453.25,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "success",
+        "timestamp": "2026-01-24T09:58:59.198072",
+        "hours": 24,
+        "count": 0,
+        "signals": []
+      }
+    },
+    {
+      "service": "market-data-ingestion",
+      "url": "https://market-data-ingestion-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 1591.82,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "message": "Market data ingested and published",
+        "securities": 2,
+        "status": "success",
+        "timestamp": "2026-01-24T09:59:00.786349"
+      }
+    },
+    {
+      "service": "websocket-streamer",
+      "url": "https://websocket-streamer-3acobgd3qa-uc.a.run.app/health",
+      "status": "healthy",
+      "response_time_ms": 493.27,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "disconnected",
+        "service": "dhan-websocket-streamer",
+        "websocket_connected": false,
+        "timestamp": "2026-01-24T09:59:01.277204"
+      }
+    },
+    {
+      "service": "cf-detect-momentum-signals",
+      "url": "https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/detect-momentum-signals",
+      "status": "healthy",
+      "response_time_ms": 532.06,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "success",
+        "timestamp": "2026-01-24T09:59:01.801822",
+        "signals": [],
+        "count": 0
+      }
+    },
+    {
+      "service": "cf-get-latest-signals",
+      "url": "https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/get-latest-signals",
+      "status": "healthy",
+      "response_time_ms": 404.2,
+      "status_code": 200,
+      "error": null,
+      "response_data": {
+        "status": "success",
+        "timestamp": "2026-01-24T09:59:02.195700",
+        "hours": 24,
+        "count": 0,
+        "signals": []
+      }
+    }
+  ]
+}

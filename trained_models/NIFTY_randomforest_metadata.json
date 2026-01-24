@@ -1,0 +1,33 @@
+{
+  "symbol": "NIFTY",
+  "model_type": "randomforest",
+  "trained_at": "2026-01-24T13:38:28.150296",
+  "metrics": {
+    "rmse": 470.04756259703464,
+    "mae": 368.3572285014649,
+    "r2": 0.16460960367952782
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/NIFTY_randomforest_model.pkl"
+}

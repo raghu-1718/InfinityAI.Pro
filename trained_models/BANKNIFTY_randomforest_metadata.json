@@ -1,0 +1,33 @@
+{
+  "symbol": "BANKNIFTY",
+  "model_type": "randomforest",
+  "trained_at": "2026-01-24T13:39:36.339576",
+  "metrics": {
+    "rmse": 1761.947966039909,
+    "mae": 1474.830302386545,
+    "r2": 0.22538004872535378
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/BANKNIFTY_randomforest_model.pkl"
+}

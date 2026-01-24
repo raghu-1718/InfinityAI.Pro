@@ -33,6 +33,7 @@ from google.cloud import firestore
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
+from src.secret_manager_credentials import get_secret_manager_credentials
 
 # Import new unified APIs
 try:
@@ -1313,39 +1314,33 @@ async def receive_dhan_postback(request: Request):
 async def save_dhan_credentials(request: DhanCredentialsRequest):
     """Save Dhan credentials to Secret Manager and verify"""
     try:
-        # Use consistent naming: dhan_creds_{uid}
-        secret_id = f"dhan_creds_{request.user_id.replace('@', '_at_').replace('.', '_')}"
-        import json
-        client = secretmanager.SecretManagerServiceClient()
         proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
-        parent = f"projects/{proj_id}"
+        logger.info("✅ Using updated SecretManagerCredentials logic for SAVE")
+        manager = get_secret_manager_credentials()
+        # Save credentials to Secret Manager
+        await manager.save_user_credentials(
+            user_id=request.user_id,
+            client_id=request.client_id,
+            access_token=request.access_token,
+            api_key=request.api_key,
+            api_secret=request.api_secret
+        )
 
-        credentials_data = {
-            "client_id": request.client_id,
-            "api_key": request.api_key,
-            "api_secret": request.api_secret,
-            "access_token": request.access_token,
-            "updated_at": datetime.utcnow().isoformat()
-        }
-
-        # Ensure secret exists
+        # Update Firestore Status (SYNC for Frontend)
         try:
-            client.create_secret(request={
-                "parent": parent,
-                "secret_id": secret_id,
-                "secret": {"replication": {"automatic": {}}}
-            })
-            logger.info(f"✅ Created new secret: {secret_id}")
+            db_client = firestore.Client(project=proj_id)
+            user_ref = db_client.collection("users").document(request.user_id)
+            user_ref.set({
+                "dhanConnected": True,
+                "dhanClientId": request.client_id,
+                "connectedAt": datetime.utcnow().isoformat(),
+                "lastUpdatedAt": datetime.utcnow().isoformat()
+            }, merge=True)
+            logger.info(f"✅ Firestore status updated for user {request.user_id}")
         except Exception as e:
-            # Already exists or other error (handled by version add)
-            pass
+            logger.error(f"⚠️ Failed to update Firestore status: {e}")
+            # Non-fatal error, credentials are safe
 
-        # Add new version
-        client.add_secret_version(request={
-            "parent": f"{parent}/secrets/{secret_id}",
-            "payload": {"data": json.dumps(credentials_data).encode("UTF-8")}
-        })
 
         # Verify connection live
         verified = False
@@ -1360,7 +1355,7 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
             else:
                 message += " but verification failed (invalid response)"
         except Exception as ve:
-            message += f" but verification failed: {str(ve)[:50]}"
+             message += f" but verification failed: {str(ve)[:50]}"
 
         return DhanCredentialsResponse(success=True, verified=verified, message=message)
     except Exception as e:
@@ -1370,29 +1365,26 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
 
 @app.get("/api/dhan/credentials/{user_id}", response_model=DhanCredentialsResponse)
 async def get_dhan_credentials(user_id: str):
-    """Get masked Dhan credentials (returns verified=False by default to force manual check if desired)"""
+    """Get masked Dhan credentials"""
     try:
-        secret_id = f"dhan_creds_{user_id.replace('@', '_at_').replace('.', '_')}"
-        import json
-        client = secretmanager.SecretManagerServiceClient()
-        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
-        name = f"projects/{proj_id}/secrets/{secret_id}/versions/latest"
+        manager = get_secret_manager_credentials()
+        creds = await manager.get_user_credentials(user_id)
+        
+        if not creds:
+             return DhanCredentialsResponse(success=False, verified=False, message="No credentials found", credentials=None)
 
-        resp = client.access_secret_version(request={"name": name})
-        data = json.loads(resp.payload.data.decode("UTF-8"))
-
+        c_data = creds.get("credentials", {})
         masked = {
-            "client_id": data.get("client_id", ""),
-            "api_key": "***" + (data.get("api_key", "")[-4:] or ""),
-            "api_secret": "***" + (data.get("api_secret", "")[-4:] or ""),
-            "access_token": "***" + (data.get("access_token", "")[-4:] or ""),
-            "is_verified": False  # Don't assume verified just because it exists
+            "client_id": c_data.get("client_id", ""),
+            "api_key": "***" + (c_data.get("api_key", "")[-4:] if c_data.get("api_key") else ""),
+            "api_secret": "***" + (c_data.get("api_secret", "")[-4:] if c_data.get("api_secret") else ""),
+            "access_token": "***" + (c_data.get("access_token", "")[-4:] if c_data.get("access_token") else ""),
+            "is_verified": False
         }
 
         return DhanCredentialsResponse(
             success=True,
-            verified=False, # UI should show 'CONNECTED' but maybe 'UNVERIFIED' until button clicked
+            verified=False,
             message="Credentials loaded",
             credentials=masked
         )
@@ -1408,10 +1400,16 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
         access_token = request.access_token
 
         # If credentials not provided in request, try to load from Secret Manager
+        if (not client_id or not access_token) and request.user_id:
+             manager = get_secret_manager_credentials()
+             creds = await manager.get_user_credentials(request.user_id)
+             if creds:
+                 c_data = creds.get("credentials", {})
+                 client_id = c_data.get("client_id")
+                 access_token = c_data.get("access_token")
+
         if not client_id or not access_token:
-             # Load from SM... (omitted for brevity, assume frontend sends them or we load)
-             # Actually, simpler if frontend sends them for now as it's a 'Verify' action.
-             pass
+             return DhanCredentialsResponse(success=False, verified=False, message="Missing credentials")
 
         dhan = create_dhan_client(client_id, access_token)
         funds = dhan.get_fund_limits()
@@ -1430,16 +1428,10 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
 async def disconnect_dhan(user_id: str):
     """Delete Dhan credentials"""
     try:
-        secret_id = f"dhan_creds_{user_id.replace('@', '_at_').replace('.', '_')}"
-        client = secretmanager.SecretManagerServiceClient()
-        proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not proj_id: raise ValueError("GOOGLE_CLOUD_PROJECT env var missing")
-        client.delete_secret(request={"name": f"projects/{proj_id}/secrets/{secret_id}"})
+        manager = get_secret_manager_credentials()
+        await manager.delete_user_credentials(user_id)
         return DhanCredentialsResponse(success=True, verified=False, message="Deleted")
     except Exception as e:
-        # If secret not found (404), consider it already deleted/disconnected
-        if "404" in str(e) or "NotFound" in str(e):
-             return DhanCredentialsResponse(success=True, verified=False, message="Disconnected (was already clean)")
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
 
 @app.get("/api/v1/user/{user_id}/account")

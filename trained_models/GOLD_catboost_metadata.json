@@ -1,0 +1,33 @@
+{
+  "symbol": "GOLD",
+  "model_type": "catboost",
+  "trained_at": "2026-01-24T13:43:03.285294",
+  "metrics": {
+    "rmse": 789.2181014811856,
+    "mae": 698.5754641863494,
+    "r2": -3.486717787621311
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/GOLD_catboost_model.pkl"
+}

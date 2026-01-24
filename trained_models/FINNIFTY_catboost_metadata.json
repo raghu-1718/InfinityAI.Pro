@@ -1,0 +1,33 @@
+{
+  "symbol": "FINNIFTY",
+  "model_type": "catboost",
+  "trained_at": "2026-01-24T13:40:27.504899",
+  "metrics": {
+    "rmse": 562.5218097562152,
+    "mae": 474.356696777667,
+    "r2": 0.24512983669929878
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/FINNIFTY_catboost_model.pkl"
+}

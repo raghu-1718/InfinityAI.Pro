@@ -1,0 +1,33 @@
+{
+  "symbol": "FINNIFTY",
+  "model_type": "lightgbm",
+  "trained_at": "2026-01-24T13:40:10.438850",
+  "metrics": {
+    "rmse": 556.6742442178803,
+    "mae": 484.71471458039844,
+    "r2": 0.2607424210436158
+  },
+  "feature_columns": [
+    "sma_20",
+    "sma_50",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi",
+    "bb_high",
+    "bb_mid",
+    "bb_low",
+    "bb_width",
+    "atr",
+    "stoch_k",
+    "stoch_d",
+    "volume_sma",
+    "volume_ratio",
+    "returns",
+    "log_returns",
+    "volatility_20"
+  ],
+  "model_file": "trained_models/FINNIFTY_lightgbm_model.pkl"
+}
