@@ -12,12 +12,14 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install dependencies
-COPY requirements.txt /app/requirements.txt
+# Copy requirements and install dependencies
+COPY backend/engine-c/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy engine-c source code
-COPY src /app/src
+COPY backend/engine-c/src /app/src
+COPY backend/shared /app/shared
 
 # Copy shared modules if they exist (optional)
 # Note: Cloud Build will handle this from the build context
