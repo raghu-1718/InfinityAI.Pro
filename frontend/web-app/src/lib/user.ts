@@ -4,7 +4,7 @@
  *
  * Priority order for user ID:
  * 1. Dhan Client ID (when connected - most stable identifier)
- * 2. Firebase UID (when authenticated via Firebase)
+ * 2. Supabase UID (when authenticated via Supabase Auth)
  * 3. Session-based ID (for coupon auth)
  * 4. Generated fallback ID (temporary until proper auth)
  */

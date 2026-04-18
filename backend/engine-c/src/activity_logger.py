@@ -2,19 +2,18 @@ import logging
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
-from google.cloud import firestore
 
 logger = logging.getLogger(__name__)
 
 class ActivityLogger:
     """
-    Logs user activities and system events to Firestore 'activity_logs' collection.
+    Logs user activities and system events to Supabase 'logs' table.
     Used for user-facing activity feeds and system auditing.
     """
 
-    def __init__(self, db_client: Optional[firestore.Client] = None):
-        self.db = db_client or firestore.Client()
-        self.collection = "activity_logs"
+    def __init__(self, db_client: Optional[Any] = None):
+        self.db = db_client
+        self.collection = "logs"
         logger.info("✅ ActivityLogger initialized")
 
     async def log_activity(
@@ -27,7 +26,7 @@ class ActivityLogger:
         severity: str = "info"
     ) -> str:
         """
-        Log an activity to Firestore.
+        Log an activity to Supabase.
 
         Args:
             user_id: The ID of the user associated with the activity.
@@ -41,7 +40,7 @@ class ActivityLogger:
             The ID of the created log document.
         """
         try:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.utcnow().isoformat()
             doc_data = {
                 "user_id": user_id,
                 "type": activity_type,
@@ -53,12 +52,18 @@ class ActivityLogger:
                 "source": "engine-c"
             }
 
-            # Use a time-sorted ID for easier querying if needed, or let Firestore auto-gen
-            # Auto-gen is usually safer for hot-spotting prevention in high/write scenarios
-            update_time, doc_ref = self.db.collection(self.collection).add(doc_data)
+            from src.user_credentials import get_credentials_manager
+            manager = get_credentials_manager()
+            if not manager or not manager.db:
+                raise Exception("Supabase DB not available")
+            
+            response = manager.db.table("logs").insert(doc_data).execute()
             
             logger.info(f"📝 Activity logged: {activity_type} for {user_id} (Trace: {trace_id})")
-            return doc_ref.id
+            
+            if response.data and len(response.data) > 0:
+                return str(response.data[0].get('id', ''))
+            return ""
 
         except Exception as e:
             logger.error(f"❌ Failed to log activity: {e}")

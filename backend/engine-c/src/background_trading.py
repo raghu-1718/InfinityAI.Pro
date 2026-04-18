@@ -6,7 +6,7 @@ Engine C is now a pure execution worker and does not initiate trades or manage t
 
 class BackgroundTradingManager:
     """Deprecated stub"""
-    def __init__(self, firestore_db=None):
+    def __init__(self, db_client=None):
         pass
 
     @property

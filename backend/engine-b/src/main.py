@@ -37,8 +37,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from dhanhq import dhanhq
 import uvicorn
-from google.cloud import secretmanager
-from google.cloud import firestore
+# from google.cloud import secretmanager (Removed)
 
 # Optional OpenTelemetry instrumentation (guarded)
 HAS_OTEL = False
@@ -60,8 +59,23 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize Firestore for signal storage
-db = firestore.Client()
+# Initialize Supabase for signal storage
+_supabase_db = None
+def get_supabase_db():
+    global _supabase_db
+    if _supabase_db is None:
+        try:
+            from supabase import create_client
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            if url and key:
+                _supabase_db = create_client(url, key)
+                logger.info("✅ Engine-B: Supabase client initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Supabase not available for signal storage: {e}")
+    return _supabase_db
+
+db = get_supabase_db()  # Legacy alias for compatibility
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 
@@ -380,19 +394,10 @@ MARKET_CONFIG = {
     }
 }
 
-# --- Secret Manager Helper ---
+# --- Secret Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
-    """Retrieve secret from Google Secret Manager"""
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
-        response = client.access_secret_version(request={"name": name})
-        # Strip any trailing whitespace/newlines from the secret
-        return response.payload.data.decode("UTF-8").strip()
-    except Exception as e:
-        logger.warning(f"Secret fetch failed for {secret_id}: {e}")
-        return ""
+    """Retrieve secret from environment variables (formerly Google Secret Manager)"""
+    return os.getenv(secret_id, "")
 
 # =====================================================================
 # DYNAMIC SYMBOL MAPPER (Production Grade)
@@ -1992,13 +1997,18 @@ async def get_market_knowledge():
 class BatchSignalsRequest(BaseModel):
     """Request model for batch signals"""
     symbols: List[str]
-    user_id: Optional[str] = None  # User ID for Firestore storage
+    user_id: Optional[str] = None  # User ID for Supabase storage
     fast: bool = True
 
 
-async def store_signal_to_firestore(user_id: str, signal: Any) -> bool:
-    """Store generated signal to Firestore"""
+async def store_signal_to_supabase(user_id: str, signal: Any) -> bool:
+    """Store generated signal to Supabase signals table"""
     try:
+        supa_db = get_supabase_db()
+        if not supa_db:
+            logger.warning("Supabase not available for signal storage")
+            return False
+
         # Convert signal to dict
         if hasattr(signal, 'dict'):
             signal_dict = signal.dict()
@@ -2008,23 +2018,23 @@ async def store_signal_to_firestore(user_id: str, signal: Any) -> bool:
             signal_dict = dict(signal)
 
         # Add metadata
-        signal_dict['timestamp'] = firestore.SERVER_TIMESTAMP
         signal_dict['user_id'] = user_id
         signal_dict['stored_at'] = datetime.utcnow().isoformat()
+        signal_dict['timestamp'] = datetime.utcnow().isoformat()
 
-        # Store to Firestore: users/{uid}/signals
-        db.collection('users').document(user_id).collection('signals').add(signal_dict)
-        logger.info(f"✓ Stored signal for {signal_dict.get('symbol', 'UNKNOWN')} to Firestore (user: {user_id})")
+        # Store to Supabase: signals table
+        supa_db.table('signals').insert(signal_dict).execute()
+        logger.info(f"✓ Stored signal for {signal_dict.get('symbol', 'UNKNOWN')} to Supabase (user: {user_id})")
         return True
     except Exception as e:
-        logger.error(f"✗ Failed to store signal to Firestore: {e}")
+        logger.error(f"✗ Failed to store signal to Supabase: {e}")
         return False
 
 
 @app.post("/api/v1/signal/batch")
 @app.post("/api/v1/signals/batch")  # Alias for frontend compatibility
 async def generate_batch_signals(request: BatchSignalsRequest):
-    """Generate signals for multiple symbols and store to Firestore"""
+    """Generate signals for multiple symbols and store to Supabase"""
     if len(request.symbols) > 50:
         raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
 
@@ -2036,9 +2046,9 @@ async def generate_batch_signals(request: BatchSignalsRequest):
             signal = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
             signals.append(signal)
 
-            # Store to Firestore if user_id provided
+            # Store to Supabase if user_id provided
             if request.user_id:
-                if await store_signal_to_firestore(request.user_id, signal):
+                if await store_signal_to_supabase(request.user_id, signal):
                     stored_count += 1
 
         except Exception as e:

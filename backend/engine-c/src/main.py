@@ -28,12 +28,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from dhanhq import dhanhq
 from src.dhan_client_wrapper import DhanClient, create_dhan_client, DhanEnvironment
-from google.cloud import secretmanager
-from google.cloud import firestore
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
-from src.secret_manager_credentials import get_secret_manager_credentials
 
 # Import new unified APIs
 try:
@@ -83,17 +80,8 @@ except ImportError as e:
     logger_init.warning(f"⚠️ Real-time enhancements not available: {e}")
     REALTIME_ENABLED = False
 
-# Initialize Firestore client globally
-try:
-    _firestore_db = firestore.Client()
-    logger_init = logging.getLogger("firestore_init")
-    logger_init.info("✅ Firestore client initialized")
-except Exception as e:
-    _firestore_db = None
-    logger_init = logging.getLogger("firestore_init")
-    logger_init.warning(f"⚠️ Firestore client not initialized: {e}")
-    log_startup_error(e, context="Firestore client init")
-
+# Supabase client is initialized inside UserCredentialsManager
+_supabase_db = None  # Legacy placeholder — actual DB access via UserCredentialsManager
 import os
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
@@ -177,26 +165,20 @@ except ImportError as e:
     print(f"⚠️ Performance module not available: {e}")
     log_startup_error(e, context="Performance module import")
 
-# Lazy import for User Credentials Management (using GCP Secret Manager)
-SecretManagerCredentials = None
+# Lazy import for User Credentials Management (using Supabase)
 _credentials_manager = None
 
 def get_credentials_manager():
-    """Lazy load SecretManagerCredentials for GCP Secret Manager storage"""
-    global SecretManagerCredentials, _credentials_manager
+    """Lazy load credentials manager for Supabase storage"""
+    global _credentials_manager
     if _credentials_manager is None:
         try:
-            # PREFER Firestore (UserCredentialsManager) to match Frontend Function behavior
-            # The Frontend 'submitDhanCredentialsV2' writes to Firestore 'dhan_credentials'.
-            # We must read from there.
             try:
                 from src.user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
             except ImportError:
                 from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
             _credentials_manager = gcm()
-            logger.info("✅ Using Firestore for credentials storage (Primary Vault)")
-
-            # Cloud Secret Manager available as fallback/admin if needed, but not for user-creds flow currently
+            logger.info("✅ Using Supabase for credentials storage (Primary Vault)")
         except Exception as e:
             logger.error(f"Failed to initialize credentials manager: {e}")
             return None
@@ -451,7 +433,7 @@ async def startup_event():
     # Initialize Real-Time Enhancements (robust)
     if REALTIME_ENABLED:
         try:
-            await with_timeout(initialize_realtime(_firestore_db), 10, "initialize_realtime")
+            await with_timeout(initialize_realtime(None), 10, "initialize_realtime")
             logger.info("✅ Real-time enhancements enabled")
         except Exception as e:
             logger.warning(f"Real-time enhancements init failed: {e}")
@@ -731,19 +713,10 @@ class ExecutionOptimizer:
 
 EXECUTION_OPTIMIZER = ExecutionOptimizer()
 
-# --- Secret Manager Helper ---
+# --- Secret Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
-    """Retrieve secret from Google Secret Manager"""
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
-        response = client.access_secret_version(request={"name": name})
-        # Strip any trailing whitespace/newlines from the secret
-        return response.payload.data.decode("UTF-8").strip()
-    except Exception as e:
-        print(f"Error fetching secret {secret_id}: {e}")
-        return ""
+    """Retrieve secret from environment variables (formerly Google Secret Manager)"""
+    return os.getenv(secret_id, "")
 
 # --- Models ---
 class OrderRequest(BaseModel):
@@ -882,13 +855,13 @@ class ExecutionAnalyticsRequest(BaseModel):
 async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: Optional[float] = None) -> dhanhq:
     """
     Async version: Create authenticated DhanHQ client for a specific user.
-    Uses GCP Secret Manager for credentials.
+    Uses Supabase for encrypted credential storage.
 
-    Adds exponential backoff retries to handle transient Firestore latency
+    Adds exponential backoff retries to handle transient database latency
     immediately after credential updates.
 
     CRITICAL FIX: Resolves generated user_ids (like 'user_1768802144009_1jvf3b')
-    to actual Firebase UIDs where credentials are stored in Firestore.
+    to actual user UIDs where credentials are stored in Supabase.
     """
     if start_time is None:
         start_time = time.time()
@@ -899,9 +872,9 @@ async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: 
     try:
         creds_manager = get_credentials_manager()
 
-        # CRITICAL: Resolve the user_id to the correct Firebase UID
+        # CRITICAL: Resolve the user_id to the correct UID
         # Frontend sends generated IDs like 'user_1768802144009_1jvf3b' but credentials
-        # are stored under Firebase UID in Firestore dhan_credentials collection
+        # are stored under the actual UID in Supabase user_credentials table
         resolved_user_id = user_id
 
         creds = await creds_manager.get_user_credentials(user_id)
@@ -1028,7 +1001,7 @@ class UserCredentialsVerifyRequest(BaseModel):
 async def save_user_credentials(request: UserCredentialsRequest):
     """
     Save user's Dhan credentials securely.
-    Credentials are encrypted and stored in Firestore.
+    Credentials are encrypted and stored in Supabase.
     """
     try:
         manager = get_credentials_manager()
@@ -1271,32 +1244,17 @@ async def receive_dhan_postback(request: Request):
 
         logger.info(f"📨 Received postback for order {order_id}: {order_status}")
 
-        # Update Firestore Order Record
+        # Update Supabase Order Record
         try:
-            proj = os.getenv("GOOGLE_CLOUD_PROJECT")
-            if not proj:
-                raise ValueError("GOOGLE_CLOUD_PROJECT not set")
-
-            db = firestore.Client(project=proj)
-            order_ref = db.collection("orders").document(order_id)
-
-            # Update order status and execution details
-            order_ref.set({
-                "status": order_status,
-                "updated_at": datetime.utcnow().isoformat(),
-                "last_price": payload.get("price"),
-                "filled_qty": payload.get("quantity") or payload.get("executedQuantity"),
-                "exchange_order_id": payload.get("exchangeOrderId"),
-                "trade_id": payload.get("tradeId"),
-                "symbol": payload.get("symbol"),
-                "postback_received": True
-            }, merge=True)
-
-            logger.info(f"✅ Firestore updated for order {order_id}")
-
+            manager = get_credentials_manager()
+            if manager and manager.db:
+                manager.db.table("trades").update({
+                    "status": order_status,
+                    "updated_at": datetime.utcnow().isoformat()
+                }).eq("id", order_id).execute()
+                logger.info(f"✅ Supabase updated for order {order_id}")
         except Exception as e:
-            logger.error(f"Firestore update failed for postback: {e}")
-            # Don't fail the postback response to Dhan, just log error
+            logger.error(f"Supabase update failed for postback: {e}")
 
         return {
             "status": "received",
@@ -1315,9 +1273,8 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
     """Save Dhan credentials to Secret Manager and verify"""
     try:
         proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        logger.info("✅ Using updated SecretManagerCredentials logic for SAVE")
-        manager = get_secret_manager_credentials()
-        # Save credentials to Secret Manager
+        # Save credentials to Supabase
+        manager = get_credentials_manager()
         await manager.save_user_credentials(
             user_id=request.user_id,
             client_id=request.client_id,
@@ -1326,20 +1283,14 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
             api_secret=request.api_secret
         )
 
-        # Update Firestore Status (SYNC for Frontend)
+        # Sync status via Supabase UserCredentialsManager
         try:
-            db_client = firestore.Client(project=proj_id)
-            user_ref = db_client.collection("users").document(request.user_id)
-            user_ref.set({
-                "dhanConnected": True,
-                "dhanClientId": request.client_id,
-                "connectedAt": datetime.utcnow().isoformat(),
-                "lastUpdatedAt": datetime.utcnow().isoformat()
-            }, merge=True)
-            logger.info(f"✅ Firestore status updated for user {request.user_id}")
+            manager = get_credentials_manager()
+            if manager:
+                await manager.update_connection_status(request.user_id, "connected", {})
+                logger.info(f"✅ Supabase status updated for user {request.user_id}")
         except Exception as e:
-            logger.error(f"⚠️ Failed to update Firestore status: {e}")
-            # Non-fatal error, credentials are safe
+            logger.error(f"⚠️ Failed to update Supabase status: {e}")
 
 
         # Verify connection live
@@ -1367,7 +1318,7 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
 async def get_dhan_credentials(user_id: str):
     """Get masked Dhan credentials"""
     try:
-        manager = get_secret_manager_credentials()
+        manager = get_credentials_manager()
         creds = await manager.get_user_credentials(user_id)
         
         if not creds:
@@ -1401,7 +1352,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
 
         # If credentials not provided in request, try to load from Secret Manager
         if (not client_id or not access_token) and request.user_id:
-             manager = get_secret_manager_credentials()
+             manager = get_credentials_manager()
              creds = await manager.get_user_credentials(request.user_id)
              if creds:
                  c_data = creds.get("credentials", {})
@@ -1428,7 +1379,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
 async def disconnect_dhan(user_id: str):
     """Delete Dhan credentials"""
     try:
-        manager = get_secret_manager_credentials()
+        manager = get_credentials_manager()
         await manager.delete_user_credentials(user_id)
         return DhanCredentialsResponse(success=True, verified=False, message="Deleted")
     except Exception as e:
@@ -1945,7 +1896,7 @@ async def dhan_postback(request: Dict[str, Any]):
     """
     Receive order/trade updates from DhanHQ via webhook.
     This endpoint receives real-time updates on order status, fills, etc.
-    ENHANCED: Now stores to Firestore and broadcasts in real-time.
+    ENHANCED: Now stores to Supabase and broadcasts in real-time.
     """
     try:
         logger.info(f"📥 DhanHQ Postback received: {request}")
@@ -1977,11 +1928,11 @@ async def dhan_postback(request: Dict[str, Any]):
                 severity="info" if status != "REJECTED" else "warning"
             )
 
-        # ENHANCED: Store in Firestore for trade history
+        # ENHANCED: Store in Supabase for trade history
         if REALTIME_ENABLED:
             try:
                 await store_postback_event(order_id, client_id, request)
-                logger.info(f"✅ Postback stored in Firestore: {order_id}")
+                logger.info(f"✅ Postback stored in Supabase: {order_id}")
             except Exception as e:
                 logger.warning(f"Failed to store postback: {e}")
 

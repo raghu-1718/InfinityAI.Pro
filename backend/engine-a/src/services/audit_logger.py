@@ -1,4 +1,8 @@
-from google.cloud import firestore
+"""
+Structured Audit Logger for Trading Safety Events.
+Writes to Supabase 'logs' table.
+Immutable, persistent, replayable.
+"""
 from datetime import datetime
 import os
 import logging
@@ -7,25 +11,35 @@ import json
 
 logger = logging.getLogger(__name__)
 
-# Initialize DB (Singleton-ish)
+# Initialize Supabase (Singleton)
 _db = None
 
 def get_db():
     global _db
     if _db is None:
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-pro-dev")
-        _db = firestore.Client(project=project_id)
+        try:
+            from supabase import create_client
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            if url and key:
+                _db = create_client(url, key)
+                logger.info("✅ AuditLogger: Supabase client initialized")
+            else:
+                logger.warning("⚠️ SUPABASE_URL or key not set; audit logging will be console-only")
+        except Exception as e:
+            logger.error(f"Failed to init Supabase for audit logging: {e}")
     return _db
+
 
 class AuditLogger:
     """
     Structured Audit Logger for Trading Safety Events.
-    Writes to Firestore 'trade_audit' collection.
+    Writes to Supabase 'logs' table.
     Immutable, persistent, replayable.
     """
-    
+
     def __init__(self):
-        self.collection = "trade_audit"
+        self.table = "logs"
 
     def log_event(self, uid: str, event: str, details: dict, severity: str = "INFO"):
         """
@@ -35,18 +49,22 @@ class AuditLogger:
         try:
             db = get_db()
             doc_data = {
-                "uid": uid,
-                "event": event,
-                "details": details,
+                "user_id": uid,
+                "type": event,
+                "description": json.dumps(details),
                 "severity": severity,
                 "timestamp": datetime.utcnow().isoformat(),
-                "trace_id": details.get("trace_id") or str(uuid.uuid4()),
-                "source": "engine-a"
+                "metadata": {
+                    "trace_id": details.get("trace_id") or str(uuid.uuid4()),
+                    "source": "engine-a"
+                }
             }
-            
-            db.collection(self.collection).add(doc_data)
+
+            if db:
+                db.table(self.table).insert(doc_data).execute()
+
             logger.info(f"📝 AUDIT LOG: {event} | {json.dumps(details)}")
-            
+
         except Exception as e:
             logger.error(f"❌ AUDIT LOG FAILED: {event} - {e}")
 
@@ -56,7 +74,7 @@ class AuditLogger:
 
     def log_session_stop(self, uid: str, reason: str = "MANUAL"):
         self.log_event(uid, "SESSION_STOP", {"reason": reason}, "INFO")
-    
+
     def log_trade_approved(self, uid: str, symbol: str, qty: int, value: float, risk_score: dict):
         self.log_event(uid, "TRADE_APPROVED", {
             "symbol": symbol, "quantity": qty, "value": value, "risk": risk_score
@@ -66,7 +84,7 @@ class AuditLogger:
         self.log_event(uid, "TRADE_REJECTED", {
             "symbol": symbol, "reason": reason, "details": details
         }, "WARNING")
-    
+
     def log_kill_switch(self, uid: str, reason: str, pnl: float):
         self.log_event(uid, "KILL_SWITCH_TRIGGERED", {
             "reason": reason, "pnl": pnl

@@ -14,23 +14,14 @@ aiohttp>=3.9.0
 # Broker Integration
 dhanhq==2.0.2
 
-# Cloud & Secrets
-google-cloud-secret-manager==2.20.0
-
 # =====================================================================
 # Google Cloud Integrations - Vertex AI Enhanced
 # =====================================================================
 # Official GenAI SDK with Vertex AI support (function calling, structured output)
 google-genai>=1.0.0
 
-# Cloud Logging - structured trade signal logging
-google-cloud-logging>=3.10.0
-
-# Cloud Storage - ML model and trading history storage
-google-cloud-storage>=2.14.0
-
-# Cloud Firestore - signal and trade data persistence
-google-cloud-firestore>=2.14.0
+# Supabase - signal and trade data persistence
+supabase>=2.3.0
 
 # =====================================================================
 # News & RSS Integration

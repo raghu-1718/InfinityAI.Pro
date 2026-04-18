@@ -99,21 +99,21 @@ async def place_super_order(req: SuperOrderRequest):
         response = dhan.place_super_order(data=dhan_legs)
         
         if response.get('status') == 'success':
-            # Store in Firestore
-            from google.cloud import firestore
-            db = firestore.Client()
+            # Store in Supabase
+            manager = get_credentials_manager()
+            if not manager or not manager.db:
+                raise Exception("Supabase not initialized")
             
             order_doc = {
+                'id': response.get('order_id', str(datetime.utcnow().timestamp())),
                 'user_id': req.user_id,
-                'strategy_name': req.strategy_name,
-                'legs': req.legs,
-                'dhan_response': response,
+                'strategy': req.strategy_name,
                 'status': 'PENDING',
-                'created_at': datetime.utcnow(),
-                'order_type': 'SUPER_ORDER'
+                'created_at': datetime.utcnow().isoformat(),
             }
             
-            db.collection('super_orders').document(response.get('order_id', str(datetime.utcnow().timestamp()))).set(order_doc)
+            # Using trades table for super orders
+            manager.db.table('trades').insert(order_doc).execute()
             
             return {
                 "status": "success",
@@ -184,16 +184,17 @@ async def place_iron_condor(
 async def get_super_order_status(order_id: str, user_id: str):
     """Get status of a super order"""
     try:
-        from google.cloud import firestore
-        db = firestore.Client()
+        from src.user_credentials import get_credentials_manager
+        manager = get_credentials_manager()
+        if not manager or not manager.db:
+            raise Exception("Supabase not initialized")
+            
+        response = manager.db.table('trades').select('*').eq('id', order_id).execute()
         
-        doc_ref = db.collection('super_orders').document(order_id)
-        doc = doc_ref.get()
-        
-        if not doc.exists:
+        if not response.data or len(response.data) == 0:
             raise HTTPException(status_code=404, detail="Super Order not found")
         
-        order_data = doc.to_dict()
+        order_data = response.data[0]
         
         # Verify user owns this order
         if order_data.get('user_id') != user_id:

@@ -61,22 +61,29 @@ def check_secret_manager():
         print(f"❌ Secret NOT FOUND in SM: {e}")
         return False
 
-def check_firestore():
-    print("\n--- TEST: Check Firestore ---")
-    from google.cloud import firestore
-    db = firestore.Client()
-    
-    doc = db.collection("users").document(TEST_USER_ID).get()
-    if doc.exists:
-        data = doc.to_dict()
-        print(f"✅ User Profile Exists: dhanConnected={data.get('dhanConnected')}")
-        # Cleanup
-        db.collection("users").document(TEST_USER_ID).delete()
-    else:
-        print(f"❌ User Profile NOT FOUND")
+def check_supabase():
+    print("\n--- TEST: Check Supabase ---")
+    try:
+        from supabase import create_client
+        import os
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_ANON_KEY")
+        if not url or not key:
+            print("❌ SUPABASE_URL or key not set")
+            return False
+        db = create_client(url, key)
+        response = db.table("users").select("*").eq("id", TEST_USER_ID).execute()
+        if response.data and len(response.data) > 0:
+            print(f"✅ User Profile Exists in Supabase")
+            return True
+        else:
+            print(f"❌ User Profile NOT FOUND in Supabase")
+            return False
+    except Exception as e:
+        print(f"❌ Supabase check failed: {e}")
+        return False
 
 if __name__ == "__main__":
     success = test_save_endpoint()
-    time.sleep(2) # propagation
-    check_secret_manager()
-    check_firestore()
+    time.sleep(2)
+    check_supabase()

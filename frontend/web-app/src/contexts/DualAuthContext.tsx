@@ -8,16 +8,14 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import { User } from "firebase/auth";
+import type { User } from "@/lib/firebase";
 import {
-  auth,
-  createOrUpdateUserProfile,
+  onAuthChange,
   getUserProfile,
-  UserProfile,
   signInWithGoogle as firebaseSignInWithGoogle,
   logOut as firebaseLogOut,
-  onAuthChange,
 } from "@/lib/firebase";
+import type { UserProfile } from "@/lib/supabase";
 import { verifyCouponAPI } from "@/lib/cloudFunctions";
 import { useSessionStore } from "@/hooks/useSessionStore";
 import { getEngineCUrl } from "@/lib/api";

@@ -1,6 +1,6 @@
 """
 Configuration for Engine-C
-Per-user credentials stored in Firestore; platform defaults from environment
+Per-user credentials stored in Supabase; platform defaults from environment
 """
 import os
 from dotenv import load_dotenv
@@ -30,16 +30,16 @@ class Config:
     """
     Platform-wide configuration
 
-    NOTE: User-specific DhanHQ credentials are stored in Firestore.
+    NOTE: User-specific DhanHQ credentials are stored in Supabase.
     These environment variables are OPTIONAL platform defaults only.
-    All trading operations use per-user credentials from Firestore via UserCredentialsManager.
+    All trading operations use per-user credentials from Supabase via UserCredentialsManager.
     """
     DHAN_API_BASE = os.getenv("DHAN_API_BASE", "https://api.dhan.co/v2")
     WEBSOCKET_URL = os.getenv("DHAN_WEBSOCKET_URL", "wss://stream.dhan.co")
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
     # Platform defaults (optional - not used for trading)
-    # All trading uses per-user Firestore credentials
+    # All trading uses per-user Supabase credentials
     DHAN_ACCESS_TOKEN = os.getenv("DHAN_ACCESS_TOKEN", "")
     CLIENT_ID = os.getenv("DHAN_CLIENT_ID", "")
     DHAN_API_KEY = os.getenv("DHAN_API_KEY", "")

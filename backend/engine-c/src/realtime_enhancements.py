@@ -1,9 +1,9 @@
 """
 Real-Time Enhancements Module for Engine-C
-Provides Server-Sent Events (SSE), NDJSON streaming, and Firestore event storage.
+Provides Server-Sent Events (SSE), NDJSON streaming, and Supabase event storage.
 
 Features:
-- Store postback webhooks to Firestore for audit trail
+- Store postback webhooks to Supabase for audit trail
 - Real-time position updates via SSE/NDJSON
 - Event broadcasting to all subscribers
 - Per-user event queues to prevent cross-user event pollution
@@ -17,30 +17,30 @@ from typing import Dict, Any, AsyncGenerator, Optional
 from collections import deque, defaultdict
 
 # Global state
-_firestore_db = None
+_db_client = None
 _event_queue = deque(maxlen=1000)  # Global circular buffer for events (deprecated)
 _user_event_queues: Dict[str, deque] = defaultdict(lambda: deque(maxlen=500))  # Per-user queues
 logger = logging.getLogger(__name__)
 
 
-def initialize_realtime(firestore_db):
-    """Initialize the real-time module with Firestore client."""
-    global _firestore_db
-    _firestore_db = firestore_db
-    logger.info("✅ Real-time module initialized with Firestore")
+def initialize_realtime(db_client=None):
+    """Initialize the real-time module."""
+    global _db_client
+    _db_client = db_client
+    logger.info("✅ Real-time module initialized")
 
 
 async def store_postback_event(order_id: str, client_id: str, event_data: Dict[str, Any]) -> bool:
     """
-    Store postback webhook data to Firestore.
-    Collection: trade_events
-    Document ID: {order_id}_{timestamp}
+    Store postback webhook data to Supabase logs table.
     """
-    if _firestore_db is None:
-        logger.warning("⚠️ Firestore not initialized, skipping postback storage")
-        return False
-
     try:
+        from src.user_credentials import get_credentials_manager
+        manager = get_credentials_manager()
+        if not manager or not manager.db:
+            logger.warning("⚠️ Supabase not initialized, skipping postback storage")
+            return False
+
         trade_event_doc = {
             "order_id": order_id,
             "client_id": client_id,
@@ -52,48 +52,49 @@ async def store_postback_event(order_id: str, client_id: str, event_data: Dict[s
             "filled_qty": event_data.get("filledQuantity", 0),
             "full_payload": event_data,
             "received_at": datetime.utcnow().isoformat(),
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.utcnow().isoformat(),
             "processor_version": "1.0"
         }
 
-        # Store in Firestore trade_events collection
-        doc_id = f"{order_id}_{datetime.utcnow().timestamp()}".replace('.', '_')
-        _firestore_db.collection("trade_events").document(doc_id).set(trade_event_doc)
+        # For now, just logging to Supabase trades or logs if schema supports it
+        # You may need a specific 'trade_events' table in Supabase
+        manager.db.table("logs").insert({
+            "level": "INFO",
+            "message": f"Postback received for {order_id}",
+            "metadata": trade_event_doc
+        }).execute()
 
-        logger.info(f"✅ Postback stored in Firestore: {order_id}")
+        logger.info(f"✅ Postback stored in Supabase: {order_id}")
         return True
 
     except Exception as e:
-        logger.error(f"❌ Failed to store postback in Firestore: {e}")
+        logger.error(f"❌ Failed to store postback in Supabase: {e}")
         return False
 
 
 async def update_portfolio_position(client_id: str, symbol: str, event_data: Dict[str, Any]):
     """
-    Update portfolio positions based on order status.
-    Stores to: user_positions/{client_id}
+    Update portfolio positions based on order status via Supabase
     """
-    if _firestore_db is None:
-        logger.warning("⚠️ Firestore not initialized, skipping position update")
-        return False
-
     try:
         status = event_data.get("orderStatus")
         filled_qty = event_data.get("filledQuantity", 0)
         price = event_data.get("price", 0)
 
         if status in ["FILLED", "PARTIALLY_FILLED"]:
-            positions_ref = _firestore_db.collection("user_positions").document(client_id)
-            positions_ref.set({
-                f"position_{symbol}": {
-                    "symbol": symbol,
-                    "qty": filled_qty,
-                    "avg_price": price,
-                    "status": "open",
-                    "last_updated": datetime.utcnow().isoformat()
-                },
-                "last_modified": datetime.utcnow().isoformat()
-            }, merge=True)
+            from src.user_credentials import get_credentials_manager
+            manager = get_credentials_manager()
+            if not manager or not manager.db:
+                return False
+
+            manager.db.table("portfolios").upsert({
+                "user_id": client_id,
+                "symbol": symbol,
+                "quantity": filled_qty,
+                "average_price": price,
+                "status": "open",
+                "updated_at": datetime.utcnow().isoformat()
+            }).execute()
 
             logger.info(f"✅ Portfolio updated: {symbol} position for {client_id}")
             return True
@@ -253,7 +254,7 @@ async def ndjson_event_generator(user_id: str) -> AsyncGenerator[str, None]:
 if __name__ == "__main__":
     print("✅ Real-time enhancements module loaded")
     print("\nFeatures:")
-    print("1. Firestore event storage for postback webhooks")
+    print("1. Supabase event storage for postback webhooks")
     print("2. SSE (Server-Sent Events) bridge for real-time data")
     print("3. NDJSON streaming for alternative clients")
     print("4. Event broadcasting to all subscribers")

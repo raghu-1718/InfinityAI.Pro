@@ -1,13 +1,12 @@
 """
 Options Analytics Module for Engine C
 Implements Greeks calculation using Black-Scholes model
-Integrated with Firestore for data persistence
+Integrated with Supabase for data persistence
 """
 import numpy as np
 from scipy.stats import norm
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-from google.cloud import firestore
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,8 +16,8 @@ class GreeksCalculator:
     Calculate option Greeks using Black-Scholes model
     """
     
-    def __init__(self, firestore_client: Optional[firestore.Client] = None):
-        self.db = firestore_client or firestore.Client()
+    def __init__(self, db_client: Optional[Any] = None):
+        self.db = db_client
     
     def calculate_d1_d2(self, S: float, K: float, T: float, r: float, sigma: float):
         """
@@ -223,32 +222,45 @@ class GreeksCalculator:
             'calculated_at': datetime.utcnow().isoformat()
         }
     
-    async def store_greeks_firestore(self, user_id: str, position_id: str, greeks: Dict[str, Any]):
-        """Store calculated Greeks in Firestore"""
+    async def store_greeks(self, user_id: str, position_id: str, greeks: Dict[str, Any]):
+        """Store calculated Greeks in Supabase"""
         try:
-            doc_ref = self.db.collection('options_greeks').document(user_id).collection('positions').document(position_id)
-            doc_ref.set(greeks, merge=True)
+            from src.user_credentials import get_credentials_manager
+            manager = get_credentials_manager()
+            if not manager or not manager.db:
+                return
+            
+            manager.db.table("options_greeks").upsert({
+                "user_id": user_id,
+                "position_id": position_id,
+                "greeks": greeks,
+                "updated_at": datetime.utcnow().isoformat()
+            }).execute()
             logger.info(f"✅ Stored Greeks for user {user_id}, position {position_id}")
         except Exception as e:
-            logger.error(f"Error storing Greeks in Firestore: {e}")
+            logger.error(f"Error storing Greeks in Supabase: {e}")
     
-    async def get_greeks_from_firestore(self, user_id: str, position_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve stored Greeks from Firestore"""
+    async def get_greeks(self, user_id: str, position_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve stored Greeks from Supabase"""
         try:
-            doc_ref = self.db.collection('options_greeks').document(user_id).collection('positions').document(position_id)
-            doc = doc_ref.get()
-            if doc.exists:
-                return doc.to_dict()
+            from src.user_credentials import get_credentials_manager
+            manager = get_credentials_manager()
+            if not manager or not manager.db:
+                return None
+            
+            response = manager.db.table("options_greeks").select("greeks").eq("user_id", user_id).eq("position_id", position_id).execute()
+            if response.data and len(response.data) > 0:
+                return response.data[0].get("greeks")
             return None
         except Exception as e:
-            logger.error(f"Error retrieving Greeks from Firestore: {e}")
+            logger.error(f"Error retrieving Greeks from Supabase: {e}")
             return None
 
 
 # Singleton instance
 _greeks_calculator: Optional[GreeksCalculator] = None
 
-def get_greeks_calculator(db_client: Optional[firestore.Client] = None) -> GreeksCalculator:
+def get_greeks_calculator(db_client: Optional[Any] = None) -> GreeksCalculator:
     """Get singleton instance of GreeksCalculator"""
     global _greeks_calculator
     if _greeks_calculator is None:

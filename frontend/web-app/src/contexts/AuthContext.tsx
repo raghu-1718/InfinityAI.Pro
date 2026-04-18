@@ -7,18 +7,17 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { User } from "firebase/auth";
+import type { User } from "@/lib/firebase";
 import {
   onAuthChange,
   signInWithGoogle,
   logOut,
   getUserProfile,
-  UserProfile,
 } from "@/lib/firebase";
+import type { UserProfile } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
 import { engineC } from "@/lib/api";
-import { db } from "@/lib/firebase/config";
-import { doc, onSnapshot } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
@@ -44,12 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthChange(async (supabaseUser) => {
+      setUser(supabaseUser);
 
-      if (firebaseUser) {
-        // Fetch user profile from Firestore
-        const profile = await getUserProfile(firebaseUser.uid);
+      if (supabaseUser) {
+        // Fetch user profile from Supabase
+        const profile = await getUserProfile(supabaseUser.uid);
         setUserProfile(profile);
 
         // Sync with Zustand store
@@ -64,51 +63,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // Listen to Dhan Credentials changes in real-time
-        const credentialsRef = doc(db, "dhan_credentials", firebaseUser.uid);
-        const unsubscribeCreds = onSnapshot(
-          credentialsRef,
-          (credSnapshot) => {
-            if (credSnapshot.exists()) {
-              const credData = credSnapshot.data();
-              const isConnected = !!(
-                credData.client_id && credData.access_token
-              );
+        // Poll for credential changes via Supabase instead of Firestore onSnapshot
+        const checkCredentials = async () => {
+          try {
+            const { data } = await supabase
+              .from("user_credentials")
+              .select("broker_client_id")
+              .eq("user_uid", supabaseUser.uid)
+              .maybeSingle();
 
-              // Update global state when credentials change
-              setDhanConnected(isConnected);
-              setStoreUserProfile((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      isConnected,
-                      isVerified: isConnected,
-                    }
-                  : null,
-              );
-            } else {
-              // No credentials document means disconnected
-              setDhanConnected(false);
-              setStoreUserProfile((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      isConnected: false,
-                      isVerified: false,
-                    }
-                  : null,
-              );
-            }
-          },
-          (error) => {
-            console.warn("Error listening to credentials:", error);
-            // Silently continue - not a fatal error
-          },
-        );
-
-        return () => {
-          unsubscribeCreds();
+            const isConnected = !!data?.broker_client_id;
+            setDhanConnected(isConnected);
+            setStoreUserProfile((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    isConnected,
+                    isVerified: isConnected,
+                  }
+                : null,
+            );
+          } catch (error) {
+            console.warn("Error checking credentials:", error);
+          }
         };
+
+        // Check immediately and set up polling
+        checkCredentials();
+        const credentialInterval = setInterval(checkCredentials, 30000); // Poll every 30s
+
+        // Cleanup interval on unmount or user change
+        const cleanup = () => clearInterval(credentialInterval);
+        // Store cleanup for return
+        (window as any).__authCredentialCleanup = cleanup;
       } else {
         setUserProfile(null);
         setDhanConnected(false);
@@ -118,7 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Clean up credential polling
+      if ((window as any).__authCredentialCleanup) {
+        (window as any).__authCredentialCleanup();
+      }
+    };
   }, [setStoreUserProfile, setDhanConnected, clearUserData]);
 
   const signIn = async () => {

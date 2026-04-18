@@ -1,34 +1,52 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from '@/lib/supabase';
 
 export interface SessionState {
   consecutive_losses: number;
   session_pnl: number;
   halted: boolean;
   halt_reason?: string | null;
-  updated_at?: any;
+  updated_at?: string;
 }
 
 export function useSessionState(uid: string | null | undefined) {
   const [state, setState] = useState<SessionState | null>(null);
 
   useEffect(() => {
-    if (!uid || !db) return;
+    if (!uid) return;
 
-    const docRef = doc(db, "trading_sessions", uid, "state", "circuit_breaker"); // Path matches Backend CircuitBreaker
+    // Fetch circuit breaker state from Supabase
+    const fetchState = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('circuit_breaker_state')
+          .select('*')
+          .eq('user_id', uid)
+          .maybeSingle();
 
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-          setState(snap.data() as SessionState);
-      } else {
+        if (data && !error) {
+          setState({
+            consecutive_losses: data.consecutive_losses || 0,
+            session_pnl: data.session_pnl || 0,
+            halted: data.halted || false,
+            halt_reason: data.halt_reason,
+            updated_at: data.updated_at,
+          });
+        } else {
           setState(null);
+        }
+      } catch (err) {
+        console.error("Session State Fetch Error:", err);
       }
-    }, (err) => {
-        console.error("Session State Stream Error:", err);
-    });
+    };
 
-    return () => unsubscribe();
+    // Initial fetch
+    fetchState();
+
+    // Poll every 5 seconds for near-real-time updates
+    const interval = setInterval(fetchState, 5000);
+
+    return () => clearInterval(interval);
   }, [uid]);
 
   return state;

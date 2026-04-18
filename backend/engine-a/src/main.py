@@ -36,7 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from google.cloud import secretmanager
+# from google.cloud import secretmanager (Removed)
 import httpx
 import uvicorn
 from src.trace_middleware import TraceIDMiddleware
@@ -209,22 +209,10 @@ if GOOGLE_INTEGRATIONS_AVAILABLE:
     except Exception as e:
         logger.warning(f"⚠️ Error initializing Google integrations: {e}")
 
-# --- Secret Manager Helper ---
+# --- Secret Helper ---
 def get_secret(secret_id: str, version: str = "latest") -> str:
-    """Retrieve secret from Google Secret Manager"""
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not project_id:
-             logger.warning("Using default project ID 'infinity-ai-pro-dev' for secret retrieval")
-             project_id = "infinity-ai-pro-dev"
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/{version}"
-        response = client.access_secret_version(request={"name": name})
-        # Strip any trailing whitespace/newlines from the secret
-        return response.payload.data.decode("UTF-8").strip()
-    except Exception as e:
-        print(f"Error fetching secret {secret_id}: {e}")
-        return ""
+    """Retrieve secret from environment variables (formerly Google Secret Manager)"""
+    return os.getenv(secret_id, "")
 
 # --- Models ---
 class OrchestrateRequest(BaseModel):
@@ -688,7 +676,7 @@ async def dhan_callback(request: DhanTokenExchangeRequest):
         response.raise_for_status()
         token_data = response.json()
 
-        # TODO: Store access_token securely in Firestore or GSM
+        # TODO: Store access_token securely in Supabase user_credentials table
         return {
             "status": "success",
             "message": "Token exchange complete",

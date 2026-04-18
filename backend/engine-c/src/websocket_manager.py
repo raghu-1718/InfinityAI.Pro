@@ -9,7 +9,6 @@ import struct
 import logging
 from typing import Optional, Callable, List, Dict, Any
 from datetime import datetime
-from google.cloud import firestore
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,6 @@ class DhanWebSocketManager:
         self.is_connected = False
         self.subscribed_instruments = set()
         self.on_tick = on_tick or self._default_tick_handler
-        self.db = firestore.Client()
     
     def connect(self):
         """Establish WebSocket connection"""
@@ -106,13 +104,19 @@ class DhanWebSocketManager:
             return {}
     
     def _default_tick_handler(self, tick_data: Dict[str, Any]):
-        """Default handler - store in Firestore"""
+        """Default handler - store in Supabase"""
         try:
             security_id = tick_data.get('security_id')
             if security_id:
-                # Store latest price in Firestore
-                doc_ref = self.db.collection('live_prices').document(str(security_id))
-                doc_ref.set(tick_data, merge=True)
+                from src.user_credentials import get_credentials_manager
+                manager = get_credentials_manager()
+                if manager and manager.db:
+                    manager.db.table("live_prices").upsert({
+                        "security_id": str(security_id),
+                        "ltp": tick_data.get('ltp'),
+                        "volume": tick_data.get('volume'),
+                        "updated_at": tick_data.get('timestamp')
+                    }).execute()
                 
                 logger.debug(f"Tick: {security_id} LTP: {tick_data.get('ltp')}")
         
@@ -212,13 +216,13 @@ if __name__ == "__main__":
     print("\n[INFO] WebSocket Manager Structure:")
     print("  - Binary tick parsing (Little Endian)")
     print("  - Auto-reconnection")
-    print("  - Firestore storage")
+    print("  - Supabase storage")
     print("  - Multi-user support")
     
     print("\n[INFO] Integration points:")
     print("  1. Connect with user credentials")
     print("  2. Subscribe to instruments")
-    print("  3. Real-time tick updates → Firestore")
+    print("  3. Real-time tick updates → Supabase")
     print("  4. Frontend WebSocket endpoint")
     
     print("\n" + "=" * 80)

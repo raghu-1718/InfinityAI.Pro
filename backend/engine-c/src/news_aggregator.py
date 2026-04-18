@@ -10,7 +10,7 @@ import logging
 import asyncio
 import aiohttp
 import os
-from google.cloud import secretmanager
+# from google.cloud import secretmanager (Removed)
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +59,9 @@ class NewsArticle:
         }
 
 
-def get_secret(secret_id: str, project_id: str = "galvanic-pulsar-482815-h0") -> str:
-    """Get secret from Secret Manager"""
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-        response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
-    except Exception as e:
-        logger.error(f"Error getting secret {secret_id}: {e}")
-        return ""
+def get_secret(secret_id: str, project_id: str = "") -> str:
+    """Retrieve secret from environment variables (formerly Google Secret Manager)"""
+    return os.getenv(secret_id, "")
 
 
 class NewsAggregator:

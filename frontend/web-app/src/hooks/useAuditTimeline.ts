@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { supabase } from '@/lib/supabase';
 
 export interface AuditEvent {
   uid: string;
@@ -14,23 +13,42 @@ export function useAuditTimeline(uid: string | null | undefined) {
   const [events, setEvents] = useState<AuditEvent[]>([]);
 
   useEffect(() => {
-    if (!uid || !db) return;
+    if (!uid) return;
 
-    const q = query(
-      collection(db, "trade_audit"),
-      where("uid", "==", uid),
-      orderBy("timestamp", "desc")
-      // limit(100) // Optional optimization
-    );
+    // Fetch audit events from Supabase logs table
+    const fetchEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('logs')
+          .select('*')
+          .eq('user_id', uid)
+          .order('timestamp', { ascending: false })
+          .limit(100);
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => d.data() as AuditEvent);
-      setEvents(data);
-    }, (err) => {
-        console.error("Audit Stream Error:", err);
-    });
+        if (data && !error) {
+          const mapped: AuditEvent[] = data.map((row: any) => ({
+            uid: row.user_id,
+            event: row.type || row.level || 'UNKNOWN',
+            details: typeof row.description === 'string'
+              ? (() => { try { return JSON.parse(row.description); } catch { return { message: row.description }; } })()
+              : row.metadata || {},
+            severity: row.severity || row.level,
+            timestamp: row.timestamp || row.created_at,
+          }));
+          setEvents(mapped);
+        }
+      } catch (err) {
+        console.error("Audit Timeline Fetch Error:", err);
+      }
+    };
 
-    return () => unsubscribe();
+    // Initial fetch
+    fetchEvents();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchEvents, 10000);
+
+    return () => clearInterval(interval);
   }, [uid]);
 
   return events;

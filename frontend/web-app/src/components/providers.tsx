@@ -8,8 +8,7 @@ import { CouponAuthProvider } from "@/contexts/DualAuthContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AblyProvider } from "@/contexts/AblyContext";
 import { useAppStore } from "@/lib/store";
-import { auth } from "@/lib/firebase/config";
-import { onAuthStateChanged } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 
 // Hydrate Zustand store and listen for auth state changes
 function StoreHydration() {
@@ -18,16 +17,16 @@ function StoreHydration() {
   useEffect(() => {
     useAppStore.persist.rehydrate();
 
-    // Listen for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
+    // Listen for Supabase Auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
         // User logged out, clear all user data from Zustand
         console.log("User logged out, clearing local state");
         clearUserData();
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [clearUserData]);
 
   return null;

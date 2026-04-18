@@ -12,10 +12,8 @@ sys.path.append(os.path.join(current_dir, '..'))
 # Add repo root to path (for backend.shared imports)
 sys.path.append(os.path.join(current_dir, '..', '..', '..'))
 
-# Mock Firestore and other external dependencies before importing main
-with patch('google.cloud.firestore.Client'), \
-     patch('google.cloud.secretmanager.SecretManagerServiceClient'):
-    from src.main import app
+# Mock external dependencies before importing main
+from src.main import app
 
 # Mock startup internals to prevent actual initialization/network calls
 app.dependency_overrides = {} 

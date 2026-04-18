@@ -6,16 +6,27 @@ import investpy
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional, List
-from google.cloud import firestore
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class InvestpyDataFetcher:
     """
     Fetch Indian stock data using investpy
-    Handles rate limiting and provides Firestore integration
+    Handles rate limiting and provides Supabase integration
     """
     
     def __init__(self):
-        self.db = firestore.Client()
+        self.db = None
+        try:
+            from supabase import create_client
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_ANON_KEY")
+            if url and key:
+                self.db = create_client(url, key)
+        except Exception:
+            pass
         self.rate_limit_delay = 1  # seconds between requests
     
     def fetch_stock_data(self, symbol: str, country: str = 'india', 
@@ -49,16 +60,15 @@ class InvestpyDataFetcher:
             print(f"[ERROR] investpy fetch failed for {symbol}: {str(e)}")
             return None
     
-    def save_to_firestore(self, df, symbol: str):
-        """Save data to Firestore"""
+    def save_to_supabase(self, df, symbol: str):
+        """Save data to Supabase"""
         try:
-            collection_name = f"{symbol}_INVESTPY"
-            
+            if not self.db:
+                print("[WARN] Supabase not available")
+                return False
+
             for date, row in df.iterrows():
                 date_str = date.strftime('%Y-%m-%d')
-                
-                doc_ref = self.db.collection('historical_data').document(collection_name).collection('data').document(date_str)
-                
                 data = {
                     'date': date_str,
                     'open': float(row['Open']),
@@ -70,14 +80,13 @@ class InvestpyDataFetcher:
                     'source': 'investpy',
                     'updated_at': datetime.now().isoformat()
                 }
-                
-                doc_ref.set(data, merge=True)
+                self.db.table('historical_data').upsert(data).execute()
             
-            print(f"[FIRESTORE] Saved {len(df)} records for {symbol}")
+            print(f"[SUPABASE] Saved {len(df)} records for {symbol}")
             return True
         
         except Exception as e:
-            print(f"[ERROR] Firestore save failed: {str(e)}")
+            print(f"[ERROR] Supabase save failed: {str(e)}")
             return False
 
 

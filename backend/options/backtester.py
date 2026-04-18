@@ -1,13 +1,13 @@
 """
-Options Backtesting Framework with Firestore Integration
+Options Backtesting Framework with Supabase Integration
 Replay historical option data and calculate strategy performance
 """
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from google.cloud import firestore
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -17,27 +17,24 @@ class OptionsBacktester:
     Backtest options trading strategies with historical data
     """
     
-    def __init__(self, firestore_client: Optional[firestore.Client] = None):
-        self.db = firestore_client or firestore.Client()
+    def __init__(self, db_client=None):
+        self.db = db_client
         self.results = []
     
     def fetch_historical_option_data(self, underlying: str, expiry: str, 
                                      start_date: str, end_date: str) -> pd.DataFrame:
         """
-        Fetch historical option chain snapshots from Firestore
-        
-        Collection: /option_chain_history/{underlying}_{expiry}/snapshots/
+        Fetch historical option chain snapshots from Supabase
         """
         try:
-            collection_name = f"{underlying}_{expiry}"
-            snapshots_ref = self.db.collection('option_chain_history').document(collection_name).collection('snapshots')
+            if not self.db:
+                logger.warning("No database client available for fetching historical data")
+                return pd.DataFrame()
+
+            # Fetch from Supabase
+            response = self.db.table("option_chain_history").select("*").eq("underlying", underlying).eq("expiry", expiry).gte("date", start_date).lte("date", end_date).execute()
             
-            # Query snapshots in date range
-            docs = snapshots_ref.where('date', '>=', start_date).where('date', '<=', end_date).stream()
-            
-            data = []
-            for doc in docs:
-                data.append(doc.to_dict())
+            data = response.data if response.data else []
             
             if data:
                 df = pd.DataFrame(data)
@@ -140,48 +137,18 @@ class OptionsBacktester:
     
     def save_backtest_results(self, strategy_name: str, results: Dict[str, Any]):
         """
-        Save backtest results to Firestore
+        Save backtest results to Supabase
         
-        Collection: /backtest_results/{strategy_name}/runs/{run_id}
+        Table: backtest_results
         """
         try:
+            if not self.db:
+                logger.warning("No database client — cannot save backtest results")
+                return None
+
             run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
-            doc_ref = self.db.collection('backtest_results').document(strategy_name).collection('runs').document(run_id)
-            
-            # Convert numpy types to native Python types for Firestore
-            def convert_types(obj):
-                """Recursively convert numpy types to Python native types"""
-                if isinstance(obj, np.integer):
-                    return int(obj)
-                elif isinstance(obj, np.floating):
-                    return float(obj)
-                elif isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif isinstance(obj, dict):
-                    return {k: convert_types(v) for k, v in obj.items()}
-                elif isinstance(obj, list):
-                    return [convert_types(i) for i in obj]
-                return obj
-            
-            # Store summary (not full trade list for efficiency)
-            summary = {
-                'run_id': run_id,
-                'strategy_name': strategy_name,
-                'initial_capital': float(results.get('initial_capital', 0)),
-                'final_value': float(results.get('final_value', 0)),
-                'total_return': float(results.get('total_return', 0)),
-                'total_trades': int(results.get('total_trades', 0)),
-                'win_rate': float(results.get('win_rate', 0)),
-                'max_drawdown': float(results.get('max_drawdown', 0)),
-                'sharpe_ratio': float(results.get('sharpe_ratio', 0)),
-                'run_timestamp': datetime.utcnow().isoformat()
-            }
-            
-            # Convert all values to ensure no numpy types
-            summary = convert_types(summary)
-            
-            doc_ref.set(summary)
+            self.db.table('backtest_results').insert(summary).execute()
             logger.info(f"Saved backtest results: {strategy_name}/{run_id}")
             
             return run_id
@@ -242,12 +209,12 @@ if __name__ == "__main__":
     print("  - Historical option data replay")
     print("  - Strategy P&L calculation")
     print("  - Performance metrics (Return, Win Rate, Sharpe, Max DD)")
-    print("  - Firestore integration for results")
+    print("  - Supabase integration for results")
     print("  - Strategy comparison")
     
-    print("\n[INFO] Firestore Collections:")
-    print("  - /option_chain_history/{underlying}_{expiry}/snapshots/")
-    print("  - /backtest_results/{strategy}/runs/{run_id}")
+    print("\n[INFO] Supabase Tables:")
+    print("  - option_chain_history")
+    print("  - backtest_results")
     
     print("\n[INFO] Metrics Calculated:")
     print("  - Total Return (%)")
