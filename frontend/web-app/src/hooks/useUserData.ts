@@ -75,8 +75,8 @@ export function useUserData(userId: string | null) {
 
       if (data.success) {
         setCredentials({
-          dhan_client_id: data.dhan_client_id,
-          dhan_access_token: data.dhan_access_token,
+          dhan_client_id: data.dhan_client_id || "",
+          dhan_access_token: data.dhan_access_token || "",
           updated_at: data.updated_at,
         });
       } else {

@@ -8,13 +8,13 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import type { User } from "@/lib/firebase";
+import type { User } from "@/lib/auth";
 import {
   onAuthChange,
   getUserProfile,
-  signInWithGoogle as firebaseSignInWithGoogle,
-  logOut as firebaseLogOut,
-} from "@/lib/firebase";
+  signInWithGoogle as authSignInWithGoogle,
+  logOut as authLogOut,
+} from "@/lib/auth";
 import type { UserProfile } from "@/lib/supabase";
 
 // Storage keys
@@ -41,7 +41,7 @@ function clearOldStorage() {
   }
 }
 
-export type AuthType = "firebase" | "coupon" | null;
+export type AuthType = "supabase" | "coupon" | null;
 
 export interface CouponSession {
   sessionId: string;
@@ -67,10 +67,10 @@ interface CouponAuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   authType: AuthType;
-  firebaseUser: User | null;
+  authUser: User | null;
   userProfile: UserProfile | null;
 
-  // Firebase Auth methods
+  // Supabase Auth methods
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
 
   // Coupon Auth methods
@@ -104,7 +104,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CouponUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [authType, setAuthType] = useState<AuthType>(null);
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Clear old storage on mount (version upgrade)
@@ -112,7 +112,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     clearOldStorage();
   }, []);
 
-  // Initialize auth state - check both Firebase and coupon
+  // Initialize auth state - check both Supabase and coupon
   useEffect(() => {
     let isMounted = true;
 
@@ -134,22 +134,22 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         ? localStorage.getItem(COUPON_SESSION_KEY)
         : null;
 
-    // Listen for Firebase auth state changes (safe wrapper handles SSR case)
+    // Listen for Supabase auth state changes (safe wrapper handles SSR case)
     const unsubscribe = onAuthChange(async (fbUser) => {
       if (!isMounted) return;
 
       if (fbUser) {
-        // User is signed in with Firebase
+        // User is signed in with Supabase
         clearTimeout(safetyTimeout);
         try {
           const profile = await getUserProfile(fbUser.uid);
 
           if (isMounted) {
-            setFirebaseUser(fbUser);
+            setAuthUser(fbUser);
             setUserProfile(profile);
-            setAuthType("firebase");
+            setAuthType("supabase");
 
-            // Create session from Firebase user
+            // Create session from Supabase user
             setSession({
               sessionId: fbUser.uid,
               userId: fbUser.uid,
@@ -169,15 +169,15 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
               photoURL: fbUser.photoURL,
             });
 
-            localStorage.setItem(AUTH_TYPE_KEY, "firebase");
+            localStorage.setItem(AUTH_TYPE_KEY, "supabase");
             localStorage.removeItem(COUPON_SESSION_KEY);
             setLoading(false);
           }
         } catch (error) {
-          console.error("Error loading Firebase user profile:", error);
+          console.error("Error loading Supabase user profile:", error);
           if (isMounted) {
-            setFirebaseUser(fbUser);
-            setAuthType("firebase");
+            setAuthUser(fbUser);
+            setAuthType("supabase");
             setSession({
               sessionId: fbUser.uid,
               userId: fbUser.uid,
@@ -198,8 +198,8 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        // No Firebase user - check for coupon session
-        setFirebaseUser(null);
+        // No Supabase user - check for coupon session
+        setAuthUser(null);
         setUserProfile(null);
 
         if (storedAuthType === "coupon" && storedCouponSession) {
@@ -260,7 +260,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await firebaseSignInWithGoogle();
+      const res = await authSignInWithGoogle();
       if (!res.success) {
         setLoading(false);
         return { success: false, error: res.error || "Google sign-in failed" };
@@ -269,9 +269,9 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       const fbUser = res.user!;
       const profile = res.profile ?? (await getUserProfile(fbUser.uid));
 
-      setFirebaseUser(fbUser);
+      setAuthUser(fbUser);
       setUserProfile(profile || null);
-      setAuthType("firebase");
+      setAuthType("supabase");
 
       setSession({
         sessionId: fbUser.uid,
@@ -292,7 +292,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         photoURL: fbUser.photoURL,
       });
 
-      localStorage.setItem(AUTH_TYPE_KEY, "firebase");
+      localStorage.setItem(AUTH_TYPE_KEY, "supabase");
       localStorage.removeItem(COUPON_SESSION_KEY);
 
       setLoading(false);
@@ -402,8 +402,8 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setLoading(true);
     try {
-      // Sign out using firebase helper (safe for SSR)
-      await firebaseLogOut();
+      // Sign out using supabase helper (safe for SSR)
+      await authLogOut();
 
       // Try to notify backend for coupon logout
       try {
@@ -421,7 +421,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setUser(null);
       setAuthType(null);
-      setFirebaseUser(null);
+      setAuthUser(null);
       setUserProfile(null);
     } catch (error) {
       console.error("Logout error:", error);
@@ -431,15 +431,15 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
   // Refresh session
   const refreshSession = useCallback(async () => {
-    if (firebaseUser) {
+    if (authUser) {
       try {
-        const profile = await getUserProfile(firebaseUser.uid);
+        const profile = await getUserProfile(authUser.uid);
         setUserProfile(profile);
       } catch (error) {
         console.error("Failed to refresh session:", error);
       }
     }
-  }, [firebaseUser]);
+  }, [authUser]);
 
   // Connect Dhan (placeholder - needs backend integration)
   const connectDhan = useCallback(
@@ -466,7 +466,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     loading,
     isAuthenticated: !!session,
     authType,
-    firebaseUser,
+    authUser,
     userProfile,
     signInWithGoogle,
     verifyCoupon,

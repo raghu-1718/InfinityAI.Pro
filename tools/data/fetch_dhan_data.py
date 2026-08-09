@@ -66,8 +66,7 @@ print("\n[4/7] Fetching Open Positions...")
 positions = fetch_endpoint(f"/api/dhan/positions", {"user_id": CLIENT_ID})
 if positions["success"]:
     p_list = positions["data"].get("positions", [])
-    print(f"  [OK] Open Positions: {len(p_list)}")
-   for p in p_list[:5]:
+    for p in p_list[:5]:
         print(f"    - {p.get('tradingSymbol')}: {p.get('positionType')}")
 else:
     print(f"  [ERR] Failed: {positions.get('error', 'Unknown')}")

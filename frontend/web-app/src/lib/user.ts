@@ -40,7 +40,7 @@ export function getUserId(): string {
     }
   }
 
-  // Also check for Firebase Auth UID if available in standard storage locations (if applicable)
+  // Also check for Supabase Auth UID if available in standard storage locations (if applicable)
   // But for now, we stick to the provided keys.
 
   // Priority 2: Generated fallback ID (for unauthenticated users)

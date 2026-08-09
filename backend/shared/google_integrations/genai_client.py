@@ -141,7 +141,7 @@ class GenAIClient:
         Args:
             api_key: Google API key (or set GOOGLE_API_KEY env var)
             model: Gemini model to use
-            project_id: GCP project ID for Vertex AI
+            project_id: Cloud project ID for Vertex AI
             location: GCP region for Vertex AI
         """
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")

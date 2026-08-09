@@ -54,7 +54,9 @@ export default function LivePriceCard({ symbol, refreshInterval = 30000 }: LiveP
     );
   }
 
-  const isPositive = price.change_percent >= 0;
+  const changePct = price.change_percent ?? price.changePercent ?? 0;
+  const openPrice = price.open ?? price.price ?? 0;
+  const isPositive = changePct >= 0;
   const priceColor = isPositive ? 'text-green-600' : 'text-red-600';
   const bgColor = isPositive ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20';
 
@@ -75,7 +77,7 @@ export default function LivePriceCard({ symbol, refreshInterval = 30000 }: LiveP
         </div>
         <div className={`text-sm font-semibold ${priceColor} flex items-center gap-1`}>
           <span>{isPositive ? '▲' : '▼'}</span>
-          <span>{Math.abs(price.change_percent).toFixed(2)}%</span>
+          <span>{Math.abs(changePct).toFixed(2)}%</span>
         </div>
       </div>
 
@@ -84,7 +86,7 @@ export default function LivePriceCard({ symbol, refreshInterval = 30000 }: LiveP
         <div>
           <span className="text-gray-500 dark:text-gray-400">Open:</span>
           <span className="ml-2 font-medium text-gray-900 dark:text-white">
-            ₹{price.open.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            ₹{openPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </span>
         </div>
         <div>

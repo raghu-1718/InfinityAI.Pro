@@ -32,7 +32,7 @@ export function PortfolioUpdates({ userId }: PortfolioUpdatesProps) {
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [previousValue, setPreviousValue] = useState<number | null>(null);
 
-  const { connectionState, error } = usePortfolioUpdates(userId, (data) => {
+  const { connectionState, error } = usePortfolioUpdates(userId || "", (data) => {
     setPreviousValue(portfolio?.totalValue || null);
     setPortfolio(data);
   });
@@ -54,7 +54,7 @@ export function PortfolioUpdates({ userId }: PortfolioUpdatesProps) {
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">
-            Connection Error: {error.message}
+            Connection Error: {(error as any)?.message || String(error)}
           </p>
         </div>
       )}

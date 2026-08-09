@@ -1,5 +1,10 @@
 import sys
 import os
+import logging
+
+# Setup basic logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --- Fail-fast environment variable enforcement ---
 def require_env(var: str) -> str:
@@ -131,12 +136,23 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from shared.cors_config import ALLOWED_ORIGINS
+    try:
+        from backend.shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
-    # Fallback if shared module not in path
+    # Fallback if shared module not in path - add to sys.path
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from shared.cors_config import ALLOWED_ORIGINS
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+    try:
+        from shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        # Last resort: use hardcoded production origins
+        ALLOWED_ORIGINS = [
+            "https://infinityai.pro",
+            "https://www.infinityai.pro",
+            "https://app.infinityai.pro"
+        ]
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 

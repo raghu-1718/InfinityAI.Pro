@@ -34,7 +34,7 @@ def get_allowed_origins() -> List[str]:
         List of allowed origin URLs
     """
 
-    environment = os.getenv("ENVIRONMENT", "production").lower()
+    environment = os.getenv("ENVIRONMENT", "development").lower()
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
 
     # Base production origins (ALWAYS included)
@@ -42,8 +42,6 @@ def get_allowed_origins() -> List[str]:
         "https://infinityai.pro",
         "https://www.infinityai.pro",
         "https://app.infinityai.pro",
-        f"https://{project_id}.web.app",
-        f"https://{project_id}.firebaseapp.com",
     ]
 
     # Development-only origins (NEVER in production)

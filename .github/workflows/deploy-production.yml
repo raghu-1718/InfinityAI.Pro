@@ -1,7 +1,8 @@
-# InfinityAI.Pro - Complete CI/CD Pipeline (Supabase + Railway + Vercel)
-# Deploys backend to Railway, frontend to Vercel, and DB migrations to Supabase.
+# InfinityAI.Pro - 100% GCP & Firebase CI/CD Pipeline
+# Deploys FastAPI engines (A, B, C) to GCP Cloud Run via Google Workload Identity Federation (WIF)
+# Deploys frontend to Firebase Hosting
 
-name: 🚀 Deploy InfinityAI Production
+name: 🚀 Deploy InfinityAI GCP Production
 
 on:
   push:
@@ -9,69 +10,103 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: "gen-lang-client-0779271931"
+  GCP_REGION: "us-central1"
+  WIF_PROVIDER: "projects/429140669077/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  SERVICE_ACCOUNT: "github-actions-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com"
+
 jobs:
   # ============================================
-  # 1. Database Migrations (Supabase)
+  # 1. Google Cloud Authentication via WIF
   # ============================================
-  deploy-database:
-    name: 🗄️ Supabase Migrations
+  deploy-backend-cloud-run:
+    name: ☁️ GCP Cloud Run Engines Deployment
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: supabase/setup-cli@v1
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
         with:
-          version: latest
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
-      - name: Link and Push Migrations
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorize Docker to push to Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      # Deploy Engine A
+      - name: Build & Deploy Engine A
         run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} -p ${{ secrets.SUPABASE_DB_PASSWORD }}
-          supabase db push -p ${{ secrets.SUPABASE_DB_PASSWORD }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          gcloud builds submit --config=backend/engine-a/cloudbuild.yaml backend/engine-a
+          gcloud run deploy engine-a \
+            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-a:latest \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
+
+      # Deploy Engine B
+      - name: Build & Deploy Engine B
+        run: |
+          gcloud builds submit --config=backend/engine-b/cloudbuild.yaml backend/engine-b
+          gcloud run deploy engine-b \
+            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-b:latest \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
+
+      # Deploy Engine C
+      - name: Build & Deploy Engine C
+        run: |
+          gcloud builds submit --config=backend/engine-c/cloudbuild.yaml backend/engine-c
+          gcloud run deploy engine-c \
+            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-c:latest \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
 
   # ============================================
-  # 2. Backend Deployment (Railway Monorepo)
+  # 2. Deploy Frontend to Firebase Hosting
   # ============================================
-  deploy-backend:
-    name: 🚂 Railway Deployment
+  deploy-frontend-firebase:
+    name: 🔥 Firebase Hosting Deployment
     runs-on: ubuntu-latest
-    needs: deploy-database
+    needs: deploy-backend-cloud-run
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/web-app/package-lock.json
 
-      - name: Deploy Monorepo
-        run: railway up --detach
+      - name: Install Frontend Dependencies
+        working-directory: frontend/web-app
+        run: npm ci
+
+      - name: Build Next.js Web Application
+        working-directory: frontend/web-app
+        run: npm run build
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
 
-  # ============================================
-  # 3. Frontend Deployment (Vercel)
-  # ============================================
-  deploy-frontend:
-    name: 🌐 Vercel Deployment
-    runs-on: ubuntu-latest
-    needs: deploy-backend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend/web-app
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend/web-app
-
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend/web-app
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0779271931 }}'
+          channelId: live
+          projectId: gen-lang-client-0779271931

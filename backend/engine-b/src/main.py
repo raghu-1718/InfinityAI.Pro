@@ -1,5 +1,9 @@
 import sys
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --- Environment handling (graceful) ---
 def require_env(var: str) -> str:
@@ -59,23 +63,21 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize Supabase for signal storage
-_supabase_db = None
-def get_supabase_db():
-    global _supabase_db
-    if _supabase_db is None:
+# Initialize Firestore for signal storage
+_firestore_db = None
+def get_firestore_db():
+    global _firestore_db
+    if _firestore_db is None:
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-            if url and key:
-                _supabase_db = create_client(url, key)
-                logger.info("✅ Engine-B: Supabase client initialized")
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            _firestore_db = firestore.Client(project=project_id)
+            logger.info("✅ Engine-B: Firestore client initialized")
         except Exception as e:
-            logger.warning(f"⚠️ Supabase not available for signal storage: {e}")
-    return _supabase_db
+            logger.warning(f"⚠️ Firestore not available for signal storage: {e}")
+    return _firestore_db
 
-db = get_supabase_db()  # Legacy alias for compatibility
+db = get_firestore_db()  # Database alias for signal persistence
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 
@@ -327,12 +329,23 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Import CORS config from shared module (environment-gated)
 try:
-    from shared.cors_config import ALLOWED_ORIGINS
+    try:
+        from backend.shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        from shared.cors_config import ALLOWED_ORIGINS
 except ImportError:
-    # Fallback if shared module not in path
+    # Fallback if shared module not in path - add to sys.path
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    from shared.cors_config import ALLOWED_ORIGINS
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+    try:
+        from shared.cors_config import ALLOWED_ORIGINS
+    except ImportError:
+        # Last resort: use hardcoded production origins
+        ALLOWED_ORIGINS = [
+            "https://infinityai.pro",
+            "https://www.infinityai.pro",
+            "https://app.infinityai.pro"
+        ]
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
 

@@ -1,39 +1,44 @@
+"""
+Sync Firestore Credentials Tool for InfinityAI.Pro
+Updates user credentials using Environment Variables or GCP Secret Manager.
+"""
+import os
+import sys
 from google.cloud import firestore
 from datetime import datetime
 
-db = firestore.Client()
-
 def update_firestore_creds():
-    user_id = "B79BqvTlaTZltC8uGO3jLxJBBt93"
-    new_client_id = "1101302170"
-    new_access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJwX2lwIjoiNC4yNDAuMzkuMTkzIiwic19pcCI6IiIsImlzcyI6ImRoYW4iLCJwYXJ0bmVySWQiOiIiLCJleHAiOjE3Njg2NjQzNDAsImlhdCI6MTc2ODU3Nzk0MCwidG9rZW5Db25zdW1lclR5cGUiOiJTRUxGIiwid2ViaG9va1VybCI6Imh0dHBzOi8vZW5naW5lLWMtM2Fjb2JnZDNxYS11Yy5hLnJ1bi5hcHAvYXBpL2RoYW4vcG9zdGJhY2siLCJkaGFuQ2xpZW50SWQiOiIxMTAxMzAyMTcwIn0.d7tffa3tVIlkKuOTbQHZDHDGLHv-VqNiQf6G63u7_6ehh4bpzpWJOPDhtQV0UtF7w4mg_uTHi9JhtGNdurZ5vA"
-    new_api_key = "b76a41e2"
-    new_api_secret = "3b27c08e-797c-40e4-8e80-0498ea853236"
+    user_id = os.getenv("USER_ID", "default_user")
+    new_client_id = os.getenv("DHAN_CLIENT_ID")
+    new_access_token = os.getenv("DHAN_ACCESS_TOKEN")
+    new_api_key = os.getenv("DHAN_API_KEY", "")
+    new_api_secret = os.getenv("DHAN_API_SECRET", "")
     
-    print(f"Updating Firestore credentials for {user_id}...")
+    if not new_client_id or not new_access_token:
+        print("⚠️ Environment variables DHAN_CLIENT_ID and DHAN_ACCESS_TOKEN required!")
+        sys.exit(0)
+
+    db = firestore.Client()
+    print(f"Updating Firestore credentials for user: {user_id}...")
     
-    # 1. Update dhan_credentials collection (The Vault)
-    creds_ref = db.collection('dhan_credentials').document(user_id)
+    # 1. Update user_credentials collection (The Vault)
+    creds_ref = db.collection('user_credentials').document(user_id)
     creds_ref.set({
-        "credentials": {
-            "client_id": new_client_id,
-            "access_token": new_access_token,
-            "api_key": new_api_key,
-            "api_secret": new_api_secret,
-            "connection_status": "connected" # We verified it works
-        },
+        "dhan_client_id": new_client_id,
+        "dhan_access_token": new_access_token,
+        "api_key": new_api_key,
+        "api_secret": new_api_secret,
         "isConnected": True,
-        "verified": True,
-        "updatedAt": datetime.utcnow()
+        "updated_at": datetime.utcnow().isoformat()
     }, merge=True)
-    print("✅ dhan_credentials updated.")
+    print("✅ user_credentials updated.")
     
     # 2. Update users collection (Frontend Profile)
     user_ref = db.collection('users').document(user_id)
     user_ref.set({
         "dhanConnected": True,
         "dhanClientId": new_client_id,
-        "lastUpdatedAt": datetime.utcnow()
+        "lastUpdatedAt": datetime.utcnow().isoformat()
     }, merge=True)
     print("✅ users profile updated.")
 

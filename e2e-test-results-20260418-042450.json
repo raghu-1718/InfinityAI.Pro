@@ -1,0 +1,119 @@
+{
+  "test_date": "2026-04-18T04:24:50.702000",
+  "tests": [
+    {
+      "name": "Engine-A Health",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-B Health",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-C Health",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-C LIVE Trading Mode",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "Expecting value: line 2 column 1 (char 1)"
+    },
+    {
+      "name": "Engine-C DhanHQ Connection",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-A Orchestration",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "Expecting value: line 2 column 1 (char 1)"
+    },
+    {
+      "name": "Engine-B ML Models",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "Expecting value: line 2 column 1 (char 1)"
+    },
+    {
+      "name": "Market Status Endpoint",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-C Funds Endpoint Exists",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Trading Settings Schema Exists",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-C System Status",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-C Performance Stats",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "WebSocket Streamer Available",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "API v1 User Credentials Endpoint",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "API v1 Optimize Timing Endpoint",
+      "passed": false,
+      "status": "\u274c FAIL",
+      "details": "HTTP 404"
+    },
+    {
+      "name": "Engine-A Response Time",
+      "passed": true,
+      "status": "\u2705 PASS",
+      "details": "352.5ms"
+    },
+    {
+      "name": "Engine-B Response Time",
+      "passed": true,
+      "status": "\u2705 PASS",
+      "details": "379.1ms"
+    },
+    {
+      "name": "Engine-C Response Time",
+      "passed": true,
+      "status": "\u2705 PASS",
+      "details": "392.7ms"
+    }
+  ],
+  "summary": {
+    "total": 18,
+    "passed": 3,
+    "failed": 15,
+    "success_rate": 16.666666666666668
+  }
+}

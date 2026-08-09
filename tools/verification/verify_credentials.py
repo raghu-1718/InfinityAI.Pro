@@ -130,13 +130,13 @@ def verify_cloud_function_retrieval(user_id: str) -> Tuple[bool, Dict]:
         print_info("Request payload:")
         print(f"  {Colors.CYAN}{json.dumps({'user_id': user_id}, indent=2)}{Colors.END}\n")
 
-        print_info("Expected successful response:")
-        print(f"  {Colors.CYAN}{json.dumps({
+        expected_resp = {
             'success': True,
             'dhan_client_id': '1234567890',
             'dhan_access_token': 'eyJ0eXAi...',
             'updated_at': '2026-01-11T15:30:45.000Z'
-        }, indent=2)}{Colors.END}\n")
+        }
+        print(f"  {Colors.CYAN}{json.dumps(expected_resp, indent=2)}{Colors.END}\n")
 
         print_warning("Note: Actual test requires deployed Cloud Functions and authentication")
 
@@ -164,11 +164,12 @@ def verify_dhan_api_connection(user_id: str, client_id: str, access_token: str) 
         print_info(f"Testing Dhan API /verify endpoint for user: {user_id}")
         print_info("Request:")
         print(f"  Endpoint: {Colors.CYAN}POST {ENGINE_C_BASE_URL}/api/dhan/verify{Colors.END}")
-        print(f"  Payload: {Colors.CYAN}{json.dumps({
+        payload_preview = {
             'user_id': user_id,
-            'client_id': '****7890',  # Masked for security
-            'access_token': '****...'  # Masked for security
-        }, indent=2)}{Colors.END}\n")
+            'client_id': '****7890',
+            'access_token': '****...'
+        }
+        print(f"  Payload: {Colors.CYAN}{json.dumps(payload_preview, indent=2)}{Colors.END}\n")
 
         # Make actual request (credentials provided)
         response = requests.post(

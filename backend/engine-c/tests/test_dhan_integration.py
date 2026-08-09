@@ -106,8 +106,9 @@ async def test_get_funds_success():
             assert data["status"] == "success"
             
             # Verify data passed through correctly
-            funds_data = data["data"]
-            assert funds_data["dhanClientId"] == MOCK_CLIENT_ID
+            print("DEBUG DATA:", data)
+            funds_data = data.get("data", {})
+            assert funds_data.get("dhanClientId") == MOCK_CLIENT_ID
             # Check if the tyop is preserved (as Engine A/C usually passthrough)
             assert funds_data["availabelBalance"] == 100.25
 

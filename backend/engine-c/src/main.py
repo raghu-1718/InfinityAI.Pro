@@ -50,11 +50,9 @@ except ImportError as e:
     NEWS_AGGREGATOR_AVAILABLE = False
 
 try:
-    from src.user_credentials_enhanced import get_credentials_manager
+    from src.user_credentials import get_credentials_manager
     ENHANCED_CREDENTIALS_AVAILABLE = True
 except ImportError as e:
-    logger_init = logging.getLogger("enhanced_credentials_import")
-    logger_init.warning(f"⚠️ Enhanced credentials not available: {e}")
     ENHANCED_CREDENTIALS_AVAILABLE = False
 
 # Register Dhan Data API router for market data (Phase 2)
@@ -222,8 +220,8 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://engine-b:8080")
-ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://engine-a:8080")
+ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://localhost:8002" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-b:8080")
+ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://localhost:8001" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-a:8080")
 
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
@@ -249,8 +247,7 @@ except ImportError:
             "https://infinityai.pro",
             "https://www.infinityai.pro",
             "https://app.infinityai.pro",
-            "https://galvanic-pulsar-482815-h0.web.app",
-            "https://galvanic-pulsar-482815-h0.firebaseapp.com",
+            "http://localhost:3000",
         ]
         logger.warning(f"⚠️ CORS config module not found, using hardcoded origins")
 
@@ -942,7 +939,7 @@ def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
     """
     Sync version: Create authenticated DhanHQ client.
 
-    If user_id is provided, uses that user's credentials from GCP Secret Manager.
+    If user_id is provided, uses that user's credentials from Supabase environment.
     Otherwise, falls back to admin credentials from Secret Manager (for market data).
 
     NOTE: For user-specific credentials in async endpoints, use get_dhan_client_async() instead.
@@ -1652,12 +1649,20 @@ async def place_order(order: OrderRequest, request: Request):
             # All trades execute against Dhan API
             dhan_client = get_dhan_client()
 
+            # Map frontend order types to DhanHQ expected constants
+            order_type_map = {
+                "STOPLOSS": "STOP_LOSS",
+                "STOPLIMIT": "STOP_LOSS",
+                "STOPMARKET": "STOP_LOSS_MARKET"
+            }
+            dhan_order_type = order_type_map.get(order.order_type.upper(), order.order_type.upper())
+            
             # Build kwargs dynamically, only include non-None and relevant fields
             order_kwargs = {
-                "transaction_type": order.transaction_type,
+                "transaction_type": order.transaction_type.upper(),
                 "exchange_segment": order.exchange_segment,
                 "product_type": order.product_type,
-                "order_type": order.order_type,
+                "order_type": dhan_order_type,
                 "validity": order.validity,
                 "security_id": order.security_id,
                 "quantity": order.quantity,
@@ -1665,10 +1670,11 @@ async def place_order(order: OrderRequest, request: Request):
             # Always include price for DhanHQ SDK, default to 0 for MARKET orders
             if order.price is not None:
                 order_kwargs["price"] = order.price
-            elif order.order_type == "MARKET":
+            elif dhan_order_type == "MARKET":
                 order_kwargs["price"] = 0
+            
             # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
-            if order.trigger_price is not None and order.order_type in ["STOPLOSS", "STOPLIMIT", "STOPMARKET"]:
+            if order.trigger_price is not None and "STOP" in dhan_order_type:
                 order_kwargs["trigger_price"] = order.trigger_price
             if order.disclosed_quantity:
                 order_kwargs["disclosed_quantity"] = order.disclosed_quantity
@@ -1743,10 +1749,18 @@ async def cancel_order(request: OrderCancelRequest):
 async def modify_order(request: OrderModifyRequest):
     """Modify existing order"""
     try:
+        # Map frontend order types to DhanHQ expected constants
+        order_type_map = {
+            "STOPLOSS": "STOP_LOSS",
+            "STOPLIMIT": "STOP_LOSS",
+            "STOPMARKET": "STOP_LOSS_MARKET"
+        }
+        dhan_order_type = order_type_map.get(request.order_type.upper(), request.order_type.upper()) if request.order_type else request.order_type
+
         dhan_client = get_dhan_client()
         response = dhan_client.modify_order(
             order_id=request.order_id,
-            order_type=request.order_type,
+            order_type=dhan_order_type,
             leg_name=request.leg_name,
             quantity=request.quantity,
             price=request.price,
@@ -2139,7 +2153,7 @@ async def delete_user_credentials_simple(user_id: str):
             raise HTTPException(status_code=503, detail="Credentials manager not available")
         target_id = user_id
         if user_id and user_id.isdigit():
-            # Prefer deleting the actual document if stored under Firebase UID
+            # Prefer deleting the actual document if stored under Supabase UID
             creds = await manager.find_credentials_by_client_id(user_id)
             if creds:
                 target_id = creds.get("user_id", user_id)

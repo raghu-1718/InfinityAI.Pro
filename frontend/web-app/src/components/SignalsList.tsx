@@ -89,73 +89,79 @@ export default function SignalsList({ refreshInterval = 30000, maxSignals = 10 }
         </div>
       ) : (
         <div className="space-y-3">
-          {signals.map((signal, index) => (
-            <div
-              key={index}
-              className={`${getSignalColor(signal.signal_type)} border-2 rounded-lg p-4 transition-all hover:scale-102`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                {/* Symbol & Signal Type */}
-                <div className="flex items-center gap-3">
-                  <h4 className="text-lg font-bold">{signal.symbol}</h4>
-                  <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white dark:bg-gray-800">
-                    {signal.signal_type}
+          {signals.map((signal, index) => {
+            const sigType = signal.signal_type || signal.signal || 'HOLD';
+            const sigStrategy = signal.strategy || 'Multi-Factor AI Model';
+            const sigPrice = signal.price ?? signal.entryPrice ?? 0;
+
+            return (
+              <div
+                key={index}
+                className={`${getSignalColor(sigType)} border-2 rounded-lg p-4 transition-all hover:scale-102`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  {/* Symbol & Signal Type */}
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-lg font-bold">{signal.symbol}</h4>
+                    <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white dark:bg-gray-800">
+                      {sigType}
+                    </span>
+                  </div>
+
+                  {/* Timestamp */}
+                  <span className="text-xs opacity-75">
+                    {new Date(signal.timestamp).toLocaleString('en-IN', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                 </div>
 
-                {/* Timestamp */}
-                <span className="text-xs opacity-75">
-                  {new Date(signal.timestamp).toLocaleString('en-IN', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-
-              {/* Strategy & Confidence */}
-              <div className="flex items-center gap-4 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm opacity-75">Strategy:</span>
-                  <span className="text-sm font-semibold">{signal.strategy}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm opacity-75">Confidence:</span>
-                  <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 ${getConfidenceBadge(signal.confidence)} rounded-full`}></div>
-                    <span className="text-sm font-semibold">
-                      {(signal.confidence * 100).toFixed(0)}%
-                    </span>
+                {/* Strategy & Confidence */}
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm opacity-75">Strategy:</span>
+                    <span className="text-sm font-semibold">{sigStrategy}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm opacity-75">Confidence:</span>
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 ${getConfidenceBadge(signal.confidence)} rounded-full`}></div>
+                      <span className="text-sm font-semibold">
+                        {signal.confidence > 1 ? signal.confidence.toFixed(0) : (signal.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Price */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm opacity-75">Entry Price:</span>
-                <span className="text-lg font-bold">
-                  ₹{signal.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              {/* Indicators */}
-              {signal.indicators && Object.keys(signal.indicators).length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    {Object.entries(signal.indicators).map(([key, value]) => (
-                      <div key={key}>
-                        <span className="opacity-75">{key}:</span>
-                        <span className="ml-1 font-semibold">
-                          {typeof value === 'number' ? value.toFixed(2) : value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                {/* Price */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm opacity-75">Entry Price:</span>
+                  <span className="text-lg font-bold">
+                    ₹{sigPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Indicators */}
+                {signal.indicators && Object.keys(signal.indicators).length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      {Object.entries(signal.indicators).map(([key, value]) => (
+                        <div key={key}>
+                          <span className="opacity-75">{key}:</span>
+                          <span className="ml-1 font-semibold">
+                            {typeof value === 'number' ? value.toFixed(2) : String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

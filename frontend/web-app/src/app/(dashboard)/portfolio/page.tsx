@@ -246,7 +246,7 @@ export default function PortfolioPage() {
                               border: '1px solid hsl(var(--border))',
                               borderRadius: '8px',
                             }}
-                            formatter={(value: number) => formatCurrency(value)}
+                            formatter={(value: any) => formatCurrency(Number(value || 0))}
                           />
                           <Legend
                             formatter={(value: string) => (

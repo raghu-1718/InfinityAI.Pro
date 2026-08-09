@@ -7,13 +7,13 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import type { User } from "@/lib/firebase";
+import type { User } from "@/lib/auth";
 import {
   onAuthChange,
   signInWithGoogle,
   logOut,
   getUserProfile,
-} from "@/lib/firebase";
+} from "@/lib/auth";
 import type { UserProfile } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
@@ -74,15 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const isConnected = !!data?.broker_client_id;
             setDhanConnected(isConnected);
-            setStoreUserProfile((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    isConnected,
-                    isVerified: isConnected,
-                  }
-                : null,
-            );
+            setStoreUserProfile({
+              userId: supabaseUser.uid,
+              clientId: data?.broker_client_id || supabaseUser.uid,
+              name: (supabaseUser as any).displayName || (supabaseUser as any).email?.split("@")[0] || "User",
+              email: (supabaseUser as any).email || "",
+              isConnected,
+              isVerified: isConnected,
+            });
           } catch (error) {
             console.warn("Error checking credentials:", error);
           }

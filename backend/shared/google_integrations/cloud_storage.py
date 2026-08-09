@@ -127,7 +127,7 @@ class ModelStorage:
 
         Args:
             bucket_name: GCS bucket name
-            project_id: GCP project ID
+            project_id: Cloud project ID
             models_prefix: Prefix for model objects in bucket
             local_cache_dir: Local directory for model caching
         """
@@ -393,7 +393,7 @@ class TradingHistoryStorage:
 
         Args:
             bucket_name: GCS bucket name
-            project_id: GCP project ID
+            project_id: Cloud project ID
             history_prefix: Prefix for history objects
         """
         self.bucket_name = bucket_name or os.getenv("GCS_HISTORY_BUCKET", "infinityai-history")

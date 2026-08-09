@@ -22,7 +22,7 @@ interface Quote {
 
 export function LiveMarketQuotes() {
   const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
-  const { connectionState, error } = useMarketData((data) => {
+  const { connectionState, error } = useMarketData(['NIFTY', 'BANKNIFTY'], (data: any) => {
     setQuotes((prev) => {
       const updated = new Map(prev);
       updated.set(data.symbol, {
@@ -65,7 +65,7 @@ export function LiveMarketQuotes() {
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">
-            Connection Error: {error.message}
+            Connection Error: {(error as any)?.message || String(error)}
           </p>
         </div>
       )}

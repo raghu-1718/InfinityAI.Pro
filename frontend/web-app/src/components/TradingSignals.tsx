@@ -81,7 +81,7 @@ export function TradingSignals({ engineId }: TradingSignalsProps) {
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">
-            Connection Error: {error.message}
+            Connection Error: {(error as any)?.message || String(error)}
           </p>
         </div>
       )}

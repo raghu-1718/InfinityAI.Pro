@@ -6,7 +6,6 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CouponAuthProvider } from "@/contexts/DualAuthContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AblyProvider } from "@/contexts/AblyContext";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 
@@ -50,9 +49,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <StoreHydration />
       <AuthProvider>
-        <AblyProvider>
-          <CouponAuthProvider>{children}</CouponAuthProvider>
-        </AblyProvider>
+        <CouponAuthProvider>{children}</CouponAuthProvider>
       </AuthProvider>
       <Toaster position="top-right" richColors />
       <ReactQueryDevtools initialIsOpen={false} />

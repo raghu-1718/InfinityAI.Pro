@@ -238,7 +238,7 @@ class EnhancedGenAIClient:
         Initialize the enhanced GenAI client.
 
         Args:
-            project_id: GCP project ID (default from env)
+            project_id: Cloud project ID (default from env)
             location: GCP region (default us-central1)
             model_id: Primary Gemini model (default: gemini-2.5-flash for speed)
             advanced_model_id: Advanced model for complex reasoning (default: gemini-3-pro)

@@ -202,7 +202,7 @@ export function useUserAccount() {
   const { userProfile, setFunds, setUserProfile, setDematData } = useAppStore();
   const userId = userProfile?.userId || getStoredUserId();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["userAccount", userId],
     queryFn: async () => {
       if (!userId) {
@@ -294,19 +294,24 @@ export function useUserAccount() {
 
       return failureCount < 2;
     },
-    onError: (error: any) => {
-      console.warn("useUserAccount error", error);
+  });
 
-      // Keep connected state for transient issues; only disconnect on 401
-      if (error?.status === 401 && userProfile?.isConnected) {
+  // Handle 401 unauthenticated state side effect via useEffect
+  useEffect(() => {
+    if (query.error) {
+      console.warn("useUserAccount error", query.error);
+      const err = query.error as any;
+      if (err?.status === 401 && userProfile?.isConnected) {
         setUserProfile({
           ...userProfile,
           isConnected: false,
           isVerified: false,
         });
       }
-    },
-  });
+    }
+  }, [query.error, userProfile, setUserProfile]);
+
+  return query;
 }
 
 // Funds Hook - Now uses user's connected account
@@ -1267,7 +1272,7 @@ export function useOptionChain(
     queryKey: ["option-chain", params.under_security_id, params.expiry],
     queryFn: async () => {
       if (!userId) throw new Error("User ID required");
-      const res = await engineC.getOptionChain({ ...params, user_id: userId });
+      const res = await engineC.getOptionChainFull({ ...params, user_id: userId });
       return res;
     },
     enabled:

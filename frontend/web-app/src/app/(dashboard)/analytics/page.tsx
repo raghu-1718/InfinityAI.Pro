@@ -430,7 +430,7 @@ export default function AnalyticsPage() {
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
+                          formatter={(value: any) => formatCurrency(Number(value || 0))}
                           contentStyle={{
                             backgroundColor: 'hsl(var(--card))',
                             border: '1px solid hsl(var(--border))',
@@ -987,7 +987,7 @@ export default function AnalyticsPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [`${value.toFixed(2)}%`, 'Cumulative Return']}
+                    formatter={(value: any) => [`${Number(value || 0).toFixed(2)}%`, 'Cumulative Return']}
                   />
                   <Area
                     type="monotone"
@@ -1027,7 +1027,7 @@ export default function AnalyticsPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [`${value.toFixed(2)}%`, 'Drawdown']}
+                    formatter={(value: any) => [`${Number(value || 0).toFixed(2)}%`, 'Drawdown']}
                   />
                   <Area
                     type="monotone"

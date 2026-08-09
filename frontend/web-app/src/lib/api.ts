@@ -29,7 +29,7 @@ export const getEngineCUrl = () => {
 };
 
 // API URLs from environment variables with correct fallbacks
-const API_CONFIG = {
+export const API_CONFIG = {
   ENGINE_A: getEngineAUrl(),
   ENGINE_B: getEngineBUrl(),
   ENGINE_C: getEngineCUrl(),
@@ -197,7 +197,8 @@ export interface FundsResponse {
   status: string;
   data: {
     dhanClientId: string;
-    availabelBalance: number;
+    availableBalance: number;
+    availabelBalance?: number;
     sodLimit: number;
     collateralAmount: number;
   };
@@ -979,6 +980,35 @@ export const engineC = {
     return res.json();
   },
 
+  async getHistoricalData(symbol: string, fromDate: string, toDate: string, interval: string = "1D") {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/historical?symbol=${encodeURIComponent(symbol)}&fromDate=${fromDate}&toDate=${toDate}&interval=${interval}`
+    );
+    return res.json();
+  },
+
+  async getMarketDepth(symbol: string, levels: number = 20) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/market-depth?symbol=${encodeURIComponent(symbol)}&levels=${levels}`
+    );
+    return res.json();
+  },
+
+  async getOptionChain(symbol: string, expiry?: string) {
+    const query = expiry ? `&expiry=${encodeURIComponent(expiry)}` : "";
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/option-chain?symbol=${encodeURIComponent(symbol)}${query}`
+    );
+    return res.json();
+  },
+
+  async getExpiredOptions(symbol: string, date: string) {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/expired-options?symbol=${encodeURIComponent(symbol)}&date=${date}`
+    );
+    return res.json();
+  },
+
   // User Credentials API
   async getUserCredentials(userId: string) {
     const res = await fetchWithTimeout(
@@ -1268,7 +1298,7 @@ export const engineC = {
 
   // ==================== OPTIONS ANALYTICS & MARKET DATA ====================
 
-  async getOptionChain(params: {
+  async getOptionChainFull(params: {
     under_security_id: number;
     under_exchange_segment: string;
     expiry: string;

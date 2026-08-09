@@ -31,7 +31,7 @@ export default function LoginPage() {
     isAuthenticated,
     isGoogleSignedIn,
     isCouponVerified,
-    firebaseUser,
+    authUser: firebaseUser,
     loading
   } = useCouponAuth();
 

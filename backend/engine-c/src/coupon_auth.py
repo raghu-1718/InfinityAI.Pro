@@ -55,11 +55,11 @@ class CouponAuthManager:
             self.sessions_collection = "coupon_sessions"
             self.users_collection = "users"
             if self.db:
-                logger.info("✅ CouponAuthManager initialized with Supabase")
+                logger.info("✅ CouponAuthManager initialized with Firestore")
             else:
-                raise Exception("Supabase DB client not initialized")
+                logger.info("ℹ️ CouponAuthManager using in-memory storage fallback")
         except Exception as e:
-            logger.warning(f"Supabase not available, using in-memory storage: {e}")
+            logger.warning(f"Firestore DB client not available, using in-memory storage: {e}")
             self.db = None
             self._memory_coupons = {}
             self._memory_sessions = {}

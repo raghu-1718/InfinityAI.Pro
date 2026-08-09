@@ -26,9 +26,9 @@ export default function PriceChart({ symbol, hours = 24, refreshInterval = 60000
 
   const fetchData = async () => {
     try {
-      const response = await getPriceHistory(symbol, hours);
+      const response = await getPriceHistory(symbol, String(hours));
       if (response.status === 'success') {
-        setData(response.data);
+        setData(response.ticks || response.data || []);
         setError(null);
       } else {
         setError(response.error || 'Failed to load data');
@@ -72,13 +72,13 @@ export default function PriceChart({ symbol, hours = 24, refreshInterval = 60000
       hour: '2-digit',
       minute: '2-digit',
     }),
-    price: tick.price,
+    price: tick.price ?? tick.close ?? 0,
     high: tick.high,
     low: tick.low,
   }));
 
   // Calculate price range for Y-axis domain
-  const prices = data.map((t) => t.price);
+  const prices = data.map((t) => t.price ?? t.close ?? 0);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   const padding = (maxPrice - minPrice) * 0.1;
@@ -116,8 +116,8 @@ export default function PriceChart({ symbol, hours = 24, refreshInterval = 60000
               borderRadius: '8px',
               color: '#F9FAFB',
             }}
-            formatter={(value: number) => [
-              `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+            formatter={(value: any) => [
+              `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
               'Price',
             ]}
           />
@@ -156,7 +156,7 @@ export default function PriceChart({ symbol, hours = 24, refreshInterval = 60000
         <div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Current</div>
           <div className="text-lg font-semibold text-gray-900 dark:text-white">
-            ₹{data[data.length - 1]?.price.toFixed(2)}
+            ₹{(data[data.length - 1]?.price ?? data[data.length - 1]?.close ?? 0).toFixed(2)}
           </div>
         </div>
         <div>

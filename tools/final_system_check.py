@@ -4,13 +4,16 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 import json
 
+import os
+
 # Initialize Firebase
 try:
     app = firebase_admin.get_app()
 except ValueError:
     cred = credentials.ApplicationDefault()
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
     firebase_admin.initialize_app(cred, {
-        'projectId': 'galvanic-pulsar-482815-h0',
+        'projectId': project_id,
     })
 
 db = firestore.client()
@@ -150,10 +153,18 @@ else:
 print("\n" + "=" * 80)
 print("FINAL STATUS SUMMARY")
 print("=" * 80)
+user_data = user_doc.to_dict() if 'user_doc' in locals() and user_doc and user_doc.exists else {}
+settings = user_data.get('settings', {})
 print(f"System Active: {user_data.get('tradingActive', False)}")
 print(f"Auto-Trading Enabled: {settings.get('autoTrading', False)}")
-print(f"Signal Generation: {'ACTIVE' if all_signals else 'NONE'}")
-print(f"Crude Oil Coverage: {'YES' if crude_signals else 'NO'}")
-print(f"NIFTY Coverage: {'YES' if nifty_signals else 'NO'}")
-print(f"Active Trading: {'YES' if positions or orders else 'NO'}")
+all_sig = all_signals if 'all_signals' in locals() else []
+crude_sig = crude_signals if 'crude_signals' in locals() else []
+nifty_sig = nifty_signals if 'nifty_signals' in locals() else []
+pos = positions if 'positions' in locals() else []
+ord_list = orders if 'orders' in locals() else []
+
+print(f"Signal Generation: {'ACTIVE' if all_sig else 'NONE'}")
+print(f"Crude Oil Coverage: {'YES' if crude_sig else 'NO'}")
+print(f"NIFTY Coverage: {'YES' if nifty_sig else 'NO'}")
+print(f"Active Trading: {'YES' if pos or ord_list else 'NO'}")
 print("=" * 80)

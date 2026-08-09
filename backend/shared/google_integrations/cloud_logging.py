@@ -130,7 +130,7 @@ class TradingLogger:
         Initialize the trading logger.
 
         Args:
-            project_id: GCP project ID
+            project_id: Cloud project ID
             log_name: Name for the Cloud Logging log
             enable_cloud_logging: Whether to enable Cloud Logging
             labels: Default labels to add to all log entries
