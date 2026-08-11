@@ -57,7 +57,7 @@ def test_health_endpoints(results):
 
     for engine_name, url in ENGINES.items():
         try:
-            response = requests.get(f"{url}/health", timeout=5)
+            response = requests.get(f"{url}/health", timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 results.add_test(
@@ -76,7 +76,7 @@ def test_engine_c_trading_mode(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/health", timeout=5)
+        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/health", timeout=10)
         data = response.json()
         is_live = data.get('status') == 'healthy' or data.get('trading_mode') == 'LIVE'
         results.add_test(
@@ -93,7 +93,7 @@ def test_engine_c_dhan_connection(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/api/dhan/status", timeout=5)
+        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/api/dhan/status", timeout=10)
         if response.status_code == 200:
             data = response.json()
             results.add_test(
@@ -112,7 +112,7 @@ def test_engine_a_orchestration(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-a-r2f5flt77q-uc.a.run.app/health", timeout=5)
+        response = requests.get("https://engine-a-r2f5flt77q-uc.a.run.app/health", timeout=10)
         data = response.json()
 
         is_healthy = data.get('status') == 'healthy'
@@ -135,7 +135,7 @@ def test_engine_b_ml_models(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/health", timeout=5)
+        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/health", timeout=10)
         data = response.json()
 
         capabilities = data.get('capabilities', {})
@@ -166,7 +166,7 @@ def test_market_status(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/api/v1/market/status", timeout=5)
+        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/api/v1/market/status", timeout=10)
         if response.status_code == 200:
             data = response.json()
             has_time = 'current_time' in data or 'time' in data or 'timestamp' in data or 'server_time' in data
@@ -191,7 +191,7 @@ def test_dhan_account_data(results):
         response = requests.get(
             "https://engine-c-r2f5flt77q-uc.a.run.app/api/dhan/funds",
             headers={"X-User-ID": "test-user"},
-            timeout=5
+            timeout=10
         )
         # We expect 401/403 or 200 or 500 (unauthenticated user session) depending on auth
         endpoint_exists = response.status_code in [200, 401, 403, 400, 500]

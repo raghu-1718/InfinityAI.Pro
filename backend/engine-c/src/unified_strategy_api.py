@@ -225,10 +225,11 @@ async def execute_strategy(
         logger.info(f"Executing {request.strategy} for user {x_user_id}")
         
         # Get spot price (use provided or default)
-        spot_price = request.spot_price or 23500.0
+        spot_price = request.spot_price or 24455.75
         
-        # Determine lot size
-        lot_size = 50 if "NIFTY" in request.symbol else 25
+        # Determine lot size (August 2026 NSE specs: NIFTY=65, BANKNIFTY=30)
+        lot_size = 65 if "NIFTY" in request.symbol and "BANK" not in request.symbol else (30 if "BANK" in request.symbol else 40)
+
         
         # Route to appropriate calculator
         if request.asset_class == AssetClass.OPTIONS:

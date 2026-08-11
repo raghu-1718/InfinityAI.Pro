@@ -131,21 +131,24 @@ class SEBIRegulations:
     """
 
     LOT_SIZES_DEC_2025 = {
-        "NIFTY": 75,
-        "BANKNIFTY": 35,
-        "FINNIFTY": 65,
-        "MIDCPNIFTY": 140,
+        "NIFTY": 65,
+        "BANKNIFTY": 30,
+        "FINNIFTY": 40,
+        "MIDCPNIFTY": 120,
         "NIFTYNXT50": 25,
-        "SENSEX": 20,
-        "BANKEX": 30,
+        "SENSEX": 10,
+        "BANKEX": 15,
     }
 
     LOT_SIZES_POST_DEC30 = {
         "NIFTY": 65,
         "BANKNIFTY": 30,
-        "FINNIFTY": 60,
+        "FINNIFTY": 40,
         "MIDCPNIFTY": 120,
+        "SENSEX": 10,
+        "BANKEX": 15,
     }
+
 
     STT_RATES = {
         "EQUITY_DELIVERY": 0.001,

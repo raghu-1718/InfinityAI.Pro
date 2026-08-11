@@ -164,7 +164,7 @@ class IronCondorStrategy(OptionsStrategy):
         call_long_strike: float,
         put_short_strike: float,
         put_long_strike: float,
-        lot_size: int = 50,
+        lot_size: int = 65,
         volatility: float = 0.18
     ):
         super().__init__(symbol, spot_price, expiry, volatility)
@@ -249,7 +249,7 @@ class BullCallSpreadStrategy(OptionsStrategy):
         expiry: str,
         long_strike: float,
         short_strike: float,
-        lot_size: int = 50,
+        lot_size: int = 65,
         volatility: float = 0.18
     ):
         super().__init__(symbol, spot_price, expiry, volatility)

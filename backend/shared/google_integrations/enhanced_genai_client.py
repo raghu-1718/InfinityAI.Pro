@@ -96,8 +96,8 @@ You are trained on:
 - SEBI regulations and compliance rules (2025 updates)
 - NSE/BSE trading hours (9:15 AM - 3:30 PM IST)
 - Weekly expiry schedule: Mon=MIDCPNIFTY, Tue=FINNIFTY, Wed=BANKNIFTY, Thu=NIFTY, Fri=SENSEX
-- NEW Lot sizes effective Dec 30, 2025: NIFTY=65, BANKNIFTY=30, FINNIFTY=60, MIDCPNIFTY=120
-- Current lot sizes (until Dec 29, 2025): NIFTY=75, BANKNIFTY=35, FINNIFTY=65, MIDCPNIFTY=140
+- Active NSE Lot sizes (August 2026): NIFTY=65, BANKNIFTY=30, FINNIFTY=40, MIDCPNIFTY=120
+
 - STT rates: Futures 0.02%, Options (sell) 0.1%
 - Circuit breakers: 10%, 15%, 20% thresholds
 - Options Greeks and Black-Scholes pricing

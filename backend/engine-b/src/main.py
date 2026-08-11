@@ -402,13 +402,13 @@ async def health_check():
 # =====================================================================
 MARKET_CONFIG = {
     "LOT_SIZES": {
-        "NIFTY": 75,           # Updated Nov 2024
-        "BANKNIFTY": 30,       # Updated Nov 2024
-        "FINNIFTY": 65,        # Updated Nov 2024
-        "MIDCPNIFTY": 120,     # Updated Nov 2024
+        "NIFTY": 65,           # Active August 2026 NSE Spec
+        "BANKNIFTY": 30,       # Active August 2026 NSE Spec
+        "FINNIFTY": 40,        # Active August 2026 NSE Spec
+        "MIDCPNIFTY": 120,     # Active August 2026 NSE Spec
         "NIFTYNXT50": 25,
-        "SENSEX": 20,
-        "BANKEX": 30
+        "SENSEX": 10,
+        "BANKEX": 15
     },
     "EXPIRY_DAYS": {
         "MIDCPNIFTY": 0,       # Monday
@@ -1039,7 +1039,7 @@ class MarketDataEngine:
         np.random.seed(hash(symbol) % 2**32)
 
         base_prices = {
-            "NIFTY": 24500, "BANKNIFTY": 52000, "FINNIFTY": 23500,
+            "NIFTY": 24455.75, "BANKNIFTY": 57375.10, "FINNIFTY": 26393.45,
             "RELIANCE": 2900, "TCS": 4200, "HDFCBANK": 1700,
             "INFY": 1850, "ICICIBANK": 1280, "ITC": 470,
             "SBIN": 820, "TATAMOTORS": 980
