@@ -18,10 +18,11 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 # Configuration
 ENGINES = {
-    "Engine-A": "https://engine-a-r2f5flt77q-uc.a.run.app",
-    "Engine-B": "https://engine-b-r2f5flt77q-uc.a.run.app",
-    "Engine-C": "https://engine-c-r2f5flt77q-uc.a.run.app",
+    "Engine-A": "https://engine-a-313407263327.us-central1.run.app",
+    "Engine-B": "https://engine-b-313407263327.us-central1.run.app",
+    "Engine-C": "https://engine-c-313407263327.us-central1.run.app",
 }
+
 
 class E2ETestResults:
     def __init__(self):
@@ -76,7 +77,8 @@ def test_engine_c_trading_mode(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/health", timeout=10)
+        response = requests.get(f"{ENGINES['Engine-C']}/health", timeout=10)
+
         data = response.json()
         is_live = data.get('status') == 'healthy' or data.get('trading_mode') == 'LIVE'
         results.add_test(
@@ -93,7 +95,7 @@ def test_engine_c_dhan_connection(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/api/dhan/status", timeout=10)
+        response = requests.get(f"{ENGINES['Engine-C']}/api/dhan/status", timeout=10)
         if response.status_code == 200:
             data = response.json()
             results.add_test(
@@ -112,7 +114,7 @@ def test_engine_a_orchestration(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-a-r2f5flt77q-uc.a.run.app/health", timeout=10)
+        response = requests.get(f"{ENGINES['Engine-A']}/health", timeout=10)
         data = response.json()
 
         is_healthy = data.get('status') == 'healthy'
@@ -135,7 +137,7 @@ def test_engine_b_ml_models(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/health", timeout=10)
+        response = requests.get(f"{ENGINES['Engine-B']}/health", timeout=10)
         data = response.json()
 
         capabilities = data.get('capabilities', {})
@@ -166,7 +168,7 @@ def test_market_status(results):
     print("-" * 50)
 
     try:
-        response = requests.get("https://engine-b-r2f5flt77q-uc.a.run.app/api/v1/market/status", timeout=10)
+        response = requests.get(f"{ENGINES['Engine-B']}/api/v1/market/status", timeout=10)
         if response.status_code == 200:
             data = response.json()
             has_time = 'current_time' in data or 'time' in data or 'timestamp' in data or 'server_time' in data
@@ -189,7 +191,7 @@ def test_dhan_account_data(results):
     try:
         # Try to call funds endpoint (should exist and be callable)
         response = requests.get(
-            "https://engine-c-r2f5flt77q-uc.a.run.app/api/dhan/funds",
+            f"{ENGINES['Engine-C']}/api/dhan/funds",
             headers={"X-User-ID": "test-user"},
             timeout=10
         )
@@ -210,7 +212,7 @@ def test_trading_settings(results):
 
     try:
         response = requests.get(
-            "https://engine-c-r2f5flt77q-uc.a.run.app/api/trading-settings-schema",
+            f"{ENGINES['Engine-C']}/api/trading-settings-schema",
             timeout=5
         )
         if response.status_code == 200:
@@ -233,7 +235,7 @@ def test_system_monitoring(results):
 
     # Test Engine-C system status
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/api/system/status", timeout=5)
+        response = requests.get(f"{ENGINES['Engine-C']}/api/system/status", timeout=5)
         if response.status_code == 200:
             results.add_test("Engine-C System Status", True, "")
         else:
@@ -243,7 +245,7 @@ def test_system_monitoring(results):
 
     # Test performance stats
     try:
-        response = requests.get("https://engine-c-r2f5flt77q-uc.a.run.app/api/performance/stats", timeout=5)
+        response = requests.get(f"{ENGINES['Engine-C']}/api/performance/stats", timeout=5)
         if response.status_code == 200:
             results.add_test("Engine-C Performance Stats", True, "")
         else:
@@ -258,7 +260,7 @@ def test_websocket_availability(results):
 
     try:
         response = requests.get(
-            "https://engine-c-r2f5flt77q-uc.a.run.app/health",
+            f"{ENGINES['Engine-C']}/health",
             timeout=5
         )
         if response.status_code == 200:
@@ -280,9 +282,10 @@ def test_api_compatibility(results):
     print("-" * 50)
 
     endpoints_to_test = [
-        ("https://engine-c-r2f5flt77q-uc.a.run.app/api/v1/user/credentials", "User Credentials"),
-        ("https://engine-c-r2f5flt77q-uc.a.run.app/api/v1/optimize/timing/NIFTY", "Optimize Timing"),
+        (f"{ENGINES['Engine-C']}/api/v1/user/credentials", "User Credentials"),
+        (f"{ENGINES['Engine-C']}/api/v1/optimize/timing/NIFTY", "Optimize Timing"),
     ]
+
 
     for url, name in endpoints_to_test:
         try:

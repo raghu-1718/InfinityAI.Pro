@@ -4,10 +4,9 @@ import { getUserId } from "@/lib/user";
 
 // Helper to determine Engine A URL based on environment
 export const getEngineAUrl = () => {
-  // Always use environment variable or correct production URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-r2f5flt77q-uc.a.run.app"
+    "https://engine-a-313407263327.us-central1.run.app"
   );
 };
 
@@ -15,18 +14,18 @@ export const getEngineAUrl = () => {
 export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-r2f5flt77q-uc.a.run.app"
+    "https://engine-b-313407263327.us-central1.run.app"
   );
 };
 
 // Helper to determine Engine C URL based on environment
 export const getEngineCUrl = () => {
-  // Updated Engine C URL
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-r2f5flt77q-uc.a.run.app"
+    "https://engine-c-313407263327.us-central1.run.app"
   );
 };
+
 
 // API URLs from environment variables with correct fallbacks
 export const API_CONFIG = {
