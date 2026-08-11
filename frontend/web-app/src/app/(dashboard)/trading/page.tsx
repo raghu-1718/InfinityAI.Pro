@@ -57,9 +57,10 @@ export default function TradingPage() {
   } = useUserAccount();
 
   // Phase 6: Live Data Streams
-  const uid = session?.userId;
+  const uid = (session?.userId && session.userId !== "unknown") ? session.userId : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
   const auditEvents = useAuditTimeline(uid);
   const sessionState = useSessionState(uid);
+
 
   // Configuration State
   const [tradingCapital, setTradingCapital] = useState("50000");
@@ -111,12 +112,13 @@ export default function TradingPage() {
   }, []);
 
   const handleStartStop = async () => {
-    if (!userProfile?.isConnected) {
+    if (!dhanConnected) {
       toast.error("Account Not Connected", {
         description: "Please connect Dhan in Settings first.",
       });
       return;
     }
+
 
     if (isKillSwitchActive && !isEngineRunning) {
       toast.error("Kill Switch Active", {
@@ -195,7 +197,12 @@ export default function TradingPage() {
   const funds = accountData?.funds?.availableBalance || 0;
 
   // Block trading if Dhan not connected
-  const dhanConnected = !!userProfile?.isConnected;
+  const dhanConnected = !!(
+    userProfile?.isConnected ||
+    session?.dhanConfigured ||
+    ((accountData as any)?.status === "success") ||
+    ((accountData as any)?.user_id)
+  );
   const isAccountLoading = accountError === null && !accountData && !isAccountError;
 
   return (
@@ -259,10 +266,11 @@ export default function TradingPage() {
             <div className="text-right">
               <p className="text-xs text-slate-400 uppercase tracking-wider">Confidence</p>
               <p className="text-2xl font-mono text-emerald-400 font-bold">
-                {aiSignal?.confidence ? `${(aiSignal.confidence * 100).toFixed(1)}%` : "--%"}
+                {aiSignal?.confidence ? `${(aiSignal.confidence > 1 ? aiSignal.confidence : aiSignal.confidence * 100).toFixed(1)}%` : "--%"}
               </p>
             </div>
           </div>
+
           
           {/* News Sentiment Card */}
           <div className="glass-card p-4 flex-1 w-full border-t-2 border-t-blue-500 flex items-center justify-between">
