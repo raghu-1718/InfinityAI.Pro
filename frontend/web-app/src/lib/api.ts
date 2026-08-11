@@ -673,16 +673,25 @@ export const engineB = {
         }
       );
       const data = await res.json();
-      return { 
-        prediction: data.signal || "BULLISH", 
-        confidence: data.confidence || 0.75, 
-        timeframe 
+      const signalObj = data.signal;
+      const predictionStr = typeof signalObj === "string"
+        ? signalObj
+        : (signalObj?.action || "BULLISH");
+      const confidenceVal = typeof signalObj === "object"
+        ? (signalObj?.confidence ?? data.confidence ?? 0.75)
+        : (data.confidence ?? 0.75);
+
+      return {
+        prediction: predictionStr,
+        confidence: confidenceVal,
+        timeframe
       };
     } catch (e) {
       console.warn("Prediction endpoint failed, falling back to neutral");
       return { prediction: "NEUTRAL", confidence: 0.5, timeframe };
     }
   },
+
 
   // Sentiment Analysis - Live News Sentiment from Aggregator
   async getSentimentAnalysis(symbol: string) {

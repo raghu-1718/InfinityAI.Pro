@@ -100,7 +100,12 @@ export default function IntelligencePage() {
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-black/40 border border-white/5">
                     <p className="text-sm text-slate-400 mb-1">Predicted Day Trend</p>
-                    <p className="text-xl font-bold text-white capitalize">{marketPrediction?.prediction || "Ranging"}</p>
+                    <p className="text-xl font-bold text-white capitalize">
+                      {typeof marketPrediction?.prediction === "string"
+                        ? marketPrediction.prediction
+                        : (marketPrediction?.prediction as any)?.action || "Ranging"}
+                    </p>
+
                   </div>
                   <div className="p-4 rounded-xl bg-black/40 border border-white/5">
                     <p className="text-sm text-slate-400 mb-1">Model Accuracy</p>
