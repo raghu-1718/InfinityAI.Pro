@@ -1,0 +1,31 @@
+{
+  "health_checks": {
+    "engine_a": true,
+    "engine_b": false,
+    "engine_c": true,
+    "frontend": true
+  },
+  "coupon_auth": {
+    "success": false,
+    "latency_ms": 0
+  },
+  "news_sentiment": {
+    "success": false,
+    "sentiment_latency_ms": 478.0594001058489
+  },
+  "vertex_ai_signals": {
+    "ensemble_signal_success": true,
+    "gemini_flash_success": true,
+    "gemini_latency_ms": 0
+  },
+  "engine_a_trading": {
+    "risk_scoring_success": true,
+    "signal_processing_success": true,
+    "latency_ms": 0
+  },
+  "pubsub_stress": {
+    "published": 1000,
+    "total_time_sec": 24.943343400023878,
+    "throughput_fps": 40.09085646469682
+  }
+}

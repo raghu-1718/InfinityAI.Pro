@@ -6,9 +6,9 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "-f",
-        "engine-a/Dockerfile",
+        "backend/engine-a/Dockerfile",
         ".",
       ]
   - name: "gcr.io/cloud-builders/docker"
@@ -16,7 +16,7 @@ steps:
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
       ]
     waitFor: ["build-engine-a"]
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -28,9 +28,9 @@ steps:
         "deploy",
         "engine-a",
         "--image",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "--set-env-vars",
-        "ENGINE_B_URL=https://engine-b-228557716858.us-central1.run.app,ENGINE_C_URL=https://engine-c-228557716858.us-central1.run.app,GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0",
+        "ENGINE_B_URL=https://engine-b-r2f5flt77q-uc.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--region",
         "us-central1",
       ]
@@ -43,9 +43,9 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "-f",
-        "engine-b/Dockerfile",
+        "backend/engine-b/Dockerfile",
         ".",
       ]
     waitFor: ["-"] # Start Parallel
@@ -54,7 +54,7 @@ steps:
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
       ]
     waitFor: ["build-engine-b"]
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -66,11 +66,9 @@ steps:
         "deploy",
         "engine-b",
         "--image",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "--set-env-vars",
-        "GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0",
-        "--set-secrets",
-        "DHAN_CLIENT_ID=dhan-client-id:latest,DHAN_ACCESS_TOKEN=dhan-access-token:latest",
+        "ENGINE_A_URL=https://engine-a-r2f5flt77q-uc.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--memory",
         "2Gi",
         "--cpu",
@@ -89,9 +87,9 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
         "-f",
-        "engine-c/Dockerfile",
+        "backend/engine-c/Dockerfile",
         ".",
       ]
     waitFor: ["-"] # Start Parallel
@@ -100,7 +98,7 @@ steps:
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
       ]
     waitFor: ["build-engine-c"]
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -112,17 +110,15 @@ steps:
         "deploy",
         "engine-c",
         "--image",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
         "--set-env-vars",
-        "GOOGLE_CLOUD_PROJECT=galvanic-pulsar-482815-h0",
-        "--set-secrets",
-        "ABLY_API_KEY=ably-api-key-root:latest",
+        "ENGINE_A_URL=https://engine-a-r2f5flt77q-uc.a.run.app,ENGINE_B_URL=https://engine-b-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--region",
         "us-central1",
       ]
     waitFor: ["push-engine-c"]
 
 images:
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest"
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest"
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c:latest"

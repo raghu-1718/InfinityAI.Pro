@@ -15,10 +15,10 @@ permissions:
   id-token: write
 
 env:
-  GCP_PROJECT_ID: "gen-lang-client-0779271931"
+  GCP_PROJECT_ID: "project-841b7f97-5ee3-4fbe-920"
   GCP_REGION: "us-central1"
-  WIF_PROVIDER: "projects/429140669077/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
-  SERVICE_ACCOUNT: "github-actions-deployer@gen-lang-client-0779271931.iam.gserviceaccount.com"
+  WIF_PROVIDER: "projects/313407263327/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  SERVICE_ACCOUNT: "github-actions-deployer@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com"
 
 jobs:
   # ============================================
@@ -99,14 +99,14 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-313407263327.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-313407263327.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-313407263327.us-central1.run.app
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0779271931 }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROJECT_841B7F97_5EE3_4FBE_920 }}'
           channelId: live
-          projectId: gen-lang-client-0779271931
+          projectId: project-841b7f97-5ee3-4fbe-920

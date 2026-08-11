@@ -6,8 +6,7 @@ const nextConfig = {
   reactCompiler: true,
 
   // Enable static export for Firebase Hosting
-  // API routes moved to Cloud Functions - see frontend/functions/
-  // output: "export", // Removed for Vercel deployment
+  output: "export",
 
   // Images configuration for server-side rendering
   images: {

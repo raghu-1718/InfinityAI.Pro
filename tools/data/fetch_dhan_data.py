@@ -8,7 +8,7 @@ import sys
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-uc.a.run.app"
 USER_ID = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 CLIENT_ID = "1101302170"
 

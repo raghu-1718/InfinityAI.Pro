@@ -83,6 +83,17 @@ db = get_firestore_db()  # Database alias for signal persistence
 
 # Create FastAPI app
 app = FastAPI()
+
+@app.get("/health")
+@app.get("/engine-b/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "engine-b",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "3.0-ensemble"
+    }
+
 if HAS_OTEL:
     FastAPIInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
@@ -132,7 +143,7 @@ except Exception:
 
 # Google Cloud Integrations (Official SDKs)
 try:
-    from src.google_integrations import (
+    from shared.google_integrations import (
         GenAIClient,
         TradingLogger,
         TradingEventType,
@@ -150,7 +161,7 @@ except ImportError as e:
 
 # Enhanced GenAI with Function Calling (v3.7.7)
 try:
-    from src.google_integrations import (
+    from shared.google_integrations import (
         EnhancedGenAIClient,
         TradingRecommendation,
         MARKET_DATA_TOOLS,
@@ -174,6 +185,20 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("InfinityAI.EngineB")
+
+import math
+
+def clean_floats(obj):
+    """Recursively replace NaN and Inf with 0.0 to make JSON-compliant"""
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return 0.0
+        return obj
+    elif isinstance(obj, dict):
+        return {k: clean_floats(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_floats(x) for x in obj]
+    return obj
 
 # Import Indian Market Knowledge Base (after logger is defined)
 try:
@@ -344,7 +369,11 @@ except ImportError:
         ALLOWED_ORIGINS = [
             "https://infinityai.pro",
             "https://www.infinityai.pro",
-            "https://app.infinityai.pro"
+            "https://app.infinityai.pro",
+            "https://project-841b7f97-5ee3-4fbe-920.web.app",
+            "https://project-841b7f97-5ee3-4fbe-920.firebaseapp.com",
+            "http://localhost:3000",
+            "http://localhost:5173",
         ]
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
@@ -1775,7 +1804,7 @@ async def generate_signal(req: SignalRequest):
     else:
         predicted_price = current_price
 
-    return SignalResponse(
+    res = SignalResponse(
         symbol=symbol,
         signal=signal,
         confidence=confidence,
@@ -1798,6 +1827,12 @@ async def generate_signal(req: SignalRequest):
             "asset_class": asset_class
         }
     )
+
+    if hasattr(res, 'model_dump'):
+        res_dict = res.model_dump()
+    else:
+        res_dict = res.dict()
+    return clean_floats(res_dict)
 
 # --- Asset-Specific Strategy Helpers ---
 
@@ -2067,13 +2102,13 @@ async def generate_batch_signals(request: BatchSignalsRequest):
         except Exception as e:
             logger.error(f"Batch signal error for {symbol}: {e}")
 
-    return {
+    return clean_floats({
         "signals": signals,
         "total": len(signals),
         "stored": stored_count,
         "user_id": request.user_id,
         "timestamp": datetime.utcnow().isoformat()
-    }
+    })
 
 
 class InstrumentSignalsRequest(BaseModel):
@@ -2955,7 +2990,7 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
         }
 
         # Create structured trading prompt
-        from src.google_integrations import TradingPrompt
+        from shared.google_integrations import TradingPrompt
         trading_prompt = TradingPrompt(
             symbol=req.symbol,
             market="NSE",
@@ -3043,7 +3078,7 @@ async def generate_enhanced_signal(req: EnhancedSignalRequest):
         # Fallback to regular Gemini signal
         logger.warning("Enhanced Trading AI not available, using fallback")
         if HAS_GOOGLE_INTEGRATIONS and GENAI_CLIENT_B:
-            from src.google_integrations import TradingPrompt
+            from shared.google_integrations import TradingPrompt
             trading_prompt = TradingPrompt(
                 symbol=req.symbol,
                 market="NSE",

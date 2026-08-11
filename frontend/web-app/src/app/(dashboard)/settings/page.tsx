@@ -23,7 +23,9 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  BrainCircuit,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
@@ -65,6 +67,10 @@ export default function SettingsPage() {
   });
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  
+  // ML Settings State
+  const [minConfidence, setMinConfidence] = useState(75);
+  const [modelWeight, setModelWeight] = useState(50);
 
   // Load credentials on mount
   useEffect(() => {
@@ -101,8 +107,8 @@ export default function SettingsPage() {
   }, [session, setDhanConnected]);
 
   const handleSaveCredentials = async () => {
-    if (!session?.userId) {
-      toast.error("Not authenticated");
+    if (!session?.userId || session.userId === "guest") {
+      toast.error("⚠️ Guest Mode: Please log in or enter your access coupon before saving credentials");
       return;
     }
 
@@ -310,6 +316,10 @@ export default function SettingsPage() {
             <Server className="h-4 w-4" />
             <span className="hidden sm:inline">Engines</span>
           </TabsTrigger>
+          <TabsTrigger value="ml-settings" className="flex items-center gap-2">
+            <BrainCircuit className="h-4 w-4" />
+            <span className="hidden sm:inline">ML Models</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* --- DHAN ACCOUNT TAB --- */}
@@ -503,7 +513,7 @@ export default function SettingsPage() {
                       </Label>
                       <div className="flex gap-2">
                         <code className="flex-1 bg-background p-2 rounded border font-mono text-xs overflow-x-auto">
-                          https://galvanic-pulsar-482815-h0-web-app.web.app/trading
+                          {ENGINE_C_URL}/auth/dhan/success
                         </code>
                         <Button
                           variant="outline"
@@ -582,6 +592,59 @@ export default function SettingsPage() {
         {/* --- ENGINES TAB (Dynamic) --- */}
         <TabsContent value="engines">
           <EngineStatusCards />
+        </TabsContent>
+
+        {/* --- ML SETTINGS TAB --- */}
+        <TabsContent value="ml-settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>ML Model Configuration</CardTitle>
+              <CardDescription>
+                Adjust AI thresholds and model weights for the trading engine
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-base">Minimum AI Confidence</Label>
+                  <span className="font-mono text-xl font-bold text-emerald-400">
+                    {minConfidence}%
+                  </span>
+                </div>
+                <Slider
+                  value={[minConfidence]}
+                  min={50}
+                  max={95}
+                  step={1}
+                  onValueChange={(val) => setMinConfidence(val[0])}
+                  className="[&>.absolute]:bg-emerald-500 py-4"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Signals below this confidence threshold will be ignored.
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="flex justify-between items-center">
+                  <Label className="text-base">Sentiment vs Tick Data Weight</Label>
+                  <span className="font-mono text-xl font-bold text-purple-400">
+                    {modelWeight}% / {100 - modelWeight}%
+                  </span>
+                </div>
+                <Slider
+                  value={[modelWeight]}
+                  min={10}
+                  max={90}
+                  step={5}
+                  onValueChange={(val) => setModelWeight(val[0])}
+                  className="[&>.absolute]:bg-purple-500 py-4"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Adjust the influence of News Sentiment vs Quantitative Tick Data on final signals.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

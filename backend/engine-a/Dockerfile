@@ -50,5 +50,5 @@ EXPOSE 8080
 # Cloud Run entrypoint
 # Single worker, async I/O (correct for FastAPI)
 # -----------------------------------------------------
-CMD exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT}
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
 

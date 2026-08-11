@@ -22,7 +22,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // Engine-C Service URL
 const ENGINE_C_URL =
   process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-  "https://engine-c-228557716858.us-central1.run.app";
+  "https://engine-c-r2f5flt77q-uc.a.run.app";
 
 export interface TradeEvent {
   event:

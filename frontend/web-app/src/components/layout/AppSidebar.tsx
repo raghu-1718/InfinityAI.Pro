@@ -29,14 +29,9 @@ import { useIndices, useFunds } from "@/hooks/useApi";
 import { useAppStore } from "@/lib/store";
 
 const NAVIGATION = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Trading", href: "/trading", icon: Zap },
-  { name: "Options", href: "/options", icon: Target },
   { name: "Portfolio", href: "/portfolio", icon: PieChart },
-  { name: "Signals", href: "/signals", icon: Brain },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Backtest", href: "/backtest", icon: History },
-  { name: "History", href: "/history", icon: Activity },
+  { name: "Trading", href: "/trading", icon: Zap },
+  { name: "Intelligence", href: "/intelligence", icon: Brain },
 ];
 
 const BOTTOM_NAV = [

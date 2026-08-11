@@ -490,10 +490,10 @@ Then provide your recommendation in this JSON format:
                 for candidate in response.candidates:
                     if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
                         for part in candidate.content.parts:
-                            if hasattr(part, 'function_call'):
+                            if getattr(part, 'function_call', None) is not None:
                                 function_calls.append({
                                     "name": part.function_call.name,
-                                    "args": dict(part.function_call.args)
+                                    "args": dict(part.function_call.args) if getattr(part.function_call, 'args', None) else {}
                                 })
 
             return {

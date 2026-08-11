@@ -17,3 +17,5 @@ statsmodels>=0.14.0
 scipy>=1.11.0
 websocket-client>=1.7.0
 investpy>=1.0.0
+google-cloud-firestore>=2.11.0
+google-cloud-pubsub>=2.18.4

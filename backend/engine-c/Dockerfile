@@ -33,5 +33,4 @@ ENV ENGINE_C_MODE=live
 
 EXPOSE 8080
 
-# Use the PORT environment variable set by Cloud Run
-CMD exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

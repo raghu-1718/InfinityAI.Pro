@@ -9,7 +9,7 @@ from firebase_admin import credentials, firestore
 
 if not firebase_admin._apps:
     cred = credentials.ApplicationDefault()
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
     firebase_admin.initialize_app(cred, {
         'projectId': project_id,
     })

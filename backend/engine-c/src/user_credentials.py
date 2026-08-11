@@ -65,7 +65,7 @@ class UserCredentialsManager:
         return f"{nonce.hex()}:{tag.hex()}:{ciphertext.hex()}"
 
     def _decrypt(self, encrypted_data: str) -> Optional[str]:
-        """Decrypt sensitive data"""
+        """Decrypt sensitive data with raw fallback"""
         if not encrypted_data:
             return None
         try:
@@ -85,7 +85,8 @@ class UserCredentialsManager:
         except Exception as e:
             logger.warning(f"GCM Decrypt failed: {e}")
 
-        return None
+        # Fallback to raw string if unencrypted
+        return encrypted_data
 
     async def save_user_credentials(
         self,
@@ -131,14 +132,21 @@ class UserCredentialsManager:
                 doc = doc_ref.get()
                 if doc.exists:
                     data = doc.to_dict()
-                    dec_token = self._decrypt(data.get("dhan_access_token"))
-                    dec_secret = self._decrypt(data.get("api_secret"))
+                    raw_token = data.get("dhan_access_token") or data.get("access_token")
+                    raw_secret = data.get("api_secret")
+                    dec_token = self._decrypt(raw_token) if raw_token else None
+                    dec_secret = self._decrypt(raw_secret) if raw_secret else None
+                    client_id = data.get("dhan_client_id") or data.get("client_id")
                     return {
                         "user_id": user_id,
-                        "dhan_client_id": data.get("dhan_client_id"),
+                        "dhan_client_id": client_id,
+                        "client_id": client_id,
                         "dhan_access_token": dec_token,
+                        "access_token": dec_token,
                         "api_key": data.get("api_key"),
                         "api_secret": dec_secret,
+                        "connection_status": data.get("connection_status", "connected" if client_id else "not_configured"),
+                        "is_verified": data.get("is_verified", False),
                         "updated_at": data.get("updated_at")
                     }
             except Exception as e:
@@ -155,7 +163,54 @@ class UserCredentialsManager:
                 "updated_at": datetime.utcnow().isoformat()
             }
 
+    async def find_credentials_by_client_id(self, client_id: str) -> Optional[Dict[str, Any]]:
+        """Find credentials by Dhan client ID"""
+        if self.db:
+            try:
+                users_ref = self.db.collection("user_credentials")
+                query = users_ref.where("dhan_client_id", "==", client_id).limit(1)
+                docs = query.stream()
+                for doc in docs:
+                    return await self.get_user_credentials(doc.id)
+            except Exception as e:
+                logger.error(f"Error querying Firestore by client_id: {e}")
         return None
+
+    async def resolve_user_id(self, user_id: str) -> str:
+        """Resolve a generic ID or client ID to the actual user_id"""
+        creds = await self.get_user_credentials(user_id)
+        if creds:
+            return user_id
+            
+        if user_id.isdigit():
+            creds = await self.find_credentials_by_client_id(user_id)
+            if creds:
+                return creds.get("user_id", user_id)
+        return user_id
+
+    async def update_connection_status(
+        self,
+        user_id: str,
+        connection_status: str,
+        account_data: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Update connection status (connected, failed, not_configured) and account data in Firestore"""
+        if self.db:
+            try:
+                doc_ref = self.db.collection("user_credentials").document(user_id)
+                update_payload = {
+                    "connection_status": connection_status,
+                    "is_verified": connection_status == "connected",
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                if account_data:
+                    update_payload["account_summary"] = account_data
+                doc_ref.set(update_payload, merge=True)
+                logger.info(f"✅ User connection status updated to '{connection_status}' for user {user_id}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to update connection status in Firestore: {e}")
+        return False
 
 _credentials_manager: Optional[UserCredentialsManager] = None
 

@@ -151,7 +151,11 @@ except ImportError:
         ALLOWED_ORIGINS = [
             "https://infinityai.pro",
             "https://www.infinityai.pro",
-            "https://app.infinityai.pro"
+            "https://app.infinityai.pro",
+            "https://project-841b7f97-5ee3-4fbe-920.web.app",
+            "https://project-841b7f97-5ee3-4fbe-920.firebaseapp.com",
+            "http://localhost:3000",
+            "http://localhost:5173",
         ]
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
@@ -165,6 +169,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+@app.get("/engine-a/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "engine-a",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "3.2-performance"
+    }
+
 # --- Risk Management ML Models ---
 from src.services.risk_manager import RiskManager
 from src.services.autonomous_trader import AutonomousTrader
@@ -175,6 +189,21 @@ RISK_MANAGER = RiskManager()
 AUTONOMOUS_TRADER = AutonomousTrader(RISK_MANAGER)
 
 # --- Google Cloud Integrations ---
+try:
+    from shared.google_integrations import (
+        TradingLogger,
+        LogLevel,
+        TradingEventType,
+        ModelStorage,
+        TradingHistoryStorage,
+        GenAIClient,
+        GeminiModel,
+        create_trading_workflow,
+        TradingPrompt
+    )
+except ImportError as e:
+    logger.warning(f"⚠️ Google integrations not available in Engine A: {e}")
+
 TRADING_LOGGER = None
 MODEL_STORAGE = None
 HISTORY_STORAGE = None
@@ -1117,18 +1146,25 @@ async def generate_ai_signal(req: AISignalRequest):
         }
 
         # Generate signal using Gemini
-        analysis = await GENAI_CLIENT.generate_trading_signal(
+        trading_prompt = TradingPrompt(
             symbol=req.symbol,
-            market_data=market_data
+            market="NSE",
+            analysis_type="signal",
+            context=market_data,
+            news_context=req.market_context
         )
+        analysis_obj = await GENAI_CLIENT.generate_trading_signal(prompt=trading_prompt)
+        
+        import dataclasses
+        analysis = dataclasses.asdict(analysis_obj)
 
         # Log the signal generation
         if TRADING_LOGGER:
             TRADING_LOGGER.log_signal(
                 symbol=req.symbol,
-                signal_type=analysis.get("signal", "HOLD"),
+                signal=analysis.get("signal", "HOLD"),
                 confidence=analysis.get("confidence", 0.0),
-                source="gemini-2.0-flash",
+                model_name="gemini-2.0-flash",
                 metadata={"market_data": market_data}
             )
 

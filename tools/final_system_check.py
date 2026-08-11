@@ -5,13 +5,18 @@ from datetime import datetime
 import json
 
 import os
+import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 # Initialize Firebase
 try:
     app = firebase_admin.get_app()
 except ValueError:
     cred = credentials.ApplicationDefault()
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0779271931")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
     firebase_admin.initialize_app(cred, {
         'projectId': project_id,
     })

@@ -42,6 +42,8 @@ def get_allowed_origins() -> List[str]:
         "https://infinityai.pro",
         "https://www.infinityai.pro",
         "https://app.infinityai.pro",
+        "https://project-841b7f97-5ee3-4fbe-920.web.app",
+        "https://project-841b7f97-5ee3-4fbe-920.firebaseapp.com",
     ]
 
     # Development-only origins (NEVER in production)

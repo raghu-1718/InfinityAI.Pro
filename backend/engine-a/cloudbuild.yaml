@@ -4,7 +4,7 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "-f",
         "backend/engine-a/Dockerfile",
         ".",
@@ -13,8 +13,8 @@ steps:
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
       ]
 
 images:
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-a:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest"

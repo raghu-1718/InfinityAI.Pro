@@ -181,6 +181,7 @@ export function useUserProfile() {
     },
     refetchInterval: 60000,
     staleTime: 30000,
+    enabled: Boolean(getUserId() && getUserId() !== "guest"),
     retry: (failureCount, error: any) => {
       if (error?.status === 404) return false;
       return failureCount < 2;
@@ -190,11 +191,7 @@ export function useUserProfile() {
 
 // Helper to get user ID from localStorage
 const getStoredUserId = () => {
-  if (typeof window === "undefined") return null;
-  // NOTE: NEVER use dhan_client_id as user ID for API calls!
-  // Backend credentials are keyed by user email, not client ID
-  // Only use the generated infinityai_user_id or coupon session userId
-  return localStorage.getItem("infinityai_user_id");
+  return getUserId();
 };
 
 // Complete User Account Hook - Fetches funds, positions, holdings, orders in one call
@@ -277,7 +274,7 @@ export function useUserAccount() {
     },
     refetchInterval: 15000, // 15 seconds for real-time updates
     staleTime: 10000,
-    enabled: !!userId,
+    enabled: Boolean(userId && userId !== "guest" && userId !== "null"),
     retry: (failureCount, error: any) => {
       // Do not retry auth failures; user must re-verify
       if (error?.status === 401) return false;
@@ -758,38 +755,7 @@ export function useMarketPrediction(
   });
 }
 
-// Sector Analysis Hook
-export function useSectorAnalysis() {
-  return useQuery({
-    queryKey: ["sector", "analysis"],
-    queryFn: () => engineB.getSectorAnalysis(),
-    staleTime: 300000,
-  });
-}
-
-// Stock Screener Hook
-export function useStockScreener(criteria: {
-  minMarketCap?: number;
-  sector?: string;
-  signalType?: "BUY" | "SELL" | "HOLD";
-  minConfidence?: number;
-}) {
-  return useQuery({
-    queryKey: ["screener", JSON.stringify(criteria)],
-    queryFn: () => engineB.screenStocks(criteria),
-    staleTime: 120000,
-  });
-}
-
-// Technical Indicators Hook
-export function useTechnicalIndicators(symbol: string, enabled = true) {
-  return useQuery({
-    queryKey: ["technical", symbol],
-    queryFn: () => engineB.getTechnicalIndicators(symbol),
-    enabled: enabled && !!symbol,
-    staleTime: 60000,
-  });
-}
+// Removed obsolete 404 routes (sector analysis, stock screener, technical indicators)
 
 // Sentiment Analysis Hook
 export function useSentimentAnalysis(symbol: string, enabled = true) {
@@ -801,28 +767,7 @@ export function useSentimentAnalysis(symbol: string, enabled = true) {
   });
 }
 
-// Correlation Analysis Hook
-export function useCorrelationAnalysis(symbols: string[]) {
-  return useQuery({
-    queryKey: ["correlation", symbols.join(",")],
-    queryFn: () => engineB.getCorrelationAnalysis(symbols),
-    enabled: symbols.length >= 2,
-    staleTime: 300000,
-  });
-}
-
-// Trade Ideas Hook
-export function useTradeIdeas(
-  budget?: number,
-  riskLevel?: "conservative" | "moderate" | "aggressive",
-) {
-  return useQuery({
-    queryKey: ["trade-ideas", budget, riskLevel],
-    queryFn: () => engineB.getTradeIdeas(budget, riskLevel),
-    staleTime: 300000,
-    refetchInterval: 600000,
-  });
-}
+// Removed obsolete 404 routes (correlation analysis, trade ideas)
 
 // =====================================================
 // Position Analysis Hooks - AI/ML Analysis of Positions

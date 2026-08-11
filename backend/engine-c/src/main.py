@@ -229,6 +229,16 @@ app = FastAPI(
     version="3.9-options-analytics"
 )
 
+@app.get("/health")
+@app.get("/engine-c/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "engine-c",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "3.9-options-analytics"
+    }
+
 # Import CORS config from shared module (environment-gated)
 try:
     try:
@@ -247,7 +257,10 @@ except ImportError:
             "https://infinityai.pro",
             "https://www.infinityai.pro",
             "https://app.infinityai.pro",
+            "https://project-841b7f97-5ee3-4fbe-920.web.app",
+            "https://project-841b7f97-5ee3-4fbe-920.firebaseapp.com",
             "http://localhost:3000",
+            "http://localhost:5173",
         ]
         logger.warning(f"⚠️ CORS config module not found, using hardcoded origins")
 
@@ -828,8 +841,8 @@ async def get_system_status(user_id: Optional[str] = Header(None, alias="X-User-
 class DhanCredentialsRequest(BaseModel):
     user_id: str
     client_id: str
-    api_key: str
-    api_secret: str
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
     access_token: str
 
 class DhanCredentialsResponse(BaseModel):
@@ -849,22 +862,17 @@ class ExecutionAnalyticsRequest(BaseModel):
     orders: List[Dict[str, Any]]
 
 # --- DhanHQ Client Helper ---
-async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: Optional[float] = None) -> dhanhq:
+async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None) -> dhanhq:
     """
     Async version: Create authenticated DhanHQ client for a specific user.
     Uses Supabase for encrypted credential storage.
 
-    Adds exponential backoff retries to handle transient database latency
-    immediately after credential updates.
-
     CRITICAL FIX: Resolves generated user_ids (like 'user_1768802144009_1jvf3b')
     to actual user UIDs where credentials are stored in Supabase.
+    Fail-fast applied: Removes retry logic for missing credentials to eliminate latency spikes.
     """
     if start_time is None:
         start_time = time.time()
-
-    MAX_RETRIES = 3
-    RETRY_DELAYS = [0.1, 0.2, 0.4]  # seconds
 
     try:
         creds_manager = get_credentials_manager()
@@ -886,45 +894,30 @@ async def get_dhan_client_async(user_id: str, retry_count: int = 0, start_time: 
                 resolved_user_id = user_id
 
         if not creds:
-             if retry_count < MAX_RETRIES:
-                wait_time = RETRY_DELAYS[retry_count]
-                logger.warning(
-                    f"⚠️ Credentials not found for {user_id}. Retrying in {wait_time * 1000:.0f}ms (attempt {retry_count + 1}/{MAX_RETRIES})"
-                )
-                await asyncio.sleep(wait_time)
-                return await get_dhan_client_async(user_id, retry_count + 1, start_time)
-
-             # Final failure
              elapsed_ms = (time.time() - start_time) * 1000
-             logger.error(
-                 f"User credentials not found for user_id/client_id: {user_id} after {retry_count + 1} attempts in {elapsed_ms:.0f}ms"
+             logger.warning(
+                 f"User credentials not found for user_id/client_id: {user_id} in {elapsed_ms:.0f}ms (failing fast)"
              )
              raise HTTPException(status_code=401, detail="User credentials not found or invalid")
 
         if creds:
-            credentials = creds.get("credentials", {})
-            client_id = credentials.get("client_id")
-            access_token = credentials.get("access_token")
+            # UserCredentialsManager returns a flat dict with these keys:
+            #   dhan_client_id, client_id, access_token (dhan_access_token alias)
+            # There is NO nested 'credentials' sub-dict.
+            client_id = creds.get("dhan_client_id") or creds.get("client_id")
+            access_token = creds.get("access_token") or creds.get("dhan_access_token")
 
             if client_id and access_token:
                 elapsed_ms = (time.time() - start_time) * 1000
                 logger.info(
-                    f"✅ DhanHQ client created for user {resolved_user_id} on attempt {retry_count + 1} in {elapsed_ms:.0f}ms"
+                    f"✅ DhanHQ client created for user {resolved_user_id} in {elapsed_ms:.0f}ms"
                 )
                 # Use wrapper to support sandbox mode
                 return create_dhan_client(client_id, access_token)
 
-        if retry_count < MAX_RETRIES:
-            wait_time = RETRY_DELAYS[retry_count]
-            logger.warning(
-                f"⚠️ Credentials not found for {user_id}. Retrying in {wait_time * 1000:.0f}ms (attempt {retry_count + 2}/{MAX_RETRIES + 1})"
-            )
-            await asyncio.sleep(wait_time)
-            return await get_dhan_client_async(user_id, retry_count + 1, start_time)
-
         elapsed_ms = (time.time() - start_time) * 1000
-        logger.error(
-            f"User credentials not found for user_id/client_id: {user_id} after {retry_count + 1} attempts in {elapsed_ms:.0f}ms"
+        logger.warning(
+            f"User credentials missing required fields for user_id/client_id: {user_id} in {elapsed_ms:.0f}ms (failing fast)"
         )
         raise HTTPException(status_code=401, detail="User credentials not found or invalid")
     except HTTPException:
@@ -995,10 +988,12 @@ class UserCredentialsVerifyRequest(BaseModel):
 
 # --- User Credentials Endpoints ---
 @app.post("/api/v1/user/credentials")
+@app.post("/api/user/credentials")
+@app.post("/api/dhan/credentials")
 async def save_user_credentials(request: UserCredentialsRequest):
     """
     Save user's Dhan credentials securely.
-    Credentials are encrypted and stored in Supabase.
+    Credentials are encrypted and stored in Firestore.
     """
     try:
         manager = get_credentials_manager()
@@ -1038,8 +1033,12 @@ async def save_user_credentials(request: UserCredentialsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/user/credentials/{user_id}")
-async def get_user_credentials_status(user_id: str):
+@app.get("/api/user/credentials")
+@app.get("/api/dhan/credentials")
+async def get_user_credentials_status(user_id: Optional[str] = None):
     """Get user's credential status (not the actual credentials)"""
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id query parameter or path parameter is required")
     try:
         manager = get_credentials_manager()
         creds = await manager.get_user_credentials(user_id)
@@ -1057,10 +1056,11 @@ async def get_user_credentials_status(user_id: str):
 
         return {
             "user_id": user_id,
-            "configured": True,
+            "configured": True if client_id else False,
             "client_id": client_id,
             "connection_status": creds.get("connection_status", "connected" if client_id else "not_configured"),
             "is_active": creds.get("is_active", True),
+            "is_verified": creds.get("is_verified", True if client_id else False),
             "updated_at": creds.get("updated_at")
         }
 
@@ -1312,8 +1312,11 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
 
 
 @app.get("/api/dhan/credentials/{user_id}", response_model=DhanCredentialsResponse)
-async def get_dhan_credentials(user_id: str):
+@app.get("/api/dhan/credentials", response_model=DhanCredentialsResponse)
+async def get_dhan_credentials(user_id: Optional[str] = None):
     """Get masked Dhan credentials"""
+    if not user_id:
+        return DhanCredentialsResponse(success=False, verified=False, message="user_id query parameter or path parameter is required", credentials=None)
     try:
         manager = get_credentials_manager()
         creds = await manager.get_user_credentials(user_id)
@@ -2197,8 +2200,8 @@ async def verify_user_credentials_simple(user_id: str):
 
         # Try to connect with user's credentials
         try:
-            client_id = creds.get("credentials", {}).get("client_id")
-            access_token = creds.get("credentials", {}).get("access_token")
+            client_id = creds.get("client_id") or creds.get("credentials", {}).get("client_id")
+            access_token = creds.get("access_token") or creds.get("credentials", {}).get("access_token")
 
             if not client_id or not access_token:
                 return {
@@ -2209,6 +2212,7 @@ async def verify_user_credentials_simple(user_id: str):
 
             dhan_client = create_dhan_client(client_id, access_token)
             funds = dhan_client.get_fund_limits()
+            logger.info(f"Verification Dhan API response for {user_id}: {funds}")
 
             if isinstance(funds, dict) and funds.get("status") == "success":
                 return {

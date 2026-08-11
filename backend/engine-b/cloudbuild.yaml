@@ -4,17 +4,17 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "-f",
-        "engine-b/Dockerfile",
+        "backend/engine-b/Dockerfile",
         ".",
       ]
   - name: "gcr.io/cloud-builders/docker"
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
       ]
 
 images:
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"

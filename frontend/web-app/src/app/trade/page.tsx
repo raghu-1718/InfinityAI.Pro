@@ -26,7 +26,7 @@ export default function AutomatedTradingPage() {
 
     try {
       const response = await fetch(
-        "https://engine-c-228557716858.us-central1.run.app/api/strategies/execute",
+        "https://engine-c-r2f5flt77q-uc.a.run.app/api/strategies/execute",
         {
           method: "POST",
           headers: {

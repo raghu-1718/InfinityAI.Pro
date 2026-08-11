@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFunds, useHoldings, usePositions, usePortfolioSignals, Holding } from '@/hooks/useApi';
+import { useFunds, useHoldings, usePositions, usePortfolioSignals, usePortfolioAnalysis, Holding } from '@/hooks/useApi';
 
 // Local types
 type SignalShort = { symbol?: string; signal?: 'BUY' | 'SELL' | 'HOLD' | string; confidence?: number };
@@ -49,6 +49,8 @@ export default function PortfolioPage() {
   // Safely handle holdings data - ensure it's always an array
   const holdingsRaw = holdingsData?.data;
   const holdings = Array.isArray(holdingsRaw) ? holdingsRaw : [];
+
+  const { data: portfolioAnalysis } = usePortfolioAnalysis(holdings, holdings.length > 0);
 
   // Safely handle positions data
   const positionsRaw = positionsData?.data;
@@ -261,6 +263,29 @@ export default function PortfolioPage() {
                       No data to display
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* AI Portfolio Health Check */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    <CardTitle className="text-lg">AI Health Score</CardTitle>
+                  </div>
+                  <CardDescription>Portfolio risk & diversification</CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <div className="flex flex-col items-center justify-center p-4">
+                     <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-4 border-purple-500/30">
+                        <span className="text-4xl font-black text-white">
+                          {portfolioAnalysis?.score || "--"}
+                        </span>
+                     </div>
+                     <p className="mt-4 text-center text-sm text-slate-300">
+                       {portfolioAnalysis?.summary || "Analyzing portfolio structure, concentration risk, and sector allocation..."}
+                     </p>
+                   </div>
                 </CardContent>
               </Card>
 

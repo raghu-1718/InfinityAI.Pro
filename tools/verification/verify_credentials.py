@@ -13,10 +13,10 @@ from datetime import datetime, timezone
 from typing import Dict, Tuple, Optional
 
 # Configuration
-GCP_PROJECT_ID = "galvanic-pulsar-482815-h0"
+GCP_PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
 ENGINE_C_BASE_URL = os.environ.get(
     "ENGINE_C_URL",
-    "https://engine-c-738553258162.us-central1.run.app"
+    "https://engine-c-r2f5flt77q-uc.a.run.app"
 )
 FIRESTORE_API = f"https://firestore.googleapis.com/v1/projects/{GCP_PROJECT_ID}/databases/default/documents"
 

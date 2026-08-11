@@ -31,6 +31,7 @@ import {
   TrendingUp,
   Infinity as InfinityIcon,
   FileClock,
+  Brain,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ import { useAuditTimeline } from "@/hooks/useAuditTimeline";
 import { useSessionState } from "@/hooks/useSessionState";
 import { SessionStatus } from "@/components/dashboard/session-status";
 import { AuditTimeline } from "@/components/dashboard/audit-timeline";
+import { useSignal, useSentimentAnalysis } from "@/hooks/useApi";
 
 export default function TradingPage() {
   const { userProfile } = useAppStore();
@@ -62,6 +64,10 @@ export default function TradingPage() {
   // Configuration State
   const [tradingCapital, setTradingCapital] = useState("50000");
   const [assetClass, setAssetClass] = useState("NIFTY");
+
+  // AI & Live Overlays
+  const { data: aiSignal } = useSignal(assetClass, true);
+  const { data: sentiment } = useSentimentAnalysis(assetClass, true);
   const [riskPerTrade, setRiskPerTrade] = useState(1.0);
   const [targetProfit, setTargetProfit] = useState(5.0);
   const [isTrailing, setIsTrailing] = useState(true);
@@ -190,10 +196,11 @@ export default function TradingPage() {
 
   // Block trading if Dhan not connected
   const dhanConnected = !!userProfile?.isConnected;
+  const isAccountLoading = accountError === null && !accountData && !isAccountError;
 
   return (
     <div className="flex flex-col items-center min-h-[calc(100vh-4rem)] p-6 gap-8 max-w-7xl mx-auto w-full">
-      {!dhanConnected && (
+      {!dhanConnected && !isAccountLoading && (
         <DhanConnectPrompt
           onConnect={() => (window.location.href = "/dashboard/settings")}
         />
@@ -233,11 +240,54 @@ export default function TradingPage() {
         <div className="max-w-3xl mx-auto mt-6 transition-all duration-500 hover:scale-[1.02]">
           <SessionStatus state={sessionState} />
         </div>
+        
+        {/* AI Confidence & Sentiment Overlay */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-6 max-w-4xl mx-auto w-full">
+          {/* AI Signal Card */}
+          <div className="glass-card p-4 flex-1 w-full border-t-2 border-t-purple-500 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Brain className="w-5 h-5 text-purple-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-slate-400 uppercase tracking-wider">AI Signal</p>
+                <p className="text-lg font-bold text-white">
+                  {aiSignal?.signal || "WAITING"} 
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Confidence</p>
+              <p className="text-2xl font-mono text-emerald-400 font-bold">
+                {aiSignal?.confidence ? `${(aiSignal.confidence * 100).toFixed(1)}%` : "--%"}
+              </p>
+            </div>
+          </div>
+          
+          {/* News Sentiment Card */}
+          <div className="glass-card p-4 flex-1 w-full border-t-2 border-t-blue-500 flex items-center justify-between">
+             <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-slate-400 uppercase tracking-wider">Live Sentiment</p>
+                <p className="text-lg font-bold text-white capitalize">
+                  {sentiment?.overall_sentiment || "Analyzing..."} 
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400 uppercase tracking-wider">News Grounding</p>
+              <Badge className="mt-1 bg-blue-500/20 text-blue-300 hover:bg-blue-500/30">Active</Badge>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
         {/* Block all trading actions if not connected */}
-        {!dhanConnected && (
+        {!dhanConnected && !isAccountLoading && (
           <div className="col-span-full bg-yellow-100 border border-yellow-400 text-yellow-900 p-4 rounded mb-4 text-center font-bold">
             Trading is disabled until you connect your Dhan account.
           </div>

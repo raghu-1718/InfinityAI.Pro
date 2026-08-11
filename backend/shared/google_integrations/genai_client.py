@@ -215,6 +215,7 @@ class GenAIClient:
                     system_instruction=system_instruction,
                     temperature=temperature,
                     max_output_tokens=max_tokens,
+                    tools=[types.Tool(google_search=types.GoogleSearch())]
                 )
             )
 
@@ -428,6 +429,7 @@ Response Format:
         if prompt.news_context:
             parts.append(f"\nRecent News:\n{prompt.news_context}")
 
+        parts.append("\nAction Required: Search the web for any breaking news regarding macroeconomic sentiment (e.g., RBI interest rate decisions) or this specific symbol in the last hour. Combine this live news context with the provided historical and tick data to generate your final trading signal.")
         parts.append("\nProvide your analysis with signal, confidence, and reasoning.")
 
         return "\n".join(parts)

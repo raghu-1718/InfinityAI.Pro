@@ -1,55 +1,20 @@
-steps:
-  - name: "gcr.io/cloud-builders/docker"
+﻿steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest', '-f', 'backend/engine-c/Dockerfile', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
     args:
-      [
-        "build",
-        "-t",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
-        "-f",
-        "backend/engine-c/Dockerfile.monorepo",
-        ".",
-      ]
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      [
-        "push",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
-      ]
-
-  # Deploy to Cloud Run
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    args:
-      [
-        "gcloud",
-        "run",
-        "deploy",
-        "engine-c",
-        "--image",
-        "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest",
-        "--region",
-        "us-central1",
-        "--platform",
-        "managed",
-        "--allow-unauthenticated",
-      ]
-
-  # --- Automated E2E/Smoke Test Steps ---
-  # - name: "python:3.11-slim"
-  #   id: "smoke-check-firestore-collections"
-  #   entrypoint: "bash"
-  #   args:
-  #     [
-  #       "-c",
-  #       "pip install -r backend/engine-a/requirements.txt && python tools/smoke_tests/check_collections.py",
-  #     ]
-  # - name: "python:3.11-slim"
-  #   id: "smoke-verify-engine-c-dhan"
-  #   entrypoint: "bash"
-  #   args:
-  #     [
-  #       "-c",
-  #       "pip install -r backend/engine-a/requirements.txt && python tools/verify_engine_c_dhan.py",
-  #     ]
-
+      - 'run'
+      - 'deploy'
+      - 'engine-c'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--quiet'
 images:
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest"
+  - 'us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest'

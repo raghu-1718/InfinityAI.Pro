@@ -54,6 +54,9 @@ class CouponAuthManager:
             self.coupons_collection = "coupons"
             self.sessions_collection = "coupon_sessions"
             self.users_collection = "users"
+            self._memory_coupons = {}
+            self._memory_sessions = {}
+            self._memory_users = {}
             if self.db:
                 logger.info("✅ CouponAuthManager initialized with Firestore")
             else:
