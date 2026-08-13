@@ -65,6 +65,49 @@ async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
   }
 }
 
+export const fetchFromEngineB = async (endpoint: string, options: RequestInit = {}) => {
+  // 1. Create a custom AbortController
+  const controller = new AbortController();
+  
+  // 2. Set a generous 60-second timeout for Heavy AI operations
+  const timeoutId = setTimeout(() => controller.abort(), 60000); 
+
+  const baseUrl = API_CONFIG.ENGINE_B;
+
+  try {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+      ...options,
+      signal: controller.signal, // 3. Attach the custom signal
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    // 4. Clear the timeout if the request succeeds before 60 seconds
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = new Error(`Engine-B API Error: ${response.statusText}`);
+      (error as any).status = response.status;
+      throw error;
+    }
+
+    return await response.json();
+    
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    // Catch the specific AbortError to log it cleanly
+    if (error.name === 'AbortError') {
+      console.error(`[TIMEOUT] Engine-B took longer than 60 seconds on ${endpoint}`);
+      throw new Error('AI Engine timed out. Please try again.');
+    }
+    
+    throw error;
+  }
+};
+
 // Types
 export interface EngineHealth {
   status: string;
@@ -553,17 +596,14 @@ export const engineA = {
 // Engine B - AI/ML Intelligence
 export const engineB = {
   async health(): Promise<EngineHealth> {
-    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/health`);
-    return res.json();
+    return fetchFromEngineB("/api/health");
   },
 
   async getSignal(data: SignalRequest): Promise<SignalResponse> {
-    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/v1/signal`, {
+    return fetchFromEngineB("/api/v1/signal", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return res.json();
   },
 
   async getEnhancedSignal(data: {
@@ -572,9 +612,8 @@ export const engineB = {
     user_analysis_type?: string;
     use_pro_model?: boolean;
   }): Promise<SignalResponse> {
-    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_B}/api/v1/signal`, {
+    return fetchFromEngineB("/api/v1/signal", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         symbol: data.symbol,
         use_gemini: true,
@@ -584,59 +623,37 @@ export const engineB = {
         },
       }),
     });
-    return res.json();
   },
 
   async getGeminiAnalysis(data: { symbol: string; context?: string }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/gemini/quick-signal/${data.symbol}`
-    );
-    return res.json();
+    return fetchFromEngineB(`/api/v1/gemini/quick-signal/${data.symbol}`);
   },
 
   async getBatchSignals(symbols: string[]) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/signals/batch`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbols }),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/signals/batch", {
+      method: "POST",
+      body: JSON.stringify({ symbols }),
+    });
   },
 
   async getModelStatus() {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/models/status`,
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/models/status");
   },
 
   // Analyze portfolio holdings using AI/ML
   async analyzePortfolio(holdings: any[]) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/portfolio/analyze`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ holdings }),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/portfolio/analyze", {
+      method: "POST",
+      body: JSON.stringify({ holdings }),
+    });
   },
 
   // Get AI recommendations for a specific holding
   async getHoldingRecommendation(symbol: string, holding: any) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/holding/recommendation`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, holding }),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/holding/recommendation", {
+      method: "POST",
+      body: JSON.stringify({ symbol, holding }),
+    });
   },
 
   // Portfolio Optimization - Get optimal allocation
@@ -644,15 +661,10 @@ export const engineB = {
     holdings: any[],
     riskTolerance: "low" | "medium" | "high" = "medium",
   ) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/portfolio/optimize`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ holdings, risk_tolerance: riskTolerance }),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/portfolio/optimize", {
+      method: "POST",
+      body: JSON.stringify({ holdings, risk_tolerance: riskTolerance }),
+    });
   },
 
   // Removed obsolete 404 routes (sector analysis, stock screener, technical indicators, correlation analysis, trade ideas)
@@ -660,31 +672,28 @@ export const engineB = {
   // Market Prediction - Wired to Finance AI Signal
   async getMarketPrediction(timeframe: "day" | "week" | "month" = "day") {
     try {
-      const res = await fetchWithTimeout(
-        `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/signal`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            symbol: "NIFTY",
-            current_price: 0, // Backend will fetch real price if 0
-            model_type: "stock_analyst"
-          }),
-        }
-      );
-      const data = await res.json();
+      const data = await fetchFromEngineB("/api/v1/finance-ai/signal", {
+        method: "POST",
+        body: JSON.stringify({
+          symbol: "NIFTY",
+          current_price: 0, // Backend will fetch real price if 0
+          model_type: "stock_analyst",
+        }),
+      });
       const signalObj = data.signal;
-      const predictionStr = typeof signalObj === "string"
-        ? signalObj
-        : (signalObj?.action || "BULLISH");
-      const confidenceVal = typeof signalObj === "object"
-        ? (signalObj?.confidence ?? data.confidence ?? 0.75)
-        : (data.confidence ?? 0.75);
+      const predictionStr =
+        typeof signalObj === "string"
+          ? signalObj
+          : signalObj?.action || "BULLISH";
+      const confidenceVal =
+        typeof signalObj === "object"
+          ? (signalObj?.confidence ?? data.confidence ?? 0.75)
+          : (data.confidence ?? 0.75);
 
       return {
         prediction: predictionStr,
         confidence: confidenceVal,
-        timeframe
+        timeframe,
       };
     } catch (e) {
       console.warn("Prediction endpoint failed, falling back to neutral");
@@ -692,18 +701,17 @@ export const engineB = {
     }
   },
 
-
   // Sentiment Analysis - Live News Sentiment from Aggregator
   async getSentimentAnalysis(symbol: string) {
     try {
       const res = await fetchWithTimeout(
-        `${API_CONFIG.ENGINE_C}/api/news/sentiment/${symbol}`
+        `${API_CONFIG.ENGINE_C}/api/news/sentiment/${symbol}`,
       );
       const data = await res.json();
       return {
         overall_sentiment: data.overall_sentiment || "Neutral",
         confidence: data.confidence || 0.5,
-        catalysts: data.recent_headlines || []
+        catalysts: data.recent_headlines || [],
       };
     } catch (e) {
       console.warn("Sentiment endpoint failed, falling back");
@@ -715,49 +723,31 @@ export const engineB = {
   async analyzePosition(
     position: PositionAnalysisRequest,
   ): Promise<PositionAnalysisResponse> {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/position/analyze`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(position),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/position/analyze", {
+      method: "POST",
+      body: JSON.stringify(position),
+    });
   },
 
   // Portfolio Analysis - Analyze entire portfolio with AI
   async analyzePortfolioPositions(positions: PositionAnalysisRequest[]) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/portfolio/analyze`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(positions),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/portfolio/analyze", {
+      method: "POST",
+      body: JSON.stringify(positions),
+    });
   },
 
   // Sentiment Analysis - Analyze text for sentiment
   async analyzeSentiment(symbol: string, text: string) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/sentiment`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, text }),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/sentiment", {
+      method: "POST",
+      body: JSON.stringify({ symbol, text }),
+    });
   },
 
   // Market Status
   async getMarketStatus() {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/market/status`,
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/market/status");
   },
 
   // ============================================================================
@@ -766,10 +756,7 @@ export const engineB = {
 
   // Finance AI Status - Check if Finance AI is available
   async getFinanceAIStatus() {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/status`,
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/finance-ai/status");
   },
 
   // Finance AI Signal - Get AI-powered trading signal
@@ -785,15 +772,10 @@ export const engineB = {
       | "risk_manager"
       | "sentiment_analyst";
   }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/signal`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/finance-ai/signal", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // Finance AI Market Analysis - Get comprehensive market analysis
@@ -803,15 +785,10 @@ export const engineB = {
     technical_indicators?: Record<string, any>;
     news_headlines?: string[];
   }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/market-analysis`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/finance-ai/market-analysis", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // Finance AI Options Strategy - Get AI-powered options strategy
@@ -822,15 +799,10 @@ export const engineB = {
     capital: number;
     risk_appetite: "LOW" | "MODERATE" | "HIGH";
   }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/options-strategy`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/finance-ai/options-strategy", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // Finance AI Risk Analysis - Get AI-powered portfolio risk analysis
@@ -843,28 +815,18 @@ export const engineB = {
     }>;
     account_value: number;
   }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/finance-ai/risk-analysis`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/finance-ai/risk-analysis", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // Free-form Gemini Chat for any trading question
   async askGemini(data: { question: string; context?: string }) {
-    const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_B}/api/v1/gemini/chat`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.json();
+    return fetchFromEngineB("/api/v1/gemini/chat", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 };
 

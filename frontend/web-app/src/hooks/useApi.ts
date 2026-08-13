@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, engineA, engineB, engineC } from "@/lib/api";
+import { api, engineA, engineB, engineC, fetchFromEngineB } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { useEffect, useCallback } from "react";
 import { getUserId } from "@/lib/user";
@@ -457,7 +457,8 @@ export function useSignal(symbol: string, enabled = true) {
       });
       return res;
     },
-    enabled,
+    enabled: enabled && !!symbol,
+    retry: 1,
     staleTime: 60000,
   });
 }
@@ -479,18 +480,28 @@ export function useSignals() {
 
   return useQuery({
     queryKey: ["signals", "all"],
-    queryFn: () => engineB.getBatchSignals(defaultSymbols),
+    queryFn: () =>
+      fetchFromEngineB("/api/v1/signals/batch", {
+        method: "POST",
+        body: JSON.stringify({ symbols: defaultSymbols }),
+      }),
+    retry: 1,
     staleTime: 30000,
     refetchInterval: 60000, // Refresh every minute
   });
 }
 
-// Batch Signals Hook
-export function useBatchSignals(symbols: string[]) {
+// Batch Signals Hook - 60-second breathing room with React Query retry protection
+export function useBatchSignals(symbols: string[] = []) {
   return useQuery({
     queryKey: ["signals", "batch", symbols],
-    queryFn: () => engineB.getBatchSignals(symbols),
+    queryFn: () =>
+      fetchFromEngineB("/api/v1/signals/batch", {
+        method: "POST",
+        body: JSON.stringify({ symbols }),
+      }),
     enabled: symbols.length > 0,
+    retry: 1,
     staleTime: 30000,
   });
 }
@@ -500,6 +511,8 @@ export function useGeminiAnalysis(symbol: string, context?: string) {
   return useQuery({
     queryKey: ["gemini", symbol, context],
     queryFn: () => engineB.getGeminiAnalysis({ symbol, context }),
+    enabled: !!symbol,
+    retry: 1,
     staleTime: 300000, // 5 minutes
   });
 }
@@ -725,6 +738,7 @@ export function usePortfolioSignals() {
     queryKey: ["portfolio", "signals", symbols.join(",")],
     queryFn: () => engineB.getBatchSignals(symbols),
     enabled: symbols.length > 0,
+    retry: 1,
     staleTime: 60000,
     refetchInterval: 120000, // Refresh every 2 minutes
   });
