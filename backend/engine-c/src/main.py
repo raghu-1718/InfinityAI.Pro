@@ -1041,7 +1041,101 @@ class UserCredentialsRequest(BaseModel):
 class UserCredentialsVerifyRequest(BaseModel):
     user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 
-# --- User Credentials Endpoints ---
+# --- Dhan Token Keep-Alive & Auto-Renewal Endpoint for Cloud Scheduler ---
+@app.post("/api/dhan/renew-token")
+@app.get("/api/dhan/renew-token")
+@app.post("/api/v1/dhan/renew-token")
+@app.get("/api/v1/dhan/renew-token")
+async def renew_dhan_tokens_endpoint(
+    user_id: Optional[str] = Query(None)
+):
+    """
+    Automated Token Keep-Alive Endpoint for Cloud Scheduler / Admin triggers.
+    Renews active Dhan tokens before the 24-hour expiry window,
+    encrypts the new token with AES-256-GCM, and updates Firestore.
+    """
+    logger.info("🔄 Triggering Dhan Token Renewal keep-alive job...")
+    results = []
+    manager = get_credentials_manager()
+
+    target_user_ids = []
+    if user_id:
+        target_user_ids.append(user_id)
+    else:
+        # If no specific user supplied, renew all users in Firestore vault
+        if manager.db:
+            try:
+                docs = manager.db.collection("user_credentials").stream()
+                for doc in docs:
+                    target_user_ids.append(doc.id)
+            except Exception as e:
+                logger.error(f"Error listing user_credentials from Firestore: {e}")
+
+        # Fallback default user if collection stream was empty
+        if not target_user_ids:
+            target_user_ids.append("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+
+    for uid in target_user_ids:
+        try:
+            resolved_id = await manager.resolve_user_id(uid)
+            creds = await manager.get_user_credentials(resolved_id)
+            if not creds:
+                results.append({"user_id": uid, "status": "skipped", "reason": "no credentials found"})
+                continue
+
+            client_id = creds.get("dhan_client_id") or creds.get("client_id")
+            access_token = creds.get("access_token") or creds.get("dhan_access_token")
+
+            if not client_id or not access_token:
+                results.append({"user_id": uid, "status": "skipped", "reason": "missing client_id or access_token"})
+                continue
+
+            renew_url = "https://api.dhan.co/v2/RenewToken"
+            headers = {
+                "dhanClientId": str(client_id),
+                "access-token": str(access_token)
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(renew_url, headers=headers) as token_resp:
+                    if token_resp.status == 200:
+                        renew_data = await token_resp.json()
+                        new_token = (
+                            renew_data.get("token") or
+                            renew_data.get("accessToken") or
+                            renew_data.get("access_token") or
+                            (renew_data.get("data") or {}).get("accessToken") or
+                            (renew_data.get("data") or {}).get("token")
+                        )
+                        if new_token:
+                            await manager.save_user_credentials(
+                                user_id=resolved_id,
+                                client_id=client_id,
+                                access_token=new_token,
+                                api_key=creds.get("api_key"),
+                                api_secret=creds.get("api_secret")
+                            )
+                            expiry_time = renew_data.get("expiryTime") or "24h"
+                            logger.info(f"✅ Token keep-alive: Successfully renewed & vaulted token for {resolved_id} (Expires: {expiry_time})")
+                            results.append({"user_id": resolved_id, "status": "renewed", "client_id": client_id, "expiryTime": expiry_time})
+                        else:
+                            logger.error(f"Failed to extract new token from response for {resolved_id}: {renew_data}")
+                            results.append({"user_id": resolved_id, "status": "failed", "reason": "unrecognized response format", "response": str(renew_data)})
+                    else:
+                        error_text = await token_resp.text()
+                        logger.error(f"Dhan RenewToken rejected for {resolved_id}: HTTP {token_resp.status} - {error_text}")
+                        results.append({"user_id": resolved_id, "status": "failed", "http_status": token_resp.status, "error": error_text})
+        except Exception as e:
+            logger.error(f"Exception during token renewal for {uid}: {e}")
+            results.append({"user_id": uid, "status": "error", "error": str(e)})
+
+    return {
+        "status": "success",
+        "timestamp": datetime.utcnow().isoformat(),
+        "total_processed": len(target_user_ids),
+        "results": results
+    }
+
 @app.get("/api/v1/user/credentials/{user_id}")
 async def get_user_credentials_status_by_path(user_id: str):
     return await get_user_credentials_status(user_id=user_id)

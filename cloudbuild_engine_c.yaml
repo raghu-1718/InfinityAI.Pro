@@ -1,6 +1,49 @@
-
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest', '-f', 'backend/engine-c/Dockerfile', '.' ]
+  # Build Engine C Docker Image from root context
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-c"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+        "-f",
+        "backend/engine-c/Dockerfile",
+        ".",
+      ]
+
+  # Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-c"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+      ]
+    waitFor: ["build-engine-c"]
+
+  # Deploy to Cloud Run in asia-south1
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-engine-c"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "engine-c",
+        "--image",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+        "--set-env-vars",
+        "ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "--region",
+        "asia-south1",
+        "--memory",
+        "512Mi",
+        "--cpu",
+        "1",
+        "--allow-unauthenticated",
+      ]
+    waitFor: ["push-engine-c"]
+
 images:
-- 'us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-c:latest'
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest"
