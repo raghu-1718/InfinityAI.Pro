@@ -1,0 +1,8 @@
+pandas
+google-cloud-bigquery
+google-cloud-storage
+lightgbm
+catboost
+joblib
+db-dtypes
+scikit-learn

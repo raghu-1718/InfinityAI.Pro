@@ -244,7 +244,7 @@ Retrain models weekly/monthly:
 # Create Cloud Scheduler job
 gcloud scheduler jobs create http train-ml-models-weekly \
   --schedule="0 2 * * 0" \
-  --uri="https://engine-b-228557716858.us-central1.run.app/admin/train-models" \
+  --uri="https://engine-b-313407263327.asia-south1.run.app/admin/train-models" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
   --message-body='{"symbol":"NIFTY","days":730,"upload_gcs":true}' \

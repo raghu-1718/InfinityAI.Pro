@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "echo \"Frontend test placeholder: always passes.\" && exit 0",
-    "deploy": "npm run build && vercel deploy --prod"
+    "deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

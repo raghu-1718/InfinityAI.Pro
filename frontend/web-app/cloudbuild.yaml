@@ -4,9 +4,9 @@ steps:
     args:
       - "build"
       - "-t"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
       - "-t"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
       - "-f"
       - "frontend/web-app/Dockerfile"
       - "."
@@ -16,7 +16,7 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
     id: "push-image-latest"
     waitFor: ["build-image"]
 
@@ -24,7 +24,7 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
     id: "push-image-sha"
     waitFor: ["build-image"]
 
@@ -36,9 +36,9 @@ steps:
       - "deploy"
       - "web-app"
       - "--image"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
       - "--region"
-      - "us-central1"
+      - "asia-south1"
       - "--platform"
       - "managed"
       - "--memory"
@@ -60,8 +60,8 @@ steps:
     waitFor: ["push-image-latest"]
 
 images:
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
-  - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+  - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+  - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
 
 timeout: "1800s"
 options:

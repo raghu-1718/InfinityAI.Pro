@@ -39,6 +39,9 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
+from concurrent.futures import ThreadPoolExecutor
+
+bq_executor = ThreadPoolExecutor(max_workers=5)
 from dhanhq import dhanhq
 import uvicorn
 # from google.cloud import secretmanager (Removed)
@@ -661,6 +664,32 @@ class MLModelStore:
         }
         self._initialize_models()
 
+    def reload_from_gcs(self):
+        """Download models from GCS"""
+        try:
+            storage_client = storage.Client()
+            bucket = storage_client.bucket('infinity-ai-models-vault')
+            
+            # Download LightGBM
+            lgb_blob = bucket.blob('lightgbm_model.pkl')
+            if lgb_blob.exists():
+                lgb_blob.download_to_filename('/tmp/lightgbm_model_dl.pkl')
+                self.models['lightgbm'] = joblib.load('/tmp/lightgbm_model_dl.pkl')
+                self.trained_symbols.add("ALL")
+                logger.info("✅ Reloaded LightGBM from GCS")
+                
+            # Download CatBoost
+            cat_blob = bucket.blob('catboost_model.cbm')
+            if cat_blob.exists() and HAS_CATBOOST:
+                cat_blob.download_to_filename('/tmp/catboost_model_dl.cbm')
+                model = CatBoostClassifier()
+                model.load_model('/tmp/catboost_model_dl.cbm')
+                self.models['catboost'] = model
+                logger.info("✅ Reloaded CatBoost from GCS")
+                
+        except Exception as e:
+            logger.error(f"GCS Reload error: {e}")
+
     def _initialize_models(self):
         """Initialize ML models on startup"""
         try:
@@ -747,7 +776,7 @@ class MLModelStore:
             available_weights = {k: v/total for k, v in available_weights.items()}
         return available_weights
 
-    def weighted_ensemble_predict(self, X_scaled: np.ndarray) -> tuple:
+    async def weighted_ensemble_predict(self, X_scaled: np.ndarray) -> tuple:
         """
         Make weighted ensemble prediction.
         Returns (predicted_class, confidence, votes_detail)
@@ -757,6 +786,30 @@ class MLModelStore:
         votes_detail = {}
 
         for model_name, weight in weights.items():
+            if model_name == 'xgboost':
+                try:
+                    # Native BigQuery ML Inference via ThreadPool
+                    loop = asyncio.get_event_loop()
+                    query = f"""
+                        SELECT * FROM ML.PREDICT(MODEL `project-841b7f97-5ee3-4fbe-920.infinity_dataset.xgboost_live_model`, 
+                        (SELECT {X_scaled[0][0]} as rsi_14, {X_scaled[0][1]} as macd_crossover, 
+                                {X_scaled[0][2]} as vwap_distance, {X_scaled[0][3]} as atr_volatility))
+                    """
+                    def run_bq():
+                        bq_client = bigquery.Client()
+                        return list(bq_client.query(query).result())
+                        
+                    result = await loop.run_in_executor(bq_executor, run_bq)
+                    if result:
+                        # Assuming the output has 'predicted_signal_outcome' or similar. 
+                        # We will just map it simply.
+                        pred_label = result[0].get('predicted_signal_outcome', 1)
+                        class_votes[int(pred_label)] += weight
+                        votes_detail['xgboost'] = {'prediction': int(pred_label), 'weight': weight, 'source': 'bqml'}
+                except Exception as e:
+                    logger.error(f"BQML Inference Error: {e}")
+                continue
+
             model = self.get_model(model_name)
             if model is not None:
                 try:
@@ -1526,10 +1579,25 @@ aiohttp_session: Optional[aiohttp.ClientSession] = None
 # API ENDPOINTS
 # =====================================================================
 
+
+async def periodic_model_update():
+    while True:
+        try:
+            logger.info("Checking GCS for newer models...")
+            MODEL_STORE.reload_from_gcs()
+        except Exception as e:
+            logger.error(f"Error during periodic model update: {e}")
+        # Wait 24 hours (run every morning)
+        await asyncio.sleep(86400)
+
 @app.on_event("startup")
 async def startup_event():
     """Bootstrap application state"""
     global aiohttp_session
+    
+    # Start background task for daily model reload
+    asyncio.create_task(periodic_model_update())
+
 
     # Create shared aiohttp session for efficient connections
     if HAS_AIOHTTP:
@@ -1573,31 +1641,8 @@ async def shutdown_event():
 
 @app.get("/healthz")
 @app.get("/api/health")
-async def healthz():
-    return {
-        "status": "healthy",
-        "service": "engine-b-ai-ml-prod",
-        "version": "4.0-enhanced-trading-ai",
-        "capabilities": MODEL_STORE.capabilities,
-        "dhan_connected": MARKET_ENGINE.dhan is not None,
-        "google_integrations": {
-            "genai": GENAI_CLIENT_B is not None,
-            "cloud_logging": TRADING_LOGGER_B is not None,
-            "cloud_storage": MODEL_STORAGE_B is not None,
-            "signal_agent": SIGNAL_AGENT is not None,
-            "risk_agent": RISK_AGENT is not None,
-            "market_agent": MARKET_AGENT is not None,
-            "enhanced_trading_ai": ENHANCED_TRADING_AI is not None
-        },
-        "enhanced_features": {
-    "indian_market_knowledge": HAS_MARKET_KNOWLEDGE,
-    "sebi_2025_compliance": HAS_MARKET_KNOWLEDGE,
-    "smart_entry_exit": HAS_ENHANCED_TRADING_AI,
-    "position_sizing": HAS_MARKET_KNOWLEDGE,
-    "risk_management": HAS_MARKET_KNOWLEDGE
-},
-        "timestamp": datetime.utcnow().isoformat()
-    }
+async def health_check():
+    return {"status": "healthy", "engine": "engine-b", "region": "asia-south1"}
 
 @app.get("/health/knowledge", tags=["health"])
 async def health_knowledge():
@@ -1762,7 +1807,7 @@ async def generate_signal(req: SignalRequest):
             X_scaled = MODEL_STORE.scalers['standard'].transform(X)
 
             # Ensemble Prediction
-            ml_class, ml_confidence, _ = MODEL_STORE.weighted_ensemble_predict(X_scaled)
+            ml_class, ml_confidence, _ = await MODEL_STORE.weighted_ensemble_predict(X_scaled)
 
             # ML Influence on Score
             if ml_class == 2:  # BUY
@@ -2047,6 +2092,19 @@ class BatchSignalsRequest(BaseModel):
     symbols: List[str]
     user_id: Optional[str] = None  # User ID for Supabase storage
     fast: bool = True
+
+
+def get_supabase_db():
+    """Safely return Supabase database client if configured"""
+    try:
+        from supabase import create_client
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+        if url and key:
+            return create_client(url, key)
+    except Exception:
+        pass
+    return None
 
 
 async def store_signal_to_supabase(user_id: str, signal: Any) -> bool:

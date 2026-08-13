@@ -30,9 +30,9 @@ steps:
         "--image",
         "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "--set-env-vars",
-        "ENGINE_B_URL=https://engine-b-r2f5flt77q-uc.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--region",
-        "us-central1",
+        "asia-south1",
       ]
     waitFor: ["push-engine-a"]
 
@@ -68,7 +68,7 @@ steps:
         "--image",
         "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "--set-env-vars",
-        "ENGINE_A_URL=https://engine-a-r2f5flt77q-uc.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--memory",
         "2Gi",
         "--cpu",
@@ -76,7 +76,7 @@ steps:
         "--timeout",
         "300s",
         "--region",
-        "us-central1",
+        "asia-south1",
       ]
     waitFor: ["push-engine-b"]
 
@@ -112,13 +112,13 @@ steps:
         "--image",
         "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
         "--set-env-vars",
-        "ENGINE_A_URL=https://engine-a-r2f5flt77q-uc.a.run.app,ENGINE_B_URL=https://engine-b-r2f5flt77q-uc.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
         "--region",
-        "us-central1",
+        "asia-south1",
       ]
     waitFor: ["push-engine-c"]
 
 images:
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a:latest"
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b:latest"
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest"

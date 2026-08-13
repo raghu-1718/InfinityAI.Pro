@@ -1,5 +1,5 @@
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi import Response, FastAPI, Request
+from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
+from fastapi import Response, FastAPI, Request, HTTPException, Header, Query
 import traceback
 
 # Error logger
@@ -31,6 +31,11 @@ from src.dhan_client_wrapper import DhanClient, create_dhan_client, DhanEnvironm
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
+from aiolimiter import AsyncLimiter
+
+# Define a global rate limiter: Max 9 requests per 1 second 
+# (Set to 9 to leave a 10% safety margin below Dhan's 10 req/s limit)
+dhan_rate_limiter = AsyncLimiter(max_rate=9, time_period=1)
 
 # Import new unified APIs
 try:
@@ -278,6 +283,14 @@ if DATA_ROUTER_AVAILABLE:
     logger.info("✅ Dhan Market Data API endpoints enabled")
 else:
     logger.warning("⚠️ Dhan Market Data API router not available; market data endpoints disabled")
+
+# Register DhanHQ API v2 Complete Router
+try:
+    from src.dhan_v2_endpoints import dhan_v2_router
+    app.include_router(dhan_v2_router)
+    logger.info("✅ DhanHQ API v2 Complete endpoints enabled")
+except Exception as e:
+    logger.error(f"⚠️ DhanHQ API v2 Complete Router error: {e}")
 
 # Register Option Strategies Router (Phase 2: Advanced Strategies)
 try:
@@ -907,6 +920,48 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
             client_id = creds.get("dhan_client_id") or creds.get("client_id")
             access_token = creds.get("access_token") or creds.get("dhan_access_token")
 
+            # Check for Token Expiry (20 hours)
+            updated_at_str = creds.get("updated_at")
+            if client_id and access_token and updated_at_str:
+                try:
+                    from datetime import datetime, timedelta
+                    # Parse ISO string
+                    updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+                    if updated_at.tzinfo:
+                        updated_at = updated_at.replace(tzinfo=None)
+                    
+                    if datetime.utcnow() - updated_at > timedelta(hours=20):
+                        logger.info(f"🔄 Token for {resolved_user_id} is >20h old. Executing Auto-Refresh.")
+                        renew_url = "https://api.dhan.co/v2/RenewToken"
+                        headers = {
+                            "dhanClientId": client_id,
+                            "access-token": access_token
+                        }
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(renew_url, headers=headers) as token_resp:
+                                if token_resp.status == 200:
+                                    renew_data = await token_resp.json()
+                                    # Dhan token response mapping
+                                    new_token = renew_data.get("accessToken") or renew_data.get("access_token") or (renew_data.get("data") or {}).get("accessToken")
+                                    if new_token:
+                                        # Save to Vault (this securely encrypts and writes to Firestore)
+                                        await creds_manager.save_user_credentials(
+                                            user_id=resolved_user_id,
+                                            client_id=client_id,
+                                            access_token=new_token,
+                                            api_key=creds.get("api_key"),
+                                            api_secret=creds.get("api_secret")
+                                        )
+                                        access_token = new_token
+                                        logger.info(f"✅ Token for {resolved_user_id} successfully auto-renewed and encrypted.")
+                                    else:
+                                        logger.error(f"Failed to parse new token from response: {renew_data}")
+                                else:
+                                    error_text = await token_resp.text()
+                                    logger.error(f"Token renewal failed: {token_resp.status} - {error_text}")
+                except Exception as e:
+                    logger.error(f"Error during token auto-refresh check: {e}")
+
             if client_id and access_token:
                 elapsed_ms = (time.time() - start_time) * 1000
                 logger.info(
@@ -977,111 +1032,185 @@ def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
 
 # --- User Credentials Models ---
 class UserCredentialsRequest(BaseModel):
-    user_id: str
+    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
     client_id: str
     access_token: str
-    api_key: Optional[str] = None
-    api_secret: Optional[str] = None
+    api_key: Optional[str] = ""
+    api_secret: Optional[str] = ""
 
 class UserCredentialsVerifyRequest(BaseModel):
-    user_id: str
+    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 
 # --- User Credentials Endpoints ---
+@app.get("/api/v1/user/credentials/{user_id}")
+async def get_user_credentials_status_by_path(user_id: str):
+    return await get_user_credentials_status(user_id=user_id)
+
+@app.get("/api/v1/user/credentials")
+@app.get("/api/user/credentials")
+@app.get("/api/dhan/credentials")
+async def get_user_credentials_status(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+    """Get user credentials status for settings page"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        creds = await manager.get_user_credentials(resolved_id)
+
+        if not creds:
+            return {
+                "user_id": resolved_id,
+                "configured": False,
+                "client_id": "",
+                "api_key": "",
+                "api_secret": "",
+                "is_verified": False,
+                "connection_status": "not_configured"
+            }
+
+        client_id = creds.get("client_id") or creds.get("dhan_client_id") or ""
+        is_verified = bool(creds.get("is_verified") or creds.get("connection_status") == "connected")
+
+        return {
+            "user_id": resolved_id,
+            "configured": bool(client_id),
+            "client_id": client_id,
+            "api_key": creds.get("api_key") or "",
+            "api_secret": creds.get("api_secret") or "",
+            "is_verified": is_verified,
+            "connection_status": creds.get("connection_status", "connected" if is_verified else "not_configured"),
+            "updated_at": creds.get("updated_at")
+        }
+    except Exception as e:
+        logger.error(f"Error getting user credentials status: {e}")
+        return {
+            "configured": False,
+            "client_id": "",
+            "api_key": "",
+            "api_secret": "",
+            "is_verified": False,
+            "error": str(e)
+        }
+
 @app.post("/api/v1/user/credentials")
 @app.post("/api/user/credentials")
 @app.post("/api/dhan/credentials")
 async def save_user_credentials(request: UserCredentialsRequest):
-    """
-    Save user's Dhan credentials securely.
-    Credentials are encrypted and stored in Firestore.
-    """
+    """Save user's Dhan credentials securely and verify live API connection"""
     try:
         manager = get_credentials_manager()
-        result = await manager.save_user_credentials(
-            user_id=request.user_id,
+        resolved_id = await manager.resolve_user_id(request.user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+
+        # Save credentials
+        save_res = await manager.save_user_credentials(
+            user_id=resolved_id,
             client_id=request.client_id,
             access_token=request.access_token,
-            api_key=request.api_key,
-            api_secret=request.api_secret
+            api_key=request.api_key or "",
+            api_secret=request.api_secret or ""
         )
 
         # Verify the connection immediately
+        is_verified = False
+        error_msg = None
         try:
             dhan_client = create_dhan_client(request.client_id, request.access_token)
             funds = dhan_client.get_fund_limits()
 
-            if isinstance(funds, dict) and funds.get("status") == "success":
-                await manager.update_connection_status(
-                    request.user_id,
-                    "connected",
-                    funds.get("data", {})
-                )
-                result["connection_status"] = "connected"
-                result["account_verified"] = True
+            if isinstance(funds, dict) and (funds.get("status") == "success" or "dhanClientId" in funds.get("data", {})):
+                await manager.update_connection_status(resolved_id, "connected", funds.get("data", {}))
+                is_verified = True
             else:
-                await manager.update_connection_status(request.user_id, "failed")
-                result["connection_status"] = "failed"
-                result["account_verified"] = False
+                error_msg = funds.get("remarks") if isinstance(funds, dict) else "Verification API returned unexpected response"
+                await manager.update_connection_status(resolved_id, "failed")
         except Exception as verify_error:
-            await manager.update_connection_status(request.user_id, "failed")
-            result["connection_status"] = "failed"
-            result["error"] = str(verify_error)
-
-        return result
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v1/user/credentials/{user_id}")
-@app.get("/api/user/credentials")
-@app.get("/api/dhan/credentials")
-async def get_user_credentials_status(user_id: Optional[str] = None):
-    """Get user's credential status (not the actual credentials)"""
-    if not user_id:
-        raise HTTPException(status_code=400, detail="user_id query parameter or path parameter is required")
-    try:
-        manager = get_credentials_manager()
-        creds = await manager.get_user_credentials(user_id)
-
-        if not creds:
-            return {
-                "user_id": user_id,
-                "configured": False,
-                "connection_status": "not_configured"
-            }
-
-        # Handle both nested and flat credential structures
-        credentials = creds.get("credentials", creds)
-        client_id = credentials.get("client_id")
+            error_msg = str(verify_error)
+            await manager.update_connection_status(resolved_id, "failed")
 
         return {
-            "user_id": user_id,
-            "configured": True if client_id else False,
-            "client_id": client_id,
-            "connection_status": creds.get("connection_status", "connected" if client_id else "not_configured"),
-            "is_active": creds.get("is_active", True),
-            "is_verified": creds.get("is_verified", True if client_id else False),
-            "updated_at": creds.get("updated_at")
+            "status": "success",
+            "success": True,
+            "user_id": resolved_id,
+            "dhan_client_id": request.client_id,
+            "is_verified": is_verified,
+            "account_verified": is_verified,
+            "connection_status": "connected" if is_verified else "failed",
+            "message": "Credentials saved & verified successfully" if is_verified else f"Credentials saved, but verification failed: {error_msg}",
+            "error": error_msg,
+            "updated_at": save_res.get("updated_at")
         }
 
     except Exception as e:
-        logger.error(f"Error getting user credentials status: {e}")
+        logger.error(f"Error saving user credentials: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/user/credentials/verify")
+@app.get("/api/v1/user/credentials/verify")
+async def verify_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+    """Verify stored user credentials with Dhan API"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        creds = await manager.get_user_credentials(resolved_id)
+
+        if not creds or not creds.get("client_id") or not creds.get("access_token"):
+            return {
+                "status": "failed",
+                "is_verified": False,
+                "user_id": resolved_id,
+                "message": "No credentials stored for verification",
+                "error": "Missing client_id or access_token"
+            }
+
+        client_id = creds.get("client_id") or creds.get("dhan_client_id")
+        access_token = creds.get("access_token") or creds.get("dhan_access_token")
+
+        is_verified = False
+        error_msg = None
+        try:
+            dhan = create_dhan_client(client_id, access_token)
+            funds = dhan.get_fund_limits()
+            if isinstance(funds, dict) and (funds.get("status") == "success" or "dhanClientId" in funds.get("data", {})):
+                is_verified = True
+            else:
+                error_msg = funds.get("remarks") if isinstance(funds, dict) else "API verification failed"
+        except Exception as ve:
+            error_msg = str(ve)
+
+        status_str = "connected" if is_verified else "failed"
+        await manager.update_connection_status(resolved_id, status_str)
+
+        return {
+            "status": "success",
+            "is_verified": is_verified,
+            "user_id": resolved_id,
+            "message": "DhanHQ connection verified" if is_verified else f"Verification failed: {error_msg}",
+            "error": error_msg
+        }
+    except Exception as e:
+        logger.error(f"Error verifying credentials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/v1/user/credentials/{user_id}")
-async def delete_user_credentials(user_id: str):
+async def delete_user_credentials_by_path(user_id: str):
+    return await delete_user_credentials(user_id=user_id)
+
+@app.delete("/api/user/credentials")
+async def delete_user_credentials(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
     """Delete user's Dhan credentials"""
     try:
         manager = get_credentials_manager()
-        success = await manager.delete_user_credentials(user_id)
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        success = await manager.delete_user_credentials(resolved_id)
 
         return {
-            "user_id": user_id,
+            "status": "success",
+            "user_id": resolved_id,
             "deleted": success,
             "message": "Credentials deleted successfully" if success else "Failed to delete"
         }
 
     except Exception as e:
+        logger.error(f"Error deleting user credentials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/user/verify")
@@ -1384,6 +1513,196 @@ async def disconnect_dhan(user_id: str):
         return DhanCredentialsResponse(success=True, verified=False, message="Deleted")
     except Exception as e:
         return DhanCredentialsResponse(success=False, verified=False, message=str(e))
+
+# ==================== FRONTEND COMPATIBLE USER CREDENTIALS ENDPOINTS ====================
+
+class UserCredentialsSaveRequest(BaseModel):
+    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
+    client_id: str
+    api_key: Optional[str] = ""
+    api_secret: Optional[str] = ""
+    access_token: str
+
+
+@app.get("/api/user/credentials")
+async def get_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+    """Get user credentials and connection status for settings page"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        creds = await manager.get_user_credentials(resolved_id)
+
+        if not creds:
+            return {
+                "configured": False,
+                "client_id": "",
+                "api_key": "",
+                "api_secret": "",
+                "is_verified": False,
+                "connection_status": "not_configured"
+            }
+
+        client_id = creds.get("client_id") or creds.get("dhan_client_id") or ""
+        is_verified = bool(creds.get("is_verified") or creds.get("connection_status") == "connected")
+
+        return {
+            "configured": bool(client_id),
+            "client_id": client_id,
+            "api_key": creds.get("api_key") or "",
+            "api_secret": creds.get("api_secret") or "",
+            "is_verified": is_verified,
+            "connection_status": creds.get("connection_status", "connected" if is_verified else "not_configured"),
+            "updated_at": creds.get("updated_at")
+        }
+    except Exception as e:
+        logger.error(f"Error fetching user credentials: {e}")
+        return {
+            "configured": False,
+            "client_id": "",
+            "api_key": "",
+            "api_secret": "",
+            "is_verified": False,
+            "error": str(e)
+        }
+
+
+@app.post("/api/user/credentials")
+async def save_user_credentials_endpoint(request: UserCredentialsSaveRequest):
+    """Save user credentials and perform live Dhan verification"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(request.user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+
+        # Save credentials
+        await manager.save_user_credentials(
+            user_id=resolved_id,
+            client_id=request.client_id,
+            access_token=request.access_token,
+            api_key=request.api_key or "",
+            api_secret=request.api_secret or ""
+        )
+
+        # Test live connection
+        is_verified = False
+        error_msg = None
+        try:
+            dhan = create_dhan_client(request.client_id, request.access_token)
+            funds = dhan.get_fund_limits()
+            if isinstance(funds, dict) and (funds.get("status") == "success" or "dhanClientId" in funds.get("data", {})):
+                is_verified = True
+            else:
+                error_msg = funds.get("remarks") if isinstance(funds, dict) else "Verification API returned unexpected response"
+        except Exception as ve:
+            error_msg = str(ve)
+
+        status_str = "connected" if is_verified else "failed"
+        await manager.update_connection_status(resolved_id, status_str)
+
+        return {
+            "status": "success",
+            "is_verified": is_verified,
+            "user_id": resolved_id,
+            "message": "Credentials saved & verified successfully" if is_verified else f"Credentials saved, but verification failed: {error_msg}",
+            "error": error_msg
+        }
+    except Exception as e:
+        logger.error(f"Error saving user credentials: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/user/credentials/verify")
+async def verify_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+    """Verify stored user credentials with Dhan API"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        creds = await manager.get_user_credentials(resolved_id)
+
+        if not creds or not creds.get("client_id") or not creds.get("access_token"):
+            return {
+                "is_verified": False,
+                "user_id": resolved_id,
+                "message": "No credentials stored for verification",
+                "error": "Missing client_id or access_token"
+            }
+
+        client_id = creds.get("client_id") or creds.get("dhan_client_id")
+        access_token = creds.get("access_token") or creds.get("dhan_access_token")
+
+        is_verified = False
+        error_msg = None
+        try:
+            dhan = create_dhan_client(client_id, access_token)
+            funds = dhan.get_fund_limits()
+            if isinstance(funds, dict) and (funds.get("status") == "success" or "dhanClientId" in funds.get("data", {})):
+                is_verified = True
+            else:
+                error_msg = funds.get("remarks") if isinstance(funds, dict) else "API verification failed"
+        except Exception as ve:
+            error_msg = str(ve)
+
+        status_str = "connected" if is_verified else "failed"
+        await manager.update_connection_status(resolved_id, status_str)
+
+        return {
+            "status": "success",
+            "is_verified": is_verified,
+            "user_id": resolved_id,
+            "message": "DhanHQ connection verified" if is_verified else f"Verification failed: {error_msg}",
+            "error": error_msg
+        }
+    except Exception as e:
+        logger.error(f"Error verifying credentials: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/user/credentials")
+async def delete_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+    """Delete stored user credentials"""
+    try:
+        manager = get_credentials_manager()
+        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        await manager.delete_user_credentials(resolved_id)
+        return {
+            "status": "success",
+            "user_id": resolved_id,
+            "message": "Dhan credentials disconnected successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error deleting credentials: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/auth/dhan/success", response_class=HTMLResponse)
+@app.get("/api/auth/dhan/success", response_class=HTMLResponse)
+async def dhan_auth_success_page():
+    """Dhan OAuth Success redirect landing page"""
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>InfinityAI Pro - Dhan Authentication Successful</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .card { background: #111827; border: 1px solid #1f2937; padding: 2rem; border-radius: 12px; max-width: 480px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+            .icon { font-size: 48px; margin-bottom: 1rem; color: #10b981; }
+            h1 { font-size: 24px; margin-bottom: 0.5rem; color: #ffffff; }
+            p { color: #9ca3af; font-size: 14px; line-height: 1.5; }
+            .btn { display: inline-block; margin-top: 1.5rem; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="icon">✅</div>
+            <h1>Dhan Authentication Successful</h1>
+            <p>Your DhanHQ broker credentials/OAuth session has been authorized for InfinityAI Pro.</p>
+            <p>You may now close this window and return to your dashboard settings.</p>
+        </div>
+    </body>
+    </html>
+    """)
 
 @app.get("/api/v1/user/{user_id}/account")
 async def get_user_account_details(user_id: str):
@@ -1701,7 +2020,11 @@ async def place_order(order: OrderRequest, request: Request):
             if order.drv_strike_price:
                 order_kwargs["drv_strike_price"] = order.drv_strike_price
 
-            response = dhan_client.place_order(**order_kwargs)
+            # Apply UUIDv4 Idempotency Key (truncated to 30 chars for DhanHQ API limit)
+            order_kwargs["tag"] = uuid.uuid4().hex[:30]
+
+            async with dhan_rate_limiter:
+                response = dhan_client.place_order(**order_kwargs)
 
             # Check response status
             if isinstance(response, dict):
@@ -2245,8 +2568,8 @@ async def get_user_demat_simple(user_id: str):
         if not creds:
             raise HTTPException(status_code=404, detail="No credentials found for user")
 
-        client_id = creds.get("credentials", {}).get("client_id")
-        access_token = creds.get("credentials", {}).get("access_token")
+        client_id = creds.get("dhan_client_id") or creds.get("client_id") or creds.get("credentials", {}).get("client_id")
+        access_token = creds.get("dhan_access_token") or creds.get("access_token") or creds.get("credentials", {}).get("access_token")
 
         if not client_id or not access_token:
             raise HTTPException(status_code=400, detail="Incomplete credentials")

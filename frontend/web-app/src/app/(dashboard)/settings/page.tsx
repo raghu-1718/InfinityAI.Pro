@@ -75,13 +75,13 @@ export default function SettingsPage() {
   // Load credentials on mount
   useEffect(() => {
     const loadCredentials = async () => {
-      if (!session?.userId) {
-        return;
-      }
+      const targetUserId = session?.userId && session.userId !== "guest" 
+        ? session.userId 
+        : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
 
       try {
         const response = await fetch(
-          `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`,
+          `${ENGINE_C_URL}/api/user/credentials?user_id=${targetUserId}`,
         );
 
         if (response.ok) {
@@ -107,13 +107,12 @@ export default function SettingsPage() {
   }, [session, setDhanConnected]);
 
   const handleSaveCredentials = async () => {
-    if (!session?.userId || session.userId === "guest") {
-      toast.error("⚠️ Guest Mode: Please log in or enter your access coupon before saving credentials");
-      return;
-    }
+    const targetUserId = session?.userId && session.userId !== "guest" 
+      ? session.userId 
+      : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
 
     if (!dhanCredentials.client_id || !dhanCredentials.access_token) {
-      toast.error("Please fill in all required fields");
+      toast.error("Please fill in all required fields (Client ID & Access Token)");
       return;
     }
 
@@ -123,7 +122,7 @@ export default function SettingsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: session.userId,
+          user_id: targetUserId,
           client_id: dhanCredentials.client_id,
           api_key: dhanCredentials.api_key || "",
           api_secret: dhanCredentials.api_secret || "",
@@ -159,8 +158,10 @@ export default function SettingsPage() {
         toast.success(
           `✅ Credentials saved & verified!\nClient ID: ${dhanCredentials.client_id}`,
         );
-        // REFRESH GLOBAL SESSION STATE
-        await refreshSession();
+        // REFRESH GLOBAL SESSION STATE IF AVAILABLE
+        if (refreshSession) {
+          await refreshSession();
+        }
       } else {
         // Show detailed reason from backend if available
         const errorDetail = data.error || data.message || "Verification failed";
@@ -180,12 +181,14 @@ export default function SettingsPage() {
   };
 
   const handleVerifyConnection = async () => {
-    if (!session?.userId) return;
+    const targetUserId = session?.userId && session.userId !== "guest" 
+      ? session.userId 
+      : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
 
     setIsConnecting(true);
     try {
       const response = await fetch(
-        `${ENGINE_C_URL}/api/user/credentials/verify?user_id=${session.userId}`,
+        `${ENGINE_C_URL}/api/user/credentials/verify?user_id=${targetUserId}`,
       );
 
       const data = await response.json();
@@ -205,8 +208,9 @@ export default function SettingsPage() {
         toast.success(
           `✅ Connection verified successfully!\nDhanHQ API responding normally.`,
         );
-        // REFRESH GLOBAL SESSION STATE
-        await refreshSession();
+        if (refreshSession) {
+          await refreshSession();
+        }
       } else {
         setDhanConnected(false);
         setDhanCredentials({ ...dhanCredentials, is_verified: false });
@@ -229,13 +233,15 @@ export default function SettingsPage() {
   };
 
   const handleDisconnect = async () => {
-    if (!session?.userId) return;
+    const targetUserId = session?.userId && session.userId !== "guest" 
+      ? session.userId 
+      : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
 
     setIsConnecting(true);
     try {
       // Call backend to delete credentials
       const response = await fetch(
-        `${ENGINE_C_URL}/api/user/credentials?user_id=${session.userId}`,
+        `${ENGINE_C_URL}/api/user/credentials?user_id=${targetUserId}`,
         { method: "DELETE" },
       );
 

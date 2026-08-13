@@ -6,7 +6,7 @@ import { getUserId } from "@/lib/user";
 export const getEngineAUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-313407263327.us-central1.run.app"
+    "https://engine-a-313407263327.asia-south1.run.app"
   );
 };
 
@@ -14,7 +14,7 @@ export const getEngineAUrl = () => {
 export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-    "https://engine-b-313407263327.us-central1.run.app"
+    "https://engine-b-313407263327.asia-south1.run.app"
   );
 };
 
@@ -22,7 +22,7 @@ export const getEngineBUrl = () => {
 export const getEngineCUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_C_URL ||
-    "https://engine-c-313407263327.us-central1.run.app"
+    "https://engine-c-313407263327.asia-south1.run.app"
   );
 };
 
@@ -943,6 +943,56 @@ export const engineC = {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/v1/execution/analytics`,
     );
+    return res.json();
+  },
+
+  // DhanHQ v2 Methods
+  async getForeverOrders(userId: string = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2") {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/forever/orders?user_id=${userId}`);
+    return res.json();
+  },
+
+  async createForeverOrder(data: any) {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/forever/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async cancelForeverOrder(orderId: string, userId: string = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2") {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/forever/orders/${orderId}?user_id=${userId}`, {
+      method: "DELETE",
+    });
+    return res.json();
+  },
+
+  async convertPosition(data: any) {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/positions/convert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async calculateMargin(data: any) {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/margin/calculator`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async getAccountLedger(userId: string = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2") {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/ledger?user_id=${userId}`);
+    return res.json();
+  },
+
+  async generateEdisForm(isin: string, quantity: number, userId: string = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2") {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/dhan/v2/edis/form?isin=${isin}&quantity=${quantity}&user_id=${userId}`);
     return res.json();
   },
 

@@ -1,7 +1,4 @@
 {
-  "functions": {
-    "source": "frontend/functions"
-  },
   "firestore": {
     "rules": "infra/firebase/firestore.rules",
     "indexes": "firestore.indexes.json"
@@ -14,70 +11,77 @@
         "source": "/api/system/**",
         "run": {
           "serviceId": "engine-a",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/engine-a/health",
         "run": {
           "serviceId": "engine-a",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/signals/**",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/engine-b/health",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/options/**",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/lstm/**",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/dqn/**",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/models/**",
         "run": {
           "serviceId": "engine-b",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/dhan/**",
         "run": {
           "serviceId": "engine-c",
-          "region": "us-central1"
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/api/user/**",
+        "run": {
+          "serviceId": "engine-c",
+          "region": "asia-south1"
         }
       },
       {
         "source": "/api/auth/**",
         "run": {
           "serviceId": "engine-c",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {
