@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface SessionState {
   consecutive_losses: number;
@@ -13,9 +13,9 @@ export function useSessionState(uid: string | null | undefined) {
   const [state, setState] = useState<SessionState | null>(null);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || !isSupabaseConfigured()) return;
 
-    // Fetch circuit breaker state from Supabase
+    // Fetch circuit breaker state (when Supabase is configured)
     const fetchState = async () => {
       try {
         const { data, error } = await supabase

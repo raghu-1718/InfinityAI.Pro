@@ -19,10 +19,10 @@ import json
 import time
 from datetime import datetime
 
-# Service URLs (Cloud Run)
-ENGINE_A_URL = "https://engine-a-228557716858.us-central1.run.app"
-ENGINE_B_URL = "https://engine-b-228557716858.us-central1.run.app"
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+# Service URLs (Cloud Run - asia-south1)
+ENGINE_A_URL = "https://engine-a-313407263327.asia-south1.run.app"
+ENGINE_B_URL = "https://engine-b-313407263327.asia-south1.run.app"
+ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
 
 # Sandbox credentials
 SANDBOX_CLIENT_ID = "2508215064"
@@ -63,6 +63,32 @@ def test_engine_health(engine_name, url):
             return False, None
     except Exception as e:
         print_result(False, f"{engine_name} unreachable: {str(e)}")
+        return False, None
+
+def test_system_state():
+    """Test unified system state endpoint on Engine A"""
+    print_header("Testing Unified System State (Engine A)", level=2)
+    endpoint = "/api/system/state"
+    url = f"{ENGINE_A_URL}{endpoint}"
+    headers = {
+        "X-User-ID": TEST_USER_ID,
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            print_result(True, f"System state retrieved from {endpoint}")
+            print(f"    System Status: {data.get('system_status', 'N/A')}")
+            print(f"    Dhan Connected: {data.get('dhan_connected', False)}")
+            print(f"    Current VIX: {data.get('current_vix', 'N/A')}")
+            return True, data
+        else:
+            print_result(False, f"System state check failed: {response.status_code}")
+            return False, None
+    except Exception as e:
+        print_result(False, f"System state unreachable: {str(e)}")
         return False, None
 
 def test_fund_limits():
@@ -312,11 +338,12 @@ def main():
         "order_cancel": False
     }
     
-    # Phase 1: Infrastructure Health Checks
-    print_header("PHASE 1: Infrastructure Health Checks")
+    # Phase 1: Infrastructure Health Checks & Unified State
+    print_header("PHASE 1: Infrastructure Health Checks & System State")
     results["engine_a_health"], _ = test_engine_health("Engine A (Orchestrator)", ENGINE_A_URL)
     results["engine_b_health"], _ = test_engine_health("Engine B (Analysis)", ENGINE_B_URL)
     results["engine_c_health"], _ = test_engine_health("Engine C (Execution)", ENGINE_C_URL)
+    results["system_state"], _ = test_system_state()
     
     # Phase 2: Account & Market Data
     print_header("PHASE 2: Account & Market Data")

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface AuditEvent {
   uid: string;
@@ -13,9 +13,9 @@ export function useAuditTimeline(uid: string | null | undefined) {
   const [events, setEvents] = useState<AuditEvent[]>([]);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || !isSupabaseConfigured()) return;
 
-    // Fetch audit events from Supabase logs table
+    // Fetch audit events from logs table (when configured)
     const fetchEvents = async () => {
       try {
         const { data, error } = await supabase
