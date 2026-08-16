@@ -408,6 +408,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# API Routers
+from api.routes import market_analysis
+app.include_router(market_analysis.router)
+
+
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 
