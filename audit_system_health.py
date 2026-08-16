@@ -10,7 +10,7 @@ GCS_BUCKET = "infinity-ai-models-vault"
 BQ_DATASET = "market_data"
 BQ_TABLE = "options_ticks"
 VERTEX_LOCATION = "us-central1"
-VERTEX_MODEL = "gemini-1.0-pro"
+VERTEX_MODEL = "gemini-2.5-pro"
 
 ENGINE_ENDPOINTS = {
     "Engine A (Cloud Run)": os.getenv("ENGINE_A_URL", "https://engine-a-placeholder-url.a.run.app/health"),
@@ -36,9 +36,46 @@ def print_status(service, status, latency, message):
 
     print(f"{Colors.BOLD}{service:<25}{Colors.RESET} [{status_color}{status:^8}{Colors.RESET}] ({latency:7.2f} ms)")
     if message:
-        print(f"  {Colors.BLUE}└─>{Colors.RESET} {message}")
+        print(f"  {Colors.BLUE}+->{Colors.RESET} {message}")
 
 # --- Health Check Functions ---
+
+def discover_cloud_run_urls(project_id: str, location: str) -> dict:
+    """Discovers Cloud Run service URLs for Engine A and C."""
+    discovered_urls = {}
+    service_names_map = {
+        "engine-a": "Engine A (Cloud Run)",
+        "engine-c": "Engine C (Cloud Run)",
+    }
+    
+    try:
+        from google.cloud import run_v2
+        client = run_v2.ServicesClient()
+        parent = f"projects/{project_id}/locations/{location}"
+        
+        print(f"  Discovering Cloud Run services in {location}...")
+        services = client.list_services(parent=parent)
+        
+        found_services = []
+        for service in services:
+            service_name = service.name.split('/')[-1]
+            if service_name in service_names_map:
+                engine_key = service_names_map[service_name]
+                discovered_urls[engine_key] = f"{service.uri}/health"
+                found_services.append(service_name)
+        
+        if found_services:
+             print(f"  +-> Discovered: {', '.join(found_services)}")
+        else:
+             print(f"  +-> No matching Cloud Run services found in {location}. Using fallbacks.")
+
+    except ImportError:
+        print(f"  +-> 'google-cloud-run' not installed. Cannot auto-discover URLs. Using fallbacks.")
+    except Exception as e:
+        print(f"  +-> Could not discover Cloud Run URLs: {e}. Using fallbacks.")
+        
+    return discovered_urls
+
 
 async def check_firestore():
     """Checks Firestore connectivity and read/write operations."""
@@ -177,6 +214,11 @@ async def main():
     print(f"{Colors.BOLD}--- InfinityAI System Health Audit ---{Colors.RESET}")
     print(f"Project: {Colors.YELLOW}{PROJECT_ID}{Colors.RESET}, Time: {time.ctime()}\n")
 
+    # Discover Cloud Run URLs and update endpoints
+    discovered_urls = discover_cloud_run_urls(PROJECT_ID, "asia-south1")
+    ENGINE_ENDPOINTS.update(discovered_urls)
+    print() # Add a newline for better formatting
+
     tasks = [
         check_firestore(),
         check_bigquery(),
@@ -209,12 +251,13 @@ if __name__ == "__main__":
         import google.cloud.firestore
         import google.cloud.bigquery
         import google.cloud.storage
+        import google.cloud.run_v2
         import vertexai
         import aiohttp
     except ImportError as e:
         print(f"{Colors.RED}Error: Missing dependencies.{Colors.RESET}")
         print("Please install the required libraries by running:")
-        print(f"{Colors.YELLOW}pip install google-cloud-firestore google-cloud-bigquery google-cloud-storage google-cloud-aiplatform aiohttp{Colors.RESET}")
+        print(f"{Colors.YELLOW}pip install google-cloud-firestore google-cloud-bigquery google-cloud-storage google-cloud-aiplatform aiohttp google-cloud-run{Colors.RESET}")
         exit(1)
 
     # Set credentials if not set
