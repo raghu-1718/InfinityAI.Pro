@@ -501,56 +501,16 @@ SYMBOL_MAPPER = SymbolMapper()
 # =====================================================================
 # API MODELS
 # =====================================================================
-class SignalRequest(BaseModel):
-    symbol: str
-    fast: bool = False
-    news_headlines: Optional[List[str]] = None  # For sentiment-enhanced signals
-    timeframe: str = "1d"
-
-class SignalResponse(BaseModel):
-    symbol: str
-    signal: str  # BUY, SELL, HOLD
-    confidence: float
-    predicted_price: float
-    current_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    target: Optional[float] = None
-    timestamp: str
-    model_version: str
-    sentiment_score: Optional[float] = None
-    data_source: Optional[str] = None
-    analysis: Optional[Dict[str, Any]] = None
-    security_id: Optional[str] = None
-    exchange_segment: Optional[str] = None
-
-class TrainingRequest(BaseModel):
-    symbol: str
-    historical_days: int = 365
-    lookahead_days: int = 5
-    n_estimators: int = 100
-    max_depth: int = 6
-    learning_rate: float = 0.1
-    use_sentiment: bool = False
-
-class TrainingResponse(BaseModel):
-    status: str
-    symbol: str
-    historical_days: int
-    samples_used: int
-    features_count: int
-    model_accuracies: Dict[str, float]
-    training_time_seconds: float
-    data_source: str
-    timestamp: str
-
-class SentimentRequest(BaseModel):
-    text: str
-
-class SentimentResponse(BaseModel):
-    text: str
-    sentiment: str
-    confidence: float
-    timestamp: str
+from src.api.models import (
+    SignalRequest, SignalResponse, TrainingRequest, TrainingResponse,
+    SentimentRequest, SentimentResponse, BatchSignalsRequest, InstrumentSignalsRequest,
+    PositionAnalysisRequest, PositionAnalysisResponse, GreeksRequest, OptionsStrategyRequest,
+    LSTMPredictRequest, DQNActionRequest, AdminTrainingRequest, LSTMTrainingRequest,
+    DQNTrainingRequest, AgentConsultRequest, GeminiSignalRequest, AgentAnalysisRequest,
+    EnhancedSignalRequest, GeminiProSignalRequest, GeminiFunctionCallingSignalRequest,
+    MarketDataRequest, GeminiChatRequest, FinanceAIRequest, FinanceAIOptionsStrategyRequest,
+    FinanceAIRiskAnalysisRequest
+)
 
 # =====================================================================
 # ML MODEL STORE
@@ -2082,11 +2042,6 @@ async def get_market_knowledge():
     }
 
 
-class BatchSignalsRequest(BaseModel):
-    """Request model for batch signals"""
-    symbols: List[str]
-    user_id: Optional[str] = None  # User ID for Firestore storage
-    fast: bool = True
 
 
 def get_firestore_db():
@@ -2162,12 +2117,6 @@ async def generate_batch_signals(request: BatchSignalsRequest):
     })
 
 
-class InstrumentSignalsRequest(BaseModel):
-    """Request model for instrument-specific signals"""
-    instruments: List[str]  # e.g., ['equities', 'nifty-options', 'banknifty-options']
-    min_confidence: float = 0.75
-    strategy: Optional[str] = "ai-signals"
-    max_signals: int = 10
 
 
 @app.post("/api/v1/signals/instruments")
@@ -2463,34 +2412,6 @@ async def get_ensemble_weights():
 # =====================================================================
 # POSITION ANALYSIS API - AI/ML POWERED
 # =====================================================================
-class PositionAnalysisRequest(BaseModel):
-    """Request model for position analysis"""
-    symbol: str
-    trading_symbol: str
-    security_id: str
-    position_type: str  # LONG or SHORT
-    exchange_segment: str
-    product_type: str
-    buy_avg: float
-    cost_price: float
-    buy_qty: int
-    sell_qty: int = 0
-    net_qty: int
-    realized_profit: float = 0.0
-    unrealized_profit: float = 0.0
-    expiry_date: Optional[str] = None
-    option_type: Optional[str] = None  # CALL or PUT
-    strike_price: Optional[float] = None
-    current_price: Optional[float] = None
-
-class PositionAnalysisResponse(BaseModel):
-    """Response model for position analysis"""
-    symbol: str
-    analysis: Dict[str, Any]
-    risk_metrics: Dict[str, Any]
-    ai_recommendation: Dict[str, Any]
-    market_context: Dict[str, Any]
-    timestamp: str
 
 @app.post("/api/v1/position/analyze", response_model=PositionAnalysisResponse)
 async def analyze_position(request: PositionAnalysisRequest):
@@ -3014,21 +2935,6 @@ async def analyze_with_market_knowledge(request: SignalRequest):
 
 # --- Google Cloud AI Integration Endpoints ---
 
-class GeminiSignalRequest(BaseModel):
-    """Request model for Gemini-powered signal generation"""
-    symbol: str
-    current_price: float
-    historical_data: Optional[Dict[str, Any]] = None
-    technical_indicators: Optional[Dict[str, float]] = None
-    news_context: Optional[str] = None
-
-
-class AgentAnalysisRequest(BaseModel):
-    """Request model for agent-based analysis"""
-    symbol: str
-    market_data: Dict[str, Any]
-    analysis_type: str = "comprehensive"  # signal, risk, market, comprehensive
-
 
 @app.post("/api/v1/ai/gemini-signal")
 async def generate_gemini_signal(req: GeminiSignalRequest):
@@ -3099,14 +3005,6 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
 # ENHANCED TRADING AI v4.0 ENDPOINTS
 # =====================================================================
 
-class EnhancedSignalRequest(BaseModel):
-    """Request for enhanced AI trading signal with comprehensive context."""
-    symbol: str
-    current_price: float
-    technical_data: Optional[Dict[str, Any]] = None
-    market_context: Optional[Dict[str, Any]] = None
-    news_sentiment: Optional[str] = None
-    portfolio_context: Optional[Dict[str, Any]] = None
 
 
 @app.post("/api/v1/ai/enhanced-signal")
@@ -3244,14 +3142,8 @@ async def generate_enhanced_signal(req: EnhancedSignalRequest):
         logger.error(f"Error generating enhanced signal: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-class EnhancedSignalRequest(BaseModel):
-    symbol: str
-    timeframe: str = "INTRADAY"
-    user_analysis_type: str = "comprehensive" # Renamed to avoid alias conflict if any
-    use_pro_model: bool = False
-
 @app.post("/api/v1/ai/enhanced-signal")
-async def generate_enhanced_signal(req: EnhancedSignalRequest):
+async def generate_enhanced_signal(req: GeminiProSignalRequest):
     """
     Generate GenAI-powered trading signal using Gemini 2.5 Flash / 3 Pro.
     Integrates real-time market data with GenAI reasoning.
@@ -3543,23 +3435,9 @@ async def get_ai_usage_stats():
 # ENHANCED GEMINI API - v4.0.0 with Gemini 3 Pro & Function Calling
 # =====================================================================
 
-class EnhancedSignalRequest(BaseModel):
-    """Request for enhanced trading signal with function calling"""
-    symbol: str
-    analysis_type: str = "comprehensive"  # intraday, swing, options, comprehensive
-    auto_execute: bool = False
-    fetch_live_data: bool = True
-
-
-class MarketDataRequest(BaseModel):
-    """Request for market data"""
-    symbol: str
-    exchange: str = "NSE"
-    data_type: str = "quote"  # quote, technicals, options, all
-
 
 @app.post("/api/v1/gemini/enhanced-signal")
-async def generate_enhanced_signal(req: EnhancedSignalRequest):
+async def generate_gemini_enhanced_signal(req: GeminiFunctionCallingSignalRequest):
     """
     Generate enhanced trading signal with Vertex AI function calling.
     Automatically fetches real-time market data.
@@ -3678,10 +3556,6 @@ async def analyze_options(symbol: str = "NIFTY", strategy: str = "auto"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-class GeminiChatRequest(BaseModel):
-    """Request model for Gemini chat."""
-    question: str
-    context: Optional[str] = None
 
 
 @app.post("/api/v1/gemini/chat")
@@ -4071,28 +3945,6 @@ except ImportError:
     HAS_FINANCE_AI = False
 
 
-class FinanceAIRequest(BaseModel):
-    """Request model for Finance AI analysis."""
-    symbol: str
-    current_price: float
-    technical_indicators: Optional[Dict[str, Any]] = None
-    news_items: Optional[List[str]] = None
-    model_type: str = "stock_analyst"
-
-
-class OptionsStrategyRequest(BaseModel):
-    """Request model for options strategy."""
-    index: str = "NIFTY"
-    spot_price: float
-    outlook: str = "NEUTRAL"  # BULLISH, BEARISH, NEUTRAL
-    capital: float = 100000
-    risk_appetite: str = "MODERATE"  # LOW, MODERATE, HIGH
-
-
-class RiskAnalysisRequest(BaseModel):
-    """Request model for portfolio risk analysis."""
-    positions: List[Dict[str, Any]]
-    account_value: float
 
 
 @app.post("/api/v1/finance-ai/signal")
@@ -4198,7 +4050,7 @@ async def get_finance_ai_market_analysis(request: FinanceAIRequest):
 
 
 @app.post("/api/v1/finance-ai/options-strategy")
-async def get_finance_ai_options_strategy(request: OptionsStrategyRequest):
+async def get_finance_ai_options_strategy(request: FinanceAIOptionsStrategyRequest):
     """
     Get AI-powered options strategy recommendation.
 
@@ -4234,7 +4086,7 @@ async def get_finance_ai_options_strategy(request: OptionsStrategyRequest):
 
 
 @app.post("/api/v1/finance-ai/risk-analysis")
-async def get_finance_ai_risk_analysis(request: RiskAnalysisRequest):
+async def get_finance_ai_risk_analysis(request: FinanceAIRiskAnalysisRequest):
     """
     Get AI-powered portfolio risk analysis.
 
@@ -4315,20 +4167,6 @@ async def get_finance_ai_status():
 
 
 # --- Options Trading Endpoints ---
-class GreeksRequest(BaseModel):
-    symbol: str
-    spot: float
-    strike: float
-    expiry: str  # YYYY-MM-DD
-    volatility: float = 0.18
-    option_type: str = "CE"  # CE or PE
-
-class OptionsStrategyRequest(BaseModel):
-    strategy_type: str  # iron_condor, bull_call_spread, covered_call
-    symbol: str
-    spot_price: float
-    expiry: str
-    parameters: Dict[str, Any]  # Strategy-specific params
 
 @app.post("/api/v1/options/greeks")
 async def calculate_greeks(req: GreeksRequest):
@@ -4417,13 +4255,6 @@ async def execute_strategy(req: OptionsStrategyRequest):
 
 
 # --- Deep Learning Endpoints ---
-class LSTMPredictRequest(BaseModel):
-    symbol: str
-    recent_data: List[Dict[str, Any]]  # Last 60 days of OHLCV + indicators
-
-class DQNActionRequest(BaseModel):
-    symbol: str
-    current_state: List[float]  # State vector
 
 @app.post("/api/v1/lstm/predict")
 async def lstm_forecast(req: LSTMPredictRequest):
@@ -4514,25 +4345,10 @@ async def deep_learning_status():
 
 
 # --- Model Training Endpoints (Admin) ---
-class TrainingRequest(BaseModel):
-    symbol: str = "NIFTY"
-    days: int = 730
-    upload_gcs: bool = True
-    gcs_bucket: str = "project-841b7f97-5ee3-4fbe-920-models"
-    gcs_prefix: str = "trained_models"
-
-
-class LSTMTrainingRequest(TrainingRequest):
-    epochs: int = 100
-    batch_size: int = 32
-
-
-class DQNTrainingRequest(TrainingRequest):
-    episodes: int = 200
 
 
 @app.post("/admin/train-models")
-async def train_all_models_endpoint(req: TrainingRequest, background_tasks: BackgroundTasks):
+async def train_all_models_endpoint(req: AdminTrainingRequest, background_tasks: BackgroundTasks):
     """
     Trigger training for both LSTM and DQN models.
     This is a long-running operation (20-45 minutes).
@@ -4620,9 +4436,6 @@ async def train_dqn_endpoint(req: DQNTrainingRequest, background_tasks: Backgrou
 
 
 # --- Agent Consultation Endpoint ---
-class AgentConsultRequest(BaseModel):
-    query: str
-    symbol: Optional[str] = None
 
 @app.post("/api/v1/agent/consult")
 async def consult_agent(req: AgentConsultRequest):

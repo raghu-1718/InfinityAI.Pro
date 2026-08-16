@@ -120,7 +120,7 @@ class DQNActionRequest(BaseModel):
     current_state: List[float]
 
 # --- Admin Training ---
-class TrainingRequest(BaseModel):
+class AdminTrainingRequest(BaseModel):
     symbol: str = "NIFTY"
     days: int = 730
     upload_gcs: bool = True
@@ -128,12 +128,12 @@ class TrainingRequest(BaseModel):
     gcs_prefix: str = "trained_models"
 
 
-class LSTMTrainingRequest(TrainingRequest):
+class LSTMTrainingRequest(AdminTrainingRequest):
     epochs: int = 100
     batch_size: int = 32
 
 
-class DQNTrainingRequest(TrainingRequest):
+class DQNTrainingRequest(AdminTrainingRequest):
     episodes: int = 200
 
 # --- AI/Gemini Integrations ---
@@ -157,9 +157,16 @@ class EnhancedSignalRequest(BaseModel):
     news_sentiment: Optional[str] = None
     portfolio_context: Optional[Dict[str, Any]] = None
 
-class GeminiEnhancedSignalRequest(BaseModel):
+class GeminiProSignalRequest(BaseModel):
     symbol: str
-    analysis_type: str = "comprehensive"
+    timeframe: str = "INTRADAY"
+    user_analysis_type: str = "comprehensive" # Renamed to avoid alias conflict if any
+    use_pro_model: bool = False
+
+class GeminiFunctionCallingSignalRequest(BaseModel):
+    """Request for enhanced trading signal with function calling"""
+    symbol: str
+    analysis_type: str = "comprehensive"  # intraday, swing, options, comprehensive
     auto_execute: bool = False
     fetch_live_data: bool = True
 
