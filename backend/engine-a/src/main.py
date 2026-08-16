@@ -45,6 +45,7 @@ from pydantic import BaseModel
 import httpx
 import uvicorn
 from src.trace_middleware import TraceIDMiddleware
+from src.api.routes import research  # <-- ADDED: Import your new research router
 
 # ML Libraries for Risk & Portfolio Management
 import numpy as np
@@ -179,6 +180,12 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         status_code=exc.status_code,
         content={"status": "error", "code": exc.status_code, "detail": exc.detail or "Not Found"}
     )
+
+
+# --- ADDED: Register the research router ---
+app.include_router(research.router)
+# -------------------------------------------
+
 
 @app.get("/health")
 @app.get("/engine-a/health")
@@ -1200,7 +1207,7 @@ async def generate_ai_signal(req: AISignalRequest):
             news_context=req.market_context
         )
         analysis_obj = await GENAI_CLIENT.generate_trading_signal(prompt=trading_prompt)
-        
+
         import dataclasses
         analysis = dataclasses.asdict(analysis_obj)
 

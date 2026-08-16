@@ -33,7 +33,7 @@ import uuid
 from src.activity_logger import ActivityLogger
 from aiolimiter import AsyncLimiter
 
-# Define a global rate limiter: Max 9 requests per 1 second 
+# Define a global rate limiter: Max 9 requests per 1 second
 # (Set to 9 to leave a 10% safety margin below Dhan's 10 req/s limit)
 dhan_rate_limiter = AsyncLimiter(max_rate=9, time_period=1)
 
@@ -345,12 +345,12 @@ if NEWS_AGGREGATOR_AVAILABLE:
         """Get latest aggregated news from all providers"""
         symbol_list = symbols.split(",") if symbols else None
         return await get_latest_news(symbol_list, hours, max_articles)
-    
+
     @app.get("/api/news/sentiment/{symbol}")
     async def get_sentiment_endpoint(symbol: str, hours: int = 24):
         """Get market sentiment for a symbol"""
         return await get_sentiment(symbol, hours)
-    
+
     logger.info("✅ News aggregator endpoints enabled")
 else:
     logger.warning("⚠️ News aggregator not available")
@@ -933,7 +933,7 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
                     updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
                     if updated_at.tzinfo:
                         updated_at = updated_at.replace(tzinfo=None)
-                    
+
                     if datetime.utcnow() - updated_at > timedelta(hours=20):
                         logger.info(f"🔄 Token for {resolved_user_id} is >20h old. Executing Auto-Refresh.")
                         renew_url = "https://api.dhan.co/v2/RenewToken"
@@ -1034,14 +1034,14 @@ def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
 
 # --- User Credentials Models ---
 class UserCredentialsRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
-    client_id: str
+    user_id: Optional[str] = "raghu_primary"
+    client_id: str = "1101302170"
     access_token: str
     api_key: Optional[str] = ""
     api_secret: Optional[str] = ""
 
 class UserCredentialsVerifyRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
+    user_id: Optional[str] = "raghu_primary"
 
 # --- Dhan Token Keep-Alive & Auto-Renewal Endpoint for Cloud Scheduler ---
 @app.post("/api/dhan/renew-token")
@@ -1066,7 +1066,6 @@ async def renew_dhan_tokens_endpoint(
     else:
         # Default single-tenant primary user
         target_user_ids.append("raghu_primary")
-        target_user_ids.append("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
 
     for uid in target_user_ids:
         try:
@@ -1538,7 +1537,7 @@ async def get_dhan_credentials(user_id: Optional[str] = None):
     try:
         manager = get_credentials_manager()
         creds = await manager.get_user_credentials(user_id)
-        
+
         if not creds:
              return DhanCredentialsResponse(success=False, verified=False, message="No credentials found", credentials=None)
 
@@ -2067,7 +2066,7 @@ async def place_order(order: OrderRequest, request: Request):
                 "STOPMARKET": "STOP_LOSS_MARKET"
             }
             dhan_order_type = order_type_map.get(order.order_type.upper(), order.order_type.upper())
-            
+
             # Build kwargs dynamically, only include non-None and relevant fields
             order_kwargs = {
                 "transaction_type": order.transaction_type.upper(),
@@ -2083,7 +2082,7 @@ async def place_order(order: OrderRequest, request: Request):
                 order_kwargs["price"] = order.price
             elif dhan_order_type == "MARKET":
                 order_kwargs["price"] = 0
-            
+
             # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
             if order.trigger_price is not None and "STOP" in dhan_order_type:
                 order_kwargs["trigger_price"] = order.trigger_price

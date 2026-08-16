@@ -100,3 +100,4 @@ data/historical/*.csv
 .firebase/
 artifacts/
 infra_snapshot/
+.aider*

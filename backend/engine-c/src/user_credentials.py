@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 PRIMARY_USER_ID = os.getenv("PRIMARY_USER_ID", "raghu_primary")
 PRIMARY_CLIENT_ID = os.getenv("PRIMARY_CLIENT_ID", "1101302170")
-LEGACY_OWNER_ID = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 
 def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
@@ -121,7 +120,7 @@ class UserCredentialsManager:
             try:
                 self.db.collection("user_credentials").document(resolved_id).set(doc_data, merge=True)
                 self.db.collection("user_credentials").document(LEGACY_OWNER_ID).set(doc_data, merge=True)
-                
+
                 try:
                     self.db.collection("users").document(resolved_id).set({
                         "dhanConnected": True,
@@ -130,7 +129,7 @@ class UserCredentialsManager:
                     }, merge=True)
                 except Exception as ue:
                     logger.warning(f"Failed to sync users doc: {ue}")
-                
+
                 # Invalidate memory cache
                 self._cached_creds = None
                 logger.info(f"✅ Credentials saved to Firestore for user: {resolved_id}")
@@ -155,7 +154,7 @@ class UserCredentialsManager:
 
         if self.db:
             # 1. Check primary known doc IDs in order: LEGACY_OWNER_ID -> PRIMARY_USER_ID -> resolved_id
-            for target in [LEGACY_OWNER_ID, PRIMARY_USER_ID, resolved_id, PRIMARY_CLIENT_ID]:
+            for target in [PRIMARY_USER_ID, resolved_id, PRIMARY_CLIENT_ID]:
                 if not target:
                     continue
                 try:

@@ -102,9 +102,9 @@ class OptionsChainIngestor:
             # 2. Fetch full option chain depth using DhanClient wrapper
             try:
                 oc_data = dhan_client_wrapper.option_chain(
-                    security_id=sec_id,
-                    exchange_segment=segment,
-                    expiry_date=target_expiry
+                    under_security_id=sec_id,
+                    under_exchange_segment=segment,
+                    expiry=target_expiry
                 )
 
                 if oc_data and oc_data.get("status") == "success":

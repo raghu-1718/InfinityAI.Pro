@@ -487,3 +487,73 @@ if __name__ == "__main__":
     res = train_tri_model_ensemble(symbol=args.symbol, days=args.days, upload_gcs=args.upload_gcs)
     import json
     print(json.dumps(res, indent=2))
+
+# Sort values and set index
+        if 'date' in data.columns:
+            data['date'] = pd.to_datetime(data['date'])
+            data = data.sort_values('date').set_index('date')
+
+    # Core Technical Indicators
+    data['returns'] = data['close'].pct_change()
+    data['log_returns'] = np.log1p(data['returns'])
+    data['sma_5'] = data['close'].rolling(5).mean()
+    data['sma_20'] = data['close'].rolling(20).mean()
+    data['ema_12'] = data['close'].ewm(span=12, adjust=False).mean()
+    data['ema_26'] = data['close'].ewm(span=26, adjust=False).mean()
+
+    # MACD
+    data['macd'] = data['ema_12'] - data['ema_26']
+    data['macd_signal'] = data['macd'].ewm(span=9, adjust=False).mean()
+
+    # RSI (14)
+    delta = data['close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    rs = gain / (loss + 1e-9)
+    data['rsi'] = 100 - (100 / (1 + rs))
+
+    # Bollinger Bands
+    roll_mean = data['close'].rolling(20).mean()
+    roll_std = data['close'].rolling(20).std()
+    data['bb_upper'] = roll_mean + (roll_std * 2)
+    data['bb_lower'] = roll_mean - (roll_std * 2)
+    data['bb_width'] = (data['bb_upper'] - data['bb_lower']) / (roll_mean + 1e-9)
+
+    # Volatility
+    data['volatility_10'] = data['returns'].rolling(10).std()
+    data['volatility_30'] = data['returns'].rolling(30).std()
+
+    # Integrate Options Features (PCR, OI) if available
+    if df_options is not None and not df_options.empty:
+        logger.info("🔗 Merging Options-derived features (PCR, OI) into training dataset...")
+        if 'date' in df_options.columns:
+            df_options['date'] = pd.to_datetime(df_options['date'])
+            df_options = df_options.set_index('date')
+
+        # Merge on date index
+        data = data.join(df_options, how='left')
+
+        # Fill missing options metrics with forward-fill or defaults
+        options_cols = ['pcr', 'total_ce_oi', 'total_pe_oi', 'avg_iv']
+        for col in options_cols:
+            if col in data.columns:
+                data[col] = data[col].fillna(method='ffill').fillna(1.0 if 'pcr' in col else 0.0)
+
+    # Define Target Variable (1 if next day close > current close, else 0)
+    data['target'] = (data['close'].shift(-1) > data['close']).astype(int)
+
+    # Drop rows with NaN resulting from rolling windows/shifts
+    data = data.dropna()
+
+    # Feature columns list
+    feature_cols = [
+        'returns', 'log_returns', 'sma_5', 'sma_20', 'ema_12', 'ema_26',
+        'macd', 'macd_signal', 'rsi', 'bb_width', 'volatility_10', 'volatility_30'
+    ]
+
+    # Add options features to training features if present
+    for col in ['pcr', 'total_ce_oi', 'total_pe_oi', 'avg_iv']:
+        if col in data.columns:
+            feature_cols.append(col)
+
+    return data, feature_cols
