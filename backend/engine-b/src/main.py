@@ -1,3 +1,13 @@
+"""
+InfinityAI.Pro - Engine B (AI/ML Core)
+
+This is the main application file for Engine B, the primary backend service
+responsible for AI/ML-driven trading signal generation, data processing,
+and integration with Google Cloud services.
+
+For a complete system overview, component interactions, and data flows,
+please refer to the central documentation at ARCHITECTURE.md.
+"""
 import sys
 import os
 import logging

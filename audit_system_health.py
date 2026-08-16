@@ -1,3 +1,12 @@
+"""
+System Health Audit Script for InfinityAI.Pro.
+
+This script asynchronously tests and verifies the working status of all
+integrated services, including GCP, Firebase, and deployed engine endpoints.
+
+For a detailed overview of the system architecture and components being tested,
+please refer to the main documentation at ARCHITECTURE.md.
+"""
 import asyncio
 import time
 import os

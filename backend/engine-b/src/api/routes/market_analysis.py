@@ -1,3 +1,12 @@
+"""
+Market Analysis API Route for Engine B.
+
+This module provides the FastAPI router for options analysis. It includes the
+`/analyze-options` endpoint, which fetches data from BigQuery and uses the
+Vertex AI Gemini client to generate institutional-grade trading insights.
+
+For detailed architecture and data flow, see ARCHITECTURE.md.
+"""
 import os
 import logging
 from fastapi import APIRouter, HTTPException
