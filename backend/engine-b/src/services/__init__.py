@@ -16,6 +16,7 @@ from .market_knowledge import (
     Segment,
     TradingSession
 )
+from .symbol_mapper import SymbolMapper
 
 __all__ = [
     "IndianMarketKnowledge",
@@ -30,5 +31,6 @@ __all__ = [
     "TradingPsychology",
     "Exchange",
     "Segment",
-    "TradingSession"
+    "TradingSession",
+    "SymbolMapper"
 ]
