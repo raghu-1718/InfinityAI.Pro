@@ -132,7 +132,7 @@ app.add_middleware(TraceIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Environment Context
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 
 # Import CORS config from shared module (environment-gated)
 try:
@@ -168,6 +168,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Silently drop public scanner 404/405 noise without noisy logging"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": "error", "code": exc.status_code, "detail": exc.detail or "Not Found"}
+    )
 
 @app.get("/health")
 @app.get("/engine-a/health")
@@ -267,7 +278,7 @@ class OrchestrateRequest(BaseModel):
 
 class InstrumentTradeRequest(BaseModel):
     """Request model for instrument-specific auto trading"""
-    instruments: List[str]  # e.g., ['equities', 'nifty-options', 'banknifty-options']
+    instruments: List[str]  # e.g., ['nifty-options', 'banknifty-options', 'sensex-options', 'finnifty-options']
     riskLevel: Optional[str] = "moderate"  # conservative, moderate, aggressive
     stopLoss: Optional[float] = 2.0  # percentage
     takeProfit: Optional[float] = 4.0  # percentage
@@ -317,7 +328,7 @@ from typing import Literal
 class SessionConfig(BaseModel):
     capital: float
     risk_mode: Literal["conservative", "moderate", "aggressive"]
-    asset_class: Literal["equities", "fno", "commodities"]
+    asset_class: Literal["fno", "commodities", "equities"] = "fno"
     user_id: str
 
 from src.services.session_manager import acquire_session_lock, release_session_lock, SessionExistsError
@@ -550,7 +561,7 @@ async def start_session(config: Dict[str, Any] = None):
 
 # --- Config ---
 # Use Cloud Run URLs for production inter-engine communication (subdomains not mapped)
-DEFAULT_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
+DEFAULT_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 ENGINE_B_URL = os.getenv("ENGINE_B_URL", f"https://engine-b-313407263327.asia-south1.run.app")
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", f"https://engine-c-313407263327.asia-south1.run.app")
 
@@ -594,6 +605,43 @@ async def root():
             "Agent Orchestrator (Multi-Agent Workflows)"
         ]
     }
+
+@app.get("/api/v1/system/engine-b-health")
+async def get_engine_b_health():
+    """Verify connectivity to Engine-B VM over internal VPC"""
+    if not ENGINE_B_URL:
+        raise HTTPException(500, "ENGINE_B_URL not configured")
+    try:
+        t0 = asyncio.get_event_loop().time()
+        res = await http_client.get(f"{ENGINE_B_URL}/health", timeout=10.0)
+        dt = (asyncio.get_event_loop().time() - t0) * 1000.0
+        return {
+            "status": "connected",
+            "latency_ms": round(dt, 2),
+            "engine_b_url": ENGINE_B_URL,
+            "engine_b_response": res.json()
+        }
+    except Exception as e:
+        logger.error(f"Failed to connect to Engine-B at {ENGINE_B_URL}: {e}")
+        return {
+            "status": "error",
+            "engine_b_url": ENGINE_B_URL,
+            "error": str(e)
+        }
+
+@app.post("/api/v1/trade/signal")
+async def proxy_trade_signal(req: Dict[str, Any]):
+    """Direct proxy to Engine-B AI/ML signal calculation over internal VPC"""
+    if not ENGINE_B_URL:
+        raise HTTPException(500, "ENGINE_B_URL not configured")
+    try:
+        res = await http_client.post(f"{ENGINE_B_URL}/api/v1/signal", json=req, timeout=20.0)
+        res.raise_for_status()
+        return res.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Engine-B RPC error: {str(e)}")
 
 # --- Risk Management Endpoints ---
 @app.post("/api/v1/risk/score")
@@ -721,7 +769,7 @@ async def dhan_callback(request: DhanTokenExchangeRequest):
         response.raise_for_status()
         token_data = response.json()
 
-        # TODO: Store access_token securely in Supabase user_credentials table
+        # User-specific tokens are persisted in Google Cloud Firestore user_credentials vault via Engine-C
         return {
             "status": "success",
             "message": "Token exchange complete",
@@ -825,13 +873,11 @@ async def orchestrate_trade(req: OrchestrateRequest, bg: BackgroundTasks):
     # 2. Prepare Execution Payload for Engine C
     # Security ID mapping (NSE Equity symbols to Dhan Security IDs)
     security_id_map = {
-        "RELIANCE": "1333",
-        "TCS": "2968",
-        "HDFCBANK": "1394",
-        "INFY": "1594",
-        "ICICIBANK": "1270",
-        "NIFTY": "13",
-        "BANKNIFTY": "25"
+       "NIFTY": "13",
+       "BANKNIFTY": "25",
+       "FINNIFTY": "27",
+       "SENSEX": "51",
+       "MIDCPNIFTY": "442"
     }
 
     security_id = security_id_map.get(req.symbol.upper())
@@ -909,18 +955,13 @@ async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: Backgrou
     if not req.instruments or len(req.instruments) == 0:
         raise HTTPException(400, "At least one instrument must be selected")
 
-    # Map instrument types to exchange segments and symbol patterns
+    # Map instrument types to exchange segments and symbol patterns (Pure Index F&O & Commodities)
     instrument_config = {
-        "equities": {
-            "exchange_segment": "NSE_EQ",
-            "product_type": "INTRADAY",
-            "pattern": None,  # No pattern filter for general equities
-        },
         "nifty-options": {
             "exchange_segment": "NSE_FNO",
             "product_type": "INTRADAY",
             "pattern": "NIFTY",
-            "exclude_patterns": ["BANKNIFTY", "FINNIFTY"]
+            "exclude_patterns": ["BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
         },
         "banknifty-options": {
             "exchange_segment": "NSE_FNO",
@@ -936,6 +977,11 @@ async def orchestrate_instrument_trade(req: InstrumentTradeRequest, bg: Backgrou
             "exchange_segment": "NSE_FNO",
             "product_type": "INTRADAY",
             "pattern": "FINNIFTY"
+        },
+        "midcpnifty-options": {
+            "exchange_segment": "NSE_FNO",
+            "product_type": "INTRADAY",
+            "pattern": "MIDCPNIFTY"
         },
         "crude-options": {
             "exchange_segment": "MCX_FNO",

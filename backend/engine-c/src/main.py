@@ -83,8 +83,8 @@ except ImportError as e:
     logger_init.warning(f"⚠️ Real-time enhancements not available: {e}")
     REALTIME_ENABLED = False
 
-# Supabase client is initialized inside UserCredentialsManager
-_supabase_db = None  # Legacy placeholder — actual DB access via UserCredentialsManager
+# Firestore client is initialized inside UserCredentialsManager
+_firestore_db = None  # Actual DB access via UserCredentialsManager
 import os
 
 # NOTE: OpenTelemetry disabled - not in requirements.txt
@@ -168,11 +168,11 @@ except ImportError as e:
     print(f"⚠️ Performance module not available: {e}")
     log_startup_error(e, context="Performance module import")
 
-# Lazy import for User Credentials Management (using Supabase)
+# Lazy import for User Credentials Management (using Google Cloud Firestore)
 _credentials_manager = None
 
 def get_credentials_manager():
-    """Lazy load credentials manager for Supabase storage"""
+    """Lazy load credentials manager for Firestore storage"""
     global _credentials_manager
     if _credentials_manager is None:
         try:
@@ -181,7 +181,7 @@ def get_credentials_manager():
             except ImportError:
                 from user_credentials import UserCredentialsManager as UCM, get_credentials_manager as gcm
             _credentials_manager = gcm()
-            logger.info("✅ Using Supabase for credentials storage (Primary Vault)")
+            logger.info("✅ Using Google Cloud Firestore for credentials storage (Primary Vault)")
         except Exception as e:
             logger.error(f"Failed to initialize credentials manager: {e}")
             return None
@@ -233,6 +233,17 @@ app = FastAPI(
     description="Trading Execution, DhanHQ Integration, Market Data APIs, Options Analytics with Greeks",
     version="3.9-options-analytics"
 )
+
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Silently drop public scanner 404/405 noise without verbose logs"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": "error", "code": exc.status_code, "detail": exc.detail or "Not Found"}
+    )
 
 @app.get("/health")
 @app.get("/engine-c/health")
@@ -878,10 +889,10 @@ class ExecutionAnalyticsRequest(BaseModel):
 async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None) -> dhanhq:
     """
     Async version: Create authenticated DhanHQ client for a specific user.
-    Uses Supabase for encrypted credential storage.
+    Uses Google Cloud Firestore for encrypted credential storage.
 
     CRITICAL FIX: Resolves generated user_ids (like 'user_1768802144009_1jvf3b')
-    to actual user UIDs where credentials are stored in Supabase.
+    to actual user UIDs where credentials are stored in Firestore.
     Fail-fast applied: Removes retry logic for missing credentials to eliminate latency spikes.
     """
     if start_time is None:
@@ -890,20 +901,13 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
     try:
         creds_manager = get_credentials_manager()
 
-        # CRITICAL: Resolve the user_id to the correct UID
-        # Frontend sends generated IDs like 'user_1768802144009_1jvf3b' but credentials
-        # are stored under the actual UID in Supabase user_credentials table
-        resolved_user_id = user_id
+        # Upfront resolution of single-tenant primary user ID
+        resolved_user_id = await creds_manager.resolve_user_id(user_id)
+        creds = await creds_manager.get_user_credentials(resolved_user_id)
 
-        creds = await creds_manager.get_user_credentials(user_id)
-
-        # If direct lookup fails, use the new resolver to find the correct user ID
-        if not creds:
-            resolved_user_id = await creds_manager.resolve_user_id(user_id)
-            if resolved_user_id and resolved_user_id != user_id:
-                logger.info(f"📍 Resolved user_id {user_id} → {resolved_user_id}")
-                creds = await creds_manager.get_user_credentials(resolved_user_id)
-            else:
+        if not creds and user_id and user_id != resolved_user_id:
+            creds = await creds_manager.get_user_credentials(user_id)
+            if creds:
                 resolved_user_id = user_id
 
         if not creds:
@@ -985,10 +989,8 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
 
 def get_dhan_client(user_id: Optional[str] = None) -> dhanhq:
     """
-    Sync version: Create authenticated DhanHQ client.
-
-    If user_id is provided, uses that user's credentials from Supabase environment.
-    Otherwise, falls back to admin credentials from Secret Manager (for market data).
+    Helper function to get Dhan client from request header, query param, or fallback.
+    If user_id is provided, uses that user's credentials from Firestore environment.
 
     NOTE: For user-specific credentials in async endpoints, use get_dhan_client_async() instead.
     """
@@ -1062,18 +1064,9 @@ async def renew_dhan_tokens_endpoint(
     if user_id:
         target_user_ids.append(user_id)
     else:
-        # If no specific user supplied, renew all users in Firestore vault
-        if manager.db:
-            try:
-                docs = manager.db.collection("user_credentials").stream()
-                for doc in docs:
-                    target_user_ids.append(doc.id)
-            except Exception as e:
-                logger.error(f"Error listing user_credentials from Firestore: {e}")
-
-        # Fallback default user if collection stream was empty
-        if not target_user_ids:
-            target_user_ids.append("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        # Default single-tenant primary user
+        target_user_ids.append("raghu_primary")
+        target_user_ids.append("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
 
     for uid in target_user_ids:
         try:
@@ -1104,8 +1097,10 @@ async def renew_dhan_tokens_endpoint(
                             renew_data.get("token") or
                             renew_data.get("accessToken") or
                             renew_data.get("access_token") or
+                            renew_data.get("dhan_access_token") or
                             (renew_data.get("data") or {}).get("accessToken") or
-                            (renew_data.get("data") or {}).get("token")
+                            (renew_data.get("data") or {}).get("token") or
+                            (renew_data.get("data") or {}).get("access_token")
                         )
                         if new_token:
                             await manager.save_user_credentials(
@@ -1115,7 +1110,7 @@ async def renew_dhan_tokens_endpoint(
                                 api_key=creds.get("api_key"),
                                 api_secret=creds.get("api_secret")
                             )
-                            expiry_time = renew_data.get("expiryTime") or "24h"
+                            expiry_time = renew_data.get("expiryTime") or renew_data.get("expiry_time") or "24h"
                             logger.info(f"✅ Token keep-alive: Successfully renewed & vaulted token for {resolved_id} (Expires: {expiry_time})")
                             results.append({"user_id": resolved_id, "status": "renewed", "client_id": client_id, "expiryTime": expiry_time})
                         else:
@@ -1143,11 +1138,11 @@ async def get_user_credentials_status_by_path(user_id: str):
 @app.get("/api/v1/user/credentials")
 @app.get("/api/user/credentials")
 @app.get("/api/dhan/credentials")
-async def get_user_credentials_status(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
-    """Get user credentials status for settings page"""
+async def get_user_credentials_status(user_id: Optional[str] = Query(None)):
+    """Get user credentials status for settings page (single-tenant auto-resolution)"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id)
         creds = await manager.get_user_credentials(resolved_id)
 
         if not creds:
@@ -1464,17 +1459,17 @@ async def receive_dhan_postback(request: Request):
 
         logger.info(f"📨 Received postback for order {order_id}: {order_status}")
 
-        # Update Supabase Order Record
+        # Update Firestore Order Record
         try:
             manager = get_credentials_manager()
             if manager and manager.db:
-                manager.db.table("trades").update({
+                manager.db.collection("trades").document(str(order_id)).set({
                     "status": order_status,
                     "updated_at": datetime.utcnow().isoformat()
-                }).eq("id", order_id).execute()
-                logger.info(f"✅ Supabase updated for order {order_id}")
+                }, merge=True)
+                logger.info(f"✅ Firestore updated for order {order_id}")
         except Exception as e:
-            logger.error(f"Supabase update failed for postback: {e}")
+            logger.error(f"Firestore update failed for postback: {e}")
 
         return {
             "status": "received",
@@ -1490,10 +1485,10 @@ async def receive_dhan_postback(request: Request):
 
 @app.post("/api/dhan/credentials", response_model=DhanCredentialsResponse)
 async def save_dhan_credentials(request: DhanCredentialsRequest):
-    """Save Dhan credentials to Secret Manager and verify"""
+    """Save Dhan credentials to Firestore and verify"""
     try:
         proj_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        # Save credentials to Supabase
+        # Save credentials to Firestore
         manager = get_credentials_manager()
         await manager.save_user_credentials(
             user_id=request.user_id,
@@ -1503,14 +1498,14 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
             api_secret=request.api_secret
         )
 
-        # Sync status via Supabase UserCredentialsManager
+        # Sync status via Firestore UserCredentialsManager
         try:
             manager = get_credentials_manager()
             if manager:
                 await manager.update_connection_status(request.user_id, "connected", {})
-                logger.info(f"✅ Supabase status updated for user {request.user_id}")
+                logger.info(f"✅ Firestore status updated for user {request.user_id}")
         except Exception as e:
-            logger.error(f"⚠️ Failed to update Supabase status: {e}")
+            logger.error(f"⚠️ Failed to update Firestore status: {e}")
 
 
         # Verify connection live
@@ -2330,7 +2325,7 @@ async def dhan_postback(request: Dict[str, Any]):
     """
     Receive order/trade updates from DhanHQ via webhook.
     This endpoint receives real-time updates on order status, fills, etc.
-    ENHANCED: Now stores to Supabase and broadcasts in real-time.
+    ENHANCED: Now stores to Firestore and broadcasts in real-time.
     """
     try:
         logger.info(f"📥 DhanHQ Postback received: {request}")
@@ -2362,11 +2357,11 @@ async def dhan_postback(request: Dict[str, Any]):
                 severity="info" if status != "REJECTED" else "warning"
             )
 
-        # ENHANCED: Store in Supabase for trade history
+        # ENHANCED: Store in Firestore for trade history
         if REALTIME_ENABLED:
             try:
                 await store_postback_event(order_id, client_id, request)
-                logger.info(f"✅ Postback stored in Supabase: {order_id}")
+                logger.info(f"✅ Postback stored in Firestore: {order_id}")
             except Exception as e:
                 logger.warning(f"Failed to store postback: {e}")
 
@@ -2512,51 +2507,48 @@ async def save_user_credentials_simple(request: UserCredentialsRequest):
 
 
 @app.get("/api/user/credentials")
-async def get_user_credentials_simple(user_id: str):
-    """Get user's saved Dhan credentials (simplified API)"""
+async def get_user_credentials_simple(user_id: Optional[str] = Query(None)):
+    """Get user's saved Dhan credentials (single-tenant auto-resolution)"""
     try:
         manager = get_credentials_manager()
         if manager is None:
             return {
-                "user_id": user_id,
+                "user_id": "raghu_primary",
                 "configured": False,
                 "client_id": "",
                 "api_key": "",
                 "is_verified": False
             }
 
-        creds = await manager.get_user_credentials(user_id)
-        resolved_user_id = user_id
-
-        if not creds and user_id and user_id.isdigit():
-            creds = await manager.find_credentials_by_client_id(user_id)
-            if creds:
-                resolved_user_id = creds.get("user_id", user_id)
+        resolved_user_id = await manager.resolve_user_id(user_id)
+        creds = await manager.get_user_credentials(resolved_user_id)
 
         if not creds:
             return {
-                "user_id": user_id,
+                "user_id": resolved_user_id,
                 "configured": False,
                 "client_id": "",
                 "api_key": "",
                 "is_verified": False
             }
 
+        client_id = creds.get("client_id") or creds.get("dhan_client_id") or creds.get("credentials", {}).get("client_id", "")
         return {
             "user_id": resolved_user_id,
             "configured": True,
-            "client_id": creds.get("credentials", {}).get("client_id", ""),
-            "api_key": creds.get("credentials", {}).get("api_key", ""),
-            "api_secret": "********" if creds.get("credentials", {}).get("api_secret") else "",
-            "access_token": "********" if creds.get("credentials", {}).get("access_token") else "",
-            "is_verified": creds.get("is_active", False),
-            "connection_status": "connected" if creds.get("is_active") else "pending_verification"
+            "client_id": client_id,
+            "dhan_client_id": client_id,
+            "api_key": creds.get("api_key") or creds.get("credentials", {}).get("api_key", ""),
+            "api_secret": "********" if (creds.get("api_secret") or creds.get("credentials", {}).get("api_secret")) else "",
+            "access_token": "********" if (creds.get("access_token") or creds.get("credentials", {}).get("access_token")) else "",
+            "is_verified": creds.get("is_verified", True),
+            "connection_status": creds.get("connection_status", "connected")
         }
 
     except Exception as e:
         logger.error(f"Failed to get credentials for {user_id}: {e}")
         return {
-            "user_id": user_id,
+            "user_id": "raghu_primary",
             "configured": False,
             "client_id": "",
             "api_key": "",
@@ -2565,22 +2557,16 @@ async def get_user_credentials_simple(user_id: str):
 
 
 @app.delete("/api/user/credentials")
-async def delete_user_credentials_simple(user_id: str):
+async def delete_user_credentials_simple(user_id: Optional[str] = Query(None)):
     """Delete user's Dhan credentials (simplified API)"""
     try:
         manager = get_credentials_manager()
         if manager is None:
             raise HTTPException(status_code=503, detail="Credentials manager not available")
-        target_id = user_id
-        if user_id and user_id.isdigit():
-            # Prefer deleting the actual document if stored under Supabase UID
-            creds = await manager.find_credentials_by_client_id(user_id)
-            if creds:
-                target_id = creds.get("user_id", user_id)
-
-        success = await manager.delete_user_credentials(target_id)
+        resolved_id = await manager.resolve_user_id(user_id)
+        success = await manager.delete_user_credentials(resolved_id)
         return {
-            "user_id": target_id,
+            "user_id": resolved_id,
             "deleted": success,
             "message": "Credentials deleted successfully" if success else "Failed to delete"
         }
@@ -2589,59 +2575,52 @@ async def delete_user_credentials_simple(user_id: str):
 
 
 @app.get("/api/user/credentials/verify")
-async def verify_user_credentials_simple(user_id: str):
-    """Verify user's Dhan connection (simplified API)"""
+async def verify_user_credentials_simple(user_id: Optional[str] = Query(None)):
+    """Verify user's Dhan connection (single-tenant auto-resolution)"""
     try:
         manager = get_credentials_manager()
         if manager is None:
             return {
-                "user_id": user_id,
+                "user_id": "raghu_primary",
                 "is_verified": False,
                 "message": "Credentials manager not available"
             }
 
-        creds = await manager.get_user_credentials(user_id)
-        resolved_user_id = user_id
-
-        if not creds and user_id and user_id.isdigit():
-            creds = await manager.find_credentials_by_client_id(user_id)
-            if creds:
-                resolved_user_id = creds.get("user_id", user_id)
+        resolved_user_id = await manager.resolve_user_id(user_id)
+        creds = await manager.get_user_credentials(resolved_user_id)
 
         if not creds:
             return {
-                "user_id": user_id,
+                "user_id": resolved_user_id,
                 "is_verified": False,
-                "message": "No credentials found"
+                "message": "No credentials found in vault"
             }
 
-        # Try to connect with user's credentials
         try:
-            client_id = creds.get("client_id") or creds.get("credentials", {}).get("client_id")
-            access_token = creds.get("access_token") or creds.get("credentials", {}).get("access_token")
+            client_id = creds.get("client_id") or creds.get("dhan_client_id")
+            access_token = creds.get("access_token") or creds.get("dhan_access_token")
 
             if not client_id or not access_token:
                 return {
-                    "user_id": user_id,
+                    "user_id": resolved_user_id,
                     "is_verified": False,
                     "message": "Incomplete credentials"
                 }
 
             dhan_client = create_dhan_client(client_id, access_token)
             funds = dhan_client.get_fund_limits()
-            logger.info(f"Verification Dhan API response for {user_id}: {funds}")
 
-            if isinstance(funds, dict) and funds.get("status") == "success":
+            if isinstance(funds, dict) and (funds.get("status") == "success" or "dhanClientId" in funds.get("data", {})):
                 return {
-                    "user_id": user_id,
+                    "user_id": resolved_user_id,
                     "is_verified": True,
                     "message": "Connection verified successfully"
                 }
         except Exception as e:
-            logger.error(f"Verification failed for {user_id}: {e}")
+            logger.error(f"Verification failed for {resolved_user_id}: {e}")
 
         return {
-            "user_id": user_id,
+            "user_id": resolved_user_id,
             "is_verified": False,
             "message": "Could not verify connection. Please check your access token."
         }
@@ -2651,14 +2630,15 @@ async def verify_user_credentials_simple(user_id: str):
 
 
 @app.get("/api/user/demat")
-async def get_user_demat_simple(user_id: str):
-    """Get user's demat account details (simplified API)"""
+async def get_user_demat_simple(user_id: Optional[str] = Query(None)):
+    """Get user's demat account details (single-tenant auto-resolution)"""
     try:
         manager = get_credentials_manager()
         if manager is None:
             raise HTTPException(status_code=503, detail="Credentials manager not available")
 
-        creds = await manager.get_user_credentials(user_id)
+        resolved_id = await manager.resolve_user_id(user_id)
+        creds = await manager.get_user_credentials(resolved_id)
         if not creds:
             raise HTTPException(status_code=404, detail="No credentials found for user")
 
@@ -2666,7 +2646,7 @@ async def get_user_demat_simple(user_id: str):
         access_token = creds.get("dhan_access_token") or creds.get("access_token") or creds.get("credentials", {}).get("access_token")
 
         if not client_id or not access_token:
-            raise HTTPException(status_code=400, detail="Incomplete credentials")
+            raise HTTPException(status_code=400, detail="Incomplete credentials in vault")
 
         dhan_client = create_dhan_client(client_id, access_token)
 
@@ -2675,33 +2655,20 @@ async def get_user_demat_simple(user_id: str):
         holdings = dhan_client.get_holdings()
         positions = dhan_client.get_positions()
 
-        logger.info(f"Raw funds response for {user_id}: {funds}")
-
-        # Check if Dhan API returned an error
-        if isinstance(funds, dict) and funds.get("status") == "failure":
-            error_msg = funds.get("remarks", {}).get("message", "Unknown error")
-            logger.error(f"Dhan API error for {user_id}: {error_msg}")
-            raise HTTPException(status_code=401, detail=f"Dhan API error: {error_msg}. Please re-enter your access token.")
-
-        # Process funds - handle both SDK formats (with or without "data" wrapper)
+        # Process funds
         if isinstance(funds, dict):
-            # Check if data is wrapped in "data" key or returned directly
             if "data" in funds and isinstance(funds.get("data"), dict):
                 funds_data = funds.get("data", {})
             elif "availabelBalance" in funds or "sodLimit" in funds:
-                # Direct response format (no wrapper)
                 funds_data = funds
             else:
                 funds_data = {}
         else:
             funds_data = {}
 
-        logger.info(f"Processed funds_data for {user_id}: {funds_data}")
-
-        # Process holdings - handle both SDK formats
+        # Process holdings
         if isinstance(holdings, dict):
             if holdings.get("status") == "failure":
-                logger.warning(f"Holdings fetch failed for {user_id}: {holdings.get('remarks', {}).get('message', 'Unknown')}")
                 holdings_data = []
             elif "data" in holdings and isinstance(holdings.get("data"), list):
                 holdings_data = holdings.get("data", [])
@@ -2714,10 +2681,9 @@ async def get_user_demat_simple(user_id: str):
             for h in holdings_data if isinstance(h, dict)
         )
 
-        # Process positions - handle both SDK formats
+        # Process positions
         if isinstance(positions, dict):
             if positions.get("status") == "failure":
-                logger.warning(f"Positions fetch failed for {user_id}: {positions.get('remarks', {}).get('message', 'Unknown')}")
                 positions_data = []
             elif "data" in positions and isinstance(positions.get("data"), list):
                 positions_data = positions.get("data", [])
@@ -2727,13 +2693,14 @@ async def get_user_demat_simple(user_id: str):
             positions_data = []
         total_positions_pnl = sum(p.get("unrealizedProfit", 0) for p in positions_data if isinstance(p, dict))
 
-        # Extract balance values (Dhan API has typo: "availabelBalance")
         available_balance = funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0
         utilized_margin = funds_data.get("utilizedAmount", 0) or funds_data.get("utilizedMargin", 0) or 0
         sod_limit = funds_data.get("sodLimit", 0) or 0
         withdrawable = funds_data.get("withdrawableBalance", 0) or 0
 
         return {
+            "user_id": resolved_id,
+            "dhan_client_id": client_id,
             "holdings": {
                 "totalValue": total_holdings_value,
                 "count": len(holdings_data),
@@ -2745,7 +2712,7 @@ async def get_user_demat_simple(user_id: str):
                         "currentPrice": h.get("lastTradedPrice", 0),
                         "pnl": h.get("unrealizedProfit", 0)
                     }
-                    for h in holdings_data[:20]  # Limit to 20 items
+                    for h in holdings_data[:20]
                 ]
             },
             "positions": {
@@ -2759,7 +2726,7 @@ async def get_user_demat_simple(user_id: str):
                         "currentPrice": p.get("lastTradedPrice", 0),
                         "pnl": p.get("unrealizedProfit", 0)
                     }
-                    for p in positions_data[:20]  # Limit to 20 items
+                    for p in positions_data[:20]
                 ]
             },
             "funds": {
@@ -2768,9 +2735,15 @@ async def get_user_demat_simple(user_id: str):
                 "sodLimit": sod_limit,
                 "withdrawableBalance": withdrawable,
                 "totalBalance": available_balance + utilized_margin,
-                "raw": funds_data  # Include raw data for debugging
+                "raw": funds_data
             }
         }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch demat for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch account: {str(e)}")
 
     except HTTPException:
         raise

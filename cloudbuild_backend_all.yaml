@@ -1,0 +1,127 @@
+steps:
+  # --------------------------------------------------
+  # Engine A: Build & Push
+  # --------------------------------------------------
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-a"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
+        "-f",
+        "backend/engine-a/Dockerfile",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-a"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
+      ]
+    waitFor: ["build-engine-a"]
+
+  # --------------------------------------------------
+  # Engine B: Build & Push
+  # --------------------------------------------------
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-b"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "-f",
+        "backend/engine-b/Dockerfile",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-b"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+      ]
+    waitFor: ["build-engine-b"]
+
+  # --------------------------------------------------
+  # Engine C: Build & Push
+  # --------------------------------------------------
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-c"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+        "-f",
+        "backend/engine-c/Dockerfile",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-c"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+      ]
+    waitFor: ["build-engine-c"]
+
+  # --------------------------------------------------
+  # Engine A: Deploy to Cloud Run
+  # --------------------------------------------------
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-engine-a"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "engine-a",
+        "--image",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
+        "--set-env-vars",
+        "ENGINE_B_URL=http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "--region",
+        "asia-south1",
+        "--memory",
+        "512Mi",
+        "--cpu",
+        "1",
+        "--allow-unauthenticated",
+      ]
+    waitFor: ["push-engine-a"]
+
+  # --------------------------------------------------
+  # Engine C: Deploy to Cloud Run
+  # --------------------------------------------------
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-engine-c"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "engine-c",
+        "--image",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest",
+        "--set-env-vars",
+        "ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,ENGINE_B_URL=http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "--region",
+        "asia-south1",
+        "--memory",
+        "512Mi",
+        "--cpu",
+        "1",
+        "--allow-unauthenticated",
+      ]
+    waitFor: ["push-engine-c"]
+
+images:
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest"
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-c:latest"
+timeout: "1800s"
