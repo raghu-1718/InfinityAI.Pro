@@ -410,7 +410,7 @@ app.add_middleware(
 )
 
 # API Routers
-from api.routes import market_analysis
+from src.api.routes import market_analysis
 app.include_router(market_analysis.router)
 
 
