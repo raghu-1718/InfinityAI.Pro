@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 # Initialize Firebase (using ADC or default project)
-project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
+project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 if not firebase_admin._apps:
     firebase_admin.initialize_app(options={'projectId': project_id})
 

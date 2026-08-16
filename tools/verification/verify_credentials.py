@@ -2,7 +2,7 @@
 """
 DHAN CREDENTIAL VERIFICATION SCRIPT
 Comprehensive verification of Dhan credentials in Firebase backend
-Project: galvanic-pulsar-482815-h0
+Project: project-841b7f97-5ee3-4fbe-920
 """
 
 import sys

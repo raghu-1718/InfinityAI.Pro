@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-PROJECT_ID = "galvanic-pulsar-482815-h0"
+PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
 REGION = "us-central1"
 FUNCTION_NAME = "market-data-ingestion"
 SCHEDULER_NAME = "market-data-publisher"
@@ -34,7 +34,7 @@ MONITORING_DURATION = 24 * 60 * 60  # 24 hours in seconds
 CHECK_INTERVAL = 5 * 60  # Check every 5 minutes in seconds
 
 # Test URLs
-FUNCTION_URL = "https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/market-data-ingestion"
+FUNCTION_URL = "https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/market-data-ingestion"
 ENGINE_C_HEALTH = "https://engine-c-3acobgd3qa-uc.a.run.app/api/health"
 ENGINE_C_STATUS = "https://engine-c-3acobgd3qa-uc.a.run.app/api/system/status"
 

@@ -1,9 +1,9 @@
 """
 Real-Time Enhancements Module for Engine-C
-Provides Server-Sent Events (SSE), NDJSON streaming, and Supabase event storage.
+Provides Server-Sent Events (SSE), NDJSON streaming, and Google Cloud Firestore event storage.
 
 Features:
-- Store postback webhooks to Supabase for audit trail
+- Store postback webhooks to Firestore for audit trail
 - Real-time position updates via SSE/NDJSON
 - Event broadcasting to all subscribers
 - Per-user event queues to prevent cross-user event pollution
@@ -32,13 +32,13 @@ def initialize_realtime(db_client=None):
 
 async def store_postback_event(order_id: str, client_id: str, event_data: Dict[str, Any]) -> bool:
     """
-    Store postback webhook data to Supabase logs table.
+    Store postback webhook data to Google Cloud Firestore logs collection.
     """
     try:
         from src.user_credentials import get_credentials_manager
         manager = get_credentials_manager()
         if not manager or not manager.db:
-            logger.warning("⚠️ Supabase not initialized, skipping postback storage")
+            logger.warning("⚠️ Firestore not initialized, skipping postback storage")
             return False
 
         trade_event_doc = {
@@ -56,25 +56,24 @@ async def store_postback_event(order_id: str, client_id: str, event_data: Dict[s
             "processor_version": "1.0"
         }
 
-        # For now, just logging to Supabase trades or logs if schema supports it
-        # You may need a specific 'trade_events' table in Supabase
-        manager.db.table("logs").insert({
+        manager.db.collection("logs").document().set({
             "level": "INFO",
             "message": f"Postback received for {order_id}",
-            "metadata": trade_event_doc
-        }).execute()
+            "metadata": trade_event_doc,
+            "timestamp": datetime.utcnow().isoformat()
+        })
 
-        logger.info(f"✅ Postback stored in Supabase: {order_id}")
+        logger.info(f"✅ Postback stored in Firestore: {order_id}")
         return True
 
     except Exception as e:
-        logger.error(f"❌ Failed to store postback in Supabase: {e}")
+        logger.error(f"❌ Failed to store postback in Firestore: {e}")
         return False
 
 
 async def update_portfolio_position(client_id: str, symbol: str, event_data: Dict[str, Any]):
     """
-    Update portfolio positions based on order status via Supabase
+    Update portfolio positions based on order status via Google Cloud Firestore
     """
     try:
         status = event_data.get("orderStatus")
@@ -87,16 +86,17 @@ async def update_portfolio_position(client_id: str, symbol: str, event_data: Dic
             if not manager or not manager.db:
                 return False
 
-            manager.db.table("portfolios").upsert({
+            doc_id = f"{client_id}_{symbol}"
+            manager.db.collection("portfolios").document(doc_id).set({
                 "user_id": client_id,
                 "symbol": symbol,
                 "quantity": filled_qty,
                 "average_price": price,
                 "status": "open",
                 "updated_at": datetime.utcnow().isoformat()
-            }).execute()
+            }, merge=True)
 
-            logger.info(f"✅ Portfolio updated: {symbol} position for {client_id}")
+            logger.info(f"✅ Portfolio updated in Firestore: {symbol} position for {client_id}")
             return True
 
     except Exception as e:
@@ -254,7 +254,7 @@ async def ndjson_event_generator(user_id: str) -> AsyncGenerator[str, None]:
 if __name__ == "__main__":
     print("✅ Real-time enhancements module loaded")
     print("\nFeatures:")
-    print("1. Supabase event storage for postback webhooks")
+    print("1. Google Cloud Firestore event storage for postback webhooks")
     print("2. SSE (Server-Sent Events) bridge for real-time data")
     print("3. NDJSON streaming for alternative clients")
     print("4. Event broadcasting to all subscribers")

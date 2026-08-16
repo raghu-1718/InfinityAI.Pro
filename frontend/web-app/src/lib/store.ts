@@ -81,16 +81,13 @@ export interface RiskMetrics {
   annualized_volatility: number;
 }
 
-// Trading instrument types
+// Trading instrument types (NSE/BSE Index Options - 2026 Mandate)
 export type TradingInstrument =
-  | "equities"
   | "nifty-options"
   | "banknifty-options"
   | "finnifty-options"
   | "sensex-options"
-  | "crude-options"
-  | "gold-options"
-  | "silver-options";
+  | "midcpnifty-options";
 
 export interface TradingConfig {
   selectedInstruments: TradingInstrument[];
@@ -247,7 +244,7 @@ export const useAppStore = create<AppState>()(
 
         // Trading Configuration (with defaults)
         tradingConfig: {
-          selectedInstruments: ["equities"] as TradingInstrument[],
+          selectedInstruments: ["nifty-options", "banknifty-options"] as TradingInstrument[],
           riskLevel: "moderate",
           stopLossPercent: 2,
           takeProfitPercent: 4,

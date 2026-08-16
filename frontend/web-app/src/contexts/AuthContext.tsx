@@ -14,8 +14,7 @@ import {
   logOut,
   getUserProfile,
 } from "@/lib/auth";
-import type { UserProfile } from "@/lib/supabase";
-import { supabase } from "@/lib/supabase";
+import type { UserProfile } from "@/lib/firebase";
 import { useAppStore } from "@/lib/store";
 import { engineC } from "@/lib/api";
 
@@ -43,12 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (supabaseUser) => {
-      setUser(supabaseUser);
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      setUser(firebaseUser);
 
-      if (supabaseUser) {
-        // Fetch user profile from Supabase
-        const profile = await getUserProfile(supabaseUser.uid);
+      if (firebaseUser) {
+        // Fetch user profile
+        const profile = await getUserProfile(firebaseUser.uid);
         setUserProfile(profile);
 
         // Sync with Zustand store
@@ -63,27 +62,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // Poll for credential changes via Supabase instead of Firestore onSnapshot
+        // Poll for credential changes via Engine-C
         const checkCredentials = async () => {
           try {
-            const { data } = await supabase
-              .from("user_credentials")
-              .select("broker_client_id")
-              .eq("user_uid", supabaseUser.uid)
-              .maybeSingle();
-
-            const isConnected = !!data?.broker_client_id;
+            const data = await engineC.getCredentials(firebaseUser.uid);
+            const isConnected = Boolean(data?.configured || data?.client_id);
             setDhanConnected(isConnected);
             setStoreUserProfile({
-              userId: supabaseUser.uid,
-              clientId: data?.broker_client_id || supabaseUser.uid,
-              name: (supabaseUser as any).displayName || (supabaseUser as any).email?.split("@")[0] || "User",
-              email: (supabaseUser as any).email || "",
+              userId: firebaseUser.uid,
+              clientId: data?.client_id || firebaseUser.uid,
+              name: (firebaseUser as any).displayName || (firebaseUser as any).email?.split("@")[0] || "User",
+              email: (firebaseUser as any).email || "",
               isConnected,
               isVerified: isConnected,
             });
           } catch (error) {
-            console.warn("Error checking credentials:", error);
+            // Safe non-blocking fallback
           }
         };
 
@@ -93,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Cleanup interval on unmount or user change
         const cleanup = () => clearInterval(credentialInterval);
-        // Store cleanup for return
         (window as any).__authCredentialCleanup = cleanup;
       } else {
         setUserProfile(null);

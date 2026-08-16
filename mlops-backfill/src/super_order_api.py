@@ -99,21 +99,20 @@ async def place_super_order(req: SuperOrderRequest):
         response = dhan.place_super_order(data=dhan_legs)
         
         if response.get('status') == 'success':
-            # Store in Supabase
+            # Store in Firestore
             manager = get_credentials_manager()
             if not manager or not manager.db:
-                raise Exception("Supabase not initialized")
-            
+                raise Exception("Firestore DB not initialized")
+
             order_doc = {
-                'id': response.get('order_id', str(datetime.utcnow().timestamp())),
+                'id': str(response.get('order_id', datetime.utcnow().timestamp())),
                 'user_id': req.user_id,
                 'strategy': req.strategy_name,
                 'status': 'PENDING',
                 'created_at': datetime.utcnow().isoformat(),
             }
-            
-            # Using trades table for super orders
-            manager.db.table('trades').insert(order_doc).execute()
+
+            manager.db.collection('trades').document(order_doc['id']).set(order_doc)
             
             return {
                 "status": "success",
@@ -187,15 +186,15 @@ async def get_super_order_status(order_id: str, user_id: str):
         from src.user_credentials import get_credentials_manager
         manager = get_credentials_manager()
         if not manager or not manager.db:
-            raise Exception("Supabase not initialized")
-            
-        response = manager.db.table('trades').select('*').eq('id', order_id).execute()
-        
-        if not response.data or len(response.data) == 0:
+            raise Exception("Firestore DB not initialized")
+
+        doc = manager.db.collection('trades').document(order_id).get()
+
+        if not doc.exists:
             raise HTTPException(status_code=404, detail="Super Order not found")
-        
-        order_data = response.data[0]
-        
+
+        order_data = doc.to_dict()
+
         # Verify user owns this order
         if order_data.get('user_id') != user_id:
             raise HTTPException(status_code=403, detail="Unauthorized")

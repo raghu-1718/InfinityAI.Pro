@@ -7,7 +7,7 @@ from google.cloud import firestore as google_firestore
 if not firebase_admin._apps:
     cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(cred, {
-        "projectId": "galvanic-pulsar-482815-h0",
+        "projectId": "project-841b7f97-5ee3-4fbe-920",
     })
 
 db = google_firestore.Client()

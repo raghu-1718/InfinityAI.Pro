@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 dhan_v2_router = APIRouter(prefix="/api/dhan/v2", tags=["DhanHQ v2 Complete API"])
 
 
-async def get_user_dhan_client(user_id: str):
-    """Helper to retrieve credentials and initialize DhanHQ client"""
+async def get_user_dhan_client(user_id: Optional[str] = None):
+    """Helper to retrieve credentials and initialize DhanHQ client (single-tenant auto-resolution)"""
     manager = get_credentials_manager()
     resolved_id = await manager.resolve_user_id(user_id)
     creds = await manager.get_user_credentials(resolved_id)
     if not creds or not creds.get("client_id") or not creds.get("access_token"):
-        raise HTTPException(status_code=401, detail="DhanHQ credentials not configured")
+        raise HTTPException(status_code=401, detail="DhanHQ credentials not configured in vault")
     client_id = creds.get("client_id") or creds.get("dhan_client_id")
     access_token = creds.get("access_token") or creds.get("dhan_access_token")
     return create_dhan_client(client_id, access_token), resolved_id
@@ -30,8 +30,8 @@ async def get_user_dhan_client(user_id: str):
 
 # --- Request Models ---
 class ForeverOrderRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
-    dhan_client_id: Optional[str] = ""
+    user_id: Optional[str] = "raghu_primary"
+    dhan_client_id: Optional[str] = "1101302170"
     order_flag: str = "SINGLE"  # SINGLE or OCO
     transaction_type: str = "BUY"  # BUY or SELL
     exchange_segment: str = "NSE_EQ"
@@ -49,7 +49,7 @@ class ForeverOrderRequest(BaseModel):
 
 
 class ConvertPositionRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
+    user_id: Optional[str] = "raghu_primary"
     from_product_type: str  # INTRADAY, CNC, MARGIN
     to_product_type: str
     exchange_segment: str  # NSE_EQ, NSE_FNO, etc.
@@ -59,8 +59,8 @@ class ConvertPositionRequest(BaseModel):
 
 
 class MarginCalculatorRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
-    dhan_client_id: Optional[str] = ""
+    user_id: Optional[str] = "raghu_primary"
+    dhan_client_id: Optional[str] = "1101302170"
     exchange_segment: str
     transaction_type: str
     quantity: int
@@ -71,7 +71,7 @@ class MarginCalculatorRequest(BaseModel):
 
 
 class BacktestRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
+    user_id: Optional[str] = "raghu_primary"
     security_id: str = "13"
     exchange_segment: str = "IDX_I"
     instrument_type: str = "INDEX"

@@ -5,7 +5,7 @@ Structured Logging Module for InfinityAI.Pro
 Provides production-grade structured logging with trace ID propagation,
 context preservation, and Cloud Logging integration.
 
-Project: galvanic-pulsar-482815-h0
+Project: project-841b7f97-5ee3-4fbe-920
 Usage:
     from shared.structured_logging import get_logger, set_trace_context
 
@@ -31,7 +31,7 @@ service_name_var: ContextVar[Optional[str]] = ContextVar("service_name", default
 
 # Global service name (set on module initialization)
 _SERVICE_NAME = os.getenv("SERVICE_NAME", "infinityai-service")
-_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
+_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
 

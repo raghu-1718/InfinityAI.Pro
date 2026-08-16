@@ -35,7 +35,7 @@ def get_allowed_origins() -> List[str]:
     """
 
     environment = os.getenv("ENVIRONMENT", "development").lower()
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "galvanic-pulsar-482815-h0")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 
     # Base production origins (ALWAYS included)
     production_origins = [

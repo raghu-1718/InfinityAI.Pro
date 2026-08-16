@@ -1,7 +1,0 @@
-functions-framework==3.*
-google-cloud-firestore==2.*
-google-cloud-storage==2.*
-google-cloud-pubsub==2.*
-pandas==2.*
-numpy==1.*
-yfinance==0.2.*

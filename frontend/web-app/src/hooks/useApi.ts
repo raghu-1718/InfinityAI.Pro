@@ -311,88 +311,46 @@ export function useUserAccount() {
   return query;
 }
 
-// Funds Hook - Now uses user's connected account
+// Funds Hook - Single-Tenant Real-Time Demat Telemetry
 export function useFunds() {
-  const { userProfile, setFunds, setUserProfile } = useAppStore();
+  const { setFunds } = useAppStore();
 
   return useQuery({
-    queryKey: ["funds", userProfile?.userId || getStoredUserId()],
+    queryKey: ["funds", "raghu_primary"],
     queryFn: async () => {
-      // Determine the user ID to use
-      const userId = userProfile?.userId || getStoredUserId();
-
-      // If user has connected their account, fetch their funds directly
-      if (userId) {
-        try {
-          // Use the user-specific funds endpoint
-          const res = await engineC.getFunds(userId);
-          if (res.status === "success" && res.data) {
-            const fundsData = res.data as {
-              dhanClientId?: string;
-              availabelBalance?: number;
-              availableBalance?: number;
-              sodLimit?: number;
-              collateralAmount?: number;
-              utilizedAmount?: number;
-            };
-
-            // Update userProfile if not already set
-            if (!userProfile?.isConnected && fundsData.dhanClientId) {
-              setUserProfile({
-                userId: fundsData.dhanClientId,
-                clientId: fundsData.dhanClientId,
-                name: `User ${fundsData.dhanClientId}`,
-                email: "",
-                isConnected: true,
-                isVerified: true,
-              });
-            }
-
-            setFunds({
-              availableBalance:
-                fundsData.availabelBalance || fundsData.availableBalance || 0,
-              sodLimit: fundsData.sodLimit || 0,
-              collateralAmount:
-                fundsData.collateralAmount || fundsData.utilizedAmount || 0,
-              dhanClientId: fundsData.dhanClientId || userId,
-            });
-            return res;
-          }
-        } catch (e) {
-          console.error("Failed to fetch user funds:", e);
-        }
-      }
-
-      // Fallback to default funds (no user_id)
       const res = await engineC.getFunds();
-      if (res.status === "success" && res.data) {
+      if (res && res.status === "success") {
+        const fundsData = (res.funds || res.data || {}) as {
+          availableBalance?: number;
+          availabelBalance?: number;
+          sodLimit?: number;
+          collateralAmount?: number;
+          utilizedMargin?: number;
+          utilizedAmount?: number;
+          dhanClientId?: string;
+        };
+
         setFunds({
-          availableBalance: res.data.availabelBalance || 0,
-          sodLimit: res.data.sodLimit || 0,
-          collateralAmount: res.data.collateralAmount || 0,
-          dhanClientId: res.data.dhanClientId || "default",
+          availableBalance: fundsData.availableBalance ?? fundsData.availabelBalance ?? 0,
+          sodLimit: fundsData.sodLimit ?? 0,
+          collateralAmount: fundsData.collateralAmount ?? fundsData.utilizedAmount ?? fundsData.utilizedMargin ?? 0,
+          dhanClientId: fundsData.dhanClientId ?? "1101302170",
         });
       }
       return res;
     },
-    refetchInterval: 30000, // 30 seconds for real-time updates
-    staleTime: 15000,
+    refetchInterval: 10000, // 10 seconds for real-time updates
+    staleTime: 5000,
     enabled: true,
   });
 }
 
-// Positions Hook - Fetches positions using user's credentials if connected
+// Positions Hook - Live positions stream
 export function usePositions() {
-  const { userProfile } = useAppStore();
-  const userId = userProfile?.userId || getStoredUserId();
-
   return useQuery({
-    queryKey: ["positions", userId],
+    queryKey: ["positions", "raghu_primary"],
     queryFn: async () => {
-      // Pass user_id to get user-specific positions
-      const res = await engineC.getPositions(userId || undefined);
-
-      // Ensure data is always an array
+      const res = await engineC.getPositions();
       if (res && res.data && !Array.isArray(res.data)) {
         return { ...res, data: [] };
       }
@@ -400,44 +358,58 @@ export function usePositions() {
     },
     refetchInterval: 10000, // 10 seconds for real-time position updates
     staleTime: 5000,
-    enabled: !!userId, // Only fetch if we have a user ID
+    enabled: true,
   });
 }
 
-// Holdings Hook - Fetches holdings using user's credentials if connected
+// Holdings Hook - Portfolio holdings stream
 export function useHoldings() {
-  const { userProfile } = useAppStore();
-  const userId = userProfile?.userId || getStoredUserId();
-
   return useQuery({
-    queryKey: ["holdings", userId],
+    queryKey: ["holdings", "raghu_primary"],
     queryFn: async () => {
-      // Pass user_id to get user-specific holdings
-      const res = await engineC.getHoldings(userId || undefined);
-
-      // Ensure data is always an array
+      const res = await engineC.getHoldings();
       if (res && res.data && !Array.isArray(res.data)) {
         return { ...res, data: [] };
       }
       return res;
     },
-    refetchInterval: 60000,
-    staleTime: 30000,
-    enabled: !!userId, // Only fetch if we have a user ID
+    refetchInterval: 10000, // 10 seconds for live portfolio valuation
+    staleTime: 5000,
+    enabled: true,
   });
 }
 
-// Orders Hook
+// Orders Hook - Live Order Book stream
 export function useOrders() {
-  const { userProfile } = useAppStore();
-  const userId = userProfile?.userId || getStoredUserId();
-
   return useQuery({
-    queryKey: ["orders", userId],
-    queryFn: () => engineC.getOrders(userId || undefined),
-    refetchInterval: 5000,
-    staleTime: 2000,
-    enabled: !!userId, // Only fetch if we have a user ID
+    queryKey: ["orders", "raghu_primary"],
+    queryFn: () => engineC.getOrders(),
+    refetchInterval: 10000, // 10 seconds for real-time order status
+    staleTime: 5000,
+    enabled: true,
+  });
+}
+
+// Market Quotes Hook - Live Multi-Asset Tickers
+export function useMarketQuotes(securityIds: string[] | string = ["1333", "11536"], exchangeSegment = "NSE_EQ") {
+  const ids = Array.isArray(securityIds) ? securityIds.join(",") : securityIds;
+  return useQuery({
+    queryKey: ["marketQuotes", ids, exchangeSegment],
+    queryFn: () => engineC.getMarketQuotes(ids, exchangeSegment),
+    refetchInterval: 10000, // 10 seconds for live market quotes
+    staleTime: 5000,
+    enabled: true,
+  });
+}
+
+// Trade Book Hook - Live Trade Execution logs
+export function useTradeBook() {
+  return useQuery({
+    queryKey: ["trades", "raghu_primary"],
+    queryFn: () => engineC.getTrades(),
+    refetchInterval: 10000,
+    staleTime: 5000,
+    enabled: true,
   });
 }
 
@@ -466,16 +438,11 @@ export function useSignal(symbol: string, enabled = true) {
 // All Signals Hook (for auto-trading)
 export function useSignals() {
   const defaultSymbols = [
-    "RELIANCE",
-    "TCS",
-    "INFY",
-    "HDFCBANK",
-    "ICICIBANK",
-    "SBIN",
-    "BHARTIARTL",
-    "ITC",
-    "KOTAKBANK",
-    "LT",
+    "NIFTY",
+    "BANKNIFTY",
+    "FINNIFTY",
+    "MIDCPNIFTY",
+    "SENSEX",
   ];
 
   return useQuery({

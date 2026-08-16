@@ -1,7 +1,7 @@
 """
 Options Analytics Module for Engine C
 Implements Greeks calculation using Black-Scholes model
-Integrated with Supabase for data persistence
+Integrated with Google Cloud Firestore for data persistence
 """
 import numpy as np
 from scipy.stats import norm
@@ -223,37 +223,40 @@ class GreeksCalculator:
         }
     
     async def store_greeks(self, user_id: str, position_id: str, greeks: Dict[str, Any]):
-        """Store calculated Greeks in Supabase"""
+        """Store calculated Greeks in Google Cloud Firestore"""
         try:
             from src.user_credentials import get_credentials_manager
             manager = get_credentials_manager()
             if not manager or not manager.db:
                 return
-            
-            manager.db.table("options_greeks").upsert({
+
+            doc_id = f"{user_id}_{position_id}"
+            manager.db.collection("options_greeks").document(doc_id).set({
                 "user_id": user_id,
                 "position_id": position_id,
                 "greeks": greeks,
                 "updated_at": datetime.utcnow().isoformat()
-            }).execute()
+            }, merge=True)
             logger.info(f"✅ Stored Greeks for user {user_id}, position {position_id}")
         except Exception as e:
-            logger.error(f"Error storing Greeks in Supabase: {e}")
-    
+            logger.error(f"Error storing Greeks in Firestore: {e}")
+
     async def get_greeks(self, user_id: str, position_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve stored Greeks from Supabase"""
+        """Retrieve stored Greeks from Google Cloud Firestore"""
         try:
             from src.user_credentials import get_credentials_manager
             manager = get_credentials_manager()
             if not manager or not manager.db:
                 return None
-            
-            response = manager.db.table("options_greeks").select("greeks").eq("user_id", user_id).eq("position_id", position_id).execute()
-            if response.data and len(response.data) > 0:
-                return response.data[0].get("greeks")
+
+            doc_id = f"{user_id}_{position_id}"
+            doc = manager.db.collection("options_greeks").document(doc_id).get()
+            if doc.exists:
+                data = doc.to_dict()
+                return data.get("greeks")
             return None
         except Exception as e:
-            logger.error(f"Error retrieving Greeks from Supabase: {e}")
+            logger.error(f"Error retrieving Greeks from Firestore: {e}")
             return None
 
 

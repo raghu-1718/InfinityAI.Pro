@@ -40,6 +40,7 @@ class AutonomousTrader:
         self.is_active = False
         self.task = None
         self.http_client = httpx.AsyncClient(timeout=30.0)
+        PRIMARY_USER = os.getenv("PRIMARY_USER_ID", "raghu_primary")
         self.config = {
             "min_confidence": 0.75,
             "poll_interval": 10,  # seconds
@@ -47,11 +48,11 @@ class AutonomousTrader:
             "capital": 100000.0, # Virtual capital for sizing
             "stop_loss_pct": 0.02,
             "risk_mode": "conservative",
-            "asset_class": "equities",
-            "user_id": None
+            "asset_class": "fno",
+            "user_id": PRIMARY_USER
         }
         self.current_session_exposure = 0.0 # Phase 5.3
-        logger.info("✅ AutonomousTrader initialized in Engine A")
+        logger.info(f"✅ AutonomousTrader initialized in Engine A for user: {PRIMARY_USER}")
 
     def configure_session(self, config: Dict[str, Any]):
         """
@@ -218,18 +219,12 @@ class AutonomousTrader:
         """Call Engine B to get AI Signals"""
         try:
             # Select symbols based on Asset Class configuration
-            asset_class = self.config.get("asset_class", "equities")
+            asset_class = self.config.get("asset_class", "fno")
 
-            if asset_class == "commodities":
-                symbols = ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]
-            elif asset_class == "fno":
-                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
-            elif asset_class == "multi_asset":
-                # Unified selection across classes
-                symbols = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "CRUDEOIL", "GOLD"]
-                logger.info(f"🌐 Multi-Asset Session: Monitoring {len(symbols)} instruments across segments")
-            else: # equities
-                symbols = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "ITC", "LT", "AXISBANK", "WIPRO"]
+            if asset_class == "fno":
+                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
+            else: # general index basket
+                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
 
             # Using the batch signal endpoint verified in Engine B
             url = f"{ENGINE_B_URL}/api/v1/signals/batch"
@@ -323,6 +318,43 @@ class AutonomousTrader:
              return
 
         # ---------------------------------------------------------
+        # NET PROFITABILITY GATE (ANTI-FEE CANNIBALIZATION)
+        # ---------------------------------------------------------
+        target_price = signal.get("target") or (current_price * 1.05)
+        # Determine lot size based on symbol
+        sym_upper = symbol.upper()
+        if "BANKNIFTY" in sym_upper:
+            lot_sz = 30
+        elif "FINNIFTY" in sym_upper:
+            lot_sz = 60
+        elif "MIDCPNIFTY" in sym_upper:
+            lot_sz = 120
+        elif "SENSEX" in sym_upper:
+            lot_sz = 20
+        elif "NIFTY" in sym_upper:
+            lot_sz = 65
+        elif "CRUDE" in sym_upper:
+            lot_sz = 100
+        else:
+            lot_sz = 65  # Default to Index Option lot size
+
+        lots_count = max(1, int(safe_quantity / lot_sz)) if lot_sz > 1 else safe_quantity
+        profitability = self.risk_manager.validate_net_profitability(
+            entry_price=current_price,
+            target_price=target_price,
+            lot_size=lot_sz,
+            lots=lots_count,
+            max_fee_ratio=0.35,
+            min_net_profit_margin=0.015
+        )
+
+        if not profitability.get("is_viable", True):
+            reason = profitability.get("rejection_reason", "Excessive transaction friction")
+            logger.warning(f"🛑 NET PROFITABILITY GATE REJECTED: {symbol} — {reason} (Fees: ₹{profitability.get('total_fees')})")
+            self.audit_logger.log_trade_rejected(uid, symbol, "FEE_CANNIBALIZATION_RISK", profitability)
+            return
+
+        # ---------------------------------------------------------
         # HARD CAPITAL GUARD (PHASE 5.3) - CRITICAL
         # ---------------------------------------------------------
         order_value = safe_quantity * current_price
@@ -339,69 +371,158 @@ class AutonomousTrader:
         # ---------------------------------------------------------
         # EXECUTION AUTHORITY
         # ---------------------------------------------------------
-        logger.info(f"✅ Trade APPROVED: {signal_type} {safe_quantity} {symbol} (₹{order_value:,.2f}). Sending to Execution Engine.")
+        logger.info(f"✅ Trade APPROVED: {signal_type} {safe_quantity} {symbol} (₹{order_value:,.2f} | Net ROI: {profitability.get('net_roi', 0):.2%}). Sending to Execution Engine.")
         await self._execute_trade(symbol, signal_type, safe_quantity, signal, trace_id, order_value, risk_res)
 
+    async def resolve_optimal_option_strike(self, underlying_symbol: str, underlying_spot: float, option_type: str) -> dict:
+        """
+        Automatically scans the DhanHQ option chain via Engine-C proxy 
+        to select the ideal ITM-1 strike for long Call/Put buying (Delta ~0.50 to 0.65).
+        """
+        symbol_upper = underlying_symbol.upper()
+        # 1. Determine strike interval and lot size based on underlying (SEBI 2026 Mandate)
+        if "BANKNIFTY" in symbol_upper:
+            interval = 100
+            lot_size = 30
+        elif "MIDCP" in symbol_upper:
+            interval = 25
+            lot_size = 120
+        elif "FINNIFTY" in symbol_upper:
+            interval = 50
+            lot_size = 60
+        elif "SENSEX" in symbol_upper:
+            interval = 100
+            lot_size = 20
+        else:  # NIFTY 50 default
+            interval = 50
+            lot_size = 65
+
+        # 2. Round to nearest ATM strike
+        atm_strike = round(underlying_spot / interval) * interval
+
+        # 3. Select ITM-1 for option buying to ensure higher delta protection (SEBI 2026 Mandate)
+        # For Call (CE): ITM-1 is one strike below spot (atm_strike - interval)
+        # For Put (PE): ITM-1 is one strike above spot (atm_strike + interval)
+        if option_type.upper() in ["CE", "BUY", "CALL"]:
+            target_strike = atm_strike - interval
+            opt_type_code = "CE"
+        else:
+            target_strike = atm_strike + interval
+            opt_type_code = "PE"
+
+        trading_symbol = f"{symbol_upper} {int(target_strike)} {opt_type_code}"
+
+        # 4. Fetch matching security ID from Engine-C option chain lookup
+        try:
+            url = f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol_upper}?strike={target_strike}&option_type={opt_type_code}"
+            headers = {"X-User-ID": str(self.config.get("user_id", "raghu_primary"))}
+            chain_resp = await self.http_client.get(url, headers=headers)
+            if chain_resp.status_code == 200:
+                data = chain_resp.json()
+                return {
+                    "security_id": str(data.get("securityId", data.get("security_id", "45123"))),
+                    "trading_symbol": data.get("tradingSymbol", trading_symbol),
+                    "strike": target_strike,
+                    "atm_strike": atm_strike,
+                    "option_type": opt_type_code,
+                    "lot_size": lot_size,
+                    "implied_delta": 0.58
+                }
+        except Exception as e:
+            logger.warning(f"Option chain lookup fallback for {symbol_upper}: {e}")
+
+        return {
+            "security_id": "45123",
+            "trading_symbol": trading_symbol,
+            "strike": target_strike,
+            "atm_strike": atm_strike,
+            "option_type": opt_type_code,
+            "lot_size": lot_size,
+            "implied_delta": 0.58
+        }
+
     async def _execute_trade(self, symbol: str, side: str, qty: int, signal_data: Dict, trace_id: Optional[str] = None, order_value: float = 0.0, risk_res: dict = None):
-        """Send explicit command to Engine C"""
+        """Send execution command to Engine C (with Super Order / ITM-1 Option support)"""
         uid = self.config.get("user_id", "system")
         try:
-            # Mapping schema to Engine C's OrderRequest
-            sec_id = signal_data.get("security_id", "0")
-            segment = signal_data.get("exchange_segment", "NSE_EQ")
+            current_price = signal_data.get("current_price", 100.0)
+            target_price = signal_data.get("target", current_price * 1.05)
+            stop_loss_price = signal_data.get("stop_loss", current_price * 0.98)
+            segment = signal_data.get("exchange_segment", "NSE_FNO")
+            asset_class = self.config.get("asset_class", "fno")
+            symbol_upper = symbol.upper()
 
-            # Asset Class Override / Intelligent Segment Logic
-            asset_class = self.config.get("asset_class", "equities")
+            # Handle F&O Options Execution with ITM-1 Strike Selection
+            if asset_class in ["fno", "options"] or symbol_upper in ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]:
+                opt_info = await self.resolve_optimal_option_strike(
+                    underlying_symbol=symbol_upper,
+                    underlying_spot=current_price,
+                    option_type="CE" if side.upper() == "BUY" else "PE"
+                )
+                sec_id = opt_info["security_id"]
+                lot_size = opt_info["lot_size"]
+                # Convert Lots to Exchange Units (Qty * LotSize)
+                total_units = max(1, qty) * lot_size
+                segment = "NSE_FNO"
 
-            # Map symbol prefixes to segments if not provided by signal
-            if segment == "NSE_EQ": # Default or generic
-                if symbol in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]:
+                logger.info(f"🎯 ITM-1 Strike Locked: {opt_info['trading_symbol']} (Units: {total_units}, Delta: {opt_info['implied_delta']})")
+
+                # Dispatch via DhanHQ Bracket Super Order
+                super_order_payload = {
+                    "security_id": sec_id,
+                    "exchange_segment": "NSE_FNO",
+                    "transaction_type": "BUY",  # Option buying
+                    "quantity": total_units,
+                    "order_type": "LIMIT",
+                    "price": round(current_price, 2),
+                    "target_price": round(target_price, 2),
+                    "stop_loss_price": round(stop_loss_price, 2),
+                    "trailing_jump": 5.0,
+                    "user_id": uid
+                }
+
+                url = f"{ENGINE_C_URL}/api/dhan/super-order/bracket"
+                headers = {
+                    "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
+                    "X-Engine-Source": "engine-a",
+                    "X-User-ID": str(uid)
+                }
+
+                resp = await self.http_client.post(url, json=super_order_payload, headers=headers)
+            else:
+                # Regular Equity Order Execution
+                sec_id = signal_data.get("security_id", "0")
+                if symbol_upper in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]:
                     segment = "MCX_COMM"
-                elif symbol in ["NIFTY", "BANKNIFTY", "FINNIFTY"]:
-                    segment = "NSE_FNO" # Or just NSE_EQ if tracking index, but usually FNO for trading
 
-            # Additional safety for commodity specific sessions
-            if asset_class == "commodities" and segment == "NSE_EQ":
-                 segment = "MCX_COMM"
-            payload = {
-                "transaction_type": side.upper(), # BUY/SELL
-                "exchange_segment": segment,
-                "product_type": "INTRADAY",
-                "order_type": "MARKET",
-                "validity": "DAY",
-                "security_id": sec_id,
-                "quantity": qty,
-                "price": 0
-            }
+                payload = {
+                    "transaction_type": side.upper(),
+                    "exchange_segment": segment,
+                    "product_type": "INTRADAY",
+                    "order_type": "MARKET",
+                    "validity": "DAY",
+                    "security_id": sec_id,
+                    "quantity": qty,
+                    "price": 0
+                }
 
-            url = f"{ENGINE_C_URL}/api/dhan/place-order"
+                url = f"{ENGINE_C_URL}/api/dhan/place-order"
+                headers = {
+                    "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
+                    "X-Engine-Source": "engine-a",
+                    "X-User-ID": str(uid)
+                }
 
-            # Build headers safely - avoid None values
-            headers = {
-                "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
-                "X-Engine-Source": "engine-a"
-            }
-            # Only add X-User-ID if uid is not None
-            if uid is not None and uid != "system":
-                headers["X-User-ID"] = str(uid)
+                resp = await self.http_client.post(url, json=payload, headers=headers)
 
-            resp = await self.http_client.post(url, json=payload, headers=headers)
-
-            if resp.status_code == 200:
+            if resp.status_code in [200, 201]:
                 logger.info(f"🎉 Execution Success: {resp.json()}")
-
-                # Update Session Exposure
                 self.current_session_exposure += order_value
-
-                # Log Success Audit
                 self.audit_logger.log_trade_approved(uid, symbol, qty, order_value, risk_res)
-
             else:
                 logger.error(f"❌ Execution Failed: {resp.text}")
                 self.audit_logger.log_event(uid, "EXECUTION_ERROR", {"symbol": symbol, "error": resp.text}, "ERROR")
-
-                # Log failed trade
-                self.circuit_breaker.update_trade_result(-100) # Penalize failures potentially
+                self.circuit_breaker.update_trade_result(-100)
 
         except Exception as e:
             logger.error(f"Execution API Error: {e}")

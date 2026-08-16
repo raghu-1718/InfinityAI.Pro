@@ -24,42 +24,42 @@
       {
         "source": "/api/v1/signals/**",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },
       {
         "source": "/engine-b/health",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/options/**",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/lstm/**",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/dqn/**",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },
       {
         "source": "/api/v1/models/**",
         "run": {
-          "serviceId": "engine-b",
+          "serviceId": "engine-a",
           "region": "asia-south1"
         }
       },

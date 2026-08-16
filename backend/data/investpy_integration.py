@@ -14,17 +14,15 @@ logger = logging.getLogger(__name__)
 class InvestpyDataFetcher:
     """
     Fetch Indian stock data using investpy
-    Handles rate limiting and provides Supabase integration
+    Handles rate limiting and provides Google Cloud Firestore integration
     """
     
     def __init__(self):
         self.db = None
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY")
-            if url and key:
-                self.db = create_client(url, key)
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            self.db = firestore.Client(project=project_id)
         except Exception:
             pass
         self.rate_limit_delay = 1  # seconds between requests
@@ -60,11 +58,11 @@ class InvestpyDataFetcher:
             print(f"[ERROR] investpy fetch failed for {symbol}: {str(e)}")
             return None
     
-    def save_to_supabase(self, df, symbol: str):
-        """Save data to Supabase"""
+    def save_to_firestore(self, df, symbol: str):
+        """Save data to Google Cloud Firestore"""
         try:
             if not self.db:
-                print("[WARN] Supabase not available")
+                print("[WARN] Firestore not available")
                 return False
 
             for date, row in df.iterrows():
@@ -80,13 +78,14 @@ class InvestpyDataFetcher:
                     'source': 'investpy',
                     'updated_at': datetime.now().isoformat()
                 }
-                self.db.table('historical_data').upsert(data).execute()
+                doc_id = f"{symbol}_NSE_{date_str}"
+                self.db.collection('historical_data').document(doc_id).set(data, merge=True)
             
-            print(f"[SUPABASE] Saved {len(df)} records for {symbol}")
+            print(f"[FIRESTORE] Saved {len(df)} records for {symbol}")
             return True
         
         except Exception as e:
-            print(f"[ERROR] Supabase save failed: {str(e)}")
+            print(f"[ERROR] Firestore save failed: {str(e)}")
             return False
 
 

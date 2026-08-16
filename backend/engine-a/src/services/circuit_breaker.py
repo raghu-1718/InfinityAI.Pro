@@ -1,6 +1,5 @@
 """
-Circuit Breaker - Trading halt mechanism with Supabase state persistence.
-Replaces Firestore state storage with Supabase PostgreSQL.
+Circuit Breaker - Trading halt mechanism with Google Cloud Firestore state persistence.
 """
 import logging
 import os
@@ -9,23 +8,19 @@ from src.safety_limits import MAX_DAILY_LOSS, MAX_CONSECUTIVE_LOSSES
 
 logger = logging.getLogger(__name__)
 
-# Initialize Supabase (Singleton)
+# Initialize Google Cloud Firestore (Singleton)
 _db = None
 
 def get_db():
     global _db
     if _db is None:
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-            if url and key:
-                _db = create_client(url, key)
-                logger.info("✅ CircuitBreaker: Supabase client initialized")
-            else:
-                logger.warning("⚠️ SUPABASE_URL or key not set; circuit breaker will use in-memory state only")
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            _db = firestore.Client(project=project_id)
+            logger.info("✅ CircuitBreaker: Google Cloud Firestore client initialized")
         except Exception as e:
-            logger.error(f"Failed to init Supabase for circuit breaker: {e}")
+            logger.warning(f"⚠️ Could not init Firestore for circuit breaker (using in-memory state): {e}")
     return _db
 
 class TradingHalted(Exception):
@@ -44,16 +39,15 @@ class CircuitBreaker:
         self.load_state()
 
     def load_state(self):
-        """Load state from Supabase"""
+        """Load state from Google Cloud Firestore"""
         try:
             db = get_db()
             if not db:
                 return
 
-            response = db.table("circuit_breaker_state").select("*").eq("user_id", self.uid).execute()
-
-            if response.data and len(response.data) > 0:
-                data = response.data[0]
+            doc = db.collection("circuit_breaker_state").document(self.uid).get()
+            if doc.exists:
+                data = doc.to_dict()
                 self.consecutive_losses = data.get("consecutive_losses", 0)
                 self.session_pnl = data.get("session_pnl", 0.0)
                 self.is_tripped = data.get("halted", False)
@@ -64,20 +58,20 @@ class CircuitBreaker:
             logger.error(f"Failed to load CircuitBreaker state: {e}")
 
     def save_state(self):
-        """Persist state to Supabase"""
+        """Persist state to Google Cloud Firestore"""
         try:
             db = get_db()
             if not db:
                 return
 
-            db.table("circuit_breaker_state").upsert({
+            db.collection("circuit_breaker_state").document(self.uid).set({
                 "user_id": self.uid,
                 "consecutive_losses": self.consecutive_losses,
                 "session_pnl": self.session_pnl,
                 "halted": self.is_tripped,
                 "halt_reason": self.trip_reason,
                 "updated_at": datetime.now(timezone.utc).isoformat()
-            }).execute()
+            }, merge=True)
         except Exception as e:
             logger.error(f"Failed to save CircuitBreaker state: {e}")
 
@@ -92,7 +86,7 @@ class CircuitBreaker:
         now = datetime.now(timezone.utc)
 
         last_dt = self.last_updated
-        # Handle string timestamps from Supabase
+        # Handle string timestamps from Firestore
         if isinstance(last_dt, str):
             try:
                 last_dt = datetime.fromisoformat(last_dt.replace('Z', '+00:00'))

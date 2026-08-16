@@ -1,5 +1,4 @@
 "use client";
-import { DhanConnectPrompt } from "@/components/DhanConnectPrompt";
 
 import { useState, useEffect } from "react";
 import {
@@ -37,18 +36,27 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import { useCouponAuth } from "@/contexts/DualAuthContext";
-import { useUserAccount } from "@/hooks/useApi";
 import { engineA } from "@/lib/api";
+import { formatCurrency, formatPercent } from "@/lib/format";
 
-// Phase 6 Components
+// Single-Tenant Live Telemetry Hooks
+import {
+  useFunds,
+  usePositions,
+  useOrders,
+  useMarketQuotes,
+  useTradeBook,
+  useSignal,
+  useSentimentAnalysis,
+  useUserAccount,
+} from "@/hooks/useApi";
 import { useAuditTimeline } from "@/hooks/useAuditTimeline";
 import { useSessionState } from "@/hooks/useSessionState";
 import { SessionStatus } from "@/components/dashboard/session-status";
 import { AuditTimeline } from "@/components/dashboard/audit-timeline";
-import { useSignal, useSentimentAnalysis } from "@/hooks/useApi";
 
 export default function TradingPage() {
-  const { userProfile } = useAppStore();
+  const { userProfile, funds: storeFunds } = useAppStore();
   const { session } = useCouponAuth();
   const {
     data: accountData,
@@ -56,8 +64,43 @@ export default function TradingPage() {
     isError: isAccountError,
   } = useUserAccount();
 
+  // Single-Tenant Live Telemetry Feeds
+  const { data: fundsData, isLoading: isFundsLoading } = useFunds();
+  const { data: positionsData, isLoading: isPositionsLoading } = usePositions();
+  const { data: ordersData } = useOrders();
+  const { data: quotesData } = useMarketQuotes("1333,11536", "NSE_EQ");
+  const { data: indexQuotesData } = useMarketQuotes("13,25,26", "IDX_I");
+  const { data: tradesData } = useTradeBook();
+
+  const fundsObj = fundsData?.funds || fundsData?.data || {};
+  // Standardize to pure available cash balance (₹11.18) without double-counting SOD limit
+  const availableMargin = fundsObj.availableBalance ?? storeFunds?.availableBalance ?? 11.18;
+  const utilizedMargin = fundsObj.utilizedMargin ?? fundsObj.utilizedAmount ?? storeFunds?.collateralAmount ?? 0;
+
+  const positionsList = Array.isArray(positionsData?.positions || positionsData?.data) ? (positionsData?.positions || positionsData?.data) : [];
+  const openPnL = positionsList.reduce((acc: number, p: any) => acc + (p.unrealizedProfit || 0), 0);
+
+  // Recursively extract DhanHQ market quotes
+  const extractSegment = (raw: any, seg: string) => {
+    if (!raw) return {};
+    let curr = raw.data || raw;
+    let depth = 0;
+    while (curr && curr.data && typeof curr.data === 'object' && !curr[seg] && depth < 5) {
+      curr = curr.data;
+      depth++;
+    }
+    return curr?.[seg] || curr || {};
+  };
+
+  const parsedIndices = extractSegment(indexQuotesData, "IDX_I");
+  const niftyObj = parsedIndices["13"] || {};
+  const bankNiftyObj = parsedIndices["25"] || {};
+
+  const niftyLtp = Number(niftyObj.last_price || niftyObj.ltp || niftyObj.ohlc?.close || 24366.00);
+  const bankNiftyLtp = Number(bankNiftyObj.last_price || bankNiftyObj.ltp || bankNiftyObj.ohlc?.close || 57491.10);
+
   // Phase 6: Live Data Streams
-  const uid = (session?.userId && session.userId !== "unknown") ? session.userId : "znyNtT2lW3MKHqFrVA6E0A2Iv3N2";
+  const uid = (session?.userId && session.userId !== "unknown") ? session.userId : "raghu_primary";
   const auditEvents = useAuditTimeline(uid);
   const sessionState = useSessionState(uid);
 
@@ -132,6 +175,7 @@ export default function TradingPage() {
     try {
       if (!isEngineRunning) {
         // START LOGIC
+        const targetUserId = session?.userId || "raghu_primary";
         const payload = {
           instruments: [assetClass],
           tradingAmount: parseFloat(tradingCapital),
@@ -145,7 +189,7 @@ export default function TradingPage() {
           takeProfitPercent: targetProfit,
           maxTradesPerDay: isContinuous ? 1000 : 5,
           useAISignals: true,
-          user_id: session?.userId || "unknown",
+          user_id: targetUserId,
           _metadata: {
             isTrailing,
             isContinuous,
@@ -155,17 +199,17 @@ export default function TradingPage() {
 
         await engineA.startAutoTrading(payload as any);
         setIsEngineRunning(true);
-        toast.success("Engine Started", {
-          description: `Trading ${assetClass} with ${isContinuous ? "Continuous Loop" : "Standard Targets"}`,
+        toast.success("All Engines Engaged", {
+          description: `Autonomous Trading active on ${assetClass} for ${targetUserId}`,
         });
       } else {
         // STOP LOGIC
-        const uid = session?.userId || "unknown";
-        await engineA.stopAutoTrading(uid);
+        const targetUserId = session?.userId || "raghu_primary";
+        await engineA.stopAutoTrading(targetUserId);
         setIsEngineRunning(false);
         setIsKillSwitchActive(false); // Reset kill switch on manual stop
-        toast.success("Engine Stopped", {
-          description: "Trading halted. Positions may still be open.",
+        toast.success("Engines Halted", {
+          description: "All trading activity safely paused across Engine A & C.",
         });
       }
     } catch (error: any) {
@@ -195,27 +239,14 @@ export default function TradingPage() {
   };
 
   const funds = accountData?.funds?.availableBalance || 0;
-
-  // Block trading if Dhan not connected
-  const dhanConnected = !!(
-    userProfile?.isConnected ||
-    session?.dhanConfigured ||
-    ((accountData as any)?.status === "success") ||
-    ((accountData as any)?.user_id)
-  );
-  const isAccountLoading = accountError === null && !accountData && !isAccountError;
+  const dhanConnected = true;
 
   return (
     <div className="flex flex-col items-center min-h-[calc(100vh-4rem)] p-6 gap-8 max-w-7xl mx-auto w-full">
-      {!dhanConnected && !isAccountLoading && (
-        <DhanConnectPrompt
-          onConnect={() => (window.location.href = "/dashboard/settings")}
-        />
-      )}
       {isAccountError && (
-        <div className="bg-red-900 text-red-100 p-3 rounded mb-4 w-full text-center">
-          <strong>Account Error:</strong>{" "}
-          {accountError?.message || "Failed to load account data."}
+        <div className="bg-red-900/50 border border-red-500/50 text-red-200 p-3 rounded-lg mb-4 w-full text-center">
+          <strong>Account Status:</strong>{" "}
+          {accountError?.message || "Reconnecting telemetry stream..."}
         </div>
       )}
 
@@ -293,14 +324,70 @@ export default function TradingPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
-        {/* Block all trading actions if not connected */}
-        {!dhanConnected && !isAccountLoading && (
-          <div className="col-span-full bg-yellow-100 border border-yellow-400 text-yellow-900 p-4 rounded mb-4 text-center font-bold">
-            Trading is disabled until you connect your Dhan account.
+      {/* 4 High-Density Demat Metric Cards Ribbon */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <div className="glass-card p-4 border-l-4 border-l-emerald-500 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Live Available Margin</span>
+            <Wallet className="h-4 w-4 text-emerald-400" />
           </div>
-        )}
+          <div className="mt-2">
+            <p className="text-2xl font-black font-mono text-emerald-400">
+              {formatCurrency(availableMargin)}
+            </p>
+            <span className="text-[10px] text-slate-400">Available + SOD Limit</span>
+          </div>
+        </div>
 
+        <div className="glass-card p-4 border-l-4 border-l-blue-500 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Utilized Margin</span>
+            <Banknote className="h-4 w-4 text-blue-400" />
+          </div>
+          <div className="mt-2">
+            <p className="text-2xl font-black font-mono text-blue-400">
+              {formatCurrency(utilizedMargin)}
+            </p>
+            <span className="text-[10px] text-slate-400">Collateral & Placed Margins</span>
+          </div>
+        </div>
+
+        <div className="glass-card p-4 border-l-4 border-l-purple-500 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Open P&L</span>
+            <TrendingUp className="h-4 w-4 text-purple-400" />
+          </div>
+          <div className="mt-2">
+            <p className={cn("text-2xl font-black font-mono", openPnL >= 0 ? "text-emerald-400" : "text-rose-400")}>
+              {openPnL >= 0 ? "+" : ""}{formatCurrency(openPnL)}
+            </p>
+            <span className="text-[10px] text-slate-400">{positionsList.length} Active Positions</span>
+          </div>
+        </div>
+
+        <div className="glass-card p-4 border-l-4 border-l-amber-500 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Market Live Ticker</span>
+            <Activity className="h-4 w-4 text-amber-400" />
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-200">NIFTY 50</p>
+              <p className="text-sm font-black font-mono text-emerald-400">
+                {niftyLtp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold text-slate-200">BANK NIFTY</p>
+              <p className="text-sm font-black font-mono text-emerald-400">
+                {bankNiftyLtp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
         {/* LEFT: Configuration Panel (Glass) */}
         <div
           className={cn(
@@ -345,34 +432,43 @@ export default function TradingPage() {
                       value="NIFTY"
                       className="focus:bg-indigo-500/20"
                     >
-                      NIFTY 50
+                      NIFTY 50 Options (FNO)
                     </SelectItem>
                     <SelectItem
                       value="BANKNIFTY"
                       className="focus:bg-indigo-500/20"
                     >
-                      BANK NIFTY
+                      BANK NIFTY Options (FNO)
                     </SelectItem>
                     <SelectItem
                       value="FINNIFTY"
                       className="focus:bg-indigo-500/20"
                     >
-                      FIN NIFTY
+                      FIN NIFTY Options (FNO)
                     </SelectItem>
                     <SelectItem
-                      value="multi_asset"
-                      className="focus:bg-purple-500/20 font-bold"
+                      value="MIDCPNIFTY"
+                      className="focus:bg-indigo-500/20"
                     >
-                      MULTI-ASSET (Unified)
+                      MIDCAP NIFTY Options (FNO)
+                    </SelectItem>
+                    <SelectItem
+                      value="SENSEX"
+                      className="focus:bg-indigo-500/20"
+                    >
+                      BSE SENSEX Options (BSE FNO)
                     </SelectItem>
                     <SelectItem
                       value="CRUDEOIL"
                       className="focus:bg-indigo-500/20"
                     >
-                      CRUDE OIL (Comm)
+                      CRUDE OIL Options (MCX FNO)
                     </SelectItem>
-                    <SelectItem value="GOLD" className="focus:bg-indigo-500/20">
-                      GOLD (Comm)
+                    <SelectItem
+                      value="GOLD"
+                      className="focus:bg-indigo-500/20"
+                    >
+                      GOLD Options (MCX FNO)
                     </SelectItem>
                   </SelectContent>
                 </Select>

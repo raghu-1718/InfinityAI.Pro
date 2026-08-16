@@ -65,7 +65,7 @@ def train_all_models(
     dqn_episodes: int = 200,
     model_dir: str = "/app/models",
     upload_gcs: bool = False,
-    gcs_bucket: str = "galvanic-pulsar-482815-h0-models",
+    gcs_bucket: str = "project-841b7f97-5ee3-4fbe-920-models",
     gcs_prefix: str = "trained_models"
 ):
     """
@@ -217,7 +217,7 @@ def main():
     parser.add_argument('--dqn-episodes', type=int, default=200, help='DQN episodes')
     parser.add_argument('--model-dir', type=str, default='/app/models', help='Model directory')
     parser.add_argument('--upload-gcs', action='store_true', help='Upload to GCS')
-    parser.add_argument('--gcs-bucket', type=str, default='galvanic-pulsar-482815-h0-models', help='GCS bucket')
+    parser.add_argument('--gcs-bucket', type=str, default='project-841b7f97-5ee3-4fbe-920-models', help='GCS bucket')
     parser.add_argument('--gcs-prefix', type=str, default='trained_models', help='GCS prefix')
 
     args = parser.parse_args()

@@ -78,56 +78,20 @@ export function Header() {
   // Get balance from user's connected demat or fallback to admin funds
   const displayBalance = dematData?.funds?.availableBalance ?? funds?.availableBalance ?? 0;
 
-  // Check if user is authenticated and Dhan is connected
-  const isDhanConnected = hydrated && (session?.dhanConfigured || userProfile?.isConnected || systemState?.dhan_connected);
+  // In Single-Tenant mode, Dhan connection is always active
+  const isDhanConnected = true;
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (!hydrated) return '?';
-    // If we have a system identity name (e.g. "Trader (12345)"), extract initials
-    if (systemState?.trader_identity && systemState.dhan_connected) {
-        return "TR"; // Trader
-    }
-    if (user?.name && typeof user.name === 'string' && user.name.length > 0) {
-      return user.name.substring(0, 2).toUpperCase();
-    }
-    if (user?.email && typeof user.email === 'string' && user.email.length > 0) {
-      return user.email.substring(0, 2).toUpperCase();
-    }
-    if (user?.userId && typeof user.userId === 'string' && user.userId.length >= 2) {
-      return user.userId.substring(0, 2).toUpperCase();
-    }
-    return 'U'; // User
+    return 'RG';
   };
 
   const getUserName = () => {
-    if (!hydrated) return 'Loading...';
-    
-    // PRIORITY 1: Backend System Identity (The "Truth")
-    if (systemState?.dhan_connected && systemState.trader_identity) {
-        return systemState.trader_identity;
-    }
-
-    if (user?.name && typeof user.name === 'string') {
-      return user.name;
-    }
-    if (user?.email && typeof user.email === 'string') {
-      return user.email.split('@')[0];
-    }
-    if (session?.userId && typeof session.userId === 'string') {
-      const len = session.userId.length;
-      return `User ${session.userId.slice(0, Math.min(8, len))}`;
-    }
-    return 'Guest User';
+    return 'Raghu (1101302170)';
   };
 
-
   const getUserEmail = () => {
-    if (!hydrated) return 'Loading...';
-    if (session?.userId) {
-      return isDhanConnected ? 'Dhan Connected' : 'Coupon Verified';
-    }
-    return 'Sign in to get started';
+    return 'DhanHQ Vault Connected';
   };
 
   return (

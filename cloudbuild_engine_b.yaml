@@ -1,0 +1,51 @@
+steps:
+  # Build Engine B Docker Image from root context
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-b"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "-f",
+        "backend/engine-b/Dockerfile",
+        ".",
+      ]
+
+  # Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-b"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+      ]
+    waitFor: ["build-engine-b"]
+
+  # Deploy to Cloud Run in asia-south1
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-engine-b"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "engine-b",
+        "--image",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "--set-env-vars",
+        "ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920",
+        "--set-secrets",
+        "GEMINI_API_KEY=GEMINI_API_KEY:latest",
+        "--region",
+        "asia-south1",
+        "--memory",
+        "2Gi",
+        "--cpu",
+        "1",
+        "--allow-unauthenticated",
+      ]
+    waitFor: ["push-engine-b"]
+
+images:
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"

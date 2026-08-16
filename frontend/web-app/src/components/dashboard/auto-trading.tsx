@@ -168,7 +168,8 @@ export function AutoTradingCard() {
           setMinConfidence(settings.min_confidence || 0.75);
           setSelectedMarkets(
             (settings.selected_instruments || [
-              "equities",
+              "nifty-options",
+              "banknifty-options",
             ]) as TradingInstrument[]
           );
           setUseAISignals(settings.use_ai_signals ?? true);
@@ -273,52 +274,34 @@ export function AutoTradingCard() {
     description: string;
   }[] = [
     {
-      id: "equities",
-      name: "Equities (NSE/BSE)",
-      icon: "📈",
-      description: "Stocks from NSE & BSE",
-    },
-    {
       id: "nifty-options",
-      name: "NIFTY Options",
+      name: "NIFTY 50 Options",
       icon: "🎯",
-      description: "NIFTY 50 Index Options",
+      description: "Lot: 65 · Weekly/Monthly (Tuesday Expiry)",
     },
     {
       id: "banknifty-options",
       name: "Bank NIFTY Options",
       icon: "🏦",
-      description: "Bank NIFTY Index Options",
-    },
-    {
-      id: "sensex-options",
-      name: "SENSEX Options",
-      icon: "📊",
-      description: "BSE SENSEX Options",
+      description: "Lot: 30 · Monthly (Last Tuesday Expiry)",
     },
     {
       id: "finnifty-options",
       name: "FIN NIFTY Options",
       icon: "💰",
-      description: "Financial Services NIFTY",
+      description: "Lot: 60 · Monthly (Last Tuesday Expiry)",
     },
     {
-      id: "crude-options",
-      name: "Crude Oil Options",
-      icon: "🛢️",
-      description: "MCX Crude Oil Options",
+      id: "midcpnifty-options",
+      name: "MIDCAP NIFTY Options",
+      icon: "⚡",
+      description: "Lot: 120 · Monthly (Last Tuesday Expiry)",
     },
     {
-      id: "gold-options",
-      name: "Gold Options",
-      icon: "🥇",
-      description: "MCX Gold Options",
-    },
-    {
-      id: "silver-options",
-      name: "Silver Options",
-      icon: "🥈",
-      description: "MCX Silver Options",
+      id: "sensex-options",
+      name: "BSE SENSEX Options",
+      icon: "📊",
+      description: "Lot: 10 · BSE Derivatives",
     },
   ];
 
@@ -497,24 +480,14 @@ export function AutoTradingCard() {
     const signalMatchesInstruments = (signal: Signal): boolean => {
       const symbol = (signal.symbol || "").toUpperCase();
 
-      // Check equities (no options suffix)
-      if (
-        selectedMarkets.includes("equities") &&
-        !symbol.includes("CE") &&
-        !symbol.includes("PE") &&
-        !symbol.includes("FUT") &&
-        !symbol.includes("OPT")
-      ) {
-        return true;
-      }
-
       // Check NIFTY Options
       if (
         selectedMarkets.includes("nifty-options") &&
         symbol.includes("NIFTY") &&
         (symbol.includes("CE") || symbol.includes("PE")) &&
         !symbol.includes("BANKNIFTY") &&
-        !symbol.includes("FINNIFTY")
+        !symbol.includes("FINNIFTY") &&
+        !symbol.includes("MIDCPNIFTY")
       ) {
         return true;
       }
@@ -523,15 +496,6 @@ export function AutoTradingCard() {
       if (
         selectedMarkets.includes("banknifty-options") &&
         symbol.includes("BANKNIFTY") &&
-        (symbol.includes("CE") || symbol.includes("PE"))
-      ) {
-        return true;
-      }
-
-      // Check SENSEX Options
-      if (
-        selectedMarkets.includes("sensex-options") &&
-        symbol.includes("SENSEX") &&
         (symbol.includes("CE") || symbol.includes("PE"))
       ) {
         return true;
@@ -546,28 +510,19 @@ export function AutoTradingCard() {
         return true;
       }
 
-      // Check Crude Options
+      // Check MIDCAP NIFTY Options
       if (
-        selectedMarkets.includes("crude-options") &&
-        symbol.includes("CRUDE") &&
+        selectedMarkets.includes("midcpnifty-options") &&
+        symbol.includes("MIDCPNIFTY") &&
         (symbol.includes("CE") || symbol.includes("PE"))
       ) {
         return true;
       }
 
-      // Check Gold Options
+      // Check SENSEX Options
       if (
-        selectedMarkets.includes("gold-options") &&
-        symbol.includes("GOLD") &&
-        (symbol.includes("CE") || symbol.includes("PE"))
-      ) {
-        return true;
-      }
-
-      // Check Silver Options
-      if (
-        selectedMarkets.includes("silver-options") &&
-        symbol.includes("SILVER") &&
+        selectedMarkets.includes("sensex-options") &&
+        symbol.includes("SENSEX") &&
         (symbol.includes("CE") || symbol.includes("PE"))
       ) {
         return true;

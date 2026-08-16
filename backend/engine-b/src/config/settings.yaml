@@ -4,21 +4,25 @@ service:
 engine_a:
   base_url: "http://engine-a:8000" # override via ENV ENGINE_A_URL
 markets:
-  NSE_INDICES: ["NIFTY", "BANKNIFTY"]
-  NSE_STOCKS: ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "LT"]
-  MCX_COMMODITIES: ["GOLD", "SILVER", "CRUDEOIL"]
+  NSE_INDICES: ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
+  NSE_OPTIONS: ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
 india:
   timezone: "Asia/Kolkata"
   sessions:
     NSE: {open: "09:15", close: "15:30"}
     BSE: {open: "09:15", close: "15:30"}
-    MCX: {open: "09:00", close: "23:30"}
+  expiry_rules_2026:
+    expiry_day: "Tuesday"
+    weekly_indices: ["NIFTY"]
+    monthly_indices: ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
   lot_sizes:
-    NIFTY: 50
-    BANKNIFTY: 15
+    NIFTY: 65
+    BANKNIFTY: 30
+    FINNIFTY: 60
+    MIDCPNIFTY: 120
+    SENSEX: 20
   min_tick_value:
     NSE: 0.05
-    MCX: 0.05
 models:
   retrain_interval_hours: 24
   enable_transformers_sentiment: false

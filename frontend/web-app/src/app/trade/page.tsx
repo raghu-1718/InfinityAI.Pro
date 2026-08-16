@@ -87,17 +87,17 @@ export default function AutomatedTradingPage() {
         description: "Wide volatility play",
       },
     ],
-    equities: [
-      { value: "rsi", label: "RSI Strategy", description: "Mean reversion" },
+    commodities: [
+      { value: "trend_following", label: "Trend Following", description: "Momentum breakout" },
       {
-        value: "ma_crossover",
-        label: "MA Crossover",
-        description: "Trend following",
+        value: "mean_reversion",
+        label: "Mean Reversion",
+        description: "Bollinger & RSI reversion",
       },
       {
-        value: "hybrid",
-        label: "Hybrid Selector",
-        description: "Multi-strategy",
+        value: "volatility_breakout",
+        label: "Volatility Breakout",
+        description: "ATR channel breakout",
       },
     ],
   };
@@ -138,25 +138,25 @@ export default function AutomatedTradingPage() {
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <div className="text-lg font-bold">Options</div>
+                  <div className="text-lg font-bold">Index Options</div>
                   <div className="text-sm text-gray-600">
-                    Derivatives trading
+                    NIFTY / BANK NIFTY / SENSEX
                   </div>
                 </button>
                 <button
                   onClick={() => {
-                    setAssetClass("equities");
-                    setStrategy("rsi");
-                    setSymbol("RELIANCE");
+                    setAssetClass("commodities");
+                    setStrategy("trend_following");
+                    setSymbol("CRUDEOIL");
                   }}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    assetClass === "equities"
+                    assetClass === "commodities"
                       ? "border-blue-600 bg-blue-50 text-blue-700"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <div className="text-lg font-bold">Equities</div>
-                  <div className="text-sm text-gray-600">Stock trading</div>
+                  <div className="text-lg font-bold">Commodities</div>
+                  <div className="text-sm text-gray-600">MCX F&O Derivatives</div>
                 </button>
               </div>
             </div>

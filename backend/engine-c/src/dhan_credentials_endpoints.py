@@ -1,6 +1,6 @@
 # ================================================================
 # DHAN CREDENTIALS MANAGEMENT ENDPOINTS
-# Stores user Dhan credentials securely in Supabase
+# Stores user Dhan credentials securely in Google Cloud Firestore
 # ================================================================
 from fastapi import APIRouter
 from datetime import datetime
@@ -109,11 +109,11 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
     try:
         logger.info(f"💾 Saving Dhan credentials for user: {request.user_id}")
         
-        # Use centralized UserCredentialsManager (Supabase)
+        # Use centralized UserCredentialsManager (Google Cloud Firestore)
         creds_manager = get_credentials_manager()
         
         if not creds_manager:
-            raise Exception("Credentials Manager (Supabase) not initialized")
+            raise Exception("Credentials Manager (Firestore) not initialized")
             
         try:
             # Save credentials
@@ -124,10 +124,10 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
                 api_key=request.api_key,
                 api_secret=request.api_secret
             )
-            logger.info(f"✅ Credentials saved via Supabase for user {request.user_id}")
+            logger.info(f"✅ Credentials saved via Firestore for user {request.user_id}")
              
         except Exception as e:
-            logger.error(f"❌ Failed to save to Supabase: {e}")
+            logger.error(f"❌ Failed to save to Firestore: {e}")
             return DhanCredentialsResponse(
                 success=False,
                 verified=False,
@@ -165,17 +165,17 @@ async def save_dhan_credentials(request: DhanCredentialsRequest):
         )
 
     # ---------------------------------------------------------
-    # CRITICAL FIX: Sync status to Supabase User Profile
+    # CRITICAL FIX: Sync status to Firestore User Profile
     # ---------------------------------------------------------
     if verified:
         try:
             creds_manager = get_credentials_manager()
             if creds_manager:
                 await creds_manager.update_connection_status(request.user_id, "connected", {})
-                logger.info(f"✅ Synced Dhan connection status to Supabase for {request.user_id}")
+                logger.info(f"✅ Synced Dhan connection status to Firestore for {request.user_id}")
             
         except Exception as fx:
-            logger.error(f"⚠️ Failed to sync status to Supabase: {fx}")
+            logger.error(f"⚠️ Failed to sync status to Firestore: {fx}")
             # Don't fail the request, as credentials are safe
 
     return DhanCredentialsResponse(
@@ -281,7 +281,7 @@ async def verify_dhan_connection(request: DhanCredentialsRequest):
 @app.delete("/api/dhan/credentials/{user_id}", response_model=DhanCredentialsResponse)
 async def disconnect_dhan(user_id: str):
     """
-    Delete user's Dhan credentials and disconnect in Supabase
+    Delete user's Dhan credentials and disconnect in Firestore
     """
     try:
         logger.info(f"🗑️ Deleting Dhan credentials for user: {user_id}")
@@ -297,14 +297,14 @@ async def disconnect_dhan(user_id: str):
         if success:
             logger.info(f"✅ Deleted credentials for user: {user_id}")
             
-            # 2. Sync Disconnect to Supabase
+            # 2. Sync Disconnect to Firestore
             try:
                 if creds_manager:
                     await creds_manager.update_connection_status(user_id, "disconnected", {})
-                logger.info(f"✅ Synced disconnect status to Supabase for {user_id}")
+                logger.info(f"✅ Synced disconnect status to Firestore for {user_id}")
                 
             except Exception as fx:
-                logger.warning(f"⚠️ Failed to sync disconnect to Supabase: {fx}")
+                logger.warning(f"⚠️ Failed to sync disconnect to Firestore: {fx}")
 
             return DhanCredentialsResponse(
                 success=True,

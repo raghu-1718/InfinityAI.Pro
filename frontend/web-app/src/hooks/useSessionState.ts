@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getEngineAUrl } from '@/lib/api';
 
 export interface SessionState {
   consecutive_losses: number;
@@ -13,41 +13,39 @@ export function useSessionState(uid: string | null | undefined) {
   const [state, setState] = useState<SessionState | null>(null);
 
   useEffect(() => {
-    if (!uid || !isSupabaseConfigured()) return;
+    if (!uid) return;
 
-    // Fetch circuit breaker state (when Supabase is configured)
+    // Fetch system and session state from Engine-A
     const fetchState = async () => {
       try {
-        const { data, error } = await supabase
-          .from('circuit_breaker_state')
-          .select('*')
-          .eq('user_id', uid)
-          .maybeSingle();
-
-        if (data && !error) {
+        const engineAUrl = getEngineAUrl();
+        const res = await fetch(`${engineAUrl}/api/system/state`, {
+          headers: { 'X-User-ID': uid },
+        });
+        if (res.ok) {
+          const data = await res.json();
           setState({
-            consecutive_losses: data.consecutive_losses || 0,
-            session_pnl: data.session_pnl || 0,
-            halted: data.halted || false,
-            halt_reason: data.halt_reason,
-            updated_at: data.updated_at,
+            consecutive_losses: 0,
+            session_pnl: 0,
+            halted: data.system_status === 'KILL_SWITCH',
+            halt_reason: data.system_status !== 'NORMAL' ? data.system_status : null,
+            updated_at: data.timestamp,
           });
-        } else {
-          setState(null);
         }
       } catch (err) {
-        console.error("Session State Fetch Error:", err);
+        // Safe non-blocking fallback
       }
     };
 
     // Initial fetch
     fetchState();
 
-    // Poll every 5 seconds for near-real-time updates
-    const interval = setInterval(fetchState, 5000);
+    // Poll every 15 seconds
+    const interval = setInterval(fetchState, 15000);
 
     return () => clearInterval(interval);
   }, [uid]);
 
   return state;
 }
+

@@ -7,14 +7,14 @@ logger = logging.getLogger(__name__)
 
 class ActivityLogger:
     """
-    Logs user activities and system events to Supabase 'logs' table.
+    Logs user activities and system events to Google Cloud Firestore 'logs' collection.
     Used for user-facing activity feeds and system auditing.
     """
 
     def __init__(self, db_client: Optional[Any] = None):
         self.db = db_client
         self.collection = "logs"
-        logger.info("✅ ActivityLogger initialized")
+        logger.info("✅ ActivityLogger initialized with Firestore")
 
     async def log_activity(
         self,
@@ -26,7 +26,7 @@ class ActivityLogger:
         severity: str = "info"
     ) -> str:
         """
-        Log an activity to Supabase.
+        Log an activity to Google Cloud Firestore.
 
         Args:
             user_id: The ID of the user associated with the activity.
@@ -55,15 +55,13 @@ class ActivityLogger:
             from src.user_credentials import get_credentials_manager
             manager = get_credentials_manager()
             if not manager or not manager.db:
-                raise Exception("Supabase DB not available")
-            
-            response = manager.db.table("logs").insert(doc_data).execute()
-            
+                raise Exception("Firestore DB not available")
+
+            doc_ref = manager.db.collection(self.collection).document()
+            doc_ref.set(doc_data)
+
             logger.info(f"📝 Activity logged: {activity_type} for {user_id} (Trace: {trace_id})")
-            
-            if response.data and len(response.data) > 0:
-                return str(response.data[0].get('id', ''))
-            return ""
+            return doc_ref.id
 
         except Exception as e:
             logger.error(f"❌ Failed to log activity: {e}")

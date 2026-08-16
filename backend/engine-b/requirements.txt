@@ -15,13 +15,13 @@ aiohttp>=3.9.0
 dhanhq==2.0.2
 
 # =====================================================================
-# Google Cloud Integrations - Vertex AI Enhanced
+# Google Cloud Integrations - Vertex AI & Firestore
 # =====================================================================
-# Official GenAI SDK with Vertex AI support (function calling, structured output)
 google-genai>=1.0.0
-
-# Supabase - signal and trade data persistence
-supabase>=2.3.0
+google-cloud-firestore>=2.11.0
+google-cloud-storage>=2.14.0
+google-cloud-bigquery>=3.17.0
+db-dtypes>=1.2.0
 
 # =====================================================================
 # News & RSS Integration
@@ -42,7 +42,6 @@ catboost>=1.2.0
 # =====================================================================
 transformers>=4.35.0
 nltk>=3.8.1
-# Note: spaCy removed to reduce image size - use transformers instead
 
 # =====================================================================
 # Data Processing & Technical Analysis
@@ -64,10 +63,8 @@ keras>=2.13.0
 # Market Data Sources
 # =====================================================================
 yfinance>=0.2.40
-
 # =====================================================================
-# Technical Analysis Library (Production Grade)
-# Note: pandas-ta has Python version issues, using ta-lib compatible alternative
+# Technical Analysis Library
 # =====================================================================
 ta>=0.11.0
 
@@ -77,7 +74,3 @@ ta>=0.11.0
 PyYAML==6.0.1
 python-multipart>=0.0.6
 aiofiles>=23.2.1
-
-google-cloud-storage
-google-cloud-bigquery
-db-dtypes

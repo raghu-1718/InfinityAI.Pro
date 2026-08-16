@@ -1,12 +1,6 @@
 /**
- * User Identity Management
- * Provides consistent user identification across the application
- *
- * Priority order for user ID:
- * 1. Dhan Client ID (when connected - most stable identifier)
- * 2. Supabase UID (when authenticated via Supabase Auth)
- * 3. Session-based ID (for coupon auth)
- * 4. Generated fallback ID (temporary until proper auth)
+ * User Identity Management (Single-Tenant Mode)
+ * Exclusively configured for Primary Owner Raghu (Client ID: 1101302170 / raghu_primary)
  */
 
 // Storage keys
@@ -15,62 +9,38 @@ const USER_ID_KEY = "infinityai_user_id";
 const AUTH_TYPE_KEY = "infinityai_auth_type";
 const COUPON_SESSION_KEY = "infinityai_coupon_session";
 
+export const PRIMARY_USER_ID = "raghu_primary";
+export const PRIMARY_DHAN_CLIENT_ID = "1101302170";
+export const PRIMARY_DISPLAY_NAME = "Raghu (1101302170)";
+
 /**
  * Get the current user's ID
- * Uses the most reliable identifier available
+ * In Single-Tenant mode, permanently resolves to raghu_primary
  */
 export function getUserId(): string {
-  if (typeof window === "undefined") return "default_user";
-
-  // Priority 1: Check auth type and get appropriate ID (Most stable persistent ID)
-  const authType = localStorage.getItem(AUTH_TYPE_KEY);
-
-  if (authType === "coupon") {
-    // Get coupon session user ID
-    const couponSession = localStorage.getItem(COUPON_SESSION_KEY);
-    if (couponSession) {
-      try {
-        const session = JSON.parse(couponSession);
-        if (session.userId) {
-          return session.userId;
-        }
-      } catch {
-        console.warn("Failed to parse coupon session");
-      }
-    }
+  if (typeof window === "undefined") return PRIMARY_USER_ID;
+  const stored = localStorage.getItem(USER_ID_KEY);
+  if (stored && stored !== "default_user" && stored !== "guest" && !stored.startsWith("user_")) {
+    return stored;
   }
-
-  // Also check for Supabase Auth UID if available in standard storage locations (if applicable)
-  // But for now, we stick to the provided keys.
-
-  // Priority 2: Generated fallback ID (for unauthenticated users)
-  // NOTE: Dhan Client ID should NOT be used as user ID for API calls
-  // because backend credentials are keyed by user email, not client ID
-  let userId = localStorage.getItem(USER_ID_KEY);
-  if (!userId) {
-    userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    localStorage.setItem(USER_ID_KEY, userId);
-  }
-  return userId;
+  return PRIMARY_USER_ID;
 }
 
 /**
  * Store the Dhan Client ID for future sessions
- * This becomes the primary identifier once connected
  */
 export function setDhanClientId(clientId: string): void {
-  if (typeof window !== "undefined" && clientId && /^\d{10}$/.test(clientId)) {
+  if (typeof window !== "undefined" && clientId) {
     localStorage.setItem(DHAN_CLIENT_ID_KEY, clientId);
-    console.log("✅ Dhan Client ID stored:", clientId);
   }
 }
 
 /**
  * Get the stored Dhan Client ID
  */
-export function getDhanClientId(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(DHAN_CLIENT_ID_KEY);
+export function getDhanClientId(): string {
+  if (typeof window === "undefined") return PRIMARY_DHAN_CLIENT_ID;
+  return localStorage.getItem(DHAN_CLIENT_ID_KEY) || PRIMARY_DHAN_CLIENT_ID;
 }
 
 /**
@@ -84,10 +54,10 @@ export function clearDhanClientId(): void {
 
 /**
  * Check if user has a Dhan account connected
+ * Always true in Single-Tenant mode with automated Cloud Scheduler Keep-Alive
  */
 export function isDhanConnected(): boolean {
-  const clientId = getDhanClientId();
-  return !!clientId && /^\d{10}$/.test(clientId);
+  return true;
 }
 
 /**
@@ -98,25 +68,15 @@ export function getUserDisplayInfo(): {
   isDhanConnected: boolean;
   displayName: string;
 } {
-  const userId = getUserId();
-  const dhanConnected = isDhanConnected();
-
-  let displayName = "Guest User";
-  if (dhanConnected) {
-    displayName = `Dhan User ${userId}`;
-  } else if (userId.startsWith("user_")) {
-    displayName = "Guest";
-  }
-
   return {
-    userId,
-    isDhanConnected: dhanConnected,
-    displayName,
+    userId: PRIMARY_USER_ID,
+    isDhanConnected: true,
+    displayName: PRIMARY_DISPLAY_NAME,
   };
 }
 
 /**
- * Clear all user identification data (for logout)
+ * Clear user identification data
  */
 export function clearUserIdentity(): void {
   if (typeof window === "undefined") return;
@@ -134,6 +94,9 @@ const userUtils = {
   isDhanConnected,
   getUserDisplayInfo,
   clearUserIdentity,
+  PRIMARY_USER_ID,
+  PRIMARY_DHAN_CLIENT_ID,
+  PRIMARY_DISPLAY_NAME,
 };
 
 export default userUtils;

@@ -2,7 +2,7 @@ import subprocess
 import json
 import concurrent.futures
 
-REPO = "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai"
+REPO = "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai"
 
 def list_untagged_images():
     print(f"Fetchting images from {REPO}...")

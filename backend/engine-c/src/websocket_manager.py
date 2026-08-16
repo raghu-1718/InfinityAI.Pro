@@ -104,22 +104,22 @@ class DhanWebSocketManager:
             return {}
     
     def _default_tick_handler(self, tick_data: Dict[str, Any]):
-        """Default handler - store in Supabase"""
+        """Default handler - store in Google Cloud Firestore"""
         try:
             security_id = tick_data.get('security_id')
             if security_id:
                 from src.user_credentials import get_credentials_manager
                 manager = get_credentials_manager()
                 if manager and manager.db:
-                    manager.db.table("live_prices").upsert({
+                    manager.db.collection("live_prices").document(str(security_id)).set({
                         "security_id": str(security_id),
                         "ltp": tick_data.get('ltp'),
                         "volume": tick_data.get('volume'),
                         "updated_at": tick_data.get('timestamp')
-                    }).execute()
-                
+                    }, merge=True)
+
                 logger.debug(f"Tick: {security_id} LTP: {tick_data.get('ltp')}")
-        
+
         except Exception as e:
             logger.error(f"Error storing tick data: {e}")
     
@@ -216,15 +216,15 @@ if __name__ == "__main__":
     print("\n[INFO] WebSocket Manager Structure:")
     print("  - Binary tick parsing (Little Endian)")
     print("  - Auto-reconnection")
-    print("  - Supabase storage")
+    print("  - Google Cloud Firestore storage")
     print("  - Multi-user support")
-    
+
     print("\n[INFO] Integration points:")
     print("  1. Connect with user credentials")
     print("  2. Subscribe to instruments")
-    print("  3. Real-time tick updates → Supabase")
+    print("  3. Real-time tick updates → Google Cloud Firestore")
     print("  4. Frontend WebSocket endpoint")
-    
+
     print("\n" + "=" * 80)
     print("  WEBSOCKET INFRASTRUCTURE READY")
     print("=" * 80)

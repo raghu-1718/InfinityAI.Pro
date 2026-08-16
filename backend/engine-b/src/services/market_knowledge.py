@@ -136,7 +136,7 @@ class SEBIRegulations:
         "FINNIFTY": 40,
         "MIDCPNIFTY": 120,
         "NIFTYNXT50": 25,
-        "SENSEX": 10,
+        "SENSEX": 20,
         "BANKEX": 15,
     }
 
@@ -145,7 +145,7 @@ class SEBIRegulations:
         "BANKNIFTY": 30,
         "FINNIFTY": 40,
         "MIDCPNIFTY": 120,
-        "SENSEX": 10,
+        "SENSEX": 20,
         "BANKEX": 15,
     }
 

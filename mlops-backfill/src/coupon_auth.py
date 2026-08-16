@@ -114,7 +114,7 @@ class CouponAuthManager:
         if self.db:
             try:
                 # Add coupon string fields 
-                self.db.table(self.coupons_collection).upsert({
+                self.db.collection(self.coupons_collection).document(code_id).set({
                     "code_id": code_id,
                     "code_display": coupon_data["code_display"],
                     "description": coupon_data["description"],
@@ -125,9 +125,9 @@ class CouponAuthManager:
                     "created_at": coupon_data["created_at"].isoformat() if coupon_data["created_at"] else None,
                     "features": coupon_data["features"],
                     "assigned_email": coupon_data["assigned_email"]
-                }).execute()
+                }, merge=True)
             except Exception as e:
-                logger.error(f"Failed to save coupon to Supabase: {e}")
+                logger.error(f"Failed to save coupon to Firestore: {e}")
                 self._memory_coupons[code_id] = coupon_data
         else:
             self._memory_coupons[code_id] = coupon_data
@@ -141,9 +141,9 @@ class CouponAuthManager:
 
         if self.db:
             try:
-                response = self.db.table(self.coupons_collection).select("*").eq("code_id", code_id).execute()
-                if response.data and len(response.data) > 0:
-                    data = response.data[0]
+                doc = self.db.collection(self.coupons_collection).document(code_id).get()
+                if doc.exists:
+                    data = doc.to_dict()
                     # Parse dates back to datetime objects if needed
                     if "expires_at" in data and isinstance(data["expires_at"], str):
                         try:
@@ -151,7 +151,7 @@ class CouponAuthManager:
                         except: pass
                     return data
             except Exception as e:
-                logger.error(f"Error fetching coupon from Supabase: {e}")
+                logger.error(f"Error fetching coupon from Firestore: {e}")
             return None
         else:
             return self._memory_coupons.get(code_id)
@@ -243,28 +243,25 @@ class CouponAuthManager:
         # Update coupon usage
         if self.db:
             try:
-                # Need to stringify dates
                 session_db_data = session_data.copy()
                 session_db_data["created_at"] = session_db_data["created_at"].isoformat()
                 session_db_data["expires_at"] = session_db_data["expires_at"].isoformat()
                 session_db_data["last_activity"] = session_db_data["last_activity"].isoformat()
-                self.db.table(self.sessions_collection).upsert(session_db_data).execute()
+                self.db.collection(self.sessions_collection).document(session_id).set(session_db_data, merge=True)
             except Exception as e:
                 logger.error(f"Failed to insert session: {e}")
-            
+
             if not is_reentry:
                 try:
-                    # In Supabase, you can't easily increment via API, so we fetch and update, or use RPC.
-                    # Since we already fetched the coupon earlier:
                     used_by_list = coupon.get("used_by", [])
                     if isinstance(used_by_list, str): used_by_list = [used_by_list]
                     used_by_list.append(user_id)
-                    
-                    self.db.table(self.coupons_collection).update({
+
+                    self.db.collection(self.coupons_collection).document(self._hash_code(code)).set({
                         "current_uses": current_uses + 1,
                         "used_by": used_by_list,
                         "used_at": utcnow().isoformat()
-                    }).eq("code_id", self._hash_code(code)).execute()
+                    }, merge=True)
                 except Exception as e:
                     logger.error(f"Failed to update coupon stats: {e}")
         else:
@@ -290,10 +287,10 @@ class CouponAuthManager:
 
         if self.db:
             try:
-                response = self.db.table(self.sessions_collection).select("*").eq("session_id", session_id).execute()
-                if not response.data or len(response.data) == 0:
+                doc = self.db.collection(self.sessions_collection).document(session_id).get()
+                if not doc.exists:
                     return {"valid": False, "message": "Session not found"}
-                session = response.data[0]
+                session = doc.to_dict()
             except Exception as e:
                 logger.error(f"Error validating session: {e}")
                 return {"valid": False, "message": "Session fetch failed"}
@@ -322,7 +319,9 @@ class CouponAuthManager:
         # Update last activity
         if self.db:
             try:
-                self.db.table(self.sessions_collection).update({"last_activity": utcnow().isoformat()}).eq("session_id", session_id).execute()
+                self.db.collection(self.sessions_collection).document(session_id).update({
+                    "last_activity": utcnow().isoformat()
+                })
             except Exception as e:
                 pass
 
@@ -339,10 +338,10 @@ class CouponAuthManager:
         """Update session when Dhan is configured"""
         if self.db:
             try:
-                self.db.table(self.sessions_collection).update({
+                self.db.collection(self.sessions_collection).document(session_id).update({
                     "dhan_configured": dhan_configured,
                     "dhan_configured_at": utcnow().isoformat() if dhan_configured else None
-                }).eq("session_id", session_id).execute()
+                })
             except Exception as e:
                 logger.error(f"Failed to update dhan status: {e}")
         else:
@@ -354,7 +353,10 @@ class CouponAuthManager:
         """Invalidate a session (logout)"""
         if self.db:
             try:
-                self.db.table(self.sessions_collection).update({"is_active": False, "logged_out_at": utcnow().isoformat()}).eq("session_id", session_id).execute()
+                self.db.collection(self.sessions_collection).document(session_id).update({
+                    "is_active": False,
+                    "logged_out_at": utcnow().isoformat()
+                })
             except Exception as e:
                 logger.error(f"Logout failed: {e}")
         else:
@@ -370,10 +372,10 @@ class CouponAuthManager:
 
         if self.db:
             try:
-                response = self.db.table(self.sessions_collection).select("*").eq("session_id", session_id).execute()
-                if not response.data or len(response.data) == 0:
+                doc = self.db.collection(self.sessions_collection).document(session_id).get()
+                if not doc.exists:
                     return None
-                session = response.data[0]
+                session = doc.to_dict()
             except Exception as e:
                 return None
         else:
@@ -400,17 +402,20 @@ class CouponAuthManager:
         # Update last activity
         if self.db:
             try:
-                self.db.table(self.sessions_collection).update({"last_activity": utcnow().isoformat()}).eq("session_id", session_id).execute()
+                self.db.collection(self.sessions_collection).document(session_id).update({
+                    "last_activity": utcnow().isoformat()
+                })
             except Exception: pass
 
         # Get features from the coupon
-        coupon_hash = session.get("coupon_code_hash")
+        coupon_code = session.get("coupon_code")
         features = ["dashboard", "trading", "signals"]
-        if coupon_hash and self.db:
+        if coupon_code and self.db:
             try:
-                resp = self.db.table(self.coupons_collection).select("features").eq("code_id", coupon_hash).execute()
-                if resp.data and len(resp.data) > 0:
-                    features = resp.data[0].get("features", features)
+                c_doc = self.db.collection(self.coupons_collection).document(self._hash_code(coupon_code)).get()
+                if c_doc.exists:
+                    c_data = c_doc.to_dict()
+                    features = c_data.get("features", features)
             except Exception: pass
 
         return {
@@ -426,7 +431,10 @@ class CouponAuthManager:
         """Invalidate/logout a session"""
         if self.db:
             try:
-                self.db.table(self.sessions_collection).update({"is_active": False, "logged_out_at": utcnow().isoformat()}).eq("session_id", session_id).execute()
+                self.db.collection(self.sessions_collection).document(session_id).update({
+                    "is_active": False,
+                    "logged_out_at": utcnow().isoformat()
+                })
                 return True
             except Exception:
                 return False
@@ -442,19 +450,19 @@ class CouponAuthManager:
 
         if self.db:
             try:
-                response = self.db.table(self.coupons_collection).select("*").execute()
-                if response.data:
-                    for data in response.data:
-                        coupons.append({
-                            "code_display": data.get("code_display", "****"),
-                            "description": data.get("description", ""),
-                            "max_uses": data.get("max_uses", 0),
-                            "current_uses": data.get("current_uses", 0),
-                            "is_active": data.get("is_active", False),
-                            "expires_at": data.get("expires_at"),
-                            "created_at": data.get("created_at"),
-                            "features": data.get("features", [])
-                        })
+                docs = self.db.collection(self.coupons_collection).stream()
+                for doc in docs:
+                    data = doc.to_dict()
+                    coupons.append({
+                        "code_display": data.get("code_display", "****"),
+                        "description": data.get("description", ""),
+                        "max_uses": data.get("max_uses", 0),
+                        "current_uses": data.get("current_uses", 0),
+                        "is_active": data.get("is_active", False),
+                        "expires_at": data.get("expires_at"),
+                        "created_at": data.get("created_at"),
+                        "features": data.get("features", [])
+                    })
             except Exception as e:
                 logger.error(f"Error fetching coupons: {e}")
         else:
@@ -485,7 +493,7 @@ class CouponAuthManager:
             code_hash = self._hash_code(code)
             try:
                 if self.db:
-                     self.db.table(self.coupons_collection).delete().eq("code_id", code_hash).execute()
+                     self.db.collection(self.coupons_collection).document(code_hash).delete()
                 elif code_hash in self._memory_coupons:
                      del self._memory_coupons[code_hash]
                 logger.info(f"🧹 Cleaned up legacy coupon: {code}")

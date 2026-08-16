@@ -80,7 +80,7 @@ fc.batch_set(collection, [{id, data}, ...])
 ```python
 from backend.shared.clients import get_secret
 
-dhan_key = get_secret("dhan-api-key")  # Retrieves from Supabase environment
+dhan_key = get_secret("dhan-api-key")  # Retrieves from Secret Manager / Firestore vault
 ```
 
 #### Logging
@@ -149,7 +149,6 @@ print(settings.cors_origins)  # Parsed from env
 ### Dependencies
 
 ```
-supabase-admin>=6.0.0
 google-cloud-secret-manager>=2.0.0
 google-cloud-firestore>=2.0.0
 pydantic>=2.0.0

@@ -5,7 +5,58 @@ from ..core.config import Config
 from ..core.utils import setup_logger
 from ..core.event_bus import event_bus
 
-log = setup_logger("DhanWS")
+from datetime import datetime, timezone
+
+def format_tick_for_pubsub(dhan_tick: dict) -> bytes:
+    """Format Dhan tick to strictly match BigQuery market_data.live_ticks schema"""
+    symbol = (
+        dhan_tick.get("tradingSymbol")
+        or dhan_tick.get("symbol")
+        or dhan_tick.get("trading_symbol")
+        or str(dhan_tick.get("security_id") or dhan_tick.get("securityId") or "NIFTY")
+    )
+    try:
+        price = float(
+            dhan_tick.get("LTP")
+            or dhan_tick.get("price")
+            or dhan_tick.get("ltp")
+            or dhan_tick.get("last_price")
+            or (dhan_tick.get("ohlc", {}).get("close") if isinstance(dhan_tick.get("ohlc"), dict) else None)
+            or 0.0
+        )
+    except (ValueError, TypeError):
+        price = 0.0
+
+    try:
+        volume = int(
+            dhan_tick.get("volume")
+            or dhan_tick.get("qty")
+            or dhan_tick.get("quantity")
+            or dhan_tick.get("last_quantity")
+            or 0
+        )
+    except (ValueError, TypeError):
+        volume = 0
+
+    ts = dhan_tick.get("timestamp") or dhan_tick.get("time")
+    if not ts:
+        ts = datetime.now(timezone.utc).isoformat()
+    elif isinstance(ts, (int, float)):
+        ts = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+
+    event_type = str(dhan_tick.get("type") or dhan_tick.get("event_type") or "TICK")
+
+    payload = {
+        "symbol": symbol,
+        "price": price,
+        "volume": volume,
+        "timestamp": ts,
+        "event_type": event_type,
+        "raw_data": json.dumps(dhan_tick),
+        "data": "live_stream"
+    }
+    return json.dumps(payload).encode("utf-8")
+
 
 class DhanWS:
     def __init__(self):
@@ -24,36 +75,17 @@ class DhanWS:
 
     def _on_message(self, ws, message):
         try:
-            data = json.loads(message)
+            data = json.loads(message) if isinstance(message, str) else message
             
-            # Pub/Sub payload for BigQuery subscription
-            if self.publisher:
-                symbol = data.get("symbol", "")
-                price = float(data.get("price", data.get("LTP", 0.0)))
-                volume = int(data.get("volume", 0))
-                event_type = data.get("type", "unknown")
-                
-                payload = {
-                    "symbol": symbol,
-                    "price": price,
-                    "volume": volume,
-                    "event_type": event_type,
-                    "raw_data": json.dumps(data)
-                }
-                
-                # Check for timestamp or fallback
-                ts = data.get("timestamp")
-                if ts:
-                    payload["timestamp"] = ts
-
-                future = self.publisher.publish(
-                    self.topic_path, 
-                    data=json.dumps(payload).encode("utf-8")
-                )
+            # Pub/Sub payload formatted for BigQuery subscription
+            if self.publisher and isinstance(data, dict):
+                formatted_bytes = format_tick_for_pubsub(data)
+                self.publisher.publish(self.topic_path, data=formatted_bytes)
                 
         except Exception as e:
             data = {"type": "raw", "message": message}
-        event_type = data.get("type", "unknown")
+            log.error(f"Error processing WS message: {e}")
+        event_type = data.get("type", "unknown") if isinstance(data, dict) else "unknown"
         event_bus.publish(event_type, data)
         log.info(f"WS: {event_type} -> {data}")
 

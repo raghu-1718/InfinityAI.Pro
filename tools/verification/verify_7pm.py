@@ -13,7 +13,7 @@ try:
 except ValueError:
     cred = credentials.ApplicationDefault()
     firebase_admin.initialize_app(cred, {
-        'projectId': 'galvanic-pulsar-482815-h0',
+        'projectId': 'project-841b7f97-5ee3-4fbe-920',
     })
 
 db = firestore.client()

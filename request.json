@@ -1,0 +1,11 @@
+{
+  "anthropic_version": "vertex-2023-10-16",
+  "stream": true,
+  "max_tokens": 512,
+  "messages": [
+    {
+      "content": "Confirm you are connected to InfinityAI.Pro via Vertex AI.",
+      "role": "user"
+    }
+  ]
+}

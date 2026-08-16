@@ -1,6 +1,5 @@
 """
-Session Manager - Distributed session locking via Supabase PostgreSQL.
-Replaces Firestore transactional locking with Supabase row-level upserts.
+Session Manager - Distributed session locking via Google Cloud Firestore.
 """
 from datetime import datetime
 import os
@@ -8,23 +7,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Initialize Supabase (Singleton)
+# Initialize Google Cloud Firestore (Singleton)
 _db = None
 
 def get_db():
     global _db
     if _db is None:
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-            if url and key:
-                _db = create_client(url, key)
-                logger.info("✅ SessionManager: Supabase client initialized")
-            else:
-                logger.warning("⚠️ SUPABASE_URL or key not set; session locking will use in-memory fallback")
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            _db = firestore.Client(project=project_id)
+            logger.info("✅ SessionManager: Google Cloud Firestore client initialized")
         except Exception as e:
-            logger.error(f"Failed to init Supabase for sessions: {e}")
+            logger.warning(f"⚠️ Could not init Firestore for sessions (using in-memory fallback): {e}")
     return _db
 
 # In-memory fallback for local/testing
@@ -36,28 +31,29 @@ class SessionExistsError(Exception):
 def acquire_session_lock(uid: str):
     """
     Acquire a distributed lock for the trading session.
-    Uses Supabase upsert with active-check to prevent race conditions.
+    Uses Google Cloud Firestore to prevent race conditions.
     """
     db = get_db()
 
     if db:
         try:
-            # Check if session is already active
-            response = db.table("trading_sessions").select("*").eq("user_id", uid).eq("active", True).execute()
+            doc_ref = db.collection("trading_sessions").document(uid)
+            doc = doc_ref.get()
 
-            if response.data and len(response.data) > 0:
-                existing = response.data[0]
-                raise SessionExistsError(
-                    f"Session already active for user {uid} (Started: {existing.get('started_at')})"
-                )
+            if doc.exists:
+                data = doc.to_dict()
+                if data.get("active") is True:
+                    raise SessionExistsError(
+                        f"Session already active for user {uid} (Started: {data.get('started_at')})"
+                    )
 
-            # Set Lock via upsert
-            db.table("trading_sessions").upsert({
+            # Set Lock via Firestore
+            doc_ref.set({
                 "user_id": uid,
                 "active": True,
                 "started_at": datetime.utcnow().isoformat(),
                 "last_heartbeat": datetime.utcnow().isoformat()
-            }).execute()
+            }, merge=True)
 
         except SessionExistsError:
             raise
@@ -85,10 +81,10 @@ def release_session_lock(uid: str):
 
     if db:
         try:
-            db.table("trading_sessions").update({
+            db.collection("trading_sessions").document(uid).update({
                 "active": False,
                 "stopped_at": datetime.utcnow().isoformat()
-            }).eq("user_id", uid).execute()
+            })
             logger.info(f"🔓 Session Lock Released: {uid}")
         except Exception as e:
             logger.warning(f"Session lock release warning: {e}")
@@ -102,11 +98,12 @@ def check_session_active(uid: str) -> bool:
 
     if db:
         try:
-            response = db.table("trading_sessions").select("active").eq("user_id", uid).execute()
-            if response.data and len(response.data) > 0:
-                return response.data[0].get("active", False) is True
+            doc = db.collection("trading_sessions").document(uid).get()
+            if doc.exists:
+                return doc.to_dict().get("active", False) is True
         except Exception as e:
             logger.error(f"Session check failed: {e}")
         return False
     else:
         return _memory_sessions.get(uid, {}).get("active", False)
+

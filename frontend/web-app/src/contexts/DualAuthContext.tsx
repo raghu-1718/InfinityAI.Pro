@@ -15,7 +15,7 @@ import {
   signInWithGoogle as authSignInWithGoogle,
   logOut as authLogOut,
 } from "@/lib/auth";
-import type { UserProfile } from "@/lib/supabase";
+import type { UserProfile } from "@/lib/firebase";
 import { verifyCouponAPI } from "@/lib/cloudFunctions";
 import { useSessionStore } from "@/hooks/useSessionStore";
 import { getEngineCUrl } from "@/lib/api";
@@ -187,7 +187,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // Listen for Supabase auth state changes (safe wrapper handles SSR)
+    // Listen for auth state changes (safe wrapper handles SSR)
     const unsubscribe = onAuthChange(async (fbUser) => {
       if (!isMounted) return;
       clearTimeout(safetyTimeout);
@@ -207,7 +207,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } catch (error) {
-          console.error("Error loading Supabase user profile:", error);
+          console.error("Error loading user profile:", error);
           if (isMounted) {
             setAuthUser(fbUser);
             if (storedCouponData) {
@@ -217,7 +217,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        // No Supabase user - clear all auth
+        // No user - clear all auth
         if (isMounted) {
           setAuthUser(null);
           setUserProfile(null);
@@ -354,7 +354,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setLoading(true);
     try {
-      // Sign out using supabase helper (safe for SSR)
+      // Sign out using auth helper
       await authLogOut();
 
       // Try to notify backend

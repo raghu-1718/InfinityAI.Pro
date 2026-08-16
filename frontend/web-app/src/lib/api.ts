@@ -108,6 +108,27 @@ export const fetchFromEngineB = async (endpoint: string, options: RequestInit = 
   }
 };
 
+export const fetchFromEngineC = async (endpoint: string, options: RequestInit = {}) => {
+  const baseUrl = API_CONFIG.ENGINE_C;
+  const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, options);
+  return res.json();
+};
+
+// Standalone Dhan API fetch functions (Zero required user_id parameter)
+export const getFunds = () => fetchFromEngineC("/api/dhan/funds");
+export const getPositions = () => fetchFromEngineC("/api/dhan/positions");
+export const getHoldings = () => fetchFromEngineC("/api/dhan/holdings");
+export const getOrders = () => fetchFromEngineC("/api/dhan/orders");
+export const getTrades = () => fetchFromEngineC("/api/dhan/trades");
+export const getMarketQuotes = (securityIds: string[] | string = ["1333", "11536"], exchangeSegment = "NSE_EQ") => {
+  const ids = Array.isArray(securityIds) ? securityIds.join(",") : securityIds;
+  const params = new URLSearchParams({
+    security_ids: ids,
+    exchange_segment: exchangeSegment,
+  });
+  return fetchFromEngineC(`/api/dhan/market/quotes?${params.toString()}`);
+};
+
 // Types
 export interface EngineHealth {
   status: string;
@@ -533,12 +554,12 @@ export const engineA = {
     useAISignals: boolean;
     user_id: string; // Required now
   }) {
-    // Phase 5: Mapping to Backend SessionConfig
+    // Mapping to Backend SessionConfig (Pure F&O & Commodities)
     const assetClass = data.instruments.some(
-      (i) => i.includes("NIFTY") || i.includes("BANK"),
+      (i) => i.toLowerCase().includes("crude") || i.toLowerCase().includes("gold") || i.toLowerCase().includes("silver"),
     )
-      ? "fno"
-      : "equities";
+      ? "commodities"
+      : "fno";
 
     // Construct SessionConfig payload
     const payload = {
@@ -958,6 +979,21 @@ export const engineC = {
     return res.json();
   },
 
+  async getMarketQuotes(securityIds: string = "1333,11536", exchangeSegment: string = "NSE_EQ") {
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/market/quotes?security_ids=${encodeURIComponent(securityIds)}&exchange_segment=${encodeURIComponent(exchangeSegment)}`
+    );
+    return res.json();
+  },
+
+  async getTrades(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : "";
+    const res = await fetchWithTimeout(
+      `${API_CONFIG.ENGINE_C}/api/dhan/trades${queryParam}`
+    );
+    return res.json();
+  },
+
   async getHistoricalData(symbol: string, fromDate: string, toDate: string, interval: string = "1D") {
     const res = await fetchWithTimeout(
       `${API_CONFIG.ENGINE_C}/api/dhan/historical?symbol=${encodeURIComponent(symbol)}&fromDate=${fromDate}&toDate=${toDate}&interval=${interval}`
@@ -975,7 +1011,7 @@ export const engineC = {
   async getOptionChain(symbol: string, expiry?: string) {
     const query = expiry ? `&expiry=${encodeURIComponent(expiry)}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/option-chain?symbol=${encodeURIComponent(symbol)}${query}`
+      `${API_CONFIG.ENGINE_C}/api/dhan/optionchain?under_security_id=13${query}`
     );
     return res.json();
   },
@@ -987,16 +1023,17 @@ export const engineC = {
     return res.json();
   },
 
-  // User Credentials API
-  async getUserCredentials(userId: string) {
+  // User Credentials API (Single-Tenant Default)
+  async getUserCredentials(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
+      `${API_CONFIG.ENGINE_C}/api/user/credentials${queryParam}`,
     );
     return res.json();
   },
 
   async saveUserCredentials(data: {
-    user_id: string;
+    user_id?: string;
     client_id: string;
     access_token: string;
     api_key?: string;
@@ -1012,23 +1049,26 @@ export const engineC = {
     return res.json();
   },
 
-  async verifyUserCredentials(userId: string) {
+  async verifyUserCredentials(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify?user_id=${userId}`,
+      `${API_CONFIG.ENGINE_C}/api/user/credentials/verify${queryParam}`,
     );
     return res.json();
   },
 
-  async getUserDemat(userId: string) {
+  async getUserDemat(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/demat?user_id=${userId}`,
+      `${API_CONFIG.ENGINE_C}/api/user/demat${queryParam}`,
     );
     return res.json();
   },
 
-  async deleteUserCredentials(userId: string) {
+  async deleteUserCredentials(userId?: string) {
+    const queryParam = userId ? `?user_id=${userId}` : "";
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/user/credentials?user_id=${userId}`,
+      `${API_CONFIG.ENGINE_C}/api/user/credentials${queryParam}`,
       { method: "DELETE" },
     );
     return res.json();

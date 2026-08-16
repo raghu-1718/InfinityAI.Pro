@@ -5,7 +5,7 @@ Evaluation Framework for InfinityAI.Pro
 This module provides evaluation runners for testing AI signals, trade decisions,
 and end-to-end platform functionality against test datasets.
 
-Project: galvanic-pulsar-482815-h0 (I Am Infinity)
+Project: project-841b7f97-5ee3-4fbe-920 (I Am Infinity)
 Status: Production Grade
 """
 

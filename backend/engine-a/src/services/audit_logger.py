@@ -1,6 +1,6 @@
 """
 Structured Audit Logger for Trading Safety Events.
-Writes to Supabase 'logs' table.
+Writes to Google Cloud Firestore 'logs' collection.
 Immutable, persistent, replayable.
 """
 from datetime import datetime
@@ -11,35 +11,31 @@ import json
 
 logger = logging.getLogger(__name__)
 
-# Initialize Supabase (Singleton)
+# Initialize Google Cloud Firestore (Singleton)
 _db = None
 
 def get_db():
     global _db
     if _db is None:
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-            if url and key:
-                _db = create_client(url, key)
-                logger.info("✅ AuditLogger: Supabase client initialized")
-            else:
-                logger.warning("⚠️ SUPABASE_URL or key not set; audit logging will be console-only")
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            _db = firestore.Client(project=project_id)
+            logger.info("✅ AuditLogger: Google Cloud Firestore client initialized")
         except Exception as e:
-            logger.error(f"Failed to init Supabase for audit logging: {e}")
+            logger.warning(f"⚠️ Could not init Firestore for audit logging (console-only): {e}")
     return _db
 
 
 class AuditLogger:
     """
     Structured Audit Logger for Trading Safety Events.
-    Writes to Supabase 'logs' table.
+    Writes to Google Cloud Firestore 'logs' collection.
     Immutable, persistent, replayable.
     """
 
     def __init__(self):
-        self.table = "logs"
+        self.collection = "logs"
 
     def log_event(self, uid: str, event: str, details: dict, severity: str = "INFO"):
         """
@@ -61,7 +57,7 @@ class AuditLogger:
             }
 
             if db:
-                db.table(self.table).insert(doc_data).execute()
+                db.collection(self.collection).document().set(doc_data)
 
             logger.info(f"📝 AUDIT LOG: {event} | {json.dumps(details)}")
 

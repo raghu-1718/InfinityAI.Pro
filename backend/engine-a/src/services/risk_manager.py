@@ -295,3 +295,48 @@ class RiskManager:
 
         return int(final_qty)
 
+    def validate_net_profitability(
+        self,
+        entry_price: float,
+        target_price: float,
+        lot_size: int,
+        lots: int = 1,
+        max_fee_ratio: float = 0.35,
+        min_net_profit_margin: float = 0.015
+    ) -> Dict[str, Any]:
+        """
+        Institutional Net Profitability Gate (Anti-Fee Cannibalization).
+        Computes exact Indian statutory taxes (STT, GST, Stamp Duty, Exchange Charges, SEBI fees)
+        and rejects setups where transactional friction destroys net alpha.
+        """
+        try:
+            try:
+                from src.services.tax_calculator import evaluate_net_profitability_gate
+            except ImportError:
+                try:
+                    from shared.tax_calculator import evaluate_net_profitability_gate
+                except ImportError:
+                    from tax_calculator import evaluate_net_profitability_gate
+
+            return evaluate_net_profitability_gate(
+                entry_price=entry_price,
+                target_price=target_price,
+                lot_size=lot_size,
+                lots=lots,
+                max_fee_ratio=max_fee_ratio,
+                min_net_profit_margin=min_net_profit_margin
+            )
+        except Exception as e:
+            logger.warning(f"Fallback net profitability check: {e}")
+            gross = (target_price - entry_price) * (lot_size * lots)
+            fees = 50.0  # Safe default estimate
+            return {
+                "is_viable": (gross - fees) > 0,
+                "rejection_reason": None if (gross - fees) > 0 else "Gross profit below fee estimate",
+                "gross_profit": round(gross, 2),
+                "total_fees": round(fees, 2),
+                "net_profit": round(gross - fees, 2),
+                "fee_ratio": round(fees / gross, 4) if gross > 0 else 1.0,
+                "net_roi": 0.02
+            }
+

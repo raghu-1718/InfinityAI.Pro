@@ -111,20 +111,15 @@ class YFinanceDataFetcher:
         print(f"[SAVED] {filename}")
         return filename
     
-    def save_to_supabase(self, df, symbol, exchange='NSE'):
+    def save_to_firestore(self, df, symbol, exchange='NSE'):
         """
-        Save historical data to Supabase instead of CSV
-        Table: historical_data
+        Save historical data to Google Cloud Firestore
+        Collection: historical_data
         """
         try:
-            from supabase import create_client
-            url = os.getenv("SUPABASE_URL")
-            key = os.getenv("SUPABASE_ANON_KEY")
-            if not url or not key:
-                print("[WARN] Supabase not configured")
-                return False
-
-            db = create_client(url, key)
+            from google.cloud import firestore
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            db = firestore.Client(project=project_id)
 
             for _, row in df.iterrows():
                 date_str = row['date'].strftime('%Y-%m-%d') if hasattr(row['date'], 'strftime') else str(row['date'])
@@ -141,13 +136,14 @@ class YFinanceDataFetcher:
                     'updated_at': datetime.now().isoformat()
                 }
 
-                db.table('historical_data').upsert(data).execute()
+                doc_id = f"{symbol}_{exchange}_{date_str}"
+                db.collection('historical_data').document(doc_id).set(data, merge=True)
 
-            print(f"[SUPABASE] Saved {len(df)} records for {symbol}_{exchange}")
+            print(f"[FIRESTORE] Saved {len(df)} records for {symbol}_{exchange}")
             return True
 
         except Exception as e:
-            print(f"[ERROR] Failed to save to Supabase: {str(e)}")
+            print(f"[ERROR] Failed to save to Firestore: {str(e)}")
             return False
 
 # Demo

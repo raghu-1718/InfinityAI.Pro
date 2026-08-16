@@ -4,9 +4,9 @@ steps:
     args:
       - "build"
       - "-t"
-      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
       - "-t"
-      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
       - "-f"
       - "frontend/web-app/Dockerfile"
       - "."
@@ -16,7 +16,7 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
     id: "push-image-latest"
     waitFor: ["build-image"]
 
@@ -24,7 +24,7 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
     id: "push-image-sha"
     waitFor: ["build-image"]
 
@@ -36,7 +36,7 @@ steps:
       - "deploy"
       - "web-app"
       - "--image"
-      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
+      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
       - "--region"
       - "asia-south1"
       - "--platform"
@@ -51,17 +51,15 @@ steps:
       - "--port"
       - "3000"
       - "--set-env-vars"
-      - "NODE_ENV=production"
-      - "--set-secrets"
-      - "NEXT_PUBLIC_ABLY_API_KEY=ably-api-key-subscribe:latest"
+      - "NODE_ENV=production,NEXT_PUBLIC_ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,NEXT_PUBLIC_ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,NEXT_PUBLIC_ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app"
       - "--project"
-      - "galvanic-pulsar-482815-h0"
+      - "project-841b7f97-5ee3-4fbe-920"
     id: "deploy-cloud-run"
     waitFor: ["push-image-latest"]
 
 images:
-  - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:latest"
-  - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/web-app:${SHORT_SHA}"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
 
 timeout: "1800s"
 options:

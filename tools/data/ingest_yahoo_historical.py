@@ -54,7 +54,7 @@ PERIOD_MAP = {
 class YahooHistoricalClient:
     """Async client for fetching Yahoo Finance historical data"""
 
-    def __init__(self, bucket_name: str = 'infinityai-backtesting-data', project_id: str = 'galvanic-pulsar-482815-h0'):
+    def __init__(self, bucket_name: str = 'infinityai-backtesting-data', project_id: str = 'project-841b7f97-5ee3-4fbe-920'):
         self.bucket_name = bucket_name
         self.project_id = project_id
         # No longer using storage client - saving locally

@@ -6,13 +6,13 @@
     "timestamp": "2026-01-23T17:09:42.380028"
   },
   "architecture": {
-    "project_id": "galvanic-pulsar-482815-h0",
+    "project_id": "project-841b7f97-5ee3-4fbe-920",
     "region": "us-central1",
     "timestamp": "2026-01-23T17:09:42.380028",
     "components": {
       "frontend": {
         "type": "Firebase Hosting",
-        "url": "https://galvanic-pulsar-482815-h0.web.app",
+        "url": "https://project-841b7f97-5ee3-4fbe-920.web.app",
         "technology": "Next.js 16 Static Export",
         "status": "Live"
       },

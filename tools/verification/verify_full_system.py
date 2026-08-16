@@ -2,7 +2,7 @@
 """
 Complete End-to-End System Verification
 Verifies all components, services, and integrations in real-time
-Project: InfinityAI.Pro (galvanic-pulsar-482815-h0)
+Project: InfinityAI.Pro (project-841b7f97-5ee3-4fbe-920)
 """
 
 import requests
@@ -34,10 +34,10 @@ class SystemVerifier:
         }
 
         self.cloud_functions = {
-            'get-live-prices': 'https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/get-live-prices',
-            'detect-momentum-signals': 'https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/detect-momentum-signals',
-            'get-price-history': 'https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/get-price-history',
-            'live-data-ingestion': 'https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/live-data-ingestion'
+            'get-live-prices': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices',
+            'detect-momentum-signals': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/detect-momentum-signals',
+            'get-price-history': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-price-history',
+            'live-data-ingestion': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/live-data-ingestion'
         }
 
         self.engine_c_endpoints = {
@@ -57,7 +57,7 @@ class SystemVerifier:
             '/get-session-status': 'https://engine-a-3acobgd3qa-uc.a.run.app/get-session-status'
         }
 
-        self.frontend_url = 'https://galvanic-pulsar-482815-h0.web.app'
+        self.frontend_url = 'https://project-841b7f97-5ee3-4fbe-920.web.app'
 
     def print_header(self, title: str):
         """Print section header"""
@@ -182,7 +182,7 @@ class SystemVerifier:
         # Test 2: Frontend → Cloud Functions path
         print(f"{BLUE}Testing: Frontend → Cloud Functions communication...{RESET}")
         try:
-            cf_url = 'https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/get-live-prices'
+            cf_url = 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices'
             response = requests.get(cf_url, timeout=10)
             # Any response means the function is reachable
             if response.status_code in [200, 400, 403, 405]:
@@ -233,7 +233,7 @@ class SystemVerifier:
     def generate_architecture_summary(self) -> Dict:
         """Generate current architecture state summary"""
         return {
-            "project_id": "galvanic-pulsar-482815-h0",
+            "project_id": "project-841b7f97-5ee3-4fbe-920",
             "region": "us-central1",
             "timestamp": self.results['timestamp'],
             "components": {
@@ -314,7 +314,7 @@ class SystemVerifier:
             print(f"\n{RED}❌ CRITICAL ISSUES DETECTED - REVIEW REQUIRED{RESET}")
 
         print(f"\nTimestamp: {self.results['timestamp']}")
-        print(f"Project: galvanic-pulsar-482815-h0")
+        print(f"Project: project-841b7f97-5ee3-4fbe-920")
         print(f"Region: us-central1")
 
     def run_full_verification(self):
@@ -322,7 +322,7 @@ class SystemVerifier:
         print(f"\n{BLUE}{'='*80}{RESET}")
         print(f"{BLUE}InfinityAI.Pro - Complete End-to-End System Verification{RESET}")
         print(f"{BLUE}{'='*80}{RESET}")
-        print(f"Project: galvanic-pulsar-482815-h0")
+        print(f"Project: project-841b7f97-5ee3-4fbe-920")
         print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
         self.verify_frontend()

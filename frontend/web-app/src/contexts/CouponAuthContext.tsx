@@ -15,7 +15,7 @@ import {
   signInWithGoogle as authSignInWithGoogle,
   logOut as authLogOut,
 } from "@/lib/auth";
-import type { UserProfile } from "@/lib/supabase";
+import type { UserProfile } from "@/lib/firebase";
 
 // Storage keys
 const COUPON_SESSION_KEY = "infinityai_coupon_session";
@@ -41,7 +41,7 @@ function clearOldStorage() {
   }
 }
 
-export type AuthType = "supabase" | "coupon" | null;
+export type AuthType = "google" | "coupon" | null;
 
 export interface CouponSession {
   sessionId: string;
@@ -70,7 +70,7 @@ interface CouponAuthContextType {
   authUser: User | null;
   userProfile: UserProfile | null;
 
-  // Supabase Auth methods
+  // Google OAuth methods
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
 
   // Coupon Auth methods
@@ -112,7 +112,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
     clearOldStorage();
   }, []);
 
-  // Initialize auth state - check both Supabase and coupon
+  // Initialize auth state - check both Google OAuth and coupon
   useEffect(() => {
     let isMounted = true;
 
@@ -134,12 +134,12 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         ? localStorage.getItem(COUPON_SESSION_KEY)
         : null;
 
-    // Listen for Supabase auth state changes (safe wrapper handles SSR case)
+    // Listen for auth state changes (safe wrapper handles SSR case)
     const unsubscribe = onAuthChange(async (fbUser) => {
       if (!isMounted) return;
 
       if (fbUser) {
-        // User is signed in with Supabase
+        // User is signed in with Google OAuth
         clearTimeout(safetyTimeout);
         try {
           const profile = await getUserProfile(fbUser.uid);
@@ -147,9 +147,9 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           if (isMounted) {
             setAuthUser(fbUser);
             setUserProfile(profile);
-            setAuthType("supabase");
+            setAuthType("google");
 
-            // Create session from Supabase user
+            // Create session from user
             setSession({
               sessionId: fbUser.uid,
               userId: fbUser.uid,
@@ -169,15 +169,15 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
               photoURL: fbUser.photoURL,
             });
 
-            localStorage.setItem(AUTH_TYPE_KEY, "supabase");
+            localStorage.setItem(AUTH_TYPE_KEY, "google");
             localStorage.removeItem(COUPON_SESSION_KEY);
             setLoading(false);
           }
         } catch (error) {
-          console.error("Error loading Supabase user profile:", error);
+          console.error("Error loading user profile:", error);
           if (isMounted) {
             setAuthUser(fbUser);
-            setAuthType("supabase");
+            setAuthType("google");
             setSession({
               sessionId: fbUser.uid,
               userId: fbUser.uid,
@@ -198,7 +198,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        // No Supabase user - check for coupon session
+        // No Google OAuth user - check for coupon session
         setAuthUser(null);
         setUserProfile(null);
 
@@ -271,7 +271,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
 
       setAuthUser(fbUser);
       setUserProfile(profile || null);
-      setAuthType("supabase");
+      setAuthType("google");
 
       setSession({
         sessionId: fbUser.uid,
@@ -292,7 +292,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
         photoURL: fbUser.photoURL,
       });
 
-      localStorage.setItem(AUTH_TYPE_KEY, "supabase");
+      localStorage.setItem(AUTH_TYPE_KEY, "google");
       localStorage.removeItem(COUPON_SESSION_KEY);
 
       setLoading(false);
@@ -402,7 +402,7 @@ export function CouponAuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setLoading(true);
     try {
-      // Sign out using supabase helper (safe for SSR)
+      // Sign out using auth helper
       await authLogOut();
 
       // Try to notify backend for coupon logout
