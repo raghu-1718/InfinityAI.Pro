@@ -97,23 +97,6 @@ db = get_firestore_db()  # Database alias for signal persistence
 # Create FastAPI app
 app = FastAPI()
 
-@app.get("/health")
-@app.get("/engine-b/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "service": "engine-b",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "version": "3.0-ensemble",
-        "frameworks": {
-            "pytorch": HAS_TORCH,
-            "transformers": HAS_TRANSFORMERS,
-            "xgboost": True,
-            "lightgbm": True,
-            "catboost": HAS_CATBOOST
-        }
-    }
-
 if HAS_OTEL:
     FastAPIInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
@@ -369,6 +352,28 @@ app = FastAPI(
     description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference and Vertex AI",
     version="3.7.7-vertexai"
 )
+
+@app.get("/health", tags=["Health"])
+@app.get("/healthz", tags=["Health"])
+@app.get("/api/health", tags=["Health"])
+@app.get("/engine-b/health", tags=["Health"])
+async def comprehensive_health_check():
+    """Provides a comprehensive health status for Engine B."""
+    return {
+        "status": "healthy",
+        "service": "engine-b",
+        "region": "asia-south1",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "version": "4.1-refactored",
+        "capabilities": MODEL_STORE.get_capabilities() if 'MODEL_STORE' in globals() else {},
+        "frameworks": {
+            "pytorch": HAS_TORCH,
+            "transformers": HAS_TRANSFORMERS,
+            "xgboost": True,
+            "lightgbm": True,
+            "catboost": HAS_CATBOOST
+        }
+    }
 
 # Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
