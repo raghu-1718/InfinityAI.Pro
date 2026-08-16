@@ -44,6 +44,7 @@ from concurrent.futures import ThreadPoolExecutor
 bq_executor = ThreadPoolExecutor(max_workers=5)
 from dhanhq import dhanhq
 import uvicorn
+from google.cloud import storage, bigquery
 # from google.cloud import secretmanager (Removed)
 
 # Optional OpenTelemetry instrumentation (guarded)
