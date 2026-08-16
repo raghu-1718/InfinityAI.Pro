@@ -24,30 +24,6 @@ steps:
     waitFor: ["build-engine-a"]
 
   # --------------------------------------------------
-  # Engine B: Build & Push
-  # --------------------------------------------------
-  - name: "gcr.io/cloud-builders/docker"
-    id: "build-engine-b"
-    args:
-      [
-        "build",
-        "-t",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
-        "-f",
-        "backend/engine-b/Dockerfile",
-        ".",
-      ]
-
-  - name: "gcr.io/cloud-builders/docker"
-    id: "push-engine-b"
-    args:
-      [
-        "push",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
-      ]
-    waitFor: ["build-engine-b"]
-
-  # --------------------------------------------------
   # Engine C: Build & Push
   # --------------------------------------------------
   - name: "gcr.io/cloud-builders/docker"
