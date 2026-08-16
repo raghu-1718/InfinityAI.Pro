@@ -45,14 +45,14 @@ async def check_firestore():
     service_name = "Firebase/Firestore"
     start_time = time.time()
     try:
-        from google.cloud import firestore_async
-        db = firestore_async.client.AsyncClient(project=PROJECT_ID)
+        from google.cloud import firestore
+        db = firestore.AsyncClient(project=PROJECT_ID)
         
         doc_id = f"health-check-{uuid.uuid4()}"
         doc_ref = db.collection("system_health_checks").document(doc_id)
         
         # Write
-        await doc_ref.set({"status": "testing", "timestamp": firestore_async.SERVER_TIMESTAMP})
+        await doc_ref.set({"status": "testing", "timestamp": firestore.SERVER_TIMESTAMP})
         
         # Read
         doc = await doc_ref.get()
@@ -206,7 +206,7 @@ async def main():
 if __name__ == "__main__":
     # Check for dependencies
     try:
-        import google.cloud.firestore_async
+        import google.cloud.firestore
         import google.cloud.bigquery
         import google.cloud.storage
         import vertexai
