@@ -44,7 +44,7 @@ async def analyze_options_data(request: OptionsAnalysisRequest):
         query = f"""
             SELECT *
             FROM `project-841b7f97-5ee3-4fbe-920.market_data.options_ticks`
-            WHERE instrument_symbol = @ticker
+            WHERE underlying = @ticker
             ORDER BY timestamp DESC
             LIMIT 5
         """
