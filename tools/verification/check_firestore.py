@@ -1,3 +1,11 @@
+"""
+Firestore Verification Script for InfinityAI.Pro.
+
+This script connects to the Firestore database and performs a basic read
+operation on the 'users' collection to verify connectivity and permissions.
+
+For detailed architecture and system verification procedures, see ARCHITECTURE.md.
+"""
 
 import firebase_admin
 from firebase_admin import credentials, firestore

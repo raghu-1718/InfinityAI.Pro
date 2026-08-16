@@ -1,17 +1,10 @@
 """
-Structured Logging Module for InfinityAI.Pro
-=============================================
+Production-grade structured logging for InfinityAI.Pro.
 
-Provides production-grade structured logging with trace ID propagation,
-context preservation, and Cloud Logging integration.
+This module provides structured, JSON-formatted logging compatible with
+Google Cloud Logging. It includes support for trace context propagation.
 
-Project: project-841b7f97-5ee3-4fbe-920
-Usage:
-    from shared.structured_logging import get_logger, set_trace_context
-
-    logger = get_logger(__name__)
-    set_trace_context(trace_id="abc123", user_id="user456")
-    logger.info("Trading signal received", signal="BUY", confidence=0.92)
+For detailed architecture and usage, see ARCHITECTURE.md.
 """
 
 import json
