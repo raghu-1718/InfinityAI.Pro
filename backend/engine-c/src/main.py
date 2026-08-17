@@ -226,8 +226,8 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://localhost:8002" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-b:8080")
-ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://localhost:8001" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-a:8080")
+ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://35.200.135.175:8000")
+ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://127.0.0.1:8001")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -308,7 +308,7 @@ async def lifespan(app: FastAPI):
 
     if REALTIME_ENABLED:
         try:
-            await with_timeout(initialize_realtime(None), 10, "initialize_realtime")
+            initialize_realtime(None)
             logger.info("✅ Real-time enhancements enabled")
         except Exception as e:
             logger.warning(f"Real-time enhancements init failed: {e}")
