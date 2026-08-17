@@ -1481,6 +1481,87 @@ class TradingControlRequest(BaseModel):
 class KillSwitchRequest(BaseModel):
     user_id: Optional[str] = None
     active: bool
+    cancel_timeout: float = 10.0  # per-order cancel timeout in seconds
+
+
+async def cancel_all_orders() -> dict:
+    """
+    Emergency order cancellation — called exclusively by the kill switch.
+
+    Steps:
+      1. Fetch all orders for today from Engine C (/api/dhan/orders).
+      2. Filter to PENDING / TRANSIT / PART_TRADED / OPEN states (cancellable).
+      3. Issue a cancel request for each order individually.
+      4. Return a summary {orders_found, cancelled, failed, skipped}.
+
+    Individual cancel failures are caught and logged — they must not
+    prevent other orders from being cancelled.
+    """
+    if not http_client:
+        logger.error("❌ Kill switch: http_client not initialised — cannot cancel orders")
+        return {"orders_found": 0, "cancelled": 0, "failed": 0, "skipped": 0, "error": "http_client unavailable"}
+
+    CANCELLABLE_STATES = {"PENDING", "TRANSIT", "PART_TRADED", "OPEN", "CONFIRMED"}
+    summary = {"orders_found": 0, "cancelled": 0, "failed": 0, "skipped": 0}
+
+    try:
+        # Step 1 — Fetch today's order book from Engine C
+        orders_resp = await http_client.get(
+            f"{ENGINE_C_URL}/api/dhan/orders",
+            headers={"X-Engine-Source": "engine-a"},
+            timeout=15.0
+        )
+        orders_resp.raise_for_status()
+        orders_data = orders_resp.json().get("data", [])
+
+        if not isinstance(orders_data, list):
+            logger.warning("Kill switch: unexpected orders response format from Engine C")
+            return summary
+
+        summary["orders_found"] = len(orders_data)
+        logger.warning(f"🚨 Kill Switch: found {len(orders_data)} orders — filtering cancellable states")
+
+    except Exception as e:
+        logger.error(f"❌ Kill switch: failed to fetch orders from Engine C: {e}")
+        return {"orders_found": 0, "cancelled": 0, "failed": 0, "skipped": 0, "error": str(e)}
+
+    # Step 2 & 3 — Cancel each open/pending order
+    for order in orders_data:
+        order_id = order.get("orderId") or order.get("order_id")
+        order_status = str(order.get("orderStatus") or order.get("status", "")).upper()
+        symbol = order.get("tradingSymbol") or order.get("symbol", "UNKNOWN")
+
+        if not order_id:
+            summary["skipped"] += 1
+            continue
+
+        if order_status not in CANCELLABLE_STATES:
+            logger.info(f"⏭️  Skipping order {order_id} ({symbol}) — status: {order_status}")
+            summary["skipped"] += 1
+            continue
+
+        try:
+            cancel_resp = await http_client.post(
+                f"{ENGINE_C_URL}/api/dhan/cancel-order",
+                json={"order_id": order_id},
+                headers={"X-Engine-Source": "engine-a"},
+                timeout=10.0
+            )
+            cancel_resp.raise_for_status()
+            logger.warning(f"✅ Kill switch cancelled order {order_id} ({symbol})")
+            summary["cancelled"] += 1
+        except Exception as e:
+            logger.error(f"❌ Kill switch: failed to cancel order {order_id} ({symbol}): {e}")
+            summary["failed"] += 1
+
+    logger.warning(
+        f"🚨 Kill Switch cancel complete — "
+        f"cancelled={summary['cancelled']}, "
+        f"failed={summary['failed']}, "
+        f"skipped={summary['skipped']}"
+    )
+    return summary
+
 
 @app.post("/api/trading/control")
 async def trading_control(req: TradingControlRequest):
@@ -1517,20 +1598,44 @@ async def trading_control(req: TradingControlRequest):
 
 @app.post("/api/trading/kill-switch")
 async def set_kill_switch(req: KillSwitchRequest):
-    """Global Kill Switch"""
+    """
+    Global Emergency Kill Switch.
+
+    When active=true:
+      1. Immediately stops the autonomous trading loop.
+      2. Fetches all open/pending orders from Engine C and cancels each one.
+      3. Returns a cancel summary (cancelled / failed / skipped counts).
+
+    When active=false:
+      - Simply deactivates the kill switch flag (does not restart trading).
+        Use /api/v1/auto-trade/start or /api/trading/control to restart.
+    """
     try:
+        cancel_summary = {}
+
         if req.active:
+            # Step 1 — Stop the autonomous trader immediately
             await AUTONOMOUS_TRADER.stop()
-            # In a real scenario, this would also cancel all open orders via Engine C
-            # await cancel_all_orders()
-            # Check if kill switch state needs persistence
+            logger.warning("🚨 KILL SWITCH ACTIVATED — autonomous trader stopped")
+
+            # Step 2 — Cancel all open/pending orders via Engine C
+            cancel_summary = await cancel_all_orders()
+            logger.warning(f"🚨 Kill Switch cancel summary: {cancel_summary}")
+
+        else:
+            logger.info("✅ Kill Switch DEACTIVATED — trading loop remains stopped until manually restarted")
 
         return {
             "success": True,
             "kill_switch_active": req.active,
-            "message": "Kill Switch " + ("ACTIVATED" if req.active else "DEACTIVATED")
+            "message": "Kill Switch " + ("ACTIVATED" if req.active else "DEACTIVATED"),
+            "autonomous_trader_stopped": req.active,
+            "cancel_summary": cancel_summary,
+            "timestamp": datetime.utcnow().isoformat()
         }
+
     except Exception as e:
+        logger.error(f"Kill switch error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

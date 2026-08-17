@@ -18,20 +18,72 @@ PRIMARY_USER_ID = os.getenv("PRIMARY_USER_ID", "raghu_primary")
 PRIMARY_CLIENT_ID = os.getenv("PRIMARY_CLIENT_ID", "1101302170")
 
 def get_encryption_key() -> bytes:
-    """Get or generate encryption key for user credentials"""
+    """
+    Load the AES-256 encryption key from the environment.
+
+    Key resolution order:
+      1. USER_CREDENTIALS_KEY  (preferred, set via GCP Secret Manager injection)
+      2. ENCRYPTION_KEY        (legacy alias)
+
+    Key formats accepted:
+      - 64-char hex string  → decoded as 32 raw bytes
+      - Base64url string    → decoded as bytes (must be ≥ 32 bytes after decode)
+      - Raw 32-byte string  → used directly
+
+    Production: raises RuntimeError if no key env var is set.
+    Local dev (ENV=local): generates a random ephemeral key (logged as warning).
+    """
     env_key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
+
     if env_key:
         try:
+            # 64-char hex → 32 raw bytes
             if len(env_key) == 64:
                 try:
-                    return bytes.fromhex(env_key)
+                    decoded = bytes.fromhex(env_key)
+                    if len(decoded) == 32:
+                        return decoded
                 except ValueError:
                     pass
-            return base64.urlsafe_b64decode(env_key) if len(env_key) > 64 else env_key.encode()
-        except Exception as e:
-            logger.warning(f"Failed to decode env var key: {e}")
 
-    return b"J4z72_08-729048-70247-9082740927"
+            # Base64url-encoded → raw bytes (must decode to ≥ 32 bytes)
+            if len(env_key) > 43:  # base64url of 32 bytes = 44 chars (with padding)
+                try:
+                    decoded = base64.urlsafe_b64decode(env_key + "=" * (-len(env_key) % 4))
+                    if len(decoded) >= 32:
+                        return decoded[:32]
+                except Exception:
+                    pass
+
+            # Raw string fallback — pad/truncate to exactly 32 bytes
+            raw = env_key.encode()
+            if len(raw) >= 32:
+                return raw[:32]
+
+            logger.warning("USER_CREDENTIALS_KEY is too short; padding to 32 bytes.")
+            return (raw + b'\x00' * 32)[:32]
+
+        except Exception as e:
+            logger.error(f"Failed to decode USER_CREDENTIALS_KEY: {e}")
+            # Fall through to the missing-key guard below
+
+    # ── No key provided ──────────────────────────────────────────────────────
+    is_local = os.getenv("ENV", "production").lower() in ("local", "development", "dev")
+
+    if not is_local:
+        raise RuntimeError(
+            "CRITICAL: USER_CREDENTIALS_KEY environment variable is not set. "
+            "Engine C cannot start without an AES-256 encryption key. "
+            "Provision it via GCP Secret Manager and inject as an env var."
+        )
+
+    # Local dev only — ephemeral random key (NOT usable to decrypt Firestore data)
+    logger.warning(
+        "⚠️  ENV=local: No USER_CREDENTIALS_KEY set. "
+        "Using a random ephemeral key — Firestore-encrypted credentials will NOT be readable. "
+        "Set USER_CREDENTIALS_KEY or DHAN_ACCESS_TOKEN env vars for local testing."
+    )
+    return os.urandom(32)
 
 class UserCredentialsManager:
     """Manages encrypted user credentials in Firebase Firestore & Secret Manager (AES-256-GCM)"""
@@ -41,11 +93,18 @@ class UserCredentialsManager:
         self._init_firestore()
         self.encryption_key = get_encryption_key()
         if len(self.encryption_key) != 32:
-            self.encryption_key = (self.encryption_key + b'0'*32)[:32]
+            self.encryption_key = (self.encryption_key + b'\x00' * 32)[:32]
         self._cached_creds: Optional[Dict[str, Any]] = None
         self._cached_creds_time: float = 0.0
 
-        logger.info("UserCredentialsManager initialized (Single-Tenant AES-256-GCM / Firebase Firestore Vault)")
+        key_source = "USER_CREDENTIALS_KEY" if os.getenv("USER_CREDENTIALS_KEY") else (
+            "ENCRYPTION_KEY" if os.getenv("ENCRYPTION_KEY") else "EPHEMERAL (local dev)"
+        )
+        logger.info(
+            f"UserCredentialsManager initialized "
+            f"(Single-Tenant AES-256-GCM / Firebase Firestore Vault) "
+            f"| key_source={key_source}"
+        )
 
     def _init_firestore(self):
         try:
@@ -119,7 +178,6 @@ class UserCredentialsManager:
         if self.db:
             try:
                 self.db.collection("user_credentials").document(resolved_id).set(doc_data, merge=True)
-                self.db.collection("user_credentials").document(LEGACY_OWNER_ID).set(doc_data, merge=True)
 
                 try:
                     self.db.collection("users").document(resolved_id).set({
@@ -153,7 +211,7 @@ class UserCredentialsManager:
         resolved_id = await self.resolve_user_id(user_id)
 
         if self.db:
-            # 1. Check primary known doc IDs in order: LEGACY_OWNER_ID -> PRIMARY_USER_ID -> resolved_id
+            # 1. Check primary known doc IDs in order: PRIMARY_USER_ID -> resolved_id -> PRIMARY_CLIENT_ID
             for target in [PRIMARY_USER_ID, resolved_id, PRIMARY_CLIENT_ID]:
                 if not target:
                     continue

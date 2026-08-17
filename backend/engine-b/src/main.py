@@ -961,7 +961,52 @@ class MarketDataEngine:
             else:
                 df = pd.DataFrame()
 
-        # Method 2: Yahoo Finance Fallback
+        # Method 2: BigQuery Live Ticks (primary authoritative real-time source)
+        if df.empty and sec_id:
+            try:
+                project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+                bq_client = bigquery.Client(project=project_id)
+
+                # Try infinity_dataset.market_ticks_history first (full history)
+                bq_query = f"""
+                    SELECT
+                        DATE(timestamp) AS Date,
+                        FIRST_VALUE(ltp) OVER (PARTITION BY DATE(timestamp) ORDER BY timestamp) AS open,
+                        MAX(ltp) OVER (PARTITION BY DATE(timestamp)) AS high,
+                        MIN(ltp) OVER (PARTITION BY DATE(timestamp)) AS low,
+                        LAST_VALUE(ltp) OVER (
+                            PARTITION BY DATE(timestamp)
+                            ORDER BY timestamp
+                            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                        ) AS close,
+                        SUM(volume) OVER (PARTITION BY DATE(timestamp)) AS volume
+                    FROM `{project_id}.infinity_dataset.market_ticks_history`
+                    WHERE security_id = @sec_id
+                      AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+                    QUALIFY ROW_NUMBER() OVER (PARTITION BY DATE(timestamp) ORDER BY timestamp DESC) = 1
+                    ORDER BY Date DESC
+                    LIMIT {days}
+                """
+                job_config = bigquery.QueryJobConfig(
+                    query_parameters=[bigquery.ScalarQueryParameter("sec_id", "STRING", str(sec_id))]
+                )
+                loop = asyncio.get_event_loop()
+                bq_rows = await loop.run_in_executor(
+                    bq_executor,
+                    lambda: bq_client.query(bq_query, job_config=job_config).to_dataframe()
+                )
+                if not bq_rows.empty and len(bq_rows) >= 30:
+                    bq_rows = bq_rows.sort_values("Date")
+                    bq_rows = bq_rows.set_index("Date")
+                    bq_rows.index = pd.to_datetime(bq_rows.index)
+                    df = bq_rows[["open", "high", "low", "close", "volume"]].copy()
+                    source = "bigquery"
+                    self.data_source_stats["dhan"] += 1  # treated as real DhanHQ data
+                    logger.info(f"📊 Fetched {len(df)} days from BigQuery for {symbol}")
+            except Exception as e:
+                logger.warning(f"BigQuery historical fetch failed for {symbol}: {e}")
+
+        # Method 3: Yahoo Finance Fallback (last real-data resort)
         if df.empty and HAS_YFINANCE:
             try:
                 logger.info(f"Using YFinance fallback for {symbol}")
@@ -987,12 +1032,21 @@ class MarketDataEngine:
             except Exception as e:
                 logger.warning(f"YFinance fetch failed for {symbol}: {e}")
 
-        # Method 3: Synthetic Data (Last Resort)
+        # All real data sources exhausted — raise 503, do NOT use synthetic data in live signal path
         if df.empty or len(df) < 50:
-            logger.warning(f"⚠️ Using synthetic data for {symbol}")
-            df = self._generate_synthetic_data(symbol, days)
-            source = "synthetic"
-            self.data_source_stats["synthetic"] += 1
+            logger.error(
+                f"❌ All real data sources failed for {symbol} "
+                f"(DhanHQ direct, Engine-C proxy, BigQuery, YFinance). "
+                f"Refusing to generate signal from synthetic data."
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Market data unavailable for {symbol}. "
+                    "DhanHQ direct, Engine-C proxy, BigQuery, and Yahoo Finance all failed. "
+                    "Retry after a brief interval."
+                )
+            )
 
         # Cache result
         self.cache[cache_key] = (df, datetime.now(), source)
@@ -1668,18 +1722,113 @@ async def market_status():
 
 def fetch_market_breadth_and_gift() -> dict:
     """
-    Fetches external macro indicators like GIFT Nifty pre-market status 
-    and NSE Advance-Decline data to gauge true institutional participation.
+    Fetches real-time macro indicators for the conviction filter:
+      - NSE Advance/Decline ratio  → BigQuery market_data.live_ticks
+      - GIFT Nifty basis           → Engine C /api/dhan/market/ltp (GIFT Nifty vs Nifty spot)
+      - Crude Oil trend            → BigQuery MCX crude tick direction
+
+    Falls back to NEUTRAL values (A/D=1.0, basis=0.0, trend=NEUTRAL) on any
+    failure so the conviction veto is never driven by stale constants.
     """
+    NEUTRAL = {"advance_decline_ratio": 1.0, "gift_nifty_basis": 0.0, "crude_oil_trend": "NEUTRAL"}
+
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+
+    result = dict(NEUTRAL)
+
+    # ── 1. NSE Advance/Decline from BigQuery live_ticks ──────────────────────
     try:
-        breadth_data = {
-            "advance_decline_ratio": 0.26,  # Weak breadth example / institutional ratio
-            "gift_nifty_basis": -12.5,     # Negative basis pointing to cautious/gap down open
-            "crude_oil_trend": "BULLISH_SPIKE"
-        }
-        return breadth_data
+        bq_client = bigquery.Client(project=project_id)
+        ad_query = f"""
+            SELECT
+                COUNTIF(daily_change > 0) AS advances,
+                COUNTIF(daily_change < 0) AS declines,
+                COUNTIF(daily_change = 0) AS unchanged
+            FROM (
+                SELECT
+                    security_id,
+                    LAST_VALUE(ltp) OVER (
+                        PARTITION BY security_id
+                        ORDER BY timestamp
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                    ) - FIRST_VALUE(ltp) OVER (
+                        PARTITION BY security_id
+                        ORDER BY timestamp
+                    ) AS daily_change
+                FROM `{project_id}.market_data.live_ticks`
+                WHERE DATE(timestamp) = CURRENT_DATE('Asia/Kolkata')
+                  AND exchange_segment = 'NSE_EQ'
+                QUALIFY ROW_NUMBER() OVER (
+                    PARTITION BY security_id ORDER BY timestamp DESC
+                ) = 1
+            )
+        """
+        ad_rows = bq_client.query(ad_query).result()
+        for row in ad_rows:
+            advances = row.advances or 0
+            declines = row.declines or 1  # avoid division by zero
+            result["advance_decline_ratio"] = round(advances / declines, 3)
+            logger.info(f"📊 Live A/D ratio: {advances}/{declines} = {result['advance_decline_ratio']}")
+            break
     except Exception as e:
-        return {"advance_decline_ratio": 1.0, "gift_nifty_basis": 0.0, "crude_oil_trend": "NEUTRAL"}
+        logger.warning(f"⚠️ BigQuery A/D ratio fetch failed: {e} — using neutral A/D=1.0")
+
+    # ── 2. GIFT Nifty basis from Engine C market data proxy ───────────────────
+    try:
+        import requests as _requests
+        # GIFT Nifty security_id on NSE_IDX: 13 (Nifty50 spot), GIFT Nifty futures differ by segment
+        # We compare GIFT Nifty LTP (IDX_I segment, security 13 in GIFT exchange)
+        # vs NSE Nifty spot to compute basis
+        nifty_resp = _requests.get(
+            f"{engine_c_url}/api/dhan/market/ltp",
+            params={"security_id": "13", "exchange_segment": "IDX_I"},
+            timeout=5
+        )
+        gift_resp = _requests.get(
+            f"{engine_c_url}/api/dhan/market/ltp",
+            params={"security_id": "13", "exchange_segment": "NSE_FNO"},
+            timeout=5
+        )
+        if nifty_resp.status_code == 200 and gift_resp.status_code == 200:
+            nifty_ltp = nifty_resp.json().get("data", {}).get("ltp", 0)
+            gift_ltp = gift_resp.json().get("data", {}).get("ltp", 0)
+            if nifty_ltp and gift_ltp:
+                result["gift_nifty_basis"] = round(gift_ltp - nifty_ltp, 2)
+                logger.info(f"📊 GIFT Nifty basis: {result['gift_nifty_basis']} pts")
+    except Exception as e:
+        logger.warning(f"⚠️ GIFT Nifty basis fetch failed: {e} — using neutral basis=0.0")
+
+    # ── 3. Crude Oil trend from BigQuery MCX ticks ────────────────────────────
+    try:
+        bq_client = bigquery.Client(project=project_id)
+        crude_query = f"""
+            SELECT
+                FIRST_VALUE(ltp) OVER (ORDER BY timestamp) AS open_price,
+                LAST_VALUE(ltp) OVER (ORDER BY timestamp
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_price
+            FROM `{project_id}.market_data.live_ticks`
+            WHERE DATE(timestamp) = CURRENT_DATE('Asia/Kolkata')
+              AND exchange_segment = 'MCX_COMM'
+              AND security_id = '10' -- MCX CrudeOil
+            LIMIT 1
+        """
+        crude_rows = list(bq_client.query(crude_query).result())
+        if crude_rows:
+            row = crude_rows[0]
+            chg_pct = ((row.last_price - row.open_price) / row.open_price * 100) if row.open_price else 0
+            if chg_pct > 1.5:
+                result["crude_oil_trend"] = "BULLISH_SPIKE"
+            elif chg_pct < -1.5:
+                result["crude_oil_trend"] = "BEARISH_DROP"
+            else:
+                result["crude_oil_trend"] = "NEUTRAL"
+            logger.info(f"📊 Crude Oil trend: {result['crude_oil_trend']} (chg={chg_pct:.2f}%)")
+    except Exception as e:
+        logger.warning(f"⚠️ Crude Oil trend fetch failed: {e} — using NEUTRAL")
+
+    return result
+
 
 
 def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float) -> dict:
