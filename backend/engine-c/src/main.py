@@ -18,6 +18,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
 import asyncio
+from contextlib import asynccontextmanager
 import time
 import aiohttp
 import sys
@@ -228,10 +229,103 @@ def _get_env(var: str, default: str = None) -> str:
 ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://localhost:8002" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-b:8080")
 ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://localhost:8001" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-a:8080")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages application startup and shutdown events."""
+    # Startup logic from the old startup_event
+    global activity_logger
+    try:
+        activity_logger = ActivityLogger()
+        logger.info("✅ Activity Logger initialized")
+    except Exception as e:
+        logger.warning(f"Failed to init Activity Logger: {e}")
+
+    async def with_timeout(coro, timeout=10, context="task"):
+        try:
+            return await asyncio.wait_for(coro, timeout=timeout)
+        except Exception as e:
+            logger.warning(f"Startup {context} failed or timed out: {e}")
+            return None
+
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            await with_timeout(ConnectionPoolManager.initialize(), 10, "ConnectionPoolManager.initialize")
+            logger.info("✅ Connection pool initialized")
+        except Exception as e:
+            logger.warning(f"Connection pool init failed: {e}")
+
+        try:
+            cache = get_cache_manager("engine_c", max_size=5000, default_ttl=30.0)
+            await with_timeout(cache.initialize(), 10, "cache.initialize")
+            logger.info("✅ Cache manager initialized")
+        except Exception as e:
+            logger.warning(f"Cache manager init failed: {e}")
+
+        try:
+            monitor = get_health_monitor()
+
+            async def check_engine_b():
+                try:
+                    session = await get_aiohttp_session()
+                    async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status != 200:
+                            raise Exception(f"Engine B unhealthy: {resp.status}")
+                except Exception as e:
+                    logger.warning(f"Engine B health check failed: {e}")
+
+            async def check_engine_a():
+                try:
+                    session = await get_aiohttp_session()
+                    async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status != 200:
+                            raise Exception(f"Engine A unhealthy: {resp.status}")
+                except Exception as e:
+                    logger.warning(f"Engine A health check failed: {e}")
+
+            monitor.register_service("engine_b", check_engine_b, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
+            monitor.register_service("engine_a", check_engine_a, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
+
+            await with_timeout(monitor.start_monitoring(interval=30.0), 10, "monitor.start_monitoring")
+            logger.info("✅ Health monitoring started")
+        except Exception as e:
+            logger.warning(f"Performance monitor init failed: {e}")
+
+    if REALTIME_ENABLED:
+        try:
+            await with_timeout(initialize_realtime(None), 10, "initialize_realtime")
+            logger.info("✅ Real-time enhancements enabled")
+        except Exception as e:
+            logger.warning(f"Real-time enhancements init failed: {e}")
+
+    try:
+        manager = get_coupon_auth_manager()
+        if manager:
+            await with_timeout(manager.initialize_default_coupons(), 10, "initialize_default_coupons")
+            logger.info("✅ Default coupons initialized")
+    except Exception as e:
+        logger.warning(f"Failed to initialize default coupons: {e}")
+
+    yield
+
+    # Shutdown logic from the old shutdown_event
+    if HAS_PERFORMANCE_MODULE:
+        try:
+            logger.info("Gracefully shutting down...")
+            monitor = get_health_monitor()
+            await monitor.stop_monitoring()
+            await ConnectionPoolManager.shutdown()
+            cache = get_cache_manager("engine_c")
+            await cache.shutdown()
+            logger.info("✅ Graceful shutdown complete")
+        except Exception as e:
+            logger.warning(f"Shutdown warning: {e}")
+
+
 app = FastAPI(
     title="InfinityAI.Pro - Engine C (Trade Execution & Order Optimization)",
     description="Trading Execution, DhanHQ Integration, Market Data APIs, Options Analytics with Greeks",
-    version="3.9-options-analytics"
+    version="3.9-options-analytics",
+    lifespan=lifespan
 )
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -281,12 +375,6 @@ except ImportError:
         logger.warning(f"⚠️ CORS config module not found, using hardcoded origins")
 
 logger.info(f"✅ CORS configured with {len(ALLOWED_ORIGINS)} allowed origins")
-try:
-    from src.options_analytics_api import router as analytics_router
-    app.include_router(analytics_router)
-    logger.info("✅ Options Analytics API endpoints enabled")
-except ImportError as e:
-    logger.warning(f"⚠️ Options Analytics not available: {e}")
 
 # Register Dhan Market Data Router (fixes /api/dhan/market/* 404)
 if DATA_ROUTER_AVAILABLE:
@@ -395,112 +483,6 @@ async def options_coupon_verify(request: Request):
     return response
 
 
-# ==============================================================================
-# STARTUP EVENT - Initialize Performance Components & Default Coupons
-# ==============================================================================
-
-import asyncio
-from contextlib import suppress
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize performance components and default coupons on startup (robust, non-blocking)"""
-    global activity_logger
-    try:
-        activity_logger = ActivityLogger()
-        logger.info("✅ Activity Logger initialized")
-    except Exception as e:
-        logger.warning(f"Failed to init Activity Logger: {e}")
-
-    # Helper for timeouts
-    async def with_timeout(coro, timeout=10, context="task"):
-        try:
-            return await asyncio.wait_for(coro, timeout=timeout)
-        except Exception as e:
-            logger.warning(f"Startup {context} failed or timed out: {e}")
-            return None
-
-    # Initialize performance module (robust)
-    if HAS_PERFORMANCE_MODULE:
-        try:
-            await with_timeout(ConnectionPoolManager.initialize(), 10, "ConnectionPoolManager.initialize")
-            logger.info("✅ Connection pool initialized")
-        except Exception as e:
-            logger.warning(f"Connection pool init failed: {e}")
-
-        try:
-            cache = get_cache_manager("engine_c", max_size=5000, default_ttl=30.0)
-            await with_timeout(cache.initialize(), 10, "cache.initialize")
-            logger.info("✅ Cache manager initialized")
-        except Exception as e:
-            logger.warning(f"Cache manager init failed: {e}")
-
-        try:
-            monitor = get_health_monitor()
-
-            async def check_engine_b():
-                try:
-                    session = await get_aiohttp_session()
-                    async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                        if resp.status != 200:
-                            raise Exception(f"Engine B unhealthy: {resp.status}")
-                except Exception as e:
-                    logger.warning(f"Engine B health check failed: {e}")
-
-            async def check_engine_a():
-                try:
-                    session = await get_aiohttp_session()
-                    async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                        if resp.status != 200:
-                            raise Exception(f"Engine A unhealthy: {resp.status}")
-                except Exception as e:
-                    logger.warning(f"Engine A health check failed: {e}")
-
-            monitor.register_service("engine_b", check_engine_b, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
-            monitor.register_service("engine_a", check_engine_a, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
-
-            await with_timeout(monitor.start_monitoring(interval=30.0), 10, "monitor.start_monitoring")
-            logger.info("✅ Health monitoring started")
-        except Exception as e:
-            logger.warning(f"Performance monitor init failed: {e}")
-
-    # Initialize Real-Time Enhancements (robust)
-    if REALTIME_ENABLED:
-        try:
-            await with_timeout(initialize_realtime(None), 10, "initialize_realtime")
-            logger.info("✅ Real-time enhancements enabled")
-        except Exception as e:
-            logger.warning(f"Real-time enhancements init failed: {e}")
-
-    # Initialize coupons (robust)
-    try:
-        manager = get_coupon_auth_manager()
-        if manager:
-            await with_timeout(manager.initialize_default_coupons(), 10, "initialize_default_coupons")
-            logger.info("✅ Default coupons initialized")
-    except Exception as e:
-        logger.warning(f"Failed to initialize default coupons: {e}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Graceful shutdown of performance components"""
-    if HAS_PERFORMANCE_MODULE:
-        try:
-            # Stop health monitoring
-            monitor = get_health_monitor()
-            await monitor.stop_monitoring()
-
-            # Close connection pools
-            await ConnectionPoolManager.shutdown()
-
-            # Shutdown caches
-            cache = get_cache_manager("engine_c")
-            await cache.shutdown()
-
-            logger.info("✅ Graceful shutdown complete")
-        except Exception as e:
-            logger.warning(f"Shutdown warning: {e}")
 
 
 # Import CORS config from shared module (environment-gated)
