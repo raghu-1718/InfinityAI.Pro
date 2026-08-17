@@ -267,7 +267,15 @@ async def lifespan(app: FastAPI):
             async def check_engine_b():
                 try:
                     session = await get_aiohttp_session()
-                    async with session.get(f"{ENGINE_B_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    headers = {
+                        "User-Agent": "Engine-C-Health-Monitor/1.0",
+                        "Accept": "application/json",
+                    }
+                    async with session.get(
+                        f"{ENGINE_B_URL}/health",
+                        timeout=aiohttp.ClientTimeout(total=5),
+                        headers=headers,
+                    ) as resp:
                         if resp.status != 200:
                             raise Exception(f"Engine B unhealthy: {resp.status}")
                 except Exception as e:
@@ -276,7 +284,15 @@ async def lifespan(app: FastAPI):
             async def check_engine_a():
                 try:
                     session = await get_aiohttp_session()
-                    async with session.get(f"{ENGINE_A_URL}/health", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    headers = {
+                        "User-Agent": "Engine-C-Health-Monitor/1.0",
+                        "Accept": "application/json",
+                    }
+                    async with session.get(
+                        f"{ENGINE_A_URL}/health",
+                        timeout=aiohttp.ClientTimeout(total=5),
+                        headers=headers,
+                    ) as resp:
                         if resp.status != 200:
                             raise Exception(f"Engine A unhealthy: {resp.status}")
                 except Exception as e:
