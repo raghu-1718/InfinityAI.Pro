@@ -226,7 +226,7 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://35.200.135.175:8000")
+ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://35.200.135.175:8080")
 ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://127.0.0.1:8001")
 
 @asynccontextmanager

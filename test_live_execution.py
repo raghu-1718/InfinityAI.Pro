@@ -2,7 +2,7 @@ import requests
 import time
 import os
 
-ENDPOINT_URL = "http://35.200.135.175:8000/analyze-options"
+ENDPOINT_URL = "http://35.200.135.175:8080/analyze-options"
 
 def run_test():
     payload = {"ticker": "NIFTY50"}

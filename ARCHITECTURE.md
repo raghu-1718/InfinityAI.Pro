@@ -46,7 +46,7 @@ The core components are:
 ### 2.2. Engine B (`backend/engine-b`) - AI/ML Core
 This is the most critical component of the system.
 - **Framework**: FastAPI (Python)
-- **Deployment**: Google Compute Engine (GCE) VM at `http://35.200.135.175:8000`. This allows for direct GPU access if needed.
+- **Deployment**: Google Compute Engine (GCE) VM at `http://35.200.135.175:8080`. This allows for direct GPU access if needed.
 - **Key Responsibilities**:
     - **Signal Generation**: Exposes `/api/v1/signal` and other endpoints to generate trading signals using a hybrid approach of rule-based analysis, a local ML ensemble, and GenAI.
     - **ML Model Ensemble**: Manages a weighted ensemble of models (XGBoost, LightGBM, CatBoost, RandomForest) for robust predictions. See `MLModelStore` class.

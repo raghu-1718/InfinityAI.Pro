@@ -23,7 +23,7 @@ VERTEX_MODEL = "gemini-2.5-pro"
 
 ENGINE_ENDPOINTS = {
     "Engine A (Cloud Run)": os.getenv("ENGINE_A_URL", "https://engine-a-placeholder-url.a.run.app/health"),
-    "Engine B (VM)": "http://35.200.135.175:8000/health",
+    "Engine B (VM)": "http://35.200.135.175:8080/health",
     "Engine C (Cloud Run)": os.getenv("ENGINE_C_URL", "https://engine-c-placeholder-url.a.run.app/health"),
 }
 
