@@ -8,7 +8,7 @@ import sys
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
-ENGINE_C_URL = "https://engine-c-r2f5flt77q-uc.a.run.app"
+ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
 USER_ID = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 CLIENT_ID = "1101302170"
 
@@ -56,7 +56,22 @@ holdings = fetch_endpoint(f"/api/dhan/holdings", {"user_id": CLIENT_ID})
 if holdings["success"]:
     h_list = holdings["data"].get("holdings", [])
     print(f"  [OK] Total Holdings: {len(h_list)}")
-    for h in h_list[:5]:
+    print(f"DEBUG: type(h_list)={type(h_list)}")
+    print(f"DEBUG: holdings['data']={holdings['data']}")
+    # Assume it's a dict, maybe the data is the dict itself, or under another key?
+    # Based on the error, h_list is a dict.
+    # Let's try to find the list.
+    actual_list = []
+    if isinstance(h_list, list):
+        actual_list = h_list
+    elif isinstance(h_list, dict):
+        # Try to find a list value in the dict
+        for k, v in h_list.items():
+            if isinstance(v, list):
+                actual_list = v
+                break
+    
+    for h in actual_list[:5]:
         print(f"    - {h.get('tradingSymbol')}: {h.get('totalQty')} @ Rs.{h.get('avgCostPrice')}")
 else:
     print(f"  [ERR] Failed: {holdings.get('error', 'Unknown')}")

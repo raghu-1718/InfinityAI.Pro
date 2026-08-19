@@ -6,6 +6,7 @@ Primary Owner Client ID: 1101302170 (raghu_primary)
 import os
 import json
 import base64
+import hashlib
 import time
 import logging
 from typing import Optional, Dict, Any
@@ -100,10 +101,13 @@ class UserCredentialsManager:
         key_source = "USER_CREDENTIALS_KEY" if os.getenv("USER_CREDENTIALS_KEY") else (
             "ENCRYPTION_KEY" if os.getenv("ENCRYPTION_KEY") else "EPHEMERAL (local dev)"
         )
+        # Log a SHA-256 fingerprint (first 16 hex chars) so key rotations are
+        # immediately traceable in Cloud Logging without exposing the raw key.
+        key_fingerprint = hashlib.sha256(self.encryption_key).hexdigest()[:16]
         logger.info(
             f"UserCredentialsManager initialized "
             f"(Single-Tenant AES-256-GCM / Firebase Firestore Vault) "
-            f"| key_source={key_source}"
+            f"| key_source={key_source} | key_fingerprint=sha256:{key_fingerprint}"
         )
 
     def _init_firestore(self):
@@ -148,10 +152,14 @@ class UserCredentialsManager:
                 data = decryptor.update(ciphertext) + decryptor.finalize()
                 return data.decode()
         except Exception as e:
-            logger.warning(f"GCM Decrypt failed: {e}")
+            logger.error(
+                f"GCM Decrypt failed — key/ciphertext mismatch or corrupted payload. "
+                f"Check USER_CREDENTIALS_KEY rotation vs stored ciphertexts. Error: {e}"
+            )
 
-        # Fallback to raw string if unencrypted
-        return encrypted_data
+        # Return None on decryption failure — do NOT pass the raw ciphertext
+        # to downstream callers (e.g. DhanHQ API), which would cause DH-901 errors.
+        return None
 
     async def save_user_credentials(
         self,

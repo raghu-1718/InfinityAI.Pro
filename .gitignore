@@ -101,3 +101,11 @@ data/historical/*.csv
 artifacts/
 infra_snapshot/
 .aider*
+scratch/
+temp_build/
+temp_extract/
+temp_verify/
+*_bq.py
+check_vertex.py
+inspect_schema.py
+test_bq_simple.py

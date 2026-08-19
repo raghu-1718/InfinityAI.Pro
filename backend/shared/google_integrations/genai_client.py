@@ -133,7 +133,7 @@ class GenAIClient:
         api_key: Optional[str] = None,
         model: GeminiModel = GeminiModel.FLASH,
         project_id: Optional[str] = None,
-        location: str = "us-central1"
+        location: str = "asia-south1"
     ):
         """
         Initialize the GenAI client.
