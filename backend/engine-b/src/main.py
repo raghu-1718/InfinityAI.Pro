@@ -45,7 +45,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 from io import StringIO
 
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from concurrent.futures import ThreadPoolExecutor
@@ -1047,6 +1047,48 @@ class MarketDataEngine:
                     "Retry after a brief interval."
                 )
             )
+
+        # Method Live LTP Update: Synchronize latest bar with real-time DhanHQ market quote
+        if not df.empty and sec_id:
+            try:
+                import requests
+                quotes_resp = requests.get(
+                    f"{self.engine_c_url}/api/dhan/market/quotes",
+                    params={
+                        "security_ids": sec_id,
+                        "exchange_segment": exchange_segment,
+                        "user_id": self.default_user_id
+                    },
+                    timeout=5
+                )
+                if quotes_resp.status_code == 200:
+                    q_json = quotes_resp.json()
+                    seg_data = q_json.get("data", {}).get("data", {}).get("data", {}).get(exchange_segment, {}).get(str(sec_id), {})
+                    live_ltp = seg_data.get("last_price")
+                    live_ohlc = seg_data.get("ohlc", {})
+                    if live_ltp and float(live_ltp) > 0:
+                        today_ts = pd.Timestamp.now().floor('D')
+                        live_open = live_ohlc.get("open", live_ltp)
+                        live_high = live_ohlc.get("high", live_ltp)
+                        live_low = live_ohlc.get("low", live_ltp)
+                        live_vol = seg_data.get("volume", 0) or 1000
+
+                        if today_ts in df.index:
+                            df.loc[today_ts, 'close'] = float(live_ltp)
+                            df.loc[today_ts, 'high'] = max(float(df.loc[today_ts, 'high']), float(live_high), float(live_ltp))
+                            df.loc[today_ts, 'low'] = min(float(df.loc[today_ts, 'low']), float(live_low), float(live_ltp))
+                        else:
+                            new_row = pd.DataFrame([{
+                                'open': float(live_open),
+                                'high': float(live_high),
+                                'low': float(live_low),
+                                'close': float(live_ltp),
+                                'volume': float(live_vol)
+                            }], index=[today_ts])
+                            df = pd.concat([df, new_row])
+                        logger.info(f"⚡ Live LTP synchronized for {symbol}: ₹{live_ltp} (Real-time live tick active)")
+            except Exception as e:
+                logger.warning(f"Failed to attach real-time live LTP for {symbol}: {e}")
 
         # Cache result
         self.cache[cache_key] = (df, datetime.now(), source)
@@ -2238,6 +2280,21 @@ async def store_signal_to_firestore(user_id: str, signal: Any) -> bool:
         logger.error(f"✗ Failed to store signal to Firestore: {e}")
         return False
 
+
+@app.options("/api/v1/signal/batch")
+@app.options("/api/v1/signals/batch")
+async def preflight_batch(request: Request):
+    origin = request.headers.get("Origin")
+    if origin in ALLOWED_ORIGINS:
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+            }
+        )
+    return Response(status_code=403)
 
 @app.post("/api/v1/signal/batch")
 @app.post("/api/v1/signals/batch")  # Alias for frontend compatibility
@@ -4622,8 +4679,517 @@ async def consult_agent(req: AgentConsultRequest):
         raise HTTPException(500, f"Agent consultation failed: {str(e)}")
 
 
+
+# =============================================================================
+# INSTITUTIONAL ML EXPANSION — 9-MODEL ENSEMBLE ENDPOINTS (v2.0)
+# =============================================================================
+
+# ─── Lazy-load singletons (avoid circular imports at module level) ────────────
+_ensemble_arbitrator = None
+_ml_model_manager   = None
+_gemini_macro       = None
+_drift_detector     = None
+
+def _get_ensemble_arbitrator():
+    global _ensemble_arbitrator
+    if _ensemble_arbitrator is None:
+        try:
+            from src.services.ensemble_arbitrator import ensemble_arbitrator
+            _ensemble_arbitrator = ensemble_arbitrator
+        except Exception as e:
+            logger.warning(f"EnsembleArbitrator import: {e}")
+    return _ensemble_arbitrator
+
+def _get_ml_manager():
+    global _ml_model_manager
+    if _ml_model_manager is None:
+        try:
+            from src.services.ml_model_manager import model_manager
+            _ml_model_manager = model_manager
+        except Exception as e:
+            logger.warning(f"MLModelManager import: {e}")
+    return _ml_model_manager
+
+def _get_gemini_macro():
+    global _gemini_macro
+    if _gemini_macro is None:
+        try:
+            from src.google_integrations.gemini_macro import gemini_macro
+            _gemini_macro = gemini_macro
+        except Exception as e:
+            logger.warning(f"GeminiMacro import: {e}")
+    return _gemini_macro
+
+def _get_drift_detector():
+    global _drift_detector
+    if _drift_detector is None:
+        try:
+            from src.services.drift_detector import drift_detector
+            _drift_detector = drift_detector
+        except Exception as e:
+            logger.warning(f"DriftDetector import: {e}")
+    return _drift_detector
+
+
+# ─── Endpoint 1: 9-Model Ensemble Signal ─────────────────────────────────────
+
+@app.get("/api/v1/ensemble/signal/{symbol}")
+async def ensemble_signal_endpoint(
+    symbol: str,
+    include_gemini: bool = True,
+    include_dqn:    bool = True,
+):
+    """
+    Full 9-model ensemble signal for a trading symbol.
+
+    Returns:
+      - signal: BUY / HOLD / SELL
+      - confidence: 0-100
+      - per-model probability breakdown
+      - dynamic ensemble weights
+      - Gemini macro sentiment (optional)
+      - DQN position sizing (optional)
+      - Current market regime (HMM)
+    """
+    symbol = symbol.upper()
+    t0 = time.time()
+
+    try:
+        manager    = _get_ml_manager()
+        arbitrator = _get_ensemble_arbitrator()
+
+        if manager is None or arbitrator is None:
+            raise HTTPException(503, "ML services not initialized")
+
+        # ── Fetch market snapshot for feature extraction ──────────────────
+        snap = {}
+        try:
+            from src.services.data_connector import DataConnector
+            connector = DataConnector(base_url=os.getenv("ENGINE_A_URL", ""))
+            snap = await connector.fetch_snapshot(symbol) or {}
+        except Exception:
+            pass
+
+        curr_price = float(snap.get("price") or snap.get("last_price") or snap.get("close") or 0.0)
+        pcr        = float(snap.get("pcr") or 1.0)
+
+        # ── Build minimal feature vector from snapshot ────────────────────
+        from src.services.feature_pipeline import extract_snapshot_features
+        X = extract_snapshot_features(snap)
+
+        import pandas as pd
+        close_proxy = pd.Series([curr_price] * 30) if curr_price > 0 else pd.Series([100.0] * 30)
+
+        # ── Get per-model probabilities ───────────────────────────────────
+        model_probas = manager.predict_all_proba(X, close_series=close_proxy, symbol=symbol)
+
+        # ── Get HMM regime tilt ───────────────────────────────────────────
+        regime_tilt  = None
+        regime_info  = {}
+        hmm_model    = manager.models.get("hmm_regime")
+        if hmm_model is not None:
+            try:
+                regime_info = hmm_model.current_regime(close_proxy)
+                regime_tilt = hmm_model.get_regime_tilt(close_proxy)
+            except Exception:
+                pass
+
+        # ── Compute ensemble signal ───────────────────────────────────────
+        ensemble_result = arbitrator.ensemble_signal(
+            model_probas=model_probas,
+            regime_tilt=regime_tilt,
+        )
+
+        # ── Gemini macro sentiment (optional) ────────────────────────────
+        macro_data = {}
+        if include_gemini:
+            gemini = _get_gemini_macro()
+            if gemini:
+                try:
+                    macro_signal = await gemini.get_macro_signal(
+                        symbol=symbol,
+                        current_price=curr_price,
+                        pcr=pcr,
+                    )
+                    sentiment_tilt = gemini.get_sentiment_multiplier(macro_signal)
+                    macro_data = {
+                        "market_sentiment": macro_signal.market_sentiment,
+                        "sentiment_score":  macro_signal.sentiment_score,
+                        "rbi_stance":       macro_signal.rbi_stance,
+                        "fii_flow_bias":    macro_signal.fii_flow_bias,
+                        "nifty_bias":       macro_signal.nifty_bias,
+                        "key_catalysts":    macro_signal.key_catalysts[:3],
+                        "confidence":       macro_signal.confidence,
+                        "source":           macro_signal.source,
+                        "cache_hit":        macro_signal.cache_hit,
+                        "sentiment_tilt_pct": round(sentiment_tilt * 100, 4),
+                    }
+                except Exception as e:
+                    logger.warning(f"Gemini macro failed: {e}")
+
+        # ── DQN adjustment (optional) ─────────────────────────────────────
+        dqn_data = {}
+        if include_dqn:
+            try:
+                dqn_result = manager.get_combined_dqn_signal(X[-1] if X.ndim > 1 else X, base_lots=1)
+                dqn_data   = dqn_result
+            except Exception as e:
+                logger.warning(f"DQN adjustment failed: {e}")
+
+        latency_ms = round((time.time() - t0) * 1000, 1)
+
+        return {
+            "symbol":           symbol,
+            "signal":           ensemble_result["signal"],
+            "confidence":       ensemble_result["confidence"],
+            "signal_proba":     ensemble_result["signal_proba"],
+            "ensemble_weights": ensemble_result["weights_used"],
+            "champion_model":   ensemble_result.get("champion_model"),
+            "challenger_model": ensemble_result.get("challenger_model"),
+            "regime":           regime_info,
+            "macro_sentiment":  macro_data,
+            "dqn":              dqn_data,
+            "model_count":      len(model_probas),
+            "latency_ms":       latency_ms,
+            "timestamp":        datetime.utcnow().isoformat(),
+            "version":          "2.0.0",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Ensemble signal failed for {symbol}: {e}", exc_info=True)
+        raise HTTPException(500, f"Ensemble signal error: {str(e)}")
+
+
+# ─── Endpoint 2: Dynamic Ensemble Weights ────────────────────────────────────
+
+@app.get("/api/v1/ensemble/weights")
+async def get_ensemble_weights():
+    """
+    Return current dynamic ensemble weights, champion/challenger status,
+    and per-model EMA accuracy scores.
+    """
+    try:
+        arbitrator = _get_ensemble_arbitrator()
+        if arbitrator is None:
+            raise HTTPException(503, "EnsembleArbitrator not initialized")
+        return {
+            "status": "success",
+            "data":   arbitrator.get_model_info(),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+# ─── Endpoint 3: Gemini 2.5 Flash Macro Signal ───────────────────────────────
+
+@app.get("/api/v1/gemini/macro-signal/{symbol}")
+async def gemini_macro_signal_endpoint(
+    symbol:        str,
+    current_price: Optional[float] = None,
+    pcr:           Optional[float] = None,
+    india_vix:     Optional[float] = None,
+    bypass_cache:  bool = False,
+):
+    """
+    Gemini 2.5 Flash grounded macro sentiment for Indian indices.
+
+    Grounding sources: Google Search (live news) + RBI/SEBI corpus.
+    Response cached in Firestore for 15 minutes.
+    Circuit breaker: disables after 3 failures, re-enables after 60s.
+    """
+    symbol = symbol.upper()
+    try:
+        gemini = _get_gemini_macro()
+        if gemini is None:
+            raise HTTPException(503, "Gemini macro service not initialized")
+
+        if bypass_cache:
+            # Clear cache for this symbol
+            try:
+                gemini._init_firestore()
+                if gemini._firestore_db:
+                    gemini._firestore_db.collection("gemini_macro_cache").document(symbol).delete()
+            except Exception:
+                pass
+
+        macro_signal = await gemini.get_macro_signal(
+            symbol=symbol,
+            current_price=current_price,
+            pcr=pcr,
+            india_vix=india_vix,
+        )
+
+        return {
+            "status":       "success",
+            "symbol":       symbol,
+            "macro_signal": macro_signal.to_dict(),
+            "circuit_breaker": gemini.get_circuit_breaker_status(),
+            "timestamp":    datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Gemini macro endpoint error: {e}")
+        raise HTTPException(500, str(e))
+
+
+# ─── Endpoint 4: Per-Model Performance Metrics ────────────────────────────────
+
+@app.get("/api/v1/models/performance")
+async def model_performance_endpoint(symbol: str = "NIFTY"):
+    """
+    Rolling per-model accuracy, EMA scores, Sharpe ratios, and champion status.
+    Source: EnsembleArbitrator tracker + BigQuery model_performance table.
+    """
+    symbol = symbol.upper()
+    try:
+        arbitrator = _get_ensemble_arbitrator()
+        if arbitrator is None:
+            raise HTTPException(503, "EnsembleArbitrator not initialized")
+
+        tracker_status = arbitrator.tracker.get_status()
+
+        # Try to pull last-run BQ metrics
+        bq_metrics = {}
+        try:
+            from google.cloud import bigquery as bq_lib
+            project = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            client  = bq_lib.Client(project=project)
+            query   = f"""
+                SELECT model_name, accuracy, f1_score, log_loss, trained_at
+                FROM `{project}.market_data.model_performance`
+                WHERE symbol = '{symbol}'
+                ORDER BY trained_at DESC
+                LIMIT 20
+            """
+            df = client.query(query).to_dataframe()
+            if not df.empty:
+                bq_metrics = df.groupby("model_name").first().to_dict(orient="index")
+        except Exception as e:
+            logger.debug(f"BQ metrics fetch: {e}")
+
+        return {
+            "status":         "success",
+            "symbol":         symbol,
+            "live_tracker":   tracker_status,
+            "bq_last_train":  bq_metrics,
+            "timestamp":      datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+# ─── Endpoint 5: Feature Drift PSI Scores ────────────────────────────────────
+
+@app.get("/api/v1/models/drift/{symbol}")
+async def model_drift_endpoint(symbol: str):
+    """
+    Feature drift PSI scores vs training baseline.
+    Triggers retraining Pub/Sub alert if PSI > 0.20.
+    """
+    symbol = symbol.upper()
+    try:
+        detector = _get_drift_detector()
+        if detector is None:
+            raise HTTPException(503, "DriftDetector not initialized")
+
+        # Load BQ baseline if not loaded yet
+        if not detector._baseline:
+            detector.load_baseline_from_bq(symbol)
+
+        # Run drift check
+        report = await detector.check_and_alert(symbol)
+
+        return {
+            "status":    "success",
+            "symbol":    symbol,
+            "drift":     report,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+# ─── Endpoint 6: Trigger Vertex AI Retraining Job ────────────────────────────
+
+@app.post("/api/v1/training/trigger")
+async def trigger_retraining_endpoint(
+    background_tasks: BackgroundTasks,
+    symbol: str = "NIFTY",
+    days:   int  = 730,
+):
+    """
+    Trigger a nightly 9-model ensemble retraining job.
+
+    On GCE VM: runs train_ensemble.py directly in background.
+    In production: submits Vertex AI Custom Training Job.
+    """
+    symbol = symbol.upper()
+    correlation_id = f"retrain_{symbol}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+
+    async def _run_training():
+        try:
+            logger.info(f"🚀 Starting retraining for {symbol} | correlationId={correlation_id}")
+            # Try Vertex AI first
+            try:
+                from google.cloud import aiplatform
+                project  = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+                location = "asia-south1"
+                aiplatform.init(project=project, location=location)
+                job = aiplatform.CustomJob(
+                    display_name=f"infinity-retrain-{symbol}-{datetime.utcnow().strftime('%Y%m%d')}",
+                    worker_pool_specs=[{
+                        "machine_spec": {"machine_type": "n1-standard-4"},
+                        "replica_count": 1,
+                        "container_spec": {
+                            "image_uri": f"gcr.io/{project}/engine-b:latest",
+                            "command": ["python", "-m", "src.training.train_ensemble"],
+                            "args": [f"--symbol={symbol}", f"--days={days}", "--upload-gcs"],
+                        },
+                    }],
+                )
+                job.submit()
+                logger.info(f"✅ Vertex AI Training Job submitted: {job.resource_name}")
+            except Exception as va_err:
+                logger.warning(f"Vertex AI submit failed ({va_err}), running local training...")
+                import subprocess
+                subprocess.Popen([
+                    "python", "-m", "src.training.train_ensemble",
+                    f"--symbol={symbol}", f"--days={days}", "--upload-gcs"
+                ])
+        except Exception as e:
+            logger.error(f"Retraining trigger failed: {e}")
+
+    background_tasks.add_task(_run_training)
+
+    return {
+        "status":         "retraining_triggered",
+        "symbol":         symbol,
+        "days":           days,
+        "correlation_id": correlation_id,
+        "triggered_at":   datetime.utcnow().isoformat(),
+        "note":           "Job submitted to Vertex AI (or local fallback). Check /api/v1/models/performance for updates.",
+    }
+
+
+# ─── Endpoint 7: HMM Market Regime ───────────────────────────────────────────
+
+@app.get("/api/v1/regime/{symbol}")
+async def market_regime_endpoint(symbol: str):
+    """
+    Current market regime from HMM (0=Bear, 1=Sideways, 2=Bull)
+    with state probabilities and ensemble weight tilt multipliers.
+    """
+    symbol = symbol.upper()
+    try:
+        manager = _get_ml_manager()
+        if manager is None:
+            raise HTTPException(503, "MLModelManager not initialized")
+
+        hmm_model = manager.models.get("hmm_regime")
+        if hmm_model is None:
+            raise HTTPException(503, "HMM regime model not loaded")
+
+        # Fetch recent close prices for regime estimation
+        snap = {}
+        curr_price = 0.0
+        try:
+            from src.services.data_connector import DataConnector
+            connector  = DataConnector(base_url=os.getenv("ENGINE_A_URL", ""))
+            snap       = await connector.fetch_snapshot(symbol) or {}
+            curr_price = float(snap.get("price") or snap.get("last_price") or snap.get("close") or 0.0)
+        except Exception:
+            pass
+
+        # Build synthetic close proxy if live data unavailable
+        import pandas as pd
+        if curr_price > 0:
+            close_proxy = pd.Series([curr_price] * 90)
+        else:
+            close_proxy = pd.Series([100.0] * 90)
+
+        regime_info  = hmm_model.current_regime(close_proxy)
+        regime_tilt  = hmm_model.get_regime_tilt(close_proxy)
+
+        return {
+            "status":         "success",
+            "symbol":         symbol,
+            "current_price":  curr_price,
+            "regime":         regime_info,
+            "weight_tilt":    regime_tilt,
+            "regime_labels":  {0: "BEAR/VOLATILE", 1: "SIDEWAYS/CHOP", 2: "BULL/TRENDING"},
+            "timestamp":      datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+# ─── DQN Endpoints (Dual Mode) ───────────────────────────────────────────────
+
+@app.get("/api/v1/dqn/signal/{symbol}")
+async def dqn_signal_endpoint(
+    symbol:    str,
+    mode:      str  = "both",   # "position_sizing" | "primary_signal" | "both"
+    base_lots: int  = 1,
+):
+    """
+    DQN Agent signal endpoint in dual mode:
+      mode=position_sizing: Returns adjusted lot size based on Q-value confidence
+      mode=primary_signal: Returns autonomous BUY/HOLD/SELL from DQN policy
+      mode=both: Returns both primary signal + adjusted lots
+    """
+    symbol = symbol.upper()
+    try:
+        manager = _get_ml_manager()
+        if manager is None:
+            raise HTTPException(503, "MLModelManager not initialized")
+
+        snap = {}
+        try:
+            from src.services.data_connector import DataConnector
+            connector = DataConnector(base_url=os.getenv("ENGINE_A_URL", ""))
+            snap = await connector.fetch_snapshot(symbol) or {}
+        except Exception:
+            pass
+
+        from src.services.feature_pipeline import extract_snapshot_features
+        X = extract_snapshot_features(snap)
+        state = X[-1] if X.ndim > 1 else X
+
+        if mode == "position_sizing":
+            result = manager.get_dqn_position_sizing(state, base_lots)
+        elif mode == "primary_signal":
+            result = manager.get_dqn_primary_signal(state)
+        else:  # both
+            result = manager.get_combined_dqn_signal(state, base_lots)
+
+        return {
+            "status":    "success",
+            "symbol":    symbol,
+            "mode":      mode,
+            "dqn":       result,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 

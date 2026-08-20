@@ -35,6 +35,7 @@ async def get_dhan_client_for_user(user_id: Optional[str] = None):
     creds_response = await credentials_manager.get_user_credentials(resolved_id)
 
     if not creds_response:
+        logger.error(f"❌ Dhan credentials not found for resolved_id: {resolved_id}")
         raise HTTPException(status_code=401, detail="Dhan credentials not configured in single-tenant vault")
 
     client_id = creds_response.get("dhan_client_id") or creds_response.get("client_id") or PRIMARY_CLIENT_ID

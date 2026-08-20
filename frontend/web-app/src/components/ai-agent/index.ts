@@ -4,3 +4,5 @@
  */
 
 export { AIAgentChat, RealTimeSignal, AutomatedTradingControl } from './AIAgentComponents';
+export { InfinityAICopilotPanel, InfinityAICopilotFloating } from './InfinityAICopilot';
+

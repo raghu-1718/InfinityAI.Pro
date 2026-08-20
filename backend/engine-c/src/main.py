@@ -100,6 +100,37 @@ except ImportError as e:
     logger_init.warning(f"⚠️ Paper trading module not available: {e}")
     PAPER_TRADING_AVAILABLE = False
 
+# Coupons authentication disabled per owner request — provide a safe no-op stub to avoid runtime errors
+class _CouponAuthDisabled:
+    async def create_coupon(self, *args, **kwargs):
+        return {"success": False, "message": "Coupons disabled by admin"}
+    async def get_coupon(self, code):
+        return None
+    async def validate_coupon(self, code, *args, **kwargs):
+        return {"success": False, "message": "Coupons disabled by admin"}
+    async def initialize_default_coupons(self):
+        return None
+    async def list_coupons(self):
+        return []
+    async def validate_session(self, session_id):
+        return {"valid": False, "message": "Coupons disabled by admin"}
+    async def update_session_dhan_status(self, *args, **kwargs):
+        return False
+    async def logout(self, session_id):
+        return {"success": False, "message": "Coupons disabled by admin"}
+    async def get_session(self, session_id):
+        return None
+    async def invalidate_session(self, session_id):
+        return False
+
+_coupon_disabled_instance = _CouponAuthDisabled()
+
+def get_coupon_auth_manager():
+    """
+    Backwards-compatible stub manager when coupons are disabled.
+    """
+    return _coupon_disabled_instance
+
 try:
     from src.webhook_verification import get_webhook_verifier, WebhookPayloadValidator, verify_dhan_webhook
     WEBHOOK_VERIFICATION_AVAILABLE = True
@@ -1369,11 +1400,11 @@ async def verify_dhan_deep(request: DhanCredentialsRequest):
              # Using a known active symbol or just the API call availability
              # Validates that "Trade" permission scope is active
              margin = dhan.get_order_margin(
-                 security_id="1333", # HDFC Bank Equity (Example) or similar common ID
+                 security_id="13", # NIFTY Index (Options-friendly) for margin capability check
                  exchange_segment=dhan.NSE,
                  transaction_type=dhan.BUY,
                  quantity=1,
-                 product_type=dhan.CNC,
+                 product_type=getattr(dhan, 'NRML', getattr(dhan, 'CNC', None)),
                  price=0
              )
         except Exception as e:
@@ -3572,6 +3603,62 @@ async def auth_status():
         "version": "1.0.0",
         "auth_type": "coupon_code"
     }
+
+
+# ─── InfinityAI Copilot (BigQuery Agent + Vertex AI Gemini 2.5) ─────────────
+class CopilotChatRequest(BaseModel):
+    message: str
+    user_id: Optional[str] = "raghu_primary"
+    context: Optional[Dict[str, Any]] = None
+
+
+@app.post("/api/copilot/chat")
+async def copilot_chat_endpoint(request: CopilotChatRequest):
+    """
+    InfinityAI Copilot Endpoint:
+    Combines BigQuery Data Agent + Vertex AI Gemini 2.5 Flash Grounding.
+    """
+    try:
+        from src.agents.bq_copilot import get_infinity_copilot
+        copilot = get_infinity_copilot()
+        response = await copilot.chat(message=request.message, context=request.context)
+        return response
+    except Exception as e:
+        logger.error(f"Copilot endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/copilot/status")
+async def copilot_status_endpoint():
+    """
+    Check InfinityAI Copilot Agent & BigQuery health.
+    """
+    try:
+        from src.agents.bq_copilot import get_infinity_copilot
+        copilot = get_infinity_copilot()
+        metrics = copilot.query_bigquery_live_metrics()
+        return {
+            "name": "InfinityAI",
+            "status": "operational",
+            "model": "Vertex AI Gemini 2.5 Flash",
+            "bigquery_warehouse": "project-841b7f97-5ee3-4fbe-920",
+            "metrics": metrics,
+            "capabilities": [
+                "BigQuery Real-Time Live Ticks",
+                "Historical Multi-Factor Feature Store",
+                "Options Greeks & IV Skew Analysis",
+                "Tri-Model ML Ensemble Synthesis",
+                "Vertex AI News & Macro Grounding"
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Copilot status error: {e}")
+        return {
+            "name": "InfinityAI",
+            "status": "degraded",
+            "error": str(e)
+        }
+
 
 
 if __name__ == "__main__":

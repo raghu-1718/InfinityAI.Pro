@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Brain, Globe, Sparkles, Newspaper } from "lucide-react";
 import { MLTrendSignalCard, MLSignalPayload } from "@/components/dashboard/MLTrendSignalCard";
+import { InfinityAICopilotPanel } from "@/components/ai-agent";
 
 export default function IntelligencePage() {
   const { data: marketPrediction, isLoading: isPredicting } = useMarketPrediction("day");
@@ -23,43 +24,47 @@ export default function IntelligencePage() {
 
   // Structured ML Signal Payloads
   const activeNiftySignal: MLSignalPayload = {
-    symbol: niftySignal?.symbol || "NIFTY",
-    signal: (niftySignal?.signal as any) || "BUY",
-    confidence: niftySignal?.confidence ? (niftySignal.confidence > 1 ? niftySignal.confidence : niftySignal.confidence * 100) : 84.5,
-    current_price: niftySignal?.current_price || 24366.00,
-    predicted_price: niftySignal?.predicted_price || 24853.30,
-    stop_loss: niftySignal?.stop_loss || 24150.00,
-    target: niftySignal?.target || 24900.00,
-    model_version: niftySignal?.model_version || "v3.6-instrument-signals-ml",
-    data_source: niftySignal?.data_source || "dhan",
-    exchange_segment: niftySignal?.exchange_segment || "IDX_I",
+    symbol: (niftySignal as any)?.symbol || "NIFTY",
+    signal: ((niftySignal as any)?.signal as any) || "BUY",
+    confidence: (niftySignal as any)?.confidence ? ((niftySignal as any).confidence > 1 ? (niftySignal as any).confidence : (niftySignal as any).confidence * 100) : 84.5,
+    current_price: (niftySignal as any)?.current_price || 24231.30,
+    predicted_price: (niftySignal as any)?.predicted_price || 24231.30,
+    stop_loss: (niftySignal as any)?.stop_loss || 24150.00,
+    target: (niftySignal as any)?.target || 24900.00,
+    model_version: (niftySignal as any)?.model_version || "v3.6-instrument-signals-ml",
+    data_source: (niftySignal as any)?.data_source || "dhan",
+    exchange_segment: (niftySignal as any)?.exchange_segment || "IDX_I",
     analysis: {
-      rsi: niftySignal?.analysis?.rsi ?? 58.42,
-      adx: niftySignal?.analysis?.adx ?? 28.15,
-      trend: niftySignal?.analysis?.trend ?? "Bullish",
-      score: niftySignal?.analysis?.score ?? 4,
-      asset_class: niftySignal?.analysis?.asset_class ?? "FNO",
-      key_factors: niftySignal?.analysis?.key_factors?.length 
-        ? niftySignal.analysis.key_factors 
+      rsi: (niftySignal as any)?.analysis?.rsi ?? 58.42,
+      adx: (niftySignal as any)?.analysis?.adx ?? 28.15,
+      trend: (niftySignal as any)?.analysis?.trend ?? "Bullish",
+      score: (niftySignal as any)?.analysis?.score ?? 4,
+      asset_class: (niftySignal as any)?.analysis?.asset_class ?? "FNO",
+      key_factors: (niftySignal as any)?.analysis?.key_factors?.length 
+        ? (niftySignal as any).analysis.key_factors 
         : ["Above EMA 50", "MACD Bullish Crossover", "ML Ensemble: BUY (84.5% conf)"]
     },
     user_id: "raghu_primary",
-    timestamp: niftySignal?.timestamp || new Date().toISOString()
+    timestamp: (niftySignal as any)?.timestamp || new Date().toISOString()
   };
+
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto w-full">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-3">
           <Brain className="w-10 h-10 text-purple-500" />
-          AI Intelligence <span className="text-white/50">& News Hub</span>
+          AI Intelligence <span className="text-white/50">& Copilot Hub</span>
         </h1>
-        <p className="text-slate-400">Live macroeconomic synthesis powered by Vertex AI Search Grounding & Tri-Model MLOps Ensemble.</p>
+        <p className="text-slate-400">Institutional quantitative intelligence combining Google Cloud BigQuery and Vertex AI Gemini 2.5 Flash Grounding.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Narrative & Global Sentiment - 2 cols */}
+        {/* Main Narrative & Copilot - 2 cols */}
         <div className="lg:col-span-2 space-y-6">
+          {/* InfinityAI Copilot Panel */}
+          <InfinityAICopilotPanel embedded={true} />
+
           <Card className="glass-card border-t-4 border-t-purple-500">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -152,3 +157,4 @@ export default function IntelligencePage() {
     </div>
   );
 }
+

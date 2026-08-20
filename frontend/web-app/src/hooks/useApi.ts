@@ -318,7 +318,8 @@ export function useFunds() {
   return useQuery({
     queryKey: ["funds", "raghu_primary"],
     queryFn: async () => {
-      const res = await engineC.getFunds();
+      const userId = getUserId();
+      const res = await engineC.getFunds(userId);
       if (res && res.status === "success") {
         const fundsData = (res.funds || res.data || {}) as {
           availableBalance?: number;
@@ -350,7 +351,8 @@ export function usePositions() {
   return useQuery({
     queryKey: ["positions", "raghu_primary"],
     queryFn: async () => {
-      const res = await engineC.getPositions();
+      const userId = getUserId();
+      const res = await engineC.getPositions(userId);
       if (res && res.data && !Array.isArray(res.data)) {
         return { ...res, data: [] };
       }
@@ -367,7 +369,8 @@ export function useHoldings() {
   return useQuery({
     queryKey: ["holdings", "raghu_primary"],
     queryFn: async () => {
-      const res = await engineC.getHoldings();
+      const userId = getUserId();
+      const res = await engineC.getHoldings(userId);
       if (res && res.data && !Array.isArray(res.data)) {
         return { ...res, data: [] };
       }
@@ -383,7 +386,10 @@ export function useHoldings() {
 export function useOrders() {
   return useQuery({
     queryKey: ["orders", "raghu_primary"],
-    queryFn: () => engineC.getOrders(),
+    queryFn: () => {
+      const userId = getUserId();
+      return engineC.getOrders(userId);
+    },
     refetchInterval: 10000, // 10 seconds for real-time order status
     staleTime: 5000,
     enabled: true,
@@ -406,7 +412,10 @@ export function useMarketQuotes(securityIds: string[] | string = ["1333", "11536
 export function useTradeBook() {
   return useQuery({
     queryKey: ["trades", "raghu_primary"],
-    queryFn: () => engineC.getTrades(),
+    queryFn: () => {
+      const userId = getUserId();
+      return engineC.getTrades(userId);
+    },
     refetchInterval: 10000,
     staleTime: 5000,
     enabled: true,

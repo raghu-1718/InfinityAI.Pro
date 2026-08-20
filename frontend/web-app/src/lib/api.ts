@@ -43,13 +43,19 @@ if (typeof window !== "undefined") {
   });
 }
 
-async function fetchWithTimeout(primaryUrl: string, options?: RequestInit) {
+async function fetchWithTimeout(
+  primaryUrl: string,
+  options?: RequestInit & { timeoutMs?: number }
+) {
   try {
+    const timeout = options?.timeoutMs || 20000;
+    const { timeoutMs, ...fetchOpts } = options || {};
     const response = await fetch(primaryUrl, {
-      ...options,
-      signal: AbortSignal.timeout(20000), // Increased timeout for reliability
+      ...fetchOpts,
+      signal: AbortSignal.timeout(timeout),
     });
     if (response.ok) return response;
+
 
     // Create error with status for better handling
     const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1392,29 +1398,43 @@ export const engineC = {
     );
     return res.json();
   },
+};
 
-  async getMarketQuotes(
-    userId: string,
-    securityIds: string[],
-    exchangeSegment: string = "NSE_EQ",
-  ) {
-    const qs = new URLSearchParams({
-      security_ids: securityIds.join(","),
-      exchange_segment: exchangeSegment,
-      user_id: userId,
-    });
+// ─── InfinityAI Copilot Client (BigQuery Agent + Vertex AI) ────────────────
+export const infinityCopilot = {
+  async chat(message: string, context?: any) {
+    const userId = getUserId();
     const res = await fetchWithTimeout(
-      `${API_CONFIG.ENGINE_C}/api/dhan/market/quotes?${qs.toString()}`,
+      `${API_CONFIG.ENGINE_C}/api/copilot/chat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          user_id: userId,
+          context,
+        }),
+        timeoutMs: 60000,
+      }
     );
     return res.json();
   },
+
+  async getStatus() {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/copilot/status`, {
+      timeoutMs: 15000,
+    });
+    return res.json();
+  },
 };
+
 
 // Combined API
 export const api = {
   engineA,
   engineB,
   engineC,
+  copilot: infinityCopilot,
 
   // Utility: Check all engines health
   async checkAllEngines(): Promise<{
@@ -1437,3 +1457,4 @@ export const api = {
 };
 
 export default api;
+

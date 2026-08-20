@@ -4,6 +4,7 @@ import { useCouponAuth } from '@/contexts/DualAuthContext';
 import { AppSidebar, TopBar } from '@/components/layout/AppSidebar';
 import { GlobalDataPoller } from '@/components/layout/global-data-poller';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { InfinityAICopilotFloating } from '@/components/ai-agent';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, TrendingUp } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function DashboardLayout({
   // Authenticated - show dashboard layout with new design
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background relative">
         {/* Sidebar */}
         <AppSidebar />
         <GlobalDataPoller />
@@ -36,8 +37,12 @@ export default function DashboardLayout({
             {children}
           </main>
         </div>
+
+        {/* Global Institutional Copilot Drawer */}
+        <InfinityAICopilotFloating />
       </div>
     </ErrorBoundary>
   );
 }
+
 
