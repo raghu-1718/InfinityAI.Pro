@@ -116,31 +116,25 @@ async def initialize_realtime(db_client=None):
     # 3. Connect to DhanHQ Market Feed
     try:
         logger.info(f"Connecting to DhanHQ market feed for client_id: {client_id}...")
-        # Example instruments: NIFTY 50 (1, '13') and NIFTY BANK (1, '26000')
         instruments = [(1, '13'), (1, '26000')]
-        
-        def on_connect():
-            logger.info("✅ DhanHQ market feed connected.")
-
-        def on_close():
-            logger.warning("DhanHQ market feed disconnected.")
-
-        def on_error(err):
-            logger.error(f"DhanHQ market feed error: {err}")
-
         feed = marketfeed.DhanFeed(
             client_id=client_id,
             access_token=access_token,
             instruments=instruments,
-            on_connect=on_connect,
-            on_message=on_message,
-            on_close=on_close,
-            on_error=on_error
+            version='v2'
         )
 
-        # The library handles running this in a background thread.
-        feed.run_in_background()
-        logger.info(f"✅ DhanHQ market feed started in background for instruments: {instruments}")
+        def _run_feed():
+            try:
+                logger.info(f"✅ DhanHQ market feed thread starting for: {instruments}")
+                feed.run_forever()
+            except Exception as fe:
+                logger.warning(f"DhanHQ feed loop note: {fe}")
+
+        import threading
+        t = threading.Thread(target=_run_feed, daemon=True)
+        t.start()
+        logger.info(f"✅ DhanHQ market feed started in background thread for instruments: {instruments}")
 
     except Exception as e:
         logger.error(f"❌ Failed to start DhanHQ market feed: {e}")
