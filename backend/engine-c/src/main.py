@@ -194,8 +194,8 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://35.200.135.175:8080")
-ENGINE_A_URL = _get_env("ENGINE_A_URL", "http://127.0.0.1:8001")
+ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://10.160.0.2:8080")
+ENGINE_A_URL = _get_env("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -245,9 +245,10 @@ async def lifespan(app: FastAPI):
                         headers=headers,
                     ) as resp:
                         if resp.status != 200:
-                            raise Exception(f"Engine B unhealthy: {resp.status}")
+                            raise Exception(f"Engine B unhealthy: HTTP {resp.status}")
                 except Exception as e:
-                    logger.warning(f"Engine B health check failed: {e}")
+                    err_msg = str(e) or type(e).__name__
+                    logger.warning(f"Engine B health check failed ({ENGINE_B_URL}): {err_msg}")
 
             async def check_engine_a():
                 try:
@@ -262,9 +263,10 @@ async def lifespan(app: FastAPI):
                         headers=headers,
                     ) as resp:
                         if resp.status != 200:
-                            raise Exception(f"Engine A unhealthy: {resp.status}")
+                            raise Exception(f"Engine A unhealthy: HTTP {resp.status}")
                 except Exception as e:
-                    logger.warning(f"Engine A health check failed: {e}")
+                    err_msg = str(e) or type(e).__name__
+                    logger.warning(f"Engine A health check failed ({ENGINE_A_URL}): {err_msg}")
 
             monitor.register_service("engine_b", check_engine_b, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
             monitor.register_service("engine_a", check_engine_a, CircuitBreakerConfig(failure_threshold=3, timeout=30.0))
@@ -276,7 +278,7 @@ async def lifespan(app: FastAPI):
 
     if REALTIME_ENABLED:
         try:
-            initialize_realtime(None)
+            await with_timeout(initialize_realtime(None), 10, "initialize_realtime")
             logger.info("✅ Real-time enhancements enabled")
         except Exception as e:
             logger.warning(f"Real-time enhancements init failed: {e}")
