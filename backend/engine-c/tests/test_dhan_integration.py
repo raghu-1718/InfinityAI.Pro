@@ -31,17 +31,11 @@ mock_monitor_instance.start_monitoring = AsyncMock()
 mock_monitor_instance.stop_monitoring = AsyncMock()
 mock_health_monitor.return_value = mock_monitor_instance
 
-mock_coupon_manager = MagicMock()
-mock_coupon_instance = MagicMock()
-mock_coupon_instance.initialize_default_coupons = AsyncMock()
-mock_coupon_manager.return_value = mock_coupon_instance
-
 # Apply patches
 patch('src.main.initialize_realtime', new=AsyncMock()).start()
 patch('src.main.ConnectionPoolManager.initialize', new=AsyncMock()).start()
 patch('src.main.get_cache_manager', new=mock_cache_manager).start()
 patch('src.main.get_health_monitor', new=mock_health_monitor).start()
-patch('src.main.get_coupon_auth_manager', new=mock_coupon_manager).start()
 patch('src.main.ActivityLogger', new=MagicMock()).start()
 
 client = TestClient(app)

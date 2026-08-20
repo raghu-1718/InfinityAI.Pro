@@ -85,6 +85,13 @@
         }
       },
       {
+        "source": "/api/copilot/**",
+        "run": {
+          "serviceId": "engine-c",
+          "region": "asia-south1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
