@@ -70,52 +70,6 @@ class MarginCalculatorRequest(BaseModel):
     trigger_price: Optional[float] = 0.0
 
 
-class BacktestRequest(BaseModel):
-    user_id: Optional[str] = "raghu_primary"
-    security_id: str = "13"
-    exchange_segment: str = "IDX_I"
-    instrument_type: str = "INDEX"
-    strategy_name: str = "MA_CROSSOVER"  # MA_CROSSOVER, RSI_REVERSION, MACD_MOMENTUM, BOLLINGER_BANDS
-    months: int = 6
-    initial_capital: float = 1000000.0
-    position_size_pct: float = 0.2
-    stop_loss_pct: float = 0.02
-    take_profit_pct: float = 0.04
-
-
-# --- 6-Month Quantitative Backtester ---
-@dhan_v2_router.post("/backtest")
-async def run_6month_backtest(req: BacktestRequest):
-    """Run 6-month historical strategy backtest using DhanHQ candle data"""
-    try:
-        from .backtest_engine import BacktestEngine
-        engine = BacktestEngine(user_id=req.user_id)
-        df = await engine.fetch_historical_data(
-            security_id=req.security_id,
-            exchange_segment=req.exchange_segment,
-            instrument_type=req.instrument_type,
-            months=req.months
-        )
-        res = engine.run_backtest(
-            df=df,
-            strategy_name=req.strategy_name,
-            initial_capital=req.initial_capital,
-            position_size_pct=req.position_size_pct,
-            stop_loss_pct=req.stop_loss_pct,
-            take_profit_pct=req.take_profit_pct
-        )
-        return {
-            "status": "success",
-            "security_id": req.security_id,
-            "months": req.months,
-            "data": res,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    except Exception as e:
-        logger.error(f"Error executing 6-month backtest: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 # --- Forever Orders (GTT) ---
 @dhan_v2_router.get("/forever/orders")
 async def get_forever_orders(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):

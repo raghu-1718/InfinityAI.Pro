@@ -91,15 +91,7 @@ import os
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 # (OpenTelemetry imports and initialization would go here)
 
-# Paper Trading & Webhook Verification
-try:
-    from src.paper_trading import get_paper_engine, PaperTradingEngine
-    PAPER_TRADING_AVAILABLE = True
-except ImportError as e:
-    logger_init = logging.getLogger("paper_trading_import")
-    logger_init.warning(f"⚠️ Paper trading module not available: {e}")
-    PAPER_TRADING_AVAILABLE = False
-
+# Webhook Verification
 try:
     from src.webhook_verification import get_webhook_verifier, WebhookPayloadValidator, verify_dhan_webhook
     WEBHOOK_VERIFICATION_AVAILABLE = True
@@ -436,11 +428,11 @@ async def health_check():
         "status": "healthy",
         "service": "engine-c-execution",
         "broker": "DhanHQ",
-        "version": "3.8-performance-optimized",
-        "trading_mode": ENGINE_C_MODE.upper(),
-        "mode_badge": "📄 PAPER TRADING" if ENGINE_C_MODE == "paper" else "💰 LIVE TRADING",
+        "version": "4.0-live-execution",
+        "trading_mode": "LIVE",
+        "mode_badge": "💰 LIVE TRADING",
         "ml_capabilities": ["slippage_prediction", "order_timing", "twap_splitting", "vwap_splitting", "execution_analytics"],
-        "paper_trading_available": PAPER_TRADING_AVAILABLE,
+        "live_execution_enforced": True,
         "webhook_verification_available": WEBHOOK_VERIFICATION_AVAILABLE,
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -1989,104 +1981,80 @@ async def place_order(order: OrderRequest, request: Request):
             )
 
     try:
-        # Route based on trading mode
-        if ENGINE_C_MODE == "paper":
-            if not PAPER_TRADING_AVAILABLE:
-                raise HTTPException(status_code=503, detail="Paper trading module not available")
+        # Strict Institutional Live Execution Mode (DhanHQ API v2)
+        dhan_client = get_dhan_client()
 
-            # Use paper trading engine
-            paper_engine = get_paper_engine()
-            response = paper_engine.place_order(
-                symbol=order.security_id or order.symbol if hasattr(order, 'symbol') else "NIFTY",
-                transaction_type=order.transaction_type,
-                quantity=order.quantity,
-                price=order.price or 0,
-                order_type=order.order_type,
-                trigger_price=getattr(order, 'trigger_price', None)
-            )
+        # Map frontend order types to DhanHQ expected constants
+        order_type_map = {
+            "STOPLOSS": "STOP_LOSS",
+            "STOPLIMIT": "STOP_LOSS",
+            "STOPMARKET": "STOP_LOSS_MARKET"
+        }
+        dhan_order_type = order_type_map.get(order.order_type.upper(), order.order_type.upper())
 
-            # Add mode indicator
-            response["mode"] = "PAPER_TRADING"
-            response["portfolio_state"] = paper_engine.get_portfolio_state()
+        # Build kwargs dynamically, only include non-None and relevant fields
+        order_kwargs = {
+            "transaction_type": order.transaction_type.upper(),
+            "exchange_segment": order.exchange_segment,
+            "product_type": order.product_type,
+            "order_type": dhan_order_type,
+            "validity": order.validity,
+            "security_id": order.security_id,
+            "quantity": order.quantity,
+        }
+        # Always include price for DhanHQ SDK, default to 0 for MARKET orders
+        if order.price is not None:
+            order_kwargs["price"] = order.price
+        elif dhan_order_type == "MARKET":
+            order_kwargs["price"] = 0
 
-            logger.info(f"📄 Paper order placed: {response}")
-            return response
+        # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
+        if order.trigger_price is not None and "STOP" in dhan_order_type:
+            order_kwargs["trigger_price"] = order.trigger_price
+        if order.disclosed_quantity:
+            order_kwargs["disclosed_quantity"] = order.disclosed_quantity
+        if order.after_market_order:
+            order_kwargs["after_market_order"] = order.after_market_order
+        if order.amo_time and order.after_market_order:
+            order_kwargs["amo_time"] = order.amo_time
 
-        else:  # LIVE mode
-            # All trades execute against Dhan API
-            dhan_client = get_dhan_client()
+        # Bracket order fields (only for BO/CO types)
+        if order.product_type in ["BO", "CO"]:
+            if order.bo_profit_value:
+                order_kwargs["bo_profit_value"] = order.bo_profit_value
+            if order.bo_stop_loss_value:
+                order_kwargs["bo_stop_loss_value"] = order.bo_stop_loss_value
 
-            # Map frontend order types to DhanHQ expected constants
-            order_type_map = {
-                "STOPLOSS": "STOP_LOSS",
-                "STOPLIMIT": "STOP_LOSS",
-                "STOPMARKET": "STOP_LOSS_MARKET"
-            }
-            dhan_order_type = order_type_map.get(order.order_type.upper(), order.order_type.upper())
+        # Derivative fields (only for F&O)
+        if order.drv_expiry_date:
+            order_kwargs["drv_expiry_date"] = order.drv_expiry_date
+        if order.drv_options_type:
+            order_kwargs["drv_options_type"] = order.drv_options_type
+        if order.drv_strike_price:
+            order_kwargs["drv_strike_price"] = order.drv_strike_price
 
-            # Build kwargs dynamically, only include non-None and relevant fields
-            order_kwargs = {
-                "transaction_type": order.transaction_type.upper(),
-                "exchange_segment": order.exchange_segment,
-                "product_type": order.product_type,
-                "order_type": dhan_order_type,
-                "validity": order.validity,
-                "security_id": order.security_id,
-                "quantity": order.quantity,
-            }
-            # Always include price for DhanHQ SDK, default to 0 for MARKET orders
-            if order.price is not None:
-                order_kwargs["price"] = order.price
-            elif dhan_order_type == "MARKET":
-                order_kwargs["price"] = 0
+        # Apply UUIDv4 Idempotency Key (truncated to 30 chars for DhanHQ API limit)
+        order_kwargs["tag"] = uuid.uuid4().hex[:30]
 
-            # Only include trigger_price if present and order_type is STOPLOSS/STOPLIMIT/STOPMARKET
-            if order.trigger_price is not None and "STOP" in dhan_order_type:
-                order_kwargs["trigger_price"] = order.trigger_price
-            if order.disclosed_quantity:
-                order_kwargs["disclosed_quantity"] = order.disclosed_quantity
-            if order.after_market_order:
-                order_kwargs["after_market_order"] = order.after_market_order
-            if order.amo_time and order.after_market_order:
-                order_kwargs["amo_time"] = order.amo_time
+        async with dhan_rate_limiter:
+            response = dhan_client.place_order(**order_kwargs)
 
-            # Bracket order fields (only for BO/CO types)
-            if order.product_type in ["BO", "CO"]:
-                if order.bo_profit_value:
-                    order_kwargs["bo_profit_value"] = order.bo_profit_value
-                if order.bo_stop_loss_value:
-                    order_kwargs["bo_stop_loss_value"] = order.bo_stop_loss_value
+        # Check response status
+        if isinstance(response, dict):
+            if response.get("status") == "failure":
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Dhan Order Failed: {response.get('remarks', 'Unknown error')}"
+                )
+            elif response.get("status") == "success":
+                return {
+                    "status": "success",
+                    "mode": "LIVE_TRADING",
+                    "order_id": response.get("data", {}).get("orderId"),
+                    "dhan_response": response
+                }
 
-            # Derivative fields (only for F&O)
-            if order.drv_expiry_date:
-                order_kwargs["drv_expiry_date"] = order.drv_expiry_date
-            if order.drv_options_type:
-                order_kwargs["drv_options_type"] = order.drv_options_type
-            if order.drv_strike_price:
-                order_kwargs["drv_strike_price"] = order.drv_strike_price
-
-            # Apply UUIDv4 Idempotency Key (truncated to 30 chars for DhanHQ API limit)
-            order_kwargs["tag"] = uuid.uuid4().hex[:30]
-
-            async with dhan_rate_limiter:
-                response = dhan_client.place_order(**order_kwargs)
-
-            # Check response status
-            if isinstance(response, dict):
-                if response.get("status") == "failure":
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Dhan Order Failed: {response.get('remarks', 'Unknown error')}"
-                    )
-                elif response.get("status") == "success":
-                    return {
-                        "status": "success",
-                        "mode": "LIVE_TRADING",
-                        "order_id": response.get("data", {}).get("orderId"),
-                        "dhan_response": response
-                    }
-
-            return {"status": "success", "mode": "LIVE_TRADING", "dhan_response": response}
+        return {"status": "success", "mode": "LIVE_TRADING", "dhan_response": response}
 
     except HTTPException:
         raise
