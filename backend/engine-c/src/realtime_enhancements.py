@@ -117,15 +117,17 @@ async def initialize_realtime(db_client=None):
     try:
         logger.info(f"Connecting to DhanHQ market feed for client_id: {client_id}...")
         instruments = [(1, '13'), (1, '26000')]
-        feed = marketfeed.DhanFeed(
-            client_id=client_id,
-            access_token=access_token,
-            instruments=instruments,
-            version='v2'
-        )
 
         def _run_feed():
             try:
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                feed = marketfeed.DhanFeed(
+                    client_id=client_id,
+                    access_token=access_token,
+                    instruments=instruments,
+                    version='v2'
+                )
                 logger.info(f"✅ DhanHQ market feed thread starting for: {instruments}")
                 feed.run_forever()
             except Exception as fe:
