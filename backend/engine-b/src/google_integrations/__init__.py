@@ -237,6 +237,16 @@ def get_fii_dii_activity() -> Dict[str, Any]:
 
 from .finance_ai_model import get_finance_ai_model, FinanceAIModel
 
+# ─── Gemini 2.5 Flash Macro Grounding ──────────────────────────────────────
+try:
+    from .gemini_macro import GeminiMacroIntelligence, get_gemini_macro_intelligence, MacroSignal
+    HAS_GEMINI_MACRO = True
+except ImportError:
+    HAS_GEMINI_MACRO = False
+    GeminiMacroIntelligence = None
+    get_gemini_macro_intelligence = None
+    MacroSignal = None
+
 __all__ = [
     # Core
     "GenAIClient", "EnhancedGenAIClient",
@@ -253,4 +263,6 @@ __all__ = [
     "get_market_news", "get_option_chain_data", "get_fii_dii_activity",
     # Finance AI
     "get_finance_ai_model", "FinanceAIModel",
+    # Gemini Macro Grounding
+    "GeminiMacroIntelligence", "get_gemini_macro_intelligence", "MacroSignal",
 ]
