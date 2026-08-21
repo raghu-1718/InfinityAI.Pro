@@ -244,21 +244,21 @@ export const useAppStore = create<AppState>()(
 
         // Trading Configuration (with defaults)
         tradingConfig: {
-          selectedInstruments: ["nifty-options", "banknifty-options"] as TradingInstrument[],
+          selectedInstruments: ["nifty-options", "banknifty-options", "finnifty-options"] as TradingInstrument[],
           riskLevel: "moderate",
-          stopLossPercent: 2,
-          takeProfitPercent: 4,
-          maxTradesPerDay: 10,
-          tradingAmount: 10000,
+          stopLossPercent: 12,        // Minimum stop loss: 12% on option premium (adjustable)
+          takeProfitPercent: 15,      // Minimum profit target: 15% on option premium (adjustable)
+          maxTradesPerDay: 5,         // Max 5 high-conviction trades per day
+          tradingAmount: 10000,       // Baseline capital: ₹10,000
           useAISignals: true,
           autoRebalance: false,
           // Extended settings with defaults
           minCapital: 5000,
           maxCapital: 100000,
-          maxRiskPerTrade: 0.02,
-          minConfidence: 0.75,
-          trailingStopLoss: false,
-          positionSizingMethod: "fixed",
+          maxRiskPerTrade: 0.03,      // Max 3% risk of total capital per trade
+          minConfidence: 0.60,        // 60% minimum Tri-Model consensus
+          trailingStopLoss: true,     // Trailing stop loss enabled once target hit
+          positionSizingMethod: "percentage", // Auto-sizes lots based on available capital
         },
         setTradingConfig: (config) =>
           set((state) => ({

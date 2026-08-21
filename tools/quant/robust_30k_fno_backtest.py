@@ -34,7 +34,7 @@ USER_ID = "raghu_primary"
 FNO_SPECS = {
     "NIFTY": {"sec_id": "13", "seg": "IDX_I", "type": "INDEX", "lot_size": 65, "tick_size": 0.05},
     "BANKNIFTY": {"sec_id": "25", "seg": "IDX_I", "type": "INDEX", "lot_size": 30, "tick_size": 0.05},
-    "FINNIFTY": {"sec_id": "27", "seg": "IDX_I", "type": "INDEX", "lot_size": 65, "tick_size": 0.05}
+    "FINNIFTY": {"sec_id": "27", "seg": "IDX_I", "type": "INDEX", "lot_size": 60, "tick_size": 0.05}
 }
 
 fe = FeatureEngineer()

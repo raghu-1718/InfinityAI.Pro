@@ -32,7 +32,7 @@ if len(docs) == 0:
     sample_signals = [
         ("NIFTY", 24230.50, "BUY_CALL", 0.64, 0.65, 0.63, 0.64, "BULLISH (+0.75)", 65),
         ("BANKNIFTY", 52350.00, "BUY_CALL", 0.66, 0.68, 0.65, 0.65, "BULLISH (+0.80)", 30),
-        ("FINNIFTY", 23150.25, "BUY_PUT", 0.38, 0.35, 0.40, 0.39, "BEARISH (-0.60)", 65),
+        ("FINNIFTY", 23150.25, "BUY_PUT", 0.38, 0.35, 0.40, 0.39, "BEARISH (-0.60)", 60),
         ("NIFTY", 24190.00, "BUY_PUT", 0.39, 0.37, 0.41, 0.39, "BEARISH (-0.55)", 65),
         ("BANKNIFTY", 52480.00, "BUY_CALL", 0.62, 0.63, 0.61, 0.62, "BULLISH (+0.60)", 30)
     ]

@@ -71,24 +71,36 @@ class ShadowSignalLogger:
         timestamp_str = ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
         signal_id = f"SIG_{ist_time.strftime('%Y%m%d_%H%M%S')}_{symbol}"
 
-        # Option Bracket Calculation
-        # ATM Premium estimated at ~1.2% of underlying
-        est_premium = round(spot_price * 0.012, 2)
+        # Lot Size determination
+        sym_u = symbol.upper()
+        if "BANKNIFTY" in sym_u:
+            actual_lot_size = 30
+        elif "FINNIFTY" in sym_u:
+            actual_lot_size = 60
+        elif "MIDCP" in sym_u:
+            actual_lot_size = 120
+        elif "SENSEX" in sym_u:
+            actual_lot_size = 20
+        else:
+            actual_lot_size = 65
+
+        # Option Bracket Calculation (Option Buying Only)
+        # ATM Premium estimated at ~1.0% to 1.2% of underlying
+        est_premium = round(spot_price * 0.011, 2)
         strike = round(spot_price / 50.0) * 50  # 50-point strike rounding
         option_type = "CE" if "CALL" in decision.upper() else "PE"
         contract_name = f"{symbol} {int(strike)} {option_type}"
 
-        if option_type == "CE":
-            target_prem = round(est_premium * 1.50, 2)   # +50% gain target
-            stop_loss_prem = round(est_premium * 0.75, 2) # -25% max loss stop
-        else:
-            target_prem = round(est_premium * 1.50, 2)
-            stop_loss_prem = round(est_premium * 0.75, 2)
+        # Configured 15% Take-Profit Target and 12% Minimum Stop-Loss
+        target_pct = 0.15      # +15% Minimum Profit Target (Configurable)
+        stop_loss_pct = 0.12   # -12% Minimum Stop-Loss (Configurable)
+        target_prem = round(est_premium * (1.0 + target_pct), 2)
+        stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
 
         # Statutory taxes & Dhan brokerage estimate
         charges = calculate_options_roundtrip_charges(
             premium=est_premium,
-            lot_size=lot_size,
+            lot_size=actual_lot_size,
             lots=1,
             exchange="NSE"
         )
@@ -116,9 +128,12 @@ class ShadowSignalLogger:
                 "option_type": option_type,
                 "entry_premium": est_premium,
                 "target_premium": target_prem,
+                "target_percent": target_pct * 100,
                 "stop_loss_premium": stop_loss_prem,
-                "risk_reward": risk_reward_ratio,
-                "lot_size": lot_size
+                "stop_loss_percent": stop_loss_pct * 100,
+                "trailing_stop_loss_active": True,
+                "risk_reward": "1:1.25 (Trailing)",
+                "lot_size": actual_lot_size
             },
             "execution_mode": "SHADOW_OBSERVATION",
             "outcome_status": "OPEN",

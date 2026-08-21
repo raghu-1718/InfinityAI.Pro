@@ -511,7 +511,7 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
                 atm_strike = round(spot_price / 100) * 100
 
                 # Lot sizes (updated for August 2026 NSE specs)
-                lot_sizes = {"NIFTY": 65, "BANKNIFTY": 30, "FINNIFTY": 40, "MIDCPNIFTY": 120}
+                lot_sizes = {"NIFTY": 65, "BANKNIFTY": 30, "FINNIFTY": 60, "MIDCPNIFTY": 120}
                 lot_size = lot_sizes.get(symbol.upper(), 65)
 
 
