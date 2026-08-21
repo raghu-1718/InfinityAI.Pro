@@ -1641,7 +1641,82 @@ async def set_kill_switch(req: KillSwitchRequest):
 
 
 
+@app.get("/api/v1/shadow-signals")
+async def get_shadow_signals(limit: int = 50, month: Optional[str] = None):
+    """
+    Returns live shadow signals ledger with aggregate monthly performance metrics.
+    """
+    try:
+        from google.cloud import firestore
+        project_id = os.getenv("GCP_PROJECT_ID", "project-841b7f97-5ee3-4fbe-920")
+        db = firestore.Client(project=project_id)
+        col = db.collection("ai_signals_ledger")
+        
+        query = col.order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(limit)
+        docs = list(query.stream())
+        
+        signals = []
+        resolved_trades = 0
+        winning_trades = 0
+        gross_pnl_total = 0.0
+        net_pnl_total = 0.0
+        fees_total = 0.0
+        
+        for d in docs:
+            data = d.to_dict()
+            signals.append(data)
+            status = data.get("outcome_status")
+            if status in ["TARGET_HIT", "STOP_LOSS_HIT", "EOD_SQUAREOFF"]:
+                resolved_trades += 1
+                net = data.get("net_pnl") or 0.0
+                gross = data.get("gross_pnl") or 0.0
+                fees = data.get("estimated_tax_brokerage") or 55.0
+                gross_pnl_total += gross
+                net_pnl_total += net
+                fees_total += fees
+                if net > 0:
+                    winning_trades += 1
+                    
+        win_rate = (winning_trades / resolved_trades * 100) if resolved_trades > 0 else 0.0
+        
+        return {
+            "status": "success",
+            "total_signals": len(signals),
+            "summary": {
+                "resolved_trades": resolved_trades,
+                "win_rate": round(win_rate, 2),
+                "gross_pnl": round(gross_pnl_total, 2),
+                "total_fees": round(fees_total, 2),
+                "net_pnl": round(net_pnl_total, 2),
+                "roi_30k_pct": round((net_pnl_total / 30000.0) * 100, 2)
+            },
+            "signals": signals
+        }
+    except Exception as e:
+        logger.error(f"Error fetching shadow signals: {e}")
+        return {"status": "error", "message": str(e), "signals": [], "summary": {}}
+
+
+@app.post("/api/v1/eod-settlement")
+async def trigger_eod_settlement(req: Optional[Dict[str, Any]] = None):
+    """
+    Automated 15:30 IST EOD Settlement & Retraining trigger (invoked by Cloud Scheduler).
+    """
+    try:
+        from src.services.eod_settlement_service import EODSettlementService
+        eod_svc = EODSettlementService()
+        spot_prices = (req or {}).get("spot_prices")
+        result = eod_svc.run_eod_reconciliation(current_spot_prices=spot_prices)
+        retrain_res = eod_svc.trigger_nightly_retraining()
+        result["retraining_trigger"] = retrain_res
+        return result
+    except Exception as e:
+        logger.error(f"EOD Settlement API Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
+

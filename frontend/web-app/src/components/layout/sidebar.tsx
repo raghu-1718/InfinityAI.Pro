@@ -11,6 +11,7 @@ import {
   Settings,
   ChevronLeft,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Trading', href: '/trading', icon: TrendingUp },
+  { name: 'AI Signals', href: '/signals', icon: Sparkles },
   { name: 'History', href: '/history', icon: History },
 ];
 
