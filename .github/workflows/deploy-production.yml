@@ -43,12 +43,17 @@ jobs:
       - name: Authorize Docker to push to Artifact Registry
         run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-      # Deploy Engine A
+      # Build & Deploy Engine B (ML Intelligence & Model Vault Bundle)
+      - name: Build & Deploy Engine B
+        run: |
+          gcloud builds submit --config=cloudbuild_engine_b.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
+
+      # Deploy Engine A (Orchestrator & VPC Proxy)
       - name: Build & Deploy Engine A
         run: |
           gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
 
-      # Deploy Engine C
+      # Deploy Engine C (Execution Gateway & Broker Link)
       - name: Build & Deploy Engine C
         run: |
           gcloud builds submit --config=cloudbuild_engine_c.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .

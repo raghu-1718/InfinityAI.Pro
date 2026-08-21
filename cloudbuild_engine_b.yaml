@@ -1,0 +1,42 @@
+steps:
+  # 1. Build Engine B Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-engine-b"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "-f",
+        "backend/engine-b/Dockerfile",
+        ".",
+      ]
+
+  # 2. Push Engine B image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-engine-b"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+      ]
+    waitFor: ["build-engine-b"]
+
+  # 3. Package Engine B bundle and upload to GCS Vault
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "package-engine-b-bundle"
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        mkdir -p /tmp/pkg/engine-b
+        cp -r backend/engine-b/* /tmp/pkg/engine-b/
+        mkdir -p /tmp/pkg/engine-b/shared
+        cp -r backend/shared/* /tmp/pkg/engine-b/shared/
+        tar -czf /tmp/engine-b-pkg.tar.gz -C /tmp/pkg .
+        gcloud storage cp /tmp/engine-b-pkg.tar.gz gs://infinity-ai-models-vault/engine-b-pkg.tar.gz
+    waitFor: ["-"]
+
+images:
+  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
+timeout: "1800s"
