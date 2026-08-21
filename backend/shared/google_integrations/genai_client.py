@@ -27,9 +27,9 @@ logger = logging.getLogger("InfinityAI.GenAI")
 
 
 class GeminiModel(Enum):
-    """Available Gemini models for trading analysis - Updated December 2025."""
+    """Available Gemini models for trading analysis - Updated August 2026."""
 
-    # === GEMINI 3.0 MODELS (Latest - December 2025 Preview) ===
+    # === GEMINI 3.0 MODELS (Latest - Production / Preview) ===
     GEMINI_3_PRO = "gemini-3-pro-preview"            # Most advanced, preview version
     GEMINI_3_PRO_IMAGE = "gemini-3-pro-image-preview"  # Multimodal with image generation
 

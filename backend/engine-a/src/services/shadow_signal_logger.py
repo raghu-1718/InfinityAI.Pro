@@ -71,7 +71,7 @@ class ShadowSignalLogger:
         timestamp_str = ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
         signal_id = f"SIG_{ist_time.strftime('%Y%m%d_%H%M%S')}_{symbol}"
 
-        # Lot Size determination
+        # Lot Size determination (SEBI / NSE / BSE 2026 Mandate)
         sym_u = symbol.upper()
         if "BANKNIFTY" in sym_u:
             actual_lot_size = 30
@@ -81,6 +81,8 @@ class ShadowSignalLogger:
             actual_lot_size = 120
         elif "SENSEX" in sym_u:
             actual_lot_size = 20
+        elif "NIFTY" in sym_u:
+            actual_lot_size = 65
         else:
             actual_lot_size = 65
 

@@ -510,8 +510,8 @@ def get_option_chain_data(symbol: str = "NIFTY", expiry: str = "current") -> Dic
                 pcr = total_put_oi / total_call_oi if total_call_oi > 0 else 1.0
                 atm_strike = round(spot_price / 100) * 100
 
-                # Lot sizes (updated for August 2026 NSE specs)
-                lot_sizes = {"NIFTY": 65, "BANKNIFTY": 30, "FINNIFTY": 60, "MIDCPNIFTY": 120}
+                # Lot sizes (updated for August 2026 NSE/BSE specs)
+                lot_sizes = {"NIFTY": 65, "BANKNIFTY": 30, "FINNIFTY": 60, "MIDCPNIFTY": 120, "SENSEX": 20}
                 lot_size = lot_sizes.get(symbol.upper(), 65)
 
 
