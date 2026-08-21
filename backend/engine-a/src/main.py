@@ -31,7 +31,7 @@ for _var in REQUIRED_ENV_VARS:
     require_env(_var)
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 import logging
 
