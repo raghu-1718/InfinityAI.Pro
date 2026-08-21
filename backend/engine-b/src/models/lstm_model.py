@@ -3,6 +3,7 @@ LSTM Deep Learning Model for Time-Series Price Forecasting
 Predicts next 30 days of stock prices using historical OHLCV data
 Optimized for Production & Multi-Engine Deployment
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd

@@ -109,6 +109,11 @@ temp_verify/
 check_vertex.py
 inspect_schema.py
 test_bq_simple.py
+.ai/
+catboost_info/
+models_test/
+*.cbm
+*.pkl
 .agents/
 .claude/
 .junie/
