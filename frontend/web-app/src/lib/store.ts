@@ -255,7 +255,7 @@ export const useAppStore = create<AppState>()(
           // Extended settings with defaults
           minCapital: 5000,
           maxCapital: 100000,
-          maxRiskPerTrade: 0.03,      // Max 3% risk of total capital per trade
+          maxRiskPerTrade: 0.10,      // Max 10% risk of total capital per trade (adjustable via UI)
           minConfidence: 0.60,        // 60% minimum Tri-Model consensus
           trailingStopLoss: true,     // Trailing stop loss enabled once target hit
           positionSizingMethod: "percentage", // Auto-sizes lots based on available capital

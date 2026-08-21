@@ -116,16 +116,16 @@ export function AutoTradingCard() {
     tradingConfig.maxCapital || 100000
   );
   const [maxRiskPerTrade, setMaxRiskPerTrade] = useState<number>(
-    tradingConfig.maxRiskPerTrade || 0.02
+    tradingConfig.maxRiskPerTrade ?? 0.10
   );
   const [minConfidence, setMinConfidence] = useState<number>(
-    tradingConfig.minConfidence || 0.75
+    tradingConfig.minConfidence || 0.60
   );
   const [trailingStopLoss, setTrailingStopLoss] = useState<boolean>(
-    tradingConfig.trailingStopLoss || false
+    tradingConfig.trailingStopLoss ?? true
   );
   const [positionSizingMethod, setPositionSizingMethod] = useState<string>(
-    tradingConfig.positionSizingMethod || "fixed"
+    tradingConfig.positionSizingMethod || "percentage"
   );
   const [settingsLoading, setSettingsLoading] = useState<boolean>(false);
   const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
@@ -157,14 +157,14 @@ export function AutoTradingCard() {
         const settings = data.settings;
         // Update local state with backend settings
         if (!data.is_default) {
-          setStopLossPercent(settings.stop_loss_percent || 2);
-          setTakeProfitPercent(settings.take_profit_percent || 4);
-          setMaxTradesPerDay(settings.max_trades_per_day || 10);
+          setStopLossPercent(settings.stop_loss_percent || 12);
+          setTakeProfitPercent(settings.take_profit_percent || 15);
+          setMaxTradesPerDay(settings.max_trades_per_day || 5);
           setTradingAmount(settings.trading_amount || 10000);
           setMinCapital(settings.min_capital || 5000);
           setMaxCapital(settings.max_capital || 100000);
           setRiskLevel(settings.risk_level || "moderate");
-          setMaxRiskPerTrade(settings.max_risk_per_trade || 0.02);
+          setMaxRiskPerTrade(settings.max_risk_per_trade || 0.10);
           setMinConfidence(settings.min_confidence || 0.75);
           setSelectedMarkets(
             (settings.selected_instruments || [
@@ -991,8 +991,8 @@ export function AutoTradingCard() {
                     <Slider
                       value={[maxRiskPerTrade * 100]}
                       onValueChange={([v]) => setMaxRiskPerTrade(v / 100)}
-                      min={0.5}
-                      max={10}
+                      min={1}
+                      max={25}
                       step={0.5}
                       disabled={session.isActive}
                       className="flex-1"
