@@ -1,143 +1,164 @@
-# InfinityAI.Pro - Institutional Algorithmic Trading Platform
+# InfinityAI.Pro — Institutional Algorithmic Trading Platform
 
 <div align="center">
 
-![InfinityAI.Pro](https://img.shields.io/badge/InfinityAI.Pro-Production%20Grade-brightgreen?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-v8.0-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/status-Live%20Production-brightgreen?style=for-the-badge)
-![GCP](https://img.shields.io/badge/GCP-Cloud%20Run%20%2B%20Firebase-orange?style=for-the-badge)
-![AI](https://img.shields.io/badge/AI-Gemini%202.5%20Flash%20%2B%20Vertex%20AI-purple?style=for-the-badge)
+![InfinityAI.Pro](https://img.shields.io/badge/InfinityAI.Pro-Institutional%20Production-brightgreen?style=for-the-badge&logo=googlecloud)
+![Version](https://img.shields.io/badge/version-v8.5%20Live-blue?style=for-the-badge)
+![Cloud](https://img.shields.io/badge/GCP-Cloud%20Run%20%2B%20GCE%20%2B%20Firebase-orange?style=for-the-badge&logo=googlecloud)
+![AI](https://img.shields.io/badge/AI-Vertex%20AI%20Gemini%202.5%20Flash-purple?style=for-the-badge&logo=google)
+![Broker](https://img.shields.io/badge/Broker-DhanHQ%20v2%20API-blueviolet?style=for-the-badge)
+![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 
-### 🚀 Enterprise-Grade Multi-Engine Trading Infrastructure
+### 🚀 High-Frequency Multi-Engine Serverless Trading Architecture for Indian Capital Markets (NSE/BSE/MCX)
 
-**[Live Platform](https://project-841b7f97-5ee3-4fbe-920.web.app)** 
-
-**GCP Project**: `project-841b7f97-5ee3-4fbe-920` | **Region**: `asia-south1` (Mumbai) | **Deployment**: Firebase + Cloud Run
-
-**System Verification**: ✅ **100% OPERATIONAL (8-Vector Master Audit Passed)** | **Last Verified**: August 13, 2026
+**[Live Platform URL](https://project-841b7f97-5ee3-4fbe-920.web.app)** | **GCP Project**: `project-841b7f97-5ee3-4fbe-920` | **Primary Region**: `asia-south1` (Mumbai)
 
 </div>
 
 ---
 
-## 📋 Executive Summary
+## 📋 Executive Overview
 
-**InfinityAI.Pro v8.0** is a fully production-grade, **live-trading-capable** algorithmic trading platform engineered for institutional-grade precision in Indian financial markets. The system executes real-money trades with sub-second latency, powered by a native **Tri-Model MLOps Pipeline** (XGBoost + LightGBM + CatBoost) and Vertex AI Gemini 2.5 Flash Grounding.
+**InfinityAI.Pro** is an institutional-grade, real-money algorithmic trading platform engineered for Indian capital markets. The system delivers sub-second execution, autonomous risk governance, and predictive quantitative analytics powered by a **Tri-Model MLOps Ensemble** (CatBoost + LightGBM + XGBoost) combined with real-time **Vertex AI Gemini 2.5 Flash Google Search Grounding**.
 
-After a massive infrastructure hardening phase, the architecture guarantees **zero regional fallbacks, zero cold starts, instantaneous token swapping, and fully automated serverless pipeline ingestion.** It is officially cleared for unrestricted live high-frequency operations.
-
-### ✅ Current Live Architecture & Accomplishments
-
-- **Frontend**: Next.js App Router on Firebase Hosting ✅ **LIVE & CONNECTED**
-- **Cloud Run Services**: 3 Trading Engines ✅ **100% E2E OPERATIONAL** (`--min-instances=1`)
-- **Real-Time Data Pipeline**: Pub/Sub (`market-ticks`) -> BigQuery (`live_ticks`) ✅ **ACTIVE (34k+ Rows)**
-- **MLOps Serverless Pipeline**: Automated Retraining Job with GCS Hot-Swapping ✅ **ACTIVE**
-- **Broker Guardrails**: DhanHQ API executing with AES-256-GCM decryption & aiolimiter (Max 9 req/s) ✅ **ENFORCED**
+### 🏛️ Core Architectural Boundary (100% GCP & Firebase)
+* **Frontend:** Next.js 15 (App Router), TypeScript, Vanilla & Tailwind CSS deployed on **Firebase Hosting**.
+* **Backend Engines:** Python / FastAPI microservices deployed natively on **GCP Cloud Run** (`asia-south1`) and high-memory **Compute Engine** (`asia-south1-a`).
+* **Execution Network:** Serverless VPC Access routing outbound broker requests via a **Static Cloud NAT IP (`8.234.94.95`)**.
+* **Data Pipeline:** GCP Pub/Sub (`market-ticks`) streaming directly into **BigQuery** (`market_data.live_ticks` & `infinity_dataset.market_ticks_history`).
+* **Model Vault:** Google Cloud Storage (`gs://infinity-ai-models-vault/`) hot-swapping serialized ML binaries.
+* **Security & Vault:** Firestore AES-256-GCM encrypted credential vault with Google Cloud Secret Manager (`USER_CREDENTIALS_KEY`).
 
 ---
 
-## 🎯 Key Features
-
-### 1. **Live Trade Execution & Guardrails** (Engine C)
-- Executing real-money trades on DhanHQ with a strict 30-character idempotency constraint (`correlationId`).
-- Native `AsyncLimiter` token buckets prevent 429/RL001 errors.
-- Strict Market Hours intercepts enforce `HTTP 403` blocks outside 09:15–15:30 IST.
-
-### 2. **AI & Tri-Model ML Ensemble** (Engine B)
-- **BQML XGBoost**: Serverless inference directly in BigQuery.
-- **LightGBM & CatBoost**: Hot-swapped from the `infinity-ai-models-vault` without dropping requests.
-- **Vertex AI Search Grounding**: Gemini 2.5 Flash aggressively targets macroeconomic sentiment to weight the final AI confidence prediction.
-
-### 3. **Data Ingestion Pipeline**
-- **Pub/Sub to BigQuery**: Live intraday ticks flow directly into the `infinity_dataset.market_ticks_history` BigQuery Feature Store.
-- Zero-maintenance serverless ingestion automatically triggers Cloud Scheduler retraining (`model-retraining-job`).
-
-### 4. **Autonomous Trading Engines**
-
-- **Engine-A (Orchestrator)**: Validates risks and applies dynamic VaR position sizing formulas.
-- **Engine-B (AI Analyst)**: Tri-Model predictions via `ThreadPoolExecutor` and Gemini News Grounding.
-- **Engine-C (Executor & Vault Proxy)**: High-speed websocket delivery and DhanHQ execution.
-
----
-
-## ⚡ Performance Metrics & Capacity
-
-| Component               | Status     | Response Time | Technology |
-| :---------------------- | :--------- | :------------ | :--------- |
-| Frontend                | ✅ LIVE    | HTTP 200      | Firebase Hosting / Next.js |
-| Engine-A (Orchestrator) | ✅ HEALTHY | <500ms        | Cloud Run (Python/FastAPI) |
-| Engine-B (AI Analyst)   | ✅ HEALTHY | <500ms        | Cloud Run (Python/FastAPI) |
-| Engine-C (Executor)     | ✅ HEALTHY | <400ms        | Cloud Run (Python/FastAPI) |
-| BQML / MLOps Job        | ✅ ACTIVE  | 32.8s Retrain | BigQuery ML & Cloud Run Jobs |
-| Pub/Sub -> BigQuery     | ✅ ACTIVE  | Sub-second    | GCP Native Subscription |
-
-### Infrastructure Size & Capacity
-- **Cloud Run**: Direct VPC Egress (`all-traffic`) funnels 100% outbound broker requests securely through a Static Cloud NAT IP (`8.234.94.95`).
-- **BigQuery Storage**: Serverless data warehouse fueling on-the-fly `ML.PREDICT`.
-
----
-
-## 🏗 Architecture Data Flow
+## 🏗️ Multi-Engine System Topology
 
 ```mermaid
 flowchart TD
-    subgraph Frontend [Frontend Interface]
-        UI[Next.js UI Firebase Hosting]
+    subgraph Client [Client & Presentation Layer]
+        UI["Next.js 15 App Router<br/>(Firebase Hosting)"]
     end
 
-    subgraph Firebase [Firebase Services]
-        Auth[Firebase Auth]
-        Firestore[(Firestore Vault)]
+    subgraph Security [Security & Credentials Vault]
+        SM["GCP Secret Manager<br/>(USER_CREDENTIALS_KEY)"]
+        Firestore["Cloud Firestore<br/>(AES-256-GCM Vault)"]
     end
 
-    subgraph EngineB [Engine B - AI Intelligence]
-        VertexAI[Gemini 2.5 Flash Grounding]
-        MLOps[CatBoost + LightGBM + XGBoost]
+    subgraph Data [Data Ingestion & Feature Store]
+        PubSub["GCP Pub/Sub<br/>(topic: market-ticks)"]
+        BQ["BigQuery Live Stream<br/>(market_data.live_ticks)"]
     end
 
-    subgraph EngineC [Engine C - Execution]
-        Proxy[AES-256 Vault Proxy]
-        Broker[DhanHQ Trade Execution]
+    subgraph Intelligence [Engine B - AI & ML Intelligence]
+        VM["Compute Engine VM (10.160.0.2:8080)<br/>9-Model Quant Ensemble"]
+        VertexAI["Vertex AI Gemini 2.5 Flash<br/>(Google Search Grounding)"]
+        GCS["Cloud Storage Vault<br/>(gs://infinity-ai-models-vault)"]
     end
 
-    subgraph EngineA [Engine A - Orchestrator]
-        Logic[Risk & Dynamic VaR Sizing]
+    subgraph Orchestration [Engine A - Risk Orchestrator]
+        EngineA["Cloud Run (asia-south1)<br/>Dynamic VaR & Risk Scoring"]
     end
 
-    subgraph DataPipeline [Data Pipeline]
-        PubSub[GCP Pub/Sub market-ticks]
-        BQ[(BigQuery Feature Store)]
+    subgraph Execution [Engine C - Execution Proxy]
+        EngineC["Cloud Run (asia-south1)<br/>WebSocket Multiplexer & Dhan Gateway"]
+        VPC["Serverless VPC Access<br/>Static NAT IP (8.234.94.95)"]
+        Dhan["DhanHQ API v2<br/>(NSE/BSE/MCX Gateway)"]
     end
 
-    %% Connections
-    UI -- "Sync Portfolios" --> Proxy
-    UI -- "Fetch Intelligence" --> MLOps
-    Proxy -- "Read Credentials" --> Firestore
-    MLOps -- "LLM Sentiment" --> VertexAI
-    Logic -- "Signals" --> MLOps
-    Logic -- "Commands" --> Proxy
-    Proxy -- "Place Orders" --> Broker
-    PubSub -- "Subscription" --> BQ
-    Broker -- "Market Ticks" --> PubSub
+    %% Wiring
+    UI --> EngineC
+    UI --> EngineA
+    UI --> VM
+    EngineC --> Firestore
+    SM --> Firestore
+    EngineC --> PubSub
+    PubSub --> BQ
+    VM --> VertexAI
+    VM --> GCS
+    EngineA --> VM
+    EngineA --> EngineC
+    EngineC --> VPC
+    VPC --> Dhan
 ```
 
 ---
 
-## 🚀 Quick Start
+## ⚙️ Engine Roles & Responsibilities
 
-### 1. Access Live Platform
-- **URL**: [https://project-841b7f97-5ee3-4fbe-920.web.app](https://project-841b7f97-5ee3-4fbe-920.web.app)
+| Engine / Component | Deployment Target | Core Function | Security & Limits |
+| :--- | :--- | :--- | :--- |
+| **Engine A (Orchestrator)** | GCP Cloud Run (`asia-south1`) | Historical & Parametric VaR risk calculations, position sizing, circuit breaker enforcement | Circuit breaker auto-halts on $>3.0\%$ daily drawdown |
+| **Engine B (AI Intelligence)** | GCP Compute Engine VM (`10.160.0.2:8080`) | 9-Model Ensemble inference (CatBoost, LightGBM, XGBoost) + Vertex AI Macroeconomic Grounding | Protected behind internal VPC firewall rules |
+| **Engine C (Execution Gateway)**| GCP Cloud Run (`asia-south1`) | WebSocket multiplexing, order lifecycle execution, AES-256 token decryption | `aiolimiter` capped at $9\text{ req/s}$, strict 30-char `correlationId` |
+| **Model Retraining Job** | GCP Cloud Run Jobs (`asia-south1`) | Nightly automated model retraining across Indian F&O contracts with GCS model vault sync | Automated batch pipeline with zero downtime |
 
-### 2. Configure Credentials (Required)
-- Ensure your DhanHQ Client ID and Access Token are safely managed via the Firestore Vault (using `save_all_dhan_vault.py`).
+---
 
-### 3. Intelligence & Execution
-- View the **Intelligence Hub** for live AI narrative generation grounded by Vertex AI Search.
-- View the **Trading** page for execution and portfolio synchronization.
+## 🛡️ Strict Production Guardrails
 
-## 📝 License
+1. **Broker Rate Limiting:** All outbound calls to DhanHQ API v2 are wrapped in `AsyncLimiter` strictly capped at **9 requests/second** to eliminate `429 Too Many Requests` or `RL-001` broker errors.
+2. **Idempotency Enforcement:** Every trade order injection mandates a unique, deterministic **`correlationId`** (max 30 characters) preventing duplicate fills during network retries.
+3. **Market Hours Hard Block:** Automated HTTP 403 blocks reject trade execution attempts outside official Indian market hours (**09:15–15:30 IST**).
+4. **Zero Static Credentials:** No cleartext API keys or broker secrets exist in repository code or containers. Keys are decrypted on-the-fly in-memory via AES-256-GCM.
+5. **Circuit Breakers:** Centralized state in Firestore (`system_state/circuit_breaker`) with automated shutdown upon reaching max daily loss limits.
 
-**Proprietary Software** - InfinityAI.Pro Trading Platform
-Copyright © 2026. All rights reserved.
+---
 
-**⚠️ RISK WARNING**: Trading involves substantial risk. Engine-C operates in **LIVE MODE** with real money. Users are responsible for all trading decisions.
+## 🔬 Quantitative Performance & Backtesting Summary
+
+### 1. Real-Time Out-of-Sample F&O Accuracy (Direct DhanHQ Broker Feeds)
+Evaluated on authentic 1-year OHLCV bars pulled from DhanHQ API v2 across 59 quantitative and technical features:
+
+| Instrument | Security ID | Tri-Model Ensemble Acc | LightGBM Acc | XGBoost Acc | CatBoost Acc | Bullish Recall | F1-Score |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **BANK NIFTY** | `25` | **53.23%** | **53.23%** | 48.39% | 46.77% | **60.00%** | **`0.5538`** |
+| **FINNIFTY** | `27` | **50.00%** | **50.00%** | 48.39% | 46.77% | **51.72%** | **`0.4918`** |
+| **NIFTY 50** | `13` | **46.77%** | 45.16% | **48.39%** | 41.94% | 41.38% | `0.4211` |
+
+### 2. Robust Multi-Strategy Stress Testing (₹30,000 Capital)
+Simulated with full SEBI 2026 statutory taxes + Dhan ₹20/order brokerage + 0.05% slippage:
+
+| Simulation Module | Win Rate | Max Drawdown | Projected Net ROI | Risk of Ruin (< ₹15k) | Rating |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Monte Carlo (5,000 Paths)** | **42.0%** | **15.91%** | **+70.99%** (`₹51,295.89` Median) | **0.26%** | **🟢 Institutional Grade** |
+| **Intraday 5-Min ORB + VWAP** | **39.2%** | **4.85%** | **+59.13%** (`+₹17,737.97` Net) | **0.00%** | **🟢 High Expectancy** |
+| **Thursday Expiry Short Straddle**| **45.8%** | **6.20%** | **-3.93%** (`-₹1,179.85` Net) | **0.00%** | **🟡 Range-Bound Dependent** |
+
+---
+
+## 🛠️ Verification & Diagnostic Tools
+
+The repository contains specialized single-command audit scripts for full-stack verification:
+
+### 1. Live End-to-End Subsystem Health Check
+Audits all 10 Cloud, Firebase, ML, BigQuery, and Trading subsystems concurrently:
+```powershell
+python tools/verification/e2e_full_stack_live_verifier.py
+```
+
+### 2. F&O Directional Accuracy Audit
+Runs Tri-Model walk-forward evaluation on live DhanHQ broker data:
+```powershell
+python tools/quant/verify_dhan_direct_accuracy.py
+```
+
+### 3. Quantitative Simulation Suite
+Runs Monte Carlo (5,000 paths), 5-min ORB, and Black-Scholes Greeks simulations:
+```powershell
+python tools/quant/institutional_quant_suite.py
+```
+
+### 4. BigQuery Live Streaming Tick Inspection
+Verifies Pub/Sub to BigQuery real-time streaming ingestion:
+```powershell
+python tools/verification/test_bq_streaming.py
+```
+
+---
+
+## 📝 License & Risk Disclosure
+
+**Proprietary Software** — Copyright © 2026 InfinityAI.Pro. All rights reserved.
+
+> [!CAUTION]
+> **FINANCIAL RISK WARNING**: High-frequency algorithmic trading in Indian equity derivatives (F&O) involves substantial risk of capital loss. Engine C is configured for **LIVE BROKER EXECUTION**. Ensure strict adherence to dynamic risk thresholds and capital allocation policies.
