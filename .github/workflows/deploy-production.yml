@@ -46,12 +46,12 @@ jobs:
       # Deploy Engine A
       - name: Build & Deploy Engine A
         run: |
-          gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} .
+          gcloud builds submit --suppress-logs --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} .
 
       # Deploy Engine C
       - name: Build & Deploy Engine C
         run: |
-          gcloud builds submit --config=cloudbuild.engine-c.yaml --project=${{ env.GCP_PROJECT_ID }} .
+          gcloud builds submit --suppress-logs --config=cloudbuild.engine-c.yaml --project=${{ env.GCP_PROJECT_ID }} .
 
   # ============================================
   # 2. Deploy Frontend to Firebase Hosting
