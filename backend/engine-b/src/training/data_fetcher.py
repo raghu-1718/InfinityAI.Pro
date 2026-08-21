@@ -135,8 +135,12 @@ class MarketDataFetcher:
         # Map symbol to yfinance ticker
         ticker_map = {
             'NIFTY': '^NSEI',
+            'NIFTY50': '^NSEI',
             'BANKNIFTY': '^NSEBANK',
-            'FINNIFTY': 'NIFTY_FIN_SERVICE.NS'
+            'FINNIFTY': 'NIFTY_FIN_SERVICE.NS',
+            'MIDCPNIFTY': '^NSEMDCP50',
+            'SENSEX': '^BSESN',
+            'BSESN': '^BSESN'
         }
 
         ticker = ticker_map.get(self.symbol, self.symbol)
