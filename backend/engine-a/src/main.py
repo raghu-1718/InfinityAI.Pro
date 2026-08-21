@@ -1718,6 +1718,36 @@ async def trigger_eod_settlement(req: Optional[Dict[str, Any]] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/v1/risk/reset-circuit-breaker")
+@app.post("/api/v1/trade/reset-halt")
+async def reset_circuit_breaker(user_id: Optional[str] = "raghu_primary"):
+    """
+    Manually resets the circuit breaker / kill switch state in Firestore and in-memory.
+    Clears CONSECUTIVE_LOSSES_LIMIT and MAX_DRAWDOWN_REACHED flags to resume trading.
+    """
+    try:
+        from src.services.circuit_breaker import CircuitBreaker, get_db
+        primary_uid = os.getenv("PRIMARY_USER_ID", "raghu_primary")
+        target_uids = [user_id, "system", primary_uid] if user_id else ["raghu_primary", "system"]
+        results = {}
+
+        for uid in set(filter(None, target_uids)):
+            cb = CircuitBreaker(uid=uid)
+            cb.reset()
+            results[uid] = "RESET_OK"
+
+        return {
+            "status": "success",
+            "message": "Circuit breaker / kill switch successfully reset across all sessions. Trading halt cleared.",
+            "cleared_sessions": results,
+            "trading_halted": False,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Reset Circuit Breaker API error: {e}")
+        raise HTTPException(500, f"Failed to reset circuit breaker: {e}")
+
+
 @app.api_route("/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy_engine_b_v1(path: str, request: Request) -> Response:
     """

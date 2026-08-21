@@ -16,7 +16,7 @@ permissions:
 
 env:
   GCP_PROJECT_ID: "project-841b7f97-5ee3-4fbe-920"
-  GCP_REGION: "us-central1"
+  GCP_REGION: "asia-south1"
   WIF_PROVIDER: "projects/313407263327/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
   SERVICE_ACCOUNT: "github-actions-deployer@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com"
 
@@ -46,32 +46,12 @@ jobs:
       # Deploy Engine A
       - name: Build & Deploy Engine A
         run: |
-          gcloud builds submit --config=backend/engine-a/cloudbuild.yaml backend/engine-a
-          gcloud run deploy engine-a \
-            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-a:latest \
-            --region=${{ env.GCP_REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
-
-      # Deploy Engine B
-      - name: Build & Deploy Engine B
-        run: |
-          gcloud builds submit --config=backend/engine-b/cloudbuild.yaml backend/engine-b
-          gcloud run deploy engine-b \
-            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-b:latest \
-            --region=${{ env.GCP_REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
+          gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} .
 
       # Deploy Engine C
       - name: Build & Deploy Engine C
         run: |
-          gcloud builds submit --config=backend/engine-c/cloudbuild.yaml backend/engine-c
-          gcloud run deploy engine-c \
-            --image=us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/cloud-run-source-deploy/engine-c:latest \
-            --region=${{ env.GCP_REGION }} \
-            --platform=managed \
-            --allow-unauthenticated
+          gcloud builds submit --config=cloudbuild.engine-c.yaml --project=${{ env.GCP_PROJECT_ID }} .
 
   # ============================================
   # 2. Deploy Frontend to Firebase Hosting
@@ -99,9 +79,9 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-313407263327.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-313407263327.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-313407263327.us-central1.run.app
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-313407263327.asia-south1.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-a-313407263327.asia-south1.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-313407263327.asia-south1.run.app
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
