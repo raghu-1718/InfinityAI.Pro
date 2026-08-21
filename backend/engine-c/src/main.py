@@ -194,7 +194,10 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://10.160.0.2:8080")
+ENGINE_B_URL = _get_env(
+    "ENGINE_B_URL",
+    "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080",
+)
 ENGINE_A_URL = _get_env("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
 
 @asynccontextmanager

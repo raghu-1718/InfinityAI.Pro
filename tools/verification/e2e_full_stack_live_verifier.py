@@ -142,12 +142,29 @@ except Exception as e:
 # 9. BROKER GATEWAY (DhanHQ API v2 Live Quotes)
 t0 = time.time()
 try:
-    req = urllib.request.Request(f"{ENGINE_C_URL}/api/dhan/market/quotes?user_id=raghu_primary", headers={"User-Agent": "InfinityAI-Audit/1.0"})
+    req = urllib.request.Request(
+        f"{ENGINE_C_URL}/api/dhan/market/quotes?user_id=raghu_primary&security_ids=13,25,27&exchange_segment=IDX_I",
+        headers={"User-Agent": "InfinityAI-Audit/1.0"},
+    )
     res = urllib.request.urlopen(req, timeout=8)
     lat = (time.time() - t0) * 1000
     data = json.loads(res.read().decode())
-    quotes = data.get("data", {})
-    record_audit("Broker API", "DhanHQ v2 Real-Time Quotes", data.get("status") == "success", lat, f"NIFTY LTP: ₹{quotes.get('NIFTY', {}).get('last_price', 'N/A')}, BANKNIFTY LTP: ₹{quotes.get('BANKNIFTY', {}).get('last_price', 'N/A')}")
+    seg_data = (
+        data.get("data", {})
+        .get("data", {})
+        .get("data", {})
+        .get("IDX_I", {})
+    )
+    nifty_ltp = seg_data.get("13", {}).get("last_price", "N/A")
+    banknifty_ltp = seg_data.get("25", {}).get("last_price", "N/A")
+    finnifty_ltp = seg_data.get("27", {}).get("last_price", "N/A")
+    record_audit(
+        "Broker API",
+        "DhanHQ v2 Real-Time Quotes",
+        data.get("status") == "success",
+        lat,
+        f"NIFTY LTP: ₹{nifty_ltp}, BANKNIFTY LTP: ₹{banknifty_ltp}, FINNIFTY LTP: ₹{finnifty_ltp}",
+    )
 except Exception as e:
     record_audit("Broker API", "DhanHQ v2 Real-Time Quotes", False, -1, str(e))
 

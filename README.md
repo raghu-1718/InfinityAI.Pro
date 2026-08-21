@@ -9,7 +9,7 @@
 ![Broker](https://img.shields.io/badge/Broker-DhanHQ%20v2%20API-blueviolet?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)
 
-### 🚀 High-Frequency Multi-Engine Serverless Trading Architecture for Indian Capital Markets (NSE/BSE/MCX)
+### 🚀 High-Frequency Multi-Engine Trading Architecture for Indian Capital Markets (NSE/BSE/MCX)
 
 **[Live Platform URL](https://project-841b7f97-5ee3-4fbe-920.web.app)** | **GCP Project**: `project-841b7f97-5ee3-4fbe-920` | **Primary Region**: `asia-south1` (Mumbai)
 
@@ -22,8 +22,8 @@
 **InfinityAI.Pro** is an institutional-grade, real-money algorithmic trading platform engineered for Indian capital markets. The system delivers sub-second execution, autonomous risk governance, and predictive quantitative analytics powered by a **Tri-Model MLOps Ensemble** (CatBoost + LightGBM + XGBoost) combined with real-time **Vertex AI Gemini 2.5 Flash Google Search Grounding**.
 
 ### 🏛️ Core Architectural Boundary (100% GCP & Firebase)
-* **Frontend:** Next.js 15 (App Router), TypeScript, Vanilla & Tailwind CSS deployed on **Firebase Hosting**.
-* **Backend Engines:** Python / FastAPI microservices deployed natively on **GCP Cloud Run** (`asia-south1`) and high-memory **Compute Engine** (`asia-south1-a`).
+* **Frontend:** Next.js 15 static export (`output: "export"`) deployed on **Firebase Hosting** (`project-841b7f97-5ee3-4fbe-920.web.app`).
+* **Backend Engines:** Python / FastAPI microservices deployed on **GCP Cloud Run** (`engine-a`, `engine-c`) and **Compute Engine VM** (`engine-b-ml-prod`, private VPC endpoint).
 * **Execution Network:** Serverless VPC Access routing outbound broker requests via a **Static Cloud NAT IP (`8.234.94.95`)**.
 * **Data Pipeline:** GCP Pub/Sub (`market-ticks`) streaming directly into **BigQuery** (`market_data.live_ticks` & `infinity_dataset.market_ticks_history`).
 * **Model Vault:** Google Cloud Storage (`gs://infinity-ai-models-vault/`) hot-swapping serialized ML binaries.
@@ -68,7 +68,6 @@ flowchart TD
     %% Wiring
     UI --> EngineC
     UI --> EngineA
-    UI --> VM
     EngineC --> Firestore
     SM --> Firestore
     EngineC --> PubSub
@@ -153,6 +152,26 @@ Verifies Pub/Sub to BigQuery real-time streaming ingestion:
 ```powershell
 python tools/verification/test_bq_streaming.py
 ```
+
+### 5. Frontend (Firebase Hosting) Deploy
+Builds static assets (`frontend/web-app/out`) and deploys to Hosting:
+```powershell
+npm --prefix frontend/web-app ci --legacy-peer-deps
+npm --prefix frontend/web-app run build
+npx -y firebase-tools@latest deploy --only hosting --project project-841b7f97-5ee3-4fbe-920
+```
+
+---
+
+## 🚢 Deployment Model (Authoritative)
+
+| Layer | Runtime | Deploy Mechanism | Notes |
+| :--- | :--- | :--- | :--- |
+| Frontend | Firebase Hosting | `frontend/web-app/cloudbuild.yaml` (Firebase deploy) | Static export from Next.js `out/` |
+| Engine A | Cloud Run | `backend/cloudbuild-deploy.yaml` | Public orchestrator + proxy to Engine B |
+| Engine B | Compute Engine VM | VM service (`engine-b-ml-prod`) | Private internal endpoint on port 8080 |
+| Engine C | Cloud Run | `backend/cloudbuild-deploy.yaml` | Dhan gateway + credentials/rate limiting |
+| Data/ML | Firestore, GCS, Pub/Sub, BigQuery, Vertex AI | Managed services | Live audit via verifier scripts |
 
 ---
 

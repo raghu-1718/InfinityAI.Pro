@@ -1,66 +1,36 @@
 steps:
-  # Step 1: Build Docker image from root context to include tsconfig.base.json
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "build"
-      - "-t"
-      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
-      - "-t"
-      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
-      - "-f"
-      - "frontend/web-app/Dockerfile"
-      - "."
-    id: "build-image"
+  # Step 1: Install frontend dependencies
+  - name: "node:20"
+    id: "install-frontend-deps"
+    entrypoint: "npm"
+    args: ["--prefix", "frontend/web-app", "ci", "--legacy-peer-deps"]
 
-  # Step 2: Push to Artifact Registry (latest)
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "push"
-      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
-    id: "push-image-latest"
-    waitFor: ["build-image"]
+  # Step 2: Build static export for Firebase Hosting (outputs frontend/web-app/out)
+  - name: "node:20"
+    id: "build-frontend-static"
+    entrypoint: "npm"
+    env:
+      - "NODE_ENV=production"
+      - "NEXT_PUBLIC_ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app"
+      - "NEXT_PUBLIC_ENGINE_B_URL=https://engine-a-313407263327.asia-south1.run.app"
+      - "NEXT_PUBLIC_ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app"
+    args: ["--prefix", "frontend/web-app", "run", "build"]
+    waitFor: ["install-frontend-deps"]
 
-  # Step 2b: Push to Artifact Registry (SHA)
-  - name: "gcr.io/cloud-builders/docker"
+  # Step 3: Deploy Hosting to Firebase
+  - name: "node:20"
+    id: "deploy-firebase-hosting"
+    entrypoint: "npx"
     args:
-      - "push"
-      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
-    id: "push-image-sha"
-    waitFor: ["build-image"]
-
-  # Step 3: Deploy to Cloud Run with Ably Subscribe-Only Key
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
-    args:
-      - "run"
-      - "deploy"
-      - "web-app"
-      - "--image"
-      - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
-      - "--region"
-      - "asia-south1"
-      - "--platform"
-      - "managed"
-      - "--memory"
-      - "1Gi"
-      - "--cpu"
-      - "1"
-      - "--timeout"
-      - "3600"
-      - "--allow-unauthenticated"
-      - "--port"
-      - "3000"
-      - "--set-env-vars"
-      - "NODE_ENV=production,NEXT_PUBLIC_ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,NEXT_PUBLIC_ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,NEXT_PUBLIC_ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app"
-      - "--project"
-      - "project-841b7f97-5ee3-4fbe-920"
-    id: "deploy-cloud-run"
-    waitFor: ["push-image-latest"]
-
-images:
-  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:latest"
-  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/web-app:${SHORT_SHA}"
+      [
+        "-y",
+        "firebase-tools@latest",
+        "deploy",
+        "--only",
+        "hosting",
+        "--project",
+        "project-841b7f97-5ee3-4fbe-920",
+      ]
+    waitFor: ["build-frontend-static"]
 
 timeout: "1800s"
-options:
-  machineType: "N1_HIGHCPU_8"

@@ -24,29 +24,31 @@ docs = list(db.collection(COLLECTION_NAME).stream())
 print(f"\n[Telemetry Ingestion] Retrieved {len(docs)} total shadow signals from Firestore.")
 
 if len(docs) == 0:
-    print("ℹ️ No shadow signals recorded yet. Simulating sample ledger to demonstrate reporting format...")
-    # Demo seed if collection is brand new
-    from services.shadow_signal_logger import ShadowSignalLogger
-    logger_svc = ShadowSignalLogger(project_id=PROJECT_ID)
-    
-    sample_signals = [
-        ("NIFTY", 24230.50, "BUY_CALL", 0.64, 0.65, 0.63, 0.64, "BULLISH (+0.75)", 65),
-        ("BANKNIFTY", 52350.00, "BUY_CALL", 0.66, 0.68, 0.65, 0.65, "BULLISH (+0.80)", 30),
-        ("FINNIFTY", 23150.25, "BUY_PUT", 0.38, 0.35, 0.40, 0.39, "BEARISH (-0.60)", 60),
-        ("NIFTY", 24190.00, "BUY_PUT", 0.39, 0.37, 0.41, 0.39, "BEARISH (-0.55)", 65),
-        ("BANKNIFTY", 52480.00, "BUY_CALL", 0.62, 0.63, 0.61, 0.62, "BULLISH (+0.60)", 30)
-    ]
-    for sym, spot, dec, conf, cb, lgb, xg, gem, lot in sample_signals:
-        sig = logger_svc.log_shadow_signal(
-            symbol=sym, spot_price=spot, decision=dec, confidence_score=conf,
-            catboost_prob=cb, lightgbm_prob=lgb, xgboost_prob=xg, gemini_sentiment=gem, lot_size=lot
-        )
-        if sig:
-            # Simulate immediate outcome resolution
-            mock_exit_spot = spot * (1.008 if "CALL" in dec else 0.992)
-            logger_svc.resolve_signal_outcome(sig["signal_id"], current_spot=mock_exit_spot, is_eod_squareoff=True)
-            
-    docs = list(db.collection(COLLECTION_NAME).stream())
+    if os.getenv("ALLOW_DEMO_LEDGER_SEED", "false").lower() == "true":
+        print("ℹ️ No shadow signals recorded yet. Demo seed explicitly enabled via ALLOW_DEMO_LEDGER_SEED=true.")
+        # Demo seed only when explicitly enabled (prevents accidental synthetic production telemetry)
+        from services.shadow_signal_logger import ShadowSignalLogger
+        logger_svc = ShadowSignalLogger(project_id=PROJECT_ID)
+
+        sample_signals = [
+            ("NIFTY", 24230.50, "BUY_CALL", 0.64, 0.65, 0.63, 0.64, "BULLISH (+0.75)", 65),
+            ("BANKNIFTY", 52350.00, "BUY_CALL", 0.66, 0.68, 0.65, 0.65, "BULLISH (+0.80)", 30),
+            ("FINNIFTY", 23150.25, "BUY_PUT", 0.38, 0.35, 0.40, 0.39, "BEARISH (-0.60)", 60),
+            ("NIFTY", 24190.00, "BUY_PUT", 0.39, 0.37, 0.41, 0.39, "BEARISH (-0.55)", 65),
+            ("BANKNIFTY", 52480.00, "BUY_CALL", 0.62, 0.63, 0.61, 0.62, "BULLISH (+0.60)", 30)
+        ]
+        for sym, spot, dec, conf, cb, lgb, xg, gem, lot in sample_signals:
+            sig = logger_svc.log_shadow_signal(
+                symbol=sym, spot_price=spot, decision=dec, confidence_score=conf,
+                catboost_prob=cb, lightgbm_prob=lgb, xgboost_prob=xg, gemini_sentiment=gem, lot_size=lot
+            )
+            if sig:
+                mock_exit_spot = spot * (1.008 if "CALL" in dec else 0.992)
+                logger_svc.resolve_signal_outcome(sig["signal_id"], current_spot=mock_exit_spot, is_eod_squareoff=True)
+        docs = list(db.collection(COLLECTION_NAME).stream())
+    else:
+        print("ℹ️ No shadow signals recorded yet. Demo seeding is disabled by default for production safety.")
+        sys.exit(0)
 
 records = []
 for d in docs:

@@ -95,7 +95,17 @@ db = get_firestore_db()  # Database alias for signal persistence
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 
 # Create FastAPI app
-app = FastAPI()
+app = FastAPI(title="InfinityAI.Pro Engine B (AI/ML Core)", version="3.9-options-ml")
+
+@app.get("/health")
+@app.get("/")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "engine-b",
+        "version": "3.9-options-ml",
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 if HAS_OTEL:
     FastAPIInstrumentor().instrument_app(app)
@@ -2442,8 +2452,9 @@ def get_security_id(symbol: str) -> str:
         # Indices
         "NIFTY": "13",
         "BANKNIFTY": "25",
-        "SENSEX": "1",
-        "FINNIFTY": "26009",
+        "SENSEX": "51",
+        "FINNIFTY": "27",
+        "MIDCPNIFTY": "442",
         # MCX Commodities
         "CRUDEOIL": "11",
         "CRUDEOILM": "12",
@@ -5191,5 +5202,4 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
 

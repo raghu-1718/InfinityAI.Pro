@@ -16,7 +16,12 @@ logger = logging.getLogger(__name__)
 def _get_env(var: str, default: str = None) -> str:
     return os.environ.get(var, default)
 
-ENGINE_B_URL = _get_env("ENGINE_B_URL", "http://localhost:8002" if _get_env("ENVIRONMENT", "production") == "development" else "http://engine-b:8080")
+ENGINE_B_URL = _get_env(
+    "ENGINE_B_URL",
+    "http://localhost:8002"
+    if _get_env("ENVIRONMENT", "production") == "development"
+    else "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080",
+)
 ENGINE_C_URL = _get_env("ENGINE_C_URL", "http://engine-c:8080")
 
 # Data Freshness Enforcement (Phase-5 Security Fix)
@@ -527,5 +532,4 @@ class AutonomousTrader:
         except Exception as e:
             logger.error(f"Execution API Error: {e}")
             self.audit_logger.log_event(uid, "EXECUTION_EXCEPTION", {"error": str(e)}, "ERROR")
-
 
