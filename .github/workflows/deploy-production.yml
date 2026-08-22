@@ -78,7 +78,7 @@ jobs:
 
       - name: Install Frontend Dependencies
         working-directory: frontend/web-app
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Build Next.js Web Application
         working-directory: frontend/web-app
