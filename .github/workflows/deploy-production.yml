@@ -69,6 +69,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Authenticate with Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -88,10 +94,5 @@ jobs:
           NEXT_PUBLIC_ENGINE_B_URL: https://engine-a-313407263327.asia-south1.run.app
           NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-313407263327.asia-south1.run.app
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROJECT_841B7F97_5EE3_4FBE_920 }}'
-          channelId: live
-          projectId: project-841b7f97-5ee3-4fbe-920
+      - name: Deploy to Firebase Hosting via CLI
+        run: npx firebase-tools deploy --only hosting --project ${{ env.GCP_PROJECT_ID }} --non-interactive
