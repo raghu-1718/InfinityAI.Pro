@@ -1703,7 +1703,7 @@ async def get_shadow_signals(limit: int = 50, month: Optional[str] = None):
 @app.post("/api/v1/eod-settlement")
 async def trigger_eod_settlement(req: Optional[Dict[str, Any]] = None):
     """
-    Automated 15:30 IST EOD Settlement & Retraining trigger (invoked by Cloud Scheduler).
+    Automated 15:45 IST EOD Settlement & Retraining trigger (invoked by Cloud Scheduler).
     """
     try:
         from src.services.eod_settlement_service import EODSettlementService

@@ -295,26 +295,41 @@ class AutonomousTrader:
             return
 
         # ---------------------------------------------------------
-        # RISK GATE (MANDATORY)
+        # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE
         # ---------------------------------------------------------
-        # Calculate Position Size
-        pos_size_res = self.risk_manager.optimize_position_size(
-            capital=self.config["capital"],
-            risk_per_trade=self.config["max_risk_per_trade"],
-            stop_loss_pct=self.config["stop_loss_pct"]
+        user_capital = float(self.config.get("capital", 10000.0))
+        max_risk_trade = float(self.config.get("max_risk_per_trade", 0.10))
+        min_sl_pct = float(self.config.get("stop_loss_pct", 0.12))
+        min_target_pct = float(self.config.get("target_profit_pct", 0.15))
+
+        current_price = float(signal.get("current_price") or 1000.0)
+        # Option Buying Premium calculation (approx 1.1% of spot if index)
+        est_premium = float(signal.get("predicted_price", current_price * 0.011)) if current_price > 500 else current_price
+
+        margin_sizing = self.risk_manager.calculate_margin_aware_lot_size(
+            capital=user_capital,
+            risk_per_trade=max_risk_trade,
+            stop_loss_pct=min_sl_pct,
+            symbol=symbol,
+            premium=est_premium,
+            max_lots_cap=int(self.config.get("max_lots", 5))
         )
-        current_price = signal.get("current_price") or 1000
-        safe_quantity = int(pos_size_res.get("optimal_position_size", 0) / current_price)
-        if safe_quantity <= 0:
-            logger.warning(f"❌ Trade Rejected: Position size 0 for {symbol}")
-            self.audit_logger.log_trade_rejected(uid, symbol, "ZERO_POSITION_SIZE", {"current_price": current_price})
+
+        if not margin_sizing["is_viable"] or margin_sizing["optimal_lots"] <= 0:
+            reason = margin_sizing.get("rejection_reason", "Insufficient margin")
+            logger.warning(f"❌ Trade Rejected: {reason} for {symbol}")
+            self.audit_logger.log_trade_rejected(uid, symbol, "INSUFFICIENT_MARGIN", margin_sizing)
             return
 
-        # Risk Score
+        lots_count = margin_sizing["optimal_lots"]
+        safe_quantity = margin_sizing["total_units"]
+        order_value = margin_sizing["total_margin_required"]
+
+        # Risk Score validation
         risk_res = self.risk_manager.score_risk(
-            position_size=pos_size_res.get("risk_amount", 0),
-            volatility=0.02, # Should come from signal/market data
-            max_drawdown=0.05 # Should come from portfolio state
+            position_size=margin_sizing["max_risk_amount"],
+            volatility=0.02,
+            max_drawdown=0.05
         )
 
         if risk_res.get("recommendation") != "PROCEED":
@@ -325,29 +340,11 @@ class AutonomousTrader:
         # ---------------------------------------------------------
         # NET PROFITABILITY GATE (ANTI-FEE CANNIBALIZATION)
         # ---------------------------------------------------------
-        target_price = signal.get("target") or (current_price * 1.05)
-        # Determine lot size based on symbol
-        sym_upper = symbol.upper()
-        if "BANKNIFTY" in sym_upper:
-            lot_sz = 30
-        elif "FINNIFTY" in sym_upper:
-            lot_sz = 60
-        elif "MIDCPNIFTY" in sym_upper:
-            lot_sz = 120
-        elif "SENSEX" in sym_upper:
-            lot_sz = 20
-        elif "NIFTY" in sym_upper:
-            lot_sz = 65
-        elif "CRUDE" in sym_upper:
-            lot_sz = 100
-        else:
-            lot_sz = 65  # Default to Index Option lot size
-
-        lots_count = max(1, int(safe_quantity / lot_sz)) if lot_sz > 1 else safe_quantity
+        target_price = est_premium * (1.0 + min_target_pct)
         profitability = self.risk_manager.validate_net_profitability(
-            entry_price=current_price,
+            entry_price=est_premium,
             target_price=target_price,
-            lot_size=lot_sz,
+            lot_size=margin_sizing["lot_size"],
             lots=lots_count,
             max_fee_ratio=0.35,
             min_net_profit_margin=0.015
@@ -362,7 +359,6 @@ class AutonomousTrader:
         # ---------------------------------------------------------
         # HARD CAPITAL GUARD (PHASE 5.3) - CRITICAL
         # ---------------------------------------------------------
-        order_value = safe_quantity * current_price
         try:
             self.risk_manager.validate_hard_capital_limit(
                 order_value=order_value,

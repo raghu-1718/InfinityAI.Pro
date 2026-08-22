@@ -23,11 +23,11 @@ DEFAULT_SYMBOLS_WHITELIST = {
     "AXISBANK", "LT", "COALINDIA", "ONGC",
 }
 
-# Market trading hours: 9:15 AM - 3:30 PM IST weekdays
-MARKET_OPEN_HOUR = 9
-MARKET_OPEN_MIN = 15
-MARKET_CLOSE_HOUR = 15
-MARKET_CLOSE_MIN = 30
+# Market trading & execution operational hours: 8:55 AM - 3:45 PM IST weekdays
+MARKET_OPEN_HOUR = int(os.getenv("MARKET_OPEN_HOUR", "8"))
+MARKET_OPEN_MIN = int(os.getenv("MARKET_OPEN_MIN", "55"))
+MARKET_CLOSE_HOUR = int(os.getenv("MARKET_CLOSE_HOUR", "15"))
+MARKET_CLOSE_MIN = int(os.getenv("MARKET_CLOSE_MIN", "45"))
 
 # Order limits (per order)
 MAX_ORDER_QUANTITY = int(os.getenv("MAX_ORDER_QUANTITY", "10000"))
@@ -37,7 +37,7 @@ MAX_ORDER_NOTIONAL = float(os.getenv("MAX_ORDER_NOTIONAL", "500000"))  # INR
 MAX_ORDERS_PER_DAY = int(os.getenv("MAX_ORDERS_PER_DAY", "100"))
 
 def is_market_open() -> bool:
-    """Check if market is currently open (9:15 - 15:30 IST, weekdays only)."""
+    """Check if market is currently open (08:55 - 15:45 IST, weekdays only)."""
     now = datetime.now(IST)
 
     # Check if weekday (0-4 = Mon-Fri)
@@ -45,7 +45,7 @@ def is_market_open() -> bool:
         logger.warning(f"⚠️ Market closed: Weekend ({now.strftime('%A')})")
         return False
 
-    # Check trading hours
+    # Check trading hours (08:55 - 15:45 IST)
     market_open = time(MARKET_OPEN_HOUR, MARKET_OPEN_MIN)
     market_close = time(MARKET_CLOSE_HOUR, MARKET_CLOSE_MIN)
     current_time = now.time()
@@ -80,9 +80,9 @@ def validate_order_guardrails(
     """
     violations = []
 
-    # Check 1: Market hours
+    # Check 1: Market hours (08:55 - 15:45 IST)
     if not is_market_open():
-        violations.append(f"Market closed: Orders only allowed 9:15-15:30 IST weekdays")
+        violations.append(f"Market closed: Orders only allowed 08:55-15:45 IST weekdays")
 
     # Check 2: Symbol whitelist
     whitelist = get_symbols_whitelist()

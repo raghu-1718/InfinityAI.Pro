@@ -9,8 +9,8 @@ markets:
 india:
   timezone: "Asia/Kolkata"
   sessions:
-    NSE: {open: "09:15", close: "15:30"}
-    BSE: {open: "09:15", close: "15:30"}
+    NSE: {open: "08:55", close: "15:45"}
+    BSE: {open: "08:55", close: "15:45"}
   expiry_rules_2026:
     expiry_day: "Tuesday"
     weekly_indices: ["NIFTY"]

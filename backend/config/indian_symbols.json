@@ -2,8 +2,8 @@
   "market": {
     "exchange": "NSE",
     "timezone": "Asia/Kolkata",
-    "trading_hours_start": "09:15",
-    "trading_hours_end": "15:30",
+    "trading_hours_start": "08:55",
+    "trading_hours_end": "15:45",
     "settlement_cycle": "T+2",
     "regulated_by": "SEBI"
   },

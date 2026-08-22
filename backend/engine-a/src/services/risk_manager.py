@@ -258,6 +258,128 @@ class RiskManager:
             "position_pct_of_capital": round((position_size / capital) * 100, 2) if capital > 0 else 0
         }
 
+    def calculate_margin_aware_lot_size(
+        self,
+        capital: float,
+        risk_per_trade: float = 0.10,
+        stop_loss_pct: float = 0.12,
+        symbol: str = "NIFTY",
+        premium: float = 100.0,
+        max_lots_cap: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Institutional Margin-Aware Dynamic Lot Sizer for Options Buying.
+        Guarantees:
+        1. Never exceeds available account capital (prevents Dhan margin rejection).
+        2. Fits small capital accounts (e.g. ₹10,000 trades exactly 1 lot safely).
+        3. Scales lot count automatically as capital grows.
+        """
+        sym_u = symbol.upper()
+        if "BANKNIFTY" in sym_u:
+            lot_size = 30
+        elif "FINNIFTY" in sym_u:
+            lot_size = 60
+        elif "MIDCP" in sym_u:
+            lot_size = 120
+        elif "SENSEX" in sym_u:
+            lot_size = 20
+        elif "NIFTY" in sym_u:
+            lot_size = 65
+        else:
+            lot_size = 65
+
+        cost_per_lot = max(1.0, premium * lot_size)
+        affordable_lots = int(capital // cost_per_lot)
+
+        # Risk-budgeted lot computation
+        risk_amount = capital * max(0.01, min(0.30, risk_per_trade))
+        risk_per_lot = cost_per_lot * max(0.05, min(0.50, stop_loss_pct))
+        risk_budgeted_lots = max(1, int(risk_amount // risk_per_lot))
+
+        if capital >= cost_per_lot:
+            # Capital permits at least 1 lot
+            optimal_lots = max(1, min(max_lots_cap, min(affordable_lots, risk_budgeted_lots)))
+            is_viable = True
+            rejection_reason = None
+        else:
+            optimal_lots = 0
+            is_viable = False
+            rejection_reason = f"Insufficient capital (₹{capital:,.2f}) for 1 lot margin (₹{cost_per_lot:,.2f})"
+
+        total_units = optimal_lots * lot_size
+        total_margin_required = optimal_lots * cost_per_lot
+        max_risk = total_margin_required * stop_loss_pct
+
+        return {
+            "symbol": symbol,
+            "lot_size": lot_size,
+            "optimal_lots": optimal_lots,
+            "total_units": total_units,
+            "cost_per_lot": round(cost_per_lot, 2),
+            "total_margin_required": round(total_margin_required, 2),
+            "max_risk_amount": round(max_risk, 2),
+            "is_viable": is_viable,
+            "rejection_reason": rejection_reason,
+            "capital_utilization_pct": round((total_margin_required / capital) * 100, 2) if capital > 0 else 0.0
+        }
+
+    def calculate_dynamic_trailing_stop_loss(
+        self,
+        entry_premium: float,
+        highest_observed_premium: float,
+        current_premium: float,
+        min_stop_loss_pct: float = 0.12,
+        min_profit_target_pct: float = 0.15,
+        trailing_step_pct: float = 0.05
+    ) -> Dict[str, Any]:
+        """
+        Dynamic Trailing Stop-Loss & Target Ratchet Engine.
+        1. Enforces baseline minimum stop-loss (default 12%, user-adjustable).
+        2. Enforces minimum profit target (default 15%, user-adjustable).
+        3. Once target (+15%) is reached, trailing activates and ratchets up SL
+           locking in profit on every +5% upside surge.
+        """
+        initial_stop_loss = round(entry_premium * (1.0 - min_stop_loss_pct), 2)
+        initial_target = round(entry_premium * (1.0 + min_profit_target_pct), 2)
+
+        pnl_pct = (current_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
+        peak_gain_pct = (highest_observed_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
+
+        trailing_active = peak_gain_pct >= min_profit_target_pct
+
+        if trailing_active:
+            # Trailing stop ratchets: locks in gain with a trailing_step_pct buffer
+            locked_in_gain_pct = peak_gain_pct - trailing_step_pct
+            trailing_sl_price = round(entry_premium * (1.0 + locked_in_gain_pct), 2)
+            effective_stop_loss = max(initial_stop_loss, trailing_sl_price)
+        else:
+            effective_stop_loss = initial_stop_loss
+
+        # Determine outcome state
+        if current_premium <= effective_stop_loss:
+            action = "EXIT_TRAILING_SL" if trailing_active else "EXIT_STOP_LOSS"
+            status = "TRAILING_SL_HIT" if trailing_active else "SL_HIT"
+        elif not trailing_active and current_premium >= initial_target:
+            action = "ACTIVATE_TRAILING"
+            status = "TARGET_HIT_TRAILING_ACTIVE"
+        else:
+            action = "HOLD"
+            status = "OPEN"
+
+        return {
+            "entry_premium": round(entry_premium, 2),
+            "current_premium": round(current_premium, 2),
+            "highest_observed_premium": round(highest_observed_premium, 2),
+            "initial_stop_loss": initial_stop_loss,
+            "initial_target": initial_target,
+            "effective_stop_loss": effective_stop_loss,
+            "trailing_active": trailing_active,
+            "current_pnl_pct": round(pnl_pct * 100, 2),
+            "peak_gain_pct": round(peak_gain_pct * 100, 2),
+            "action": action,
+            "status": status
+        }
+
     def get_comprehensive_metrics(self, returns: np.ndarray,
                                    risk_free_rate: float = 0.05) -> Dict[str, Any]:
         """Get all risk metrics in a single call"""

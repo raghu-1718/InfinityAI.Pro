@@ -76,14 +76,14 @@ class MarketInfo:
             "full_name": "National Stock Exchange of India",
             "benchmark_index": "NIFTY 50",
             "website": "https://www.nseindia.com",
-            "trading_hours": {"start": "09:15", "end": "15:30"},
-            "pre_open": {"start": "09:00", "end": "09:07"},
-            "post_close": {"start": "15:40", "end": "16:00"}
+            "trading_hours": {"start": "08:55", "end": "15:45"},
+            "pre_open": {"start": "08:55", "end": "09:07"},
+            "post_close": {"start": "15:45", "end": "16:00"}
         },
         "BSE": {
             "full_name": "Bombay Stock Exchange",
             "benchmark_index": "SENSEX",
-            "trading_hours": {"start": "09:15", "end": "15:30"}
+            "trading_hours": {"start": "08:55", "end": "15:45"}
         },
         "MCX": {
             "full_name": "Multi Commodity Exchange",

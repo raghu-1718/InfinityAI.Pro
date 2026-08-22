@@ -8,18 +8,18 @@
     "regulated_by": "SEBI (Securities & Exchange Board of India)"
   },
   "trading_hours": {
-    "pre_open_session": {
-      "start": "09:00",
+    "engine_warmup_and_pre_open": {
+      "start": "08:55",
       "end": "09:15",
-      "type": "pre-market"
+      "type": "pre-market-warmup"
     },
     "main_session": {
-      "start": "09:15",
-      "end": "15:30",
-      "type": "live-trading"
+      "start": "08:55",
+      "end": "15:45",
+      "type": "live-trading-and-execution"
     },
     "post_trading": {
-      "start": "15:30",
+      "start": "15:45",
       "end": "16:00",
       "type": "settlement"
     },
@@ -296,7 +296,7 @@
   "implementation_notes": {
     "symbol_mapping": "All internal systems use NSE symbol (e.g., TCS), API calls use TCS.NSE format",
     "timezone_handling": "All timestamps converted to IST (UTC+5:30) at ingestion",
-    "market_hours_check": "Verify market is open before trading signals (09:15-15:30 IST)",
+    "market_hours_check": "Verify market is open before trading signals (08:55-15:45 IST)",
     "holiday_handling": "Skip trading signals on NSE holidays",
     "circuit_breaker": "Monitor for 10%+ price moves, halt trading if triggered",
     "volatility_adjustment": "Increase position size limits for low-volatility stocks, decrease for high-volatility"

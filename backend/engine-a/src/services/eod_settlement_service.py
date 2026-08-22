@@ -14,7 +14,7 @@ COLLECTION_NAME = "ai_signals_ledger"
 
 class EODSettlementService:
     """
-    Automated EOD Market-Close Settlement & Retraining Service (15:30 IST).
+    Automated EOD Market-Close Settlement & Retraining Service (15:45 IST).
     1. Reconciles and resolves all OPEN shadow signals at market close.
     2. Computes final gross/net PnL with statutory SEBI/Dhan fees.
     3. Streams daily summary metrics to BigQuery (market_data.eod_settlements).

@@ -792,22 +792,22 @@ def _get_market_status() -> Dict[str, Any]:
     if weekday >= 5:
         return {"status": "CLOSED", "reason": "Weekend", "next_open": "Monday 9:00 AM IST"}
 
-    # Pre-market: 9:00 - 9:15
-    pre_market_start = datetime.strptime("09:00", "%H:%M").time()
+    # Pre-market & engine warmup: 08:55 - 09:15
+    engine_warm_start = datetime.strptime("08:55", "%H:%M").time()
     market_open = datetime.strptime("09:15", "%H:%M").time()
-    market_close = datetime.strptime("15:30", "%H:%M").time()
+    market_close = datetime.strptime("15:45", "%H:%M").time()
     post_market_end = datetime.strptime("16:00", "%H:%M").time()
 
-    if current_time < pre_market_start:
-        return {"status": "CLOSED", "reason": "Before market hours", "opens_at": "9:00 AM IST"}
-    elif pre_market_start <= current_time < market_open:
-        return {"status": "PRE_MARKET", "note": "Pre-open auction session"}
+    if current_time < engine_warm_start:
+        return {"status": "CLOSED", "reason": "Before engine operational hours", "opens_at": "8:55 AM IST"}
+    elif engine_warm_start <= current_time < market_open:
+        return {"status": "PRE_MARKET", "note": "Pre-open auction & algorithmic engine warmup"}
     elif market_open <= current_time < market_close:
-        return {"status": "OPEN", "closes_at": "3:30 PM IST"}
+        return {"status": "OPEN", "closes_at": "3:45 PM IST"}
     elif market_close <= current_time < post_market_end:
-        return {"status": "POST_MARKET", "note": "After-market session"}
+        return {"status": "POST_MARKET", "note": "After-market settlement session"}
     else:
-        return {"status": "CLOSED", "reason": "After market hours", "next_open": "Tomorrow 9:00 AM IST"}
+        return {"status": "CLOSED", "reason": "After market hours", "next_open": "Tomorrow 8:55 AM IST"}
 
 
 def _get_next_expiry(symbol: str) -> str:

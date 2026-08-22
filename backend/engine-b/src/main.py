@@ -498,9 +498,9 @@ MARKET_CONFIG = {
         "2025-11-05", "2025-12-25"
     ],
     "TRADING_SESSIONS": {
-        "pre_open": {"start": "09:00", "end": "09:08"},
-        "normal": {"start": "09:15", "end": "15:30"},
-        "post_close": {"start": "15:40", "end": "16:00"}
+        "pre_open": {"start": "08:55", "end": "09:08"},
+        "normal": {"start": "08:55", "end": "15:45"},
+        "post_close": {"start": "15:45", "end": "16:00"}
     }
 }
 
@@ -2226,12 +2226,12 @@ async def get_market_knowledge():
             "nse": {
                 "name": "National Stock Exchange of India",
                 "indices": ["NIFTY 50", "NIFTY BANK", "NIFTY IT", "NIFTY MIDCAP 100"],
-                "trading_hours": "09:15 - 15:30 IST"
+                "trading_hours": "08:55 - 15:45 IST"
             },
             "bse": {
                 "name": "Bombay Stock Exchange",
                 "indices": ["SENSEX", "BSE 100", "BSE 200"],
-                "trading_hours": "09:15 - 15:30 IST"
+                "trading_hours": "08:55 - 15:45 IST"
             }
         },
         "trading_sessions": MARKET_CONFIG["TRADING_SESSIONS"],
