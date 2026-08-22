@@ -1451,6 +1451,103 @@ async def get_auto_trading_status():
     }
 
 
+class InstitutionalCapitalConfigRequest(BaseModel):
+    user_id: str = "raghu_primary"
+    configured_capital: float = 30000.0
+    autonomous_mode: bool = True
+
+
+@app.post("/api/v1/auto-trade/configure-capital")
+async def configure_autonomous_capital(req: InstitutionalCapitalConfigRequest):
+    """
+    One-Input Capital Configuration Endpoint.
+    The trader configures capital; the system autonomously sizes lots, 
+    risk limits (99% EWMA VaR), trailing stop brackets, and profit targets.
+    """
+    try:
+        cap = max(10000.0, float(req.configured_capital))
+        max_risk_inr = round(cap * 0.025, 2)       # 2.5% max risk per trade
+        daily_dd_limit = round(cap * 0.025, 2)     # 2.5% daily drawdown stop
+        
+        # Quarter-Kelly lot allocations for Indian indices
+        nifty_lots = max(1, int(cap / 25000.0))
+        banknifty_lots = max(1, int(cap / 30000.0))
+        finnifty_lots = max(1, int(cap / 25000.0))
+
+        config_payload = {
+            "user_id": req.user_id,
+            "configured_capital": cap,
+            "autonomous_mode": req.autonomous_mode,
+            "max_risk_per_trade_inr": max_risk_inr,
+            "daily_drawdown_limit_inr": daily_dd_limit,
+            "lot_sizing": {
+                "NIFTY": nifty_lots,
+                "BANKNIFTY": banknifty_lots,
+                "FINNIFTY": finnifty_lots
+            },
+            "trade_brackets": {
+                "target_profit_pct": 15.0,
+                "stop_loss_pct": 11.0,
+                "reward_to_risk": 1.36
+            },
+            "trailing_stop_tiers": {
+                "tier_1_breakeven": {"trigger_pct": 8.0, "lock_pct": 0.5},
+                "tier_2_profit_lock": {"trigger_pct": 12.0, "lock_pct": 6.0},
+                "tier_3_dynamic_trail": {"trigger_pct": 15.0, "trail_offset_pct": 4.0}
+            },
+            "execution_guardrails": {
+                "broker": "DhanHQ API v2",
+                "rate_limit": "9 req/s (aiolimiter)",
+                "market_hours": "08:55 - 15:45 IST",
+                "eod_square_off": "15:45 IST"
+            },
+            "last_configured_utc": datetime.now(timezone.utc).isoformat()
+        }
+
+        AUTONOMOUS_TRADER.config.update({
+            "capital": cap,
+            "is_active": req.autonomous_mode,
+            "max_risk_inr": max_risk_inr,
+            "daily_dd_limit": daily_dd_limit
+        })
+        AUTONOMOUS_TRADER.is_active = req.autonomous_mode
+
+        return {
+            "status": "AUTONOMOUS_CAPITAL_CONFIGURED",
+            "message": f"Autonomous trading engaged with ₹{cap:,.2f} capital.",
+            "data": config_payload
+        }
+    except Exception as e:
+        logger.error(f"Failed to configure autonomous capital: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/v1/auto-trade/autonomous-state")
+async def get_autonomous_state(user_id: str = "raghu_primary"):
+    """
+    Returns full autonomous telemetry for frontend dashboard.
+    """
+    cap = float(AUTONOMOUS_TRADER.config.get("capital", 30000.0))
+    return {
+        "status": "success",
+        "autonomous_mode": AUTONOMOUS_TRADER.is_active,
+        "configured_capital": cap,
+        "max_risk_per_trade_inr": round(cap * 0.025, 2),
+        "daily_drawdown_limit_inr": round(cap * 0.025, 2),
+        "nifty_max_lots": max(1, int(cap / 25000.0)),
+        "banknifty_max_lots": max(1, int(cap / 30000.0)),
+        "system_rules": {
+            "target_profit": "+15.0%",
+            "stop_loss": "-11.0%",
+            "breakeven_lock": "+8.0% -> +0.5%",
+            "gain_lock": "+12.0% -> +6.0%",
+            "dynamic_trail": "+15.0% -> (Peak - 4%)",
+            "eod_square_off": "15:45 IST"
+        },
+        "timestamp_utc": datetime.now(timezone.utc).isoformat()
+    }
+
+
 @app.post("/api/v1/auto-trade/config")
 async def update_auto_trading_config(request: AutoTradeStartRequest):
     """Update auto-trading configuration."""

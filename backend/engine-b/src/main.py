@@ -107,6 +107,32 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat()
     }
 
+@app.on_event("startup")
+async def on_startup():
+    try:
+        from services.async_macro_intelligence_worker import async_macro_worker
+        async_macro_worker.start()
+        logger.info("✅ Engine B: Async Macro Intelligence Worker started.")
+    except Exception as e:
+        logger.warning(f"⚠️ Engine B: Async Macro Worker startup deferred: {e}")
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    try:
+        from services.async_macro_intelligence_worker import async_macro_worker
+        async_macro_worker.stop()
+    except Exception:
+        pass
+
+@app.get("/api/ai/live-state")
+async def get_ai_live_state():
+    """Returns the sub-millisecond in-memory real-time macro AI state."""
+    try:
+        from services.async_macro_intelligence_worker import get_live_macro_prior
+        return {"status": "success", "data": get_live_macro_prior()}
+    except Exception as e:
+        return {"status": "fallback", "error": str(e)}
+
 if HAS_OTEL:
     FastAPIInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()

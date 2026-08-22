@@ -54,6 +54,7 @@ import { useAuditTimeline } from "@/hooks/useAuditTimeline";
 import { useSessionState } from "@/hooks/useSessionState";
 import { SessionStatus } from "@/components/dashboard/session-status";
 import { AuditTimeline } from "@/components/dashboard/audit-timeline";
+import { InstitutionalAutonomousCapitalController } from "@/components/dashboard/InstitutionalAutonomousCapitalController";
 
 export default function TradingPage() {
   const { userProfile, funds: storeFunds } = useAppStore();
@@ -385,6 +386,11 @@ export default function TradingPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 100% Autonomous Capital Controller Ribbon */}
+      <div className="w-full">
+        <InstitutionalAutonomousCapitalController />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
