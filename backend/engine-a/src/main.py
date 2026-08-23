@@ -2011,6 +2011,52 @@ async def proxy_engine_b_v1(path: str, request: Request) -> Response:
     )
 
 
+# =====================================================================
+# INSTITUTIONAL AI JOURNAL, CIRCUIT BREAKER & CONFLUENCE ROUTES
+# =====================================================================
+
+@app.post("/api/v1/journal/trigger-eod")
+async def trigger_eod_journal(date_str: Optional[str] = None):
+    """Triggers the 15:35 IST post-market AI qualitative journal and Telegram digest"""
+    from src.services.eod_ai_journal_service import EOD_AI_JOURNAL_SERVICE
+    try:
+        report = await EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(target_date_str=date_str)
+        return {"status": "success", "journal": report}
+    except Exception as e:
+        logger.error(f"EOD journal generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/circuit-breaker/status")
+async def get_circuit_breaker_status():
+    """Returns current real-time market risk & circuit breaker status"""
+    from src.services.black_swan_circuit_breaker import BLACK_SWAN_BREAKER
+    return {
+        "is_halted": BLACK_SWAN_BREAKER._is_halted,
+        "halt_reason": BLACK_SWAN_BREAKER._halt_reason,
+        "vix_danger_threshold": BLACK_SWAN_BREAKER.vix_absolute_threshold,
+        "flash_drop_threshold_pct": BLACK_SWAN_BREAKER.flash_drop_pct_threshold,
+        "status": "FROZEN_CIRCUIT_TRIPPED" if BLACK_SWAN_BREAKER._is_halted else "NOMINAL_ACTIVE"
+    }
+
+@app.post("/api/v1/circuit-breaker/reset")
+async def reset_circuit_breaker():
+    """Manually resets the circuit breaker"""
+    from src.services.black_swan_circuit_breaker import BLACK_SWAN_BREAKER
+    BLACK_SWAN_BREAKER.reset()
+    return {"status": "success", "message": "Circuit breaker reset to NOMINAL_ACTIVE."}
+
+@app.post("/api/v1/confluence/evaluate")
+async def evaluate_confluence_filter(symbol: str = "NIFTY", signal_type: str = "BUY_CALL", current_price: float = 24250.0):
+    """Evaluates 1m, 5m, 15m trend confluence for a prospective trade signal"""
+    from src.services.mtf_confluence_filter import MTF_CONFLUENCE_FILTER
+    res = MTF_CONFLUENCE_FILTER.evaluate_confluence(
+        symbol=symbol,
+        signal_type=signal_type,
+        current_price=current_price
+    )
+    return res
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))

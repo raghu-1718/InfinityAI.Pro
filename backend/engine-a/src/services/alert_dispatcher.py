@@ -224,4 +224,33 @@ class AlertDispatcher:
         except Exception as e:
             logger.warning(f"Webhook dispatch failed: {e}")
 
+    async def dispatch_custom_message(self, html_or_md_text: str):
+        """Dispatches an arbitrary formatted message (EOD Journal, Circuit Breakers, etc.)"""
+        try:
+            await self._send_telegram_html(html_or_md_text)
+            await self._send_whatsapp(html_or_md_text.replace("<b>", "").replace("</b>", "").replace("<code>", "").replace("</code>", "").replace("<i>", "").replace("</i>", ""))
+        except Exception as e:
+            logger.warning(f"Custom message dispatch failed: {e}")
+
+    async def _send_telegram_html(self, text: str):
+        if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+            return
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text,
+            "parse_mode": "HTML"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.post(url, json=payload)
+        except Exception as e:
+            # Fallback to plain text or Markdown if HTML parse fails
+            try:
+                payload["parse_mode"] = "Markdown"
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    await client.post(url, json=payload)
+            except Exception:
+                logger.warning(f"Telegram HTML dispatch failed: {e}")
+
 ALERT_DISPATCHER = AlertDispatcher()

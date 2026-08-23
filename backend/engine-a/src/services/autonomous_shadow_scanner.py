@@ -13,6 +13,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 
 from .shadow_signal_logger import ShadowSignalLogger
+from .black_swan_circuit_breaker import BLACK_SWAN_BREAKER
+from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
@@ -119,7 +121,28 @@ class ContinuousShadowScanner:
                 elif "SELL" in signal_dir or "PUT" in signal_dir or conf <= 0.45:
                     decision = "BUY_PUT"
 
-                # Check deduplication window (don't create duplicate identical signal within 15 min unless price moved > 0.4%)
+                # 1. Circuit Breaker Gatekeeper (India VIX & Flash Crash check)
+                breaker_status = BLACK_SWAN_BREAKER.update_market_vitals(
+                    india_vix=float(spot_prices.get("INDIAVIX", 13.5)),
+                    spot_price=spot,
+                    symbol=sym
+                )
+                if not breaker_status["can_trade"]:
+                    logger.warning(f"⛔ Trade blocked by Black Swan Breaker: {breaker_status['reason']}")
+                    continue
+
+                # 2. Multi-Timeframe (MTF) Confluence Filter
+                confluence_eval = MTF_CONFLUENCE_FILTER.evaluate_confluence(
+                    symbol=sym,
+                    signal_type=decision,
+                    current_price=spot,
+                    indicators_snapshot={"rsi": float(sig.get("rsi", 52)), "vwap": spot, "macd": float(sig.get("macd", 0))}
+                )
+                if not confluence_eval["is_approved"] and not force:
+                    logger.info(f"ℹ️ Signal {sym} {decision} filtered out: Low MTF Confluence ({confluence_eval['confluence_pct_str']})")
+                    continue
+
+                # 3. Check deduplication window (don't create duplicate identical signal within 15 min unless price moved > 0.4%)
                 last_sig = self.last_signals_cache.get(sym)
                 now_utc = datetime.now(timezone.utc)
                 if last_sig:
