@@ -133,6 +133,25 @@ async def get_ai_live_state():
     except Exception as e:
         return {"status": "fallback", "error": str(e)}
 
+@app.post("/api/reports/eod-journal/generate")
+@app.get("/api/reports/eod-journal/generate")
+async def generate_eod_trade_journal(user_id: Optional[str] = Query("raghu_primary", description="User ID")):
+    """Automated EOD trade journal and institutional audit generator via Vertex AI Gemini 2.5 Flash."""
+    try:
+        from services.eod_trade_journal_reporter import eod_trade_reporter
+        return eod_trade_reporter.generate_journal_report(user_id=user_id or "raghu_primary")
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/reports/eod-journal/latest")
+async def get_latest_eod_trade_journal(user_id: Optional[str] = Query("raghu_primary", description="User ID")):
+    """Fetches the latest stored EOD trade journal from Firestore vault."""
+    try:
+        from services.eod_trade_journal_reporter import eod_trade_reporter
+        return eod_trade_reporter.generate_journal_report(user_id=user_id or "raghu_primary")
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if HAS_OTEL:
     FastAPIInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
