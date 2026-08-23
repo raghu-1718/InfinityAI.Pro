@@ -34,7 +34,7 @@ steps:
         "--image",
         "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "--set-env-vars",
-        "ENGINE_B_URL=http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary",
+        "ENGINE_B_URL=http://10.160.0.2:8080,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary",
         "--region",
         "asia-south1",
         "--platform",

@@ -45,7 +45,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 from io import StringIO
 
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Response
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from concurrent.futures import ThreadPoolExecutor
@@ -95,7 +95,11 @@ db = get_firestore_db()  # Database alias for signal persistence
 # NOTE: OpenTelemetry disabled - not in requirements.txt
 
 # Create FastAPI app
-app = FastAPI(title="InfinityAI.Pro Engine B (AI/ML Core)", version="3.9-options-ml")
+app = FastAPI(
+    title="InfinityAI.Pro - Engine B (Production)",
+    description="SEBI 2026 Compliant Algorithmic Trading Engine with Real-Time ML Inference and Vertex AI",
+    version="4.1-options-ml"
+)
 
 @app.get("/health")
 @app.get("/")
@@ -402,11 +406,7 @@ except Exception as e:
     logger.warning(f"⚠️ Error initializing Reasoning Engine Client: {e}")
 
 
-app = FastAPI(
-    title="InfinityAI.Pro - Engine B (Production)",
-    description="SEBI 2025 Compliant Algorithmic Trading Engine with Real-Time ML Inference and Vertex AI",
-    version="3.7.7-vertexai"
-)
+# FastAPI app initialized with full middleware and routes at top of module
 
 @app.get("/health", tags=["Health"])
 @app.get("/healthz", tags=["Health"])
@@ -1838,6 +1838,15 @@ def fetch_market_breadth_and_gift() -> dict:
     try:
         bq_client = bigquery.Client(project=project_id)
         ad_query = f"""
+            WITH parsed_ticks AS (
+                SELECT
+                    publish_time,
+                    JSON_EXTRACT_SCALAR(data, '$.security_id') AS security_id,
+                    JSON_EXTRACT_SCALAR(data, '$.exchange_segment') AS exchange_segment,
+                    SAFE_CAST(JSON_EXTRACT_SCALAR(data, '$.ltp') AS FLOAT64) AS ltp
+                FROM `{project_id}.market_data.live_ticks`
+                WHERE DATE(publish_time, 'Asia/Kolkata') = CURRENT_DATE('Asia/Kolkata')
+            )
             SELECT
                 COUNTIF(daily_change > 0) AS advances,
                 COUNTIF(daily_change < 0) AS declines,
@@ -1847,17 +1856,16 @@ def fetch_market_breadth_and_gift() -> dict:
                     security_id,
                     LAST_VALUE(ltp) OVER (
                         PARTITION BY security_id
-                        ORDER BY timestamp
+                        ORDER BY publish_time
                         ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
                     ) - FIRST_VALUE(ltp) OVER (
                         PARTITION BY security_id
-                        ORDER BY timestamp
+                        ORDER BY publish_time
                     ) AS daily_change
-                FROM `{project_id}.market_data.live_ticks`
-                WHERE DATE(timestamp) = CURRENT_DATE('Asia/Kolkata')
-                  AND exchange_segment = 'NSE_EQ'
+                FROM parsed_ticks
+                WHERE exchange_segment = 'NSE_EQ' AND ltp IS NOT NULL
                 QUALIFY ROW_NUMBER() OVER (
-                    PARTITION BY security_id ORDER BY timestamp DESC
+                    PARTITION BY security_id ORDER BY publish_time DESC
                 ) = 1
             )
         """
@@ -1900,14 +1908,23 @@ def fetch_market_breadth_and_gift() -> dict:
     try:
         bq_client = bigquery.Client(project=project_id)
         crude_query = f"""
+            WITH parsed_crude AS (
+                SELECT
+                    publish_time,
+                    SAFE_CAST(JSON_EXTRACT_SCALAR(data, '$.ltp') AS FLOAT64) AS ltp
+                FROM `{project_id}.market_data.live_ticks`
+                WHERE DATE(publish_time, 'Asia/Kolkata') = CURRENT_DATE('Asia/Kolkata')
+                  AND JSON_EXTRACT_SCALAR(data, '$.exchange_segment') = 'MCX_COMM'
+                  AND JSON_EXTRACT_SCALAR(data, '$.security_id') = '10'
+                  AND JSON_EXTRACT_SCALAR(data, '$.ltp') IS NOT NULL
+            )
             SELECT
-                FIRST_VALUE(ltp) OVER (ORDER BY timestamp) AS open_price,
-                LAST_VALUE(ltp) OVER (ORDER BY timestamp
-                    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_price
-            FROM `{project_id}.market_data.live_ticks`
-            WHERE DATE(timestamp) = CURRENT_DATE('Asia/Kolkata')
-              AND exchange_segment = 'MCX_COMM'
-              AND security_id = '10' -- MCX CrudeOil
+                FIRST_VALUE(ltp) OVER (ORDER BY publish_time) AS open_price,
+                LAST_VALUE(ltp) OVER (
+                    ORDER BY publish_time
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                ) AS last_price
+            FROM parsed_crude
             LIMIT 1
         """
         crude_rows = list(bq_client.query(crude_query).result())

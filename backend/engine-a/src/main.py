@@ -571,7 +571,7 @@ async def start_session(config: Dict[str, Any] = None):
 DEFAULT_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 ENGINE_B_URL = os.getenv(
     "ENGINE_B_URL",
-    "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080",
+    "http://10.160.0.2:8080",
 )
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", f"https://engine-c-313407263327.asia-south1.run.app")
 

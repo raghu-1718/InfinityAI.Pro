@@ -20,7 +20,7 @@ ENGINE_B_URL = _get_env(
     "ENGINE_B_URL",
     "http://localhost:8002"
     if _get_env("ENVIRONMENT", "production") == "development"
-    else "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080",
+    else "http://10.160.0.2:8080",
 )
 ENGINE_C_URL = _get_env("ENGINE_C_URL", "http://engine-c:8080")
 
