@@ -7,7 +7,10 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from pydantic import BaseModel
-from .dhan_client_wrapper import create_dhan_client
+try:
+    from .dhan_client_wrapper import create_dhan_client
+except ImportError:
+    from dhan_client_wrapper import create_dhan_client
 import logging
 import os
 
