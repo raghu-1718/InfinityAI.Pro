@@ -10,7 +10,15 @@ import json
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
-from google.cloud import firestore, bigquery
+try:
+    from google.cloud import firestore
+except Exception:
+    firestore = None
+
+try:
+    from google.cloud import bigquery
+except Exception:
+    bigquery = None
 
 from .alert_dispatcher import ALERT_DISPATCHER
 
@@ -24,13 +32,19 @@ class PreMarketBriefingService:
 
     def __init__(self, project_id: str = PROJECT_ID):
         self.project_id = project_id
+        self.db = None
+        self.bq = None
         try:
-            self.db = firestore.Client(project=project_id)
-            self.bq = bigquery.Client(project=project_id)
+            if firestore:
+                self.db = firestore.Client(project=project_id)
         except Exception as e:
-            logger.warning(f"PreMarketBriefingService DB initialization warning: {e}")
-            self.db = None
-            self.bq = None
+            logger.warning(f"PreMarketBriefingService Firestore init warning: {e}")
+
+        try:
+            if bigquery:
+                self.bq = bigquery.Client(project=project_id)
+        except Exception as e:
+            logger.warning(f"PreMarketBriefingService BigQuery init warning: {e}")
 
     async def generate_and_dispatch_briefing(self) -> Dict[str, Any]:
         """Runs the 08:30 IST synthesis, saves report, and dispatches multi-channel alerts"""

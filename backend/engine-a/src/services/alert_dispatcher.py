@@ -78,42 +78,75 @@ class AlertDispatcher:
         except Exception as e:
             logger.warning(f"Error dispatching signal alert: {e}")
 
+    def _format_outcome_text(self, outcome_data: Dict[str, Any]) -> str:
+        sig_id = outcome_data.get("signal_id", "")
+        sym = outcome_data.get("symbol", "NIFTY")
+        status = outcome_data.get("outcome_status", "RESOLVED")
+        exit_prem = float(outcome_data.get("exit_premium", 0.0))
+        gross_pnl = float(outcome_data.get("gross_pnl", 0.0))
+        net_pnl = float(outcome_data.get("net_pnl", 0.0))
+        resolved_at = outcome_data.get("resolved_at", "Just now")
+        bracket = outcome_data.get("trade_bracket", {})
+        entry_prem = float(bracket.get("entry_premium", 100.0))
+        lot_size = bracket.get("lot_size", 65)
+        contract = bracket.get("contract", f"{sym} ATM Options")
+        tax_cost = float(outcome_data.get("estimated_tax_brokerage", 55.0))
+        roi_pct = (net_pnl / (entry_prem * lot_size) * 100) if (entry_prem * lot_size) > 0 else 0.0
+
+        if status == "TARGET_HIT" or net_pnl > 0:
+            header = "🟢 🎉 *INFINITY AI — PROFIT TARGET ACHIEVED (+15%)*"
+            result_badge = f"🏆 *PROFIT: +₹{net_pnl:,.2f}* (`+{roi_pct:.1f}% ROI`)"
+        elif status == "STOP_LOSS_HIT":
+            header = "🔴 🛡️ *INFINITY AI — STOP LOSS TRIGGERED (-11%)*"
+            result_badge = f"⚠️ *LOSS: -₹{abs(net_pnl):,.2f}* (`{roi_pct:.1f}% ROI`)"
+        else:
+            header = "⏰ 📋 *INFINITY AI — EOD 15:15 INTRADAY AUTO SQUARE-OFF*"
+            pnl_badge = f"+₹{net_pnl:,.2f}" if net_pnl >= 0 else f"-₹{abs(net_pnl):,.2f}"
+            result_badge = f"📊 *NET RESULT: {pnl_badge}* (`{roi_pct:+.1f}% ROI`)"
+
+        return (
+            f"{header}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 *Contract:* `{contract}`\n"
+            f"🏷️ *Signal ID:* `{sig_id}`\n"
+            f"💰 *Entry Premium:* `₹{entry_prem:.2f}` ➔ *Exit:* `₹{exit_prem:.2f}`\n"
+            f"💵 *Trade Outcome:* {result_badge}\n"
+            f"🧾 *Gross P&L:* `₹{gross_pnl:+,.2f}` | *Statutory Taxes:* `₹{tax_cost:.2f}`\n"
+            f"⏱️ *Resolution Time:* `{resolved_at}`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"✅ _Trade closed & committed to Institutional Performance Ledger_"
+        )
+
     async def dispatch_outcome_alert(self, outcome_data: Dict[str, Any]):
         """Dispatches an alert when an open trade reaches Target, Stop Loss, or EOD Exit"""
         try:
-            sig_id = outcome_data.get("signal_id", "")
-            sym = outcome_data.get("symbol", "")
-            status = outcome_data.get("outcome_status", "RESOLVED")
-            exit_prem = float(outcome_data.get("exit_premium", 0.0))
-            net_pnl = float(outcome_data.get("net_pnl", 0.0))
-            bracket = outcome_data.get("trade_bracket", {})
-            contract = bracket.get("contract", sym)
-
-            if status == "TARGET_HIT":
-                emoji = "🎉 🚀 [PROFIT TARGET HIT +15%]"
-            elif status == "STOP_LOSS_HIT":
-                emoji = "🛡️ ⚠️ [STOP LOSS HIT]"
-            else:
-                emoji = "⏰ 📋 [EOD 15:30 MARKET CLOSE SQUARE-OFF]"
-
-            pnl_str = f"+₹{net_pnl:,.2f}" if net_pnl >= 0 else f"-₹{abs(net_pnl):,.2f}"
-
-            tg_text = (
-                f"{emoji}\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"📊 *Contract:* `{contract}`\n"
-                f"🏷️ *Signal ID:* `{sig_id}`\n"
-                f"💰 *Exit Premium:* `₹{exit_prem:.2f}`\n"
-                f"💵 *Realized Net P&L:* *{pnl_str}* (After Dhan taxes & fees)\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅ _Audit record committed to Firestore & BigQuery dataset_"
-            )
-
+            tg_text = self._format_outcome_text(outcome_data)
             await self._send_telegram(tg_text)
             await self._send_whatsapp(tg_text.replace("*", "").replace("`", ""))
             await self._send_webhook({"event": "OUTCOME_RESOLVED", "data": outcome_data})
         except Exception as e:
             logger.warning(f"Error dispatching outcome alert: {e}")
+
+    def dispatch_outcome_sync(self, outcome_data: Dict[str, Any]):
+        """Thread-safe synchronous fallback for dispatching outcome alerts"""
+        try:
+            tg_text = self._format_outcome_text(outcome_data)
+            self._send_telegram_sync(tg_text)
+        except Exception as e:
+            logger.warning(f"Sync outcome dispatch error: {e}")
+
+    def _send_telegram_sync(self, text: str):
+        if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+            return
+        import urllib.request, json
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                pass
+        except Exception as e:
+            logger.warning(f"Sync Telegram dispatch failed: {e}")
 
     async def dispatch_premarket_briefing(self, report: Dict[str, Any]):
         """Dispatches the 08:30 IST Pre-Market Intelligence Briefing"""

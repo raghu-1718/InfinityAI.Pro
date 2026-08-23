@@ -1819,13 +1819,13 @@ async def get_shadow_signals(limit: int = 50, month: Optional[str] = None):
 
 
 @app.post("/api/v1/shadow-signals/scan-now")
-async def trigger_shadow_scan_now():
+async def trigger_shadow_scan_now(force: bool = False):
     """
     Manually triggers an immediate market radar scan and logs signals with expected PnL to Firestore.
     """
     try:
         from src.services.autonomous_shadow_scanner import AUTONOMOUS_SHADOW_SCANNER
-        res = await AUTONOMOUS_SHADOW_SCANNER.scan_once()
+        res = await AUTONOMOUS_SHADOW_SCANNER.scan_once(force=force)
         return {"status": "success", "result": res}
     except Exception as e:
         logger.error(f"Manual shadow scan failed: {e}")

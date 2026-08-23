@@ -262,7 +262,7 @@ class RiskManager:
         self,
         capital: float,
         risk_per_trade: float = 0.10,
-        stop_loss_pct: float = 0.12,
+        stop_loss_pct: float = 0.11,
         symbol: str = "NIFTY",
         premium: float = 100.0,
         max_lots_cap: int = 10
@@ -328,13 +328,13 @@ class RiskManager:
         entry_premium: float,
         highest_observed_premium: float,
         current_premium: float,
-        min_stop_loss_pct: float = 0.12,
+        min_stop_loss_pct: float = 0.11,
         min_profit_target_pct: float = 0.15,
         trailing_step_pct: float = 0.05
     ) -> Dict[str, Any]:
         """
         Dynamic Trailing Stop-Loss & Target Ratchet Engine.
-        1. Enforces baseline minimum stop-loss (default 12%, user-adjustable).
+        1. Enforces baseline minimum stop-loss (default 11%, user-adjustable).
         2. Enforces minimum profit target (default 15%, user-adjustable).
         3. Once target (+15%) is reached, trailing activates and ratchets up SL
            locking in profit on every +5% upside surge.

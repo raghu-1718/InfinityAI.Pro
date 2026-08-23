@@ -102,9 +102,9 @@ class ShadowSignalLogger:
         option_type = "CE" if "CALL" in decision.upper() else "PE"
         contract_name = f"{symbol} {int(strike)} {option_type}"
 
-        # Configured 15% Take-Profit Target and 12% Minimum Stop-Loss
+        # Configured 15% Take-Profit Target and 11% Minimum Stop-Loss (Hardcoded Exact)
         target_pct = 0.15      # +15% Minimum Profit Target (Configurable)
-        stop_loss_pct = 0.12   # -12% Minimum Stop-Loss (Configurable)
+        stop_loss_pct = 0.11   # -11% Minimum Stop-Loss (Exact)
         target_prem = round(est_premium * (1.0 + target_pct), 2)
         stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
 
@@ -302,11 +302,9 @@ class ShadowSignalLogger:
             data.update(updates)
             if ALERT_DISPATCHER:
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        loop.create_task(ALERT_DISPATCHER.dispatch_outcome_alert(data))
-                except Exception:
-                    pass
+                    ALERT_DISPATCHER.dispatch_outcome_sync(data)
+                except Exception as e:
+                    logger.warning(f"Failed to dispatch outcome alert: {e}")
             return data
         else:
             # Update live Mark-to-Market (MTM)

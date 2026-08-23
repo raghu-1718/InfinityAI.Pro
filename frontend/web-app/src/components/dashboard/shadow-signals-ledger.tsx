@@ -161,7 +161,7 @@ export function ShadowSignalsLedger() {
       "Expected Profit Net (₹)",
       "Max Risk Net (₹)",
       "Target Premium (+15%)",
-      "Stop Loss Premium (-12%)",
+      "Stop Loss Premium (-11%)",
       "Exit Premium",
       "Gross PnL (₹)",
       "Dhan Fees & Taxes (₹)",

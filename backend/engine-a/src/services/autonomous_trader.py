@@ -299,7 +299,7 @@ class AutonomousTrader:
         # ---------------------------------------------------------
         user_capital = float(self.config.get("capital", 10000.0))
         max_risk_trade = float(self.config.get("max_risk_per_trade", 0.10))
-        min_sl_pct = float(self.config.get("stop_loss_pct", 0.12))
+        min_sl_pct = float(self.config.get("stop_loss_pct", 0.11))
         min_target_pct = float(self.config.get("target_profit_pct", 0.15))
 
         current_price = float(signal.get("current_price") or 1000.0)

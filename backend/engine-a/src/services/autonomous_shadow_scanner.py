@@ -57,8 +57,19 @@ class ContinuousShadowScanner:
             await self.http_client.aclose()
         logger.info("🛑 ContinuousShadowScanner Background Loop STOPPED")
 
-    async def scan_once(self) -> Dict[str, Any]:
-        """Executes a single market scan cycle and returns generated signals and MTM updates"""
+    @staticmethod
+    def is_market_hours() -> bool:
+        """Enforces Indian stock market operational hours (09:15–15:30 IST Mon-Fri)"""
+        now_utc = datetime.now(timezone.utc)
+        ist = now_utc + timedelta(hours=5, minutes=30)
+        if ist.weekday() >= 5:
+            return False
+        market_open = ist.replace(hour=9, minute=15, second=0, microsecond=0)
+        market_close = ist.replace(hour=15, minute=30, second=0, microsecond=0)
+        return market_open <= ist <= market_close
+
+    async def scan_once(self, force: bool = False) -> Dict[str, Any]:
+        """Executes a single market scan cycle during 09:15-15:30 IST and updates MTM"""
         if not self.http_client or self.http_client.is_closed:
             self.http_client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0))
 
@@ -66,17 +77,27 @@ class ContinuousShadowScanner:
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "signals_generated": [],
             "signals_committed": 0,
-            "mtm_updates": {}
+            "mtm_updates": {},
+            "market_hours_active": self.is_market_hours()
         }
 
         try:
             # 1. Fetch live quotes for spot prices
             spot_prices = await self._fetch_spot_prices()
 
-            # 2. Call Engine B ML ensemble batch inference
+            # 2. Check market hours enforcement (09:15 to 15:30 IST)
+            if not self.is_market_hours() and not force:
+                logger.info("ℹ️ Market CLOSED (09:15–15:30 IST). Updating MTM without logging off-market signals.")
+                if spot_prices:
+                    mtm_res = self.shadow_logger.update_open_signals_mtm(spot_prices)
+                    results["mtm_updates"] = mtm_res
+                results["status"] = "MARKET_CLOSED_MTM_TRACKED"
+                return results
+
+            # 3. Call Engine B ML ensemble batch inference
             raw_signals = await self._fetch_engine_b_signals()
 
-            # 3. Process each signal, evaluate expected PnL, and log to Firestore
+            # 4. Process each signal, evaluate expected PnL, and log to Firestore
             for sig in raw_signals:
                 sym = sig.get("symbol", "").upper()
                 if not sym:
