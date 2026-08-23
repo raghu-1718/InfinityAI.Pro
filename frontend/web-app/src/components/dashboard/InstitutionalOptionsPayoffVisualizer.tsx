@@ -108,26 +108,55 @@ const STRATEGIES: StrategyPreset[] = [
 ];
 
 const INDEX_UNDERLYINGS = [
-  { symbol: "NIFTY", name: "NIFTY 50", spot: 24366.0, lotSize: 65, step: 50 },
-  { symbol: "BANKNIFTY", name: "BANK NIFTY", spot: 57491.1, lotSize: 30, step: 100 },
-  { symbol: "FINNIFTY", name: "FIN NIFTY", spot: 25680.5, lotSize: 65, step: 50 },
+  { symbol: "NIFTY", secId: "13", name: "NIFTY 50", defaultSpot: 24500.0, lotSize: 65, step: 50 },
+  { symbol: "BANKNIFTY", secId: "25", name: "BANK NIFTY", defaultSpot: 51500.0, lotSize: 30, step: 100 },
+  { symbol: "FINNIFTY", secId: "27", name: "FIN NIFTY", defaultSpot: 23500.0, lotSize: 65, step: 50 },
 ];
 
 export function InstitutionalOptionsPayoffVisualizer() {
   const [selectedSymbol, setSelectedSymbol] = useState("NIFTY");
   const [selectedStrategyId, setSelectedStrategyId] = useState("iron_condor");
   const [isExecuting, setIsExecuting] = useState(false);
+  const [liveSpot, setLiveSpot] = useState<number | null>(null);
 
   const activeIndex = INDEX_UNDERLYINGS.find((i) => i.symbol === selectedSymbol) || INDEX_UNDERLYINGS[0];
   const activeStrategy = STRATEGIES.find((s) => s.id === selectedStrategyId) || STRATEGIES[0];
 
+  // Fetch live spot price dynamically from DhanHQ
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchLiveSpot = async () => {
+      try {
+        const engineC = process.env.NEXT_PUBLIC_ENGINE_C_URL || "https://engine-c-313407263327.asia-south1.run.app";
+        const res = await fetch(`${engineC}/api/dhan/market/ltp?security_id=${activeIndex.secId}&exchange_segment=IDX_I`);
+        if (res.ok) {
+          const data = await res.json();
+          const ltp = data?.data?.ltp;
+          if (ltp && ltp > 0 && isMounted) {
+            setLiveSpot(ltp);
+          }
+        }
+      } catch (err) {
+        console.warn("Notice fetching live spot:", err);
+      }
+    };
+    fetchLiveSpot();
+    const interval = setInterval(fetchLiveSpot, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [activeIndex.secId]);
+
+  const effectiveSpot = liveSpot || activeIndex.defaultSpot;
+
   const legs = useMemo(() => {
-    return activeStrategy.getLegs(activeIndex.spot);
-  }, [activeStrategy, activeIndex]);
+    return activeStrategy.getLegs(effectiveSpot);
+  }, [activeStrategy, effectiveSpot]);
 
   // Compute 40-point Payoff Curve at Expiry
   const { payoffData, maxProfit, maxLoss, breakevens, netPremium } = useMemo(() => {
-    const spot = activeIndex.spot;
+    const spot = effectiveSpot;
     const rangePct = 0.035; // +/- 3.5% range
     const minPrice = spot * (1 - rangePct);
     const maxPrice = spot * (1 + rangePct);
@@ -186,7 +215,7 @@ export function InstitutionalOptionsPayoffVisualizer() {
       // Simulate/trigger execution via Engine C
       await new Promise((resolve) => setTimeout(resolve, 800));
       toast.success(`Multi-Leg Strategy Executed: ${activeStrategy.name}`, {
-        description: `${selectedSymbol} @ Spot ₹${activeIndex.spot.toLocaleString("en-IN")} | Net ${
+        description: `${selectedSymbol} @ Spot ₹${effectiveSpot.toLocaleString("en-IN")} | Net ${
           netPremium >= 0 ? "Credit" : "Debit"
         }: ₹${Math.abs(Math.round(netPremium)).toLocaleString("en-IN")}`,
       });
@@ -228,7 +257,7 @@ export function InstitutionalOptionsPayoffVisualizer() {
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                {u.name} (₹{u.spot.toLocaleString("en-IN")})
+                {u.name}
               </button>
             ))}
           </div>
@@ -279,7 +308,7 @@ export function InstitutionalOptionsPayoffVisualizer() {
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-purple-400" />
                 <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Expiry PnL Profile Curve (Spot: ₹{activeIndex.spot.toLocaleString("en-IN")})
+                  Expiry PnL Profile Curve (Spot: ₹{effectiveSpot.toLocaleString("en-IN")})
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs">

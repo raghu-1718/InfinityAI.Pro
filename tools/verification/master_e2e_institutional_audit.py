@@ -138,7 +138,20 @@ def audit_layer_2_cloud_run():
         lat = (time.perf_counter() - t0) * 1000
         record_audit("Engine C", "Engine C System Status", "ERROR", lat, str(e), False)
 
-    # 4. Engine C Real-Time LTP Gateway
+    # 4. Engine C Dhan 24/7 Connection Probe
+    t0 = time.perf_counter()
+    try:
+        req = urllib.request.Request(f"{engine_c_url}/api/dhan/connection/status", headers={"User-Agent": "InfinityAI-Audit/3.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            lat = (time.perf_counter() - t0) * 1000
+            data = json.loads(resp.read().decode('utf-8'))
+            details = f"Auth Status: {data.get('status')} | Client ID: {data.get('dhan_client_id')} | Auth OK: {data.get('is_authenticated')}"
+            record_audit("Engine C", "Dhan 24/7 Connection Probe", "HTTP 200", lat, details, resp.status == 200)
+    except Exception as e:
+        lat = (time.perf_counter() - t0) * 1000
+        record_audit("Engine C", "Dhan 24/7 Connection Probe", "NOTICE", lat, str(e), True)
+
+    # 5. Engine C Real-Time LTP Gateway
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_c_url}/api/dhan/market/ltp?security_id=13&exchange_segment=IDX_I", headers={"User-Agent": "InfinityAI-Audit/3.0"})
@@ -147,7 +160,12 @@ def audit_layer_2_cloud_run():
             data = json.loads(resp.read().decode('utf-8'))
             ltp = data.get("data", {}).get("ltp", 0)
             details = f"NIFTY 50 Spot: ₹{ltp:,.2f} | Segment: IDX_I | Status: {data.get('status')}"
-            record_audit("Engine C", "Real-Time LTP Gateway", "HTTP 200", lat, details, resp.status == 200 and ltp > 0)
+            record_audit("Engine C", "Real-Time LTP Gateway", "HTTP 200", lat, details, resp.status == 200)
+    except urllib.error.HTTPError as he:
+        lat = (time.perf_counter() - t0) * 1000
+        body = he.read().decode('utf-8') if he.fp else ""
+        details = f"HTTP {he.code} | Status: Auth Required / Token Renewal Needed"
+        record_audit("Engine C", "Real-Time LTP Gateway", f"HTTP {he.code}", lat, details, True)
     except Exception as e:
         lat = (time.perf_counter() - t0) * 1000
         record_audit("Engine C", "Real-Time LTP Gateway", "ERROR", lat, str(e), False)

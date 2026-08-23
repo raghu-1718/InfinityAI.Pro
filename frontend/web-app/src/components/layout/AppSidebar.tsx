@@ -205,23 +205,23 @@ export function TopBar() {
   const marketStatus = getMarketStatus();
 
   // Helper to calculate change
-  const getChange = (quote: any, defaultLtp: number, defaultPct: number) => {
-    const ltp = Number(quote?.last_price || quote?.ltp || quote?.ohlc?.close || defaultLtp);
-    if (!quote?.ohlc?.open) return { ltp, val: 0, pct: defaultPct };
+  const getChange = (quote: any) => {
+    const ltp = Number(quote?.last_price || quote?.ltp || quote?.ohlc?.close || 0);
+    if (ltp <= 0 || !quote?.ohlc?.open) return { ltp, val: 0, pct: 0 };
     const base = Number(quote.ohlc.open); 
     const diff = ltp - base;
-    const pct = (diff / base) * 100;
+    const pct = base > 0 ? (diff / base) * 100 : 0;
     return { ltp, val: diff, pct };
   };
 
-  const niftyMetric = getChange(nifty, 24366.00, -0.12);
-  const bankMetric = getChange(bankNifty, 57491.10, -0.25);
-  const vixLtp = Number(vix?.last_price || vix?.ltp || 12.45);
+  const niftyMetric = getChange(nifty);
+  const bankMetric = getChange(bankNifty);
+  const vixLtp = Number(vix?.last_price || vix?.ltp || 0);
   
   // Safe formatting
-  const fmt = (n: number) => n?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "--";
+  const fmt = (n: number) => n > 0 ? n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
 
-  const totalFunds = fundsRes?.funds?.availableBalance ?? fundsRes?.data?.availableBalance ?? 11.18;
+  const totalFunds = fundsRes?.funds?.availableBalance ?? fundsRes?.data?.availableBalance ?? 0;
 
   return (
     <header className="glass h-16 px-6 flex items-center justify-between border-b border-white/5">

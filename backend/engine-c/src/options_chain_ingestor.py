@@ -22,10 +22,10 @@ logger.setLevel(logging.INFO)
 
 # Core Indian Index Underlyings for Options Ingestion
 SUPPORTED_OPTIONS_INDICES = [
-    {"symbol": "NIFTY", "sec_id": 13, "segment": "IDX_I", "spot_fallback": 24366.0, "step": 50},
-    {"symbol": "BANKNIFTY", "sec_id": 25, "segment": "IDX_I", "spot_fallback": 57491.1, "step": 100},
-    {"symbol": "SENSEX", "sec_id": 51, "segment": "IDX_I", "spot_fallback": 78009.25, "step": 100},
-    {"symbol": "FINNIFTY", "sec_id": 27, "segment": "IDX_I", "spot_fallback": 25680.5, "step": 50},
+    {"symbol": "NIFTY", "sec_id": 13, "segment": "IDX_I", "step": 50},
+    {"symbol": "BANKNIFTY", "sec_id": 25, "segment": "IDX_I", "step": 100},
+    {"symbol": "SENSEX", "sec_id": 51, "segment": "IDX_I", "step": 100},
+    {"symbol": "FINNIFTY", "sec_id": 27, "segment": "IDX_I", "step": 50},
 ]
 
 class OptionsChainIngestor:
@@ -171,7 +171,6 @@ class OptionsChainIngestor:
             symbol = idx["symbol"]
             sec_id = idx["sec_id"]
             segment = idx["segment"]
-            spot_fallback = idx["spot_fallback"]
 
             # 1. Resolve nearest active expiry
             exp_url = "https://api.dhan.co/v2/optionchain/expirylist"
@@ -188,7 +187,6 @@ class OptionsChainIngestor:
                 logger.warning(f"Notice fetching expiry for {symbol}: {e}")
 
             if not target_expiry:
-                # Default next weekly Thursday expiry
                 target_expiry = (datetime.now() + timedelta(days=(3 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
 
             # 2. Fetch full option chain depth using DhanClient wrapper
@@ -200,18 +198,15 @@ class OptionsChainIngestor:
                 )
 
                 oc_dict = {}
+                spot_price = 0.0
                 if oc_data and oc_data.get("status") == "success":
-                    oc_dict = oc_data.get("data", {}).get("oc", {}) or {}
-                
-                # If market is closed or empty, generate calibrated baseline grid
+                    oc_data_payload = oc_data.get("data", {})
+                    oc_dict = oc_data_payload.get("oc", {}) or {}
+                    spot_price = float(oc_data_payload.get("last_price") or 0.0)
+
                 if not oc_dict:
-                    base_k = int(spot_fallback // idx["step"]) * idx["step"]
-                    oc_dict = {
-                        str(k): {
-                            "ce": {"last_price": max(10.0, spot_fallback - k + 45.0), "oi": 1500000, "vol": 350000, "iv": 14.2},
-                            "pe": {"last_price": max(10.0, k - spot_fallback + 45.0), "oi": 1750000, "vol": 420000, "iv": 15.8}
-                        } for k in range(base_k - 5 * idx["step"], base_k + 6 * idx["step"], idx["step"])
-                    }
+                    logger.info(f"No active option chain returned by Dhan for {symbol} ({target_expiry})")
+                    continue
 
                 symbol_rows = 0
                 current_timestamp = datetime.now(timezone.utc).isoformat()

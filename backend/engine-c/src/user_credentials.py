@@ -134,9 +134,14 @@ class UserCredentialsManager:
         return f"{nonce.hex()}:{tag.hex()}:{ciphertext.hex()}"
 
     def _decrypt(self, encrypted_data: str) -> Optional[str]:
-        """Decrypt sensitive data with raw fallback"""
+        """Decrypt sensitive data with JWT and raw fallback"""
         if not encrypted_data:
             return None
+        
+        # Direct JWT check: if it is an unencrypted standard JWT access token
+        if isinstance(encrypted_data, str) and (encrypted_data.strip().startswith("eyJ") or encrypted_data.strip().startswith("dhan_")):
+            return encrypted_data.strip()
+
         try:
             parts = encrypted_data.split(':')
             if len(parts) == 3:
@@ -152,13 +157,12 @@ class UserCredentialsManager:
                 data = decryptor.update(ciphertext) + decryptor.finalize()
                 return data.decode()
         except Exception as e:
-            logger.error(
-                f"GCM Decrypt failed — key/ciphertext mismatch or corrupted payload. "
-                f"Check USER_CREDENTIALS_KEY rotation vs stored ciphertexts. Error: {e}"
+            logger.warning(
+                f"GCM Decrypt notice: payload format mismatch ({e}). Checking raw string..."
             )
+            if isinstance(encrypted_data, str) and encrypted_data.strip().startswith("eyJ"):
+                return encrypted_data.strip()
 
-        # Return None on decryption failure — do NOT pass the raw ciphertext
-        # to downstream callers (e.g. DhanHQ API), which would cause DH-901 errors.
         return None
 
     async def save_user_credentials(

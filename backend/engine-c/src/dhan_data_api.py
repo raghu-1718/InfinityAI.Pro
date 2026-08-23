@@ -231,6 +231,89 @@ def parse_security_ids(sec_param: Any, fallback_param: Any = None) -> List[int]:
 
 
 # ==============================================================================
+# 5B. Dhan Connection Status & Token Management
+# ==============================================================================
+class DhanCredentialUpdateRequest(BaseModel):
+    client_id: str
+    access_token: str
+    user_id: Optional[str] = "raghu_primary"
+
+@data_router.get("/api/dhan/connection/status")
+async def get_dhan_connection_status(
+    user_id: Optional[str] = Query(None, description="User ID or Dhan Client ID")
+):
+    """
+    Live 24/7 DhanHQ API connection probe.
+    Tests credentials against live DhanHQ servers and reports authentication health.
+    """
+    try:
+        from src.user_credentials import get_credentials_manager
+        mgr = get_credentials_manager()
+        resolved_id = await mgr.resolve_user_id(user_id)
+        creds = await mgr.get_user_credentials(resolved_id)
+        if not creds or not creds.get("access_token"):
+            return {
+                "status": "not_configured",
+                "is_authenticated": False,
+                "client_id": PRIMARY_CLIENT_ID,
+                "message": "DhanHQ access token not found in single-tenant Firestore vault"
+            }
+
+        client_id = creds.get("client_id") or PRIMARY_CLIENT_ID
+        access_token = creds.get("access_token")
+        client = create_dhan_client(client_id, access_token)
+
+        # Probe live fundlimit endpoint
+        funds_resp = client.get_fund_limits()
+        is_auth_ok = True
+        err_msg = None
+
+        if isinstance(funds_resp, dict):
+            if funds_resp.get("status") == "failed" or "errorCode" in funds_resp or "errorType" in funds_resp:
+                is_auth_ok = False
+                err_msg = funds_resp.get("errorMessage") or funds_resp.get("remarks") or str(funds_resp)
+
+        return {
+            "status": "connected" if is_auth_ok else "auth_expired",
+            "is_authenticated": is_auth_ok,
+            "dhan_client_id": client_id,
+            "user_id": resolved_id,
+            "token_preview": f"{access_token[:12]}...{access_token[-6:]}" if len(access_token) > 20 else "***",
+            "error_detail": err_msg,
+            "verified_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "is_authenticated": False,
+            "error": str(e),
+            "verified_at": datetime.utcnow().isoformat()
+        }
+
+
+@data_router.post("/api/dhan/credentials/update")
+async def update_dhan_credentials(req: DhanCredentialUpdateRequest):
+    """
+    Saves & AES-256-GCM encrypts updated DhanHQ Client ID & 24/7 Access Token in Firestore Vault.
+    """
+    try:
+        from src.user_credentials import get_credentials_manager
+        mgr = get_credentials_manager()
+        save_res = await mgr.save_user_credentials(
+            user_id=req.user_id or "raghu_primary",
+            client_id=req.client_id,
+            access_token=req.access_token.strip()
+        )
+        return {
+            "status": "success",
+            "message": "DhanHQ credentials encrypted & stored successfully in single-tenant vault",
+            "data": save_res
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update credentials: {e}")
+
+
+# ==============================================================================
 # 6. Live Market Quotes (/api/dhan/market/quotes)
 # ==============================================================================
 @data_router.get("/api/dhan/market/quotes")
@@ -239,7 +322,7 @@ async def get_market_quotes(
     exchange_segment: str = Query("NSE_EQ", description="Exchange segment"),
     user_id: Optional[str] = Query(None, description="User ID or Client ID (Defaults to primary vault)")
 ):
-    """Live LTP, Open, High, Low, Close, Volume, VWAP, Change % with resilient parameter handling"""
+    """Live LTP, Open, High, Low, Close, Volume, VWAP, Change % directly from DhanHQ marketfeed"""
     norm_seg = normalize_exchange_segment(exchange_segment)
     sec_ids = parse_security_ids(security_ids, fallback_param=exchange_segment)
     
@@ -248,31 +331,30 @@ async def get_market_quotes(
         securities = {norm_seg: sec_ids}
         ohlc_response = client.ohlc_data(securities=securities)
         
+        # Check for Dhan API failure response
+        if isinstance(ohlc_response, dict) and ohlc_response.get("status") == "failed":
+            error_data = ohlc_response.get("data", {})
+            return {
+                "status": "auth_required" if "808" in str(error_data) else "error",
+                "message": "DhanHQ Live Marketfeed Auth Error (DH-901). Token renewal required.",
+                "dhan_response": ohlc_response,
+                "exchange_segment": norm_seg,
+                "security_ids": sec_ids,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
         return {
-            "status": "success",
+            "status": "live",
             "data": ohlc_response,
             "exchange_segment": norm_seg,
             "security_ids": sec_ids,
             "timestamp": datetime.utcnow().isoformat()
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.warning(f"⚠️ Live market quotes fallback active: {e}")
-        # Build calibrated fallback response
-        fallback_data = {
-            norm_seg: {
-                str(s): {
-                    "last_price": 24366.0 if s == 13 else (57491.1 if s == 25 else 1640.5),
-                    "ohlc": {"open": 24350.0, "high": 24400.0, "low": 24320.0, "close": 24366.0}
-                } for s in sec_ids
-            }
-        }
-        return {
-            "status": "fallback",
-            "data": fallback_data,
-            "exchange_segment": norm_seg,
-            "security_ids": sec_ids,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        logger.error(f"❌ Error querying live Dhan quotes: {e}")
+        raise HTTPException(status_code=502, detail=f"Dhan Marketfeed Gateway error: {e}")
 
 
 # ==============================================================================
@@ -290,21 +372,12 @@ async def get_market_ltp(
 ):
     """
     Real-Time Last Traded Price (LTP) Gateway for Engine B and Frontend.
-    Extracts live LTP, OHLC, and price change with automatic failover and segment resolution.
+    Extracts live LTP, OHLC, and price change directly from DhanHQ marketfeed.
     """
     raw_sec = security_ids or security_id or "13"
     sec_ids = parse_security_ids(raw_sec, fallback_param=exchange_segment)
     norm_seg = normalize_exchange_segment(segment or exchange_segment or "IDX_I")
     primary_id = sec_ids[0] if sec_ids else 13
-
-    FALLBACK_LTPS = {
-        13: 24366.00,   # NIFTY 50
-        25: 57491.10,   # BANK NIFTY
-        27: 25680.50,   # FIN NIFTY
-        51: 78009.25,   # SENSEX
-        1333: 1640.50,  # HDFCBANK
-        11536: 4120.00  # TCS
-    }
 
     try:
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
@@ -312,6 +385,17 @@ async def get_market_ltp(
         ohlc_resp = client.ohlc_data(securities=securities)
         
         ohlc_dict = ohlc_resp.get("data", {}) if isinstance(ohlc_resp, dict) and "data" in ohlc_resp else (ohlc_resp if isinstance(ohlc_resp, dict) else {})
+        
+        if isinstance(ohlc_resp, dict) and ohlc_resp.get("status") == "failed":
+            return {
+                "status": "auth_required",
+                "security_id": primary_id,
+                "exchange_segment": norm_seg,
+                "message": "DhanHQ Live Marketfeed Auth Error (DH-901). Token renewal required.",
+                "dhan_response": ohlc_resp,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
         seg_data = ohlc_dict.get(norm_seg, {}) or ohlc_dict.get(norm_seg.lower(), {})
         sec_obj = seg_data.get(str(primary_id)) or seg_data.get(primary_id) or {}
 
@@ -321,14 +405,10 @@ async def get_market_ltp(
         low_p = float(sec_obj.get("ohlc", {}).get("low") or ltp)
         close_p = float(sec_obj.get("ohlc", {}).get("close") or ltp)
 
-        if ltp <= 0.0:
-            ltp = FALLBACK_LTPS.get(primary_id, 24366.00)
-            open_p, high_p, low_p, close_p = ltp, ltp * 1.002, ltp * 0.998, ltp
-
         change_pct = round(((ltp - open_p) / open_p) * 100.0, 2) if open_p > 0 else 0.0
 
         return {
-            "status": "success",
+            "status": "live",
             "security_id": primary_id,
             "exchange_segment": norm_seg,
             "data": {
@@ -341,23 +421,11 @@ async def get_market_ltp(
             },
             "timestamp": datetime.utcnow().isoformat()
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.warning(f"⚠️ Dhan LTP query notice: {e} — delivering calibrated prior for {primary_id}")
-        fallback_ltp = FALLBACK_LTPS.get(primary_id, 24366.00)
-        return {
-            "status": "fallback",
-            "security_id": primary_id,
-            "exchange_segment": norm_seg,
-            "data": {
-                "ltp": fallback_ltp,
-                "open": fallback_ltp,
-                "high": fallback_ltp * 1.002,
-                "low": fallback_ltp * 0.998,
-                "close": fallback_ltp,
-                "change_pct": 0.0
-            },
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        logger.error(f"❌ Error querying Dhan LTP: {e}")
+        raise HTTPException(status_code=502, detail=f"Dhan Marketfeed LTP Gateway error: {e}")
 
 
 # ==============================================================================
@@ -420,21 +488,11 @@ async def get_volatility_surface_summary(symbol: str = "NIFTY"):
         doc = db.collection("options_volatility_surface").document(symbol.upper()).get()
         if doc.exists:
             return {"status": "success", "data": doc.to_dict()}
-        # Fallback calibrated summary
-        return {
-            "status": "fallback",
-            "data": {
-                "symbol": symbol.upper(),
-                "spot_price": 24366.0 if symbol.upper() == "NIFTY" else 57491.1,
-                "atm_iv": 14.2,
-                "put_call_skew_25d": 1.75,
-                "max_pain_strike": 24350 if symbol.upper() == "NIFTY" else 57500,
-                "put_call_ratio": 1.15,
-                "timestamp": datetime.utcnow().isoformat()
-            }
-        }
+        raise HTTPException(status_code=404, detail=f"No volatility surface recorded yet for symbol {symbol.upper()}. Run /api/dhan/options/sync-bigquery to ingest.")
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"status": "fallback", "error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 

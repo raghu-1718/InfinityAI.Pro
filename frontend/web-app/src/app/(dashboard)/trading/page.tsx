@@ -98,8 +98,8 @@ export default function TradingPage() {
   const niftyObj = parsedIndices["13"] || {};
   const bankNiftyObj = parsedIndices["25"] || {};
 
-  const niftyLtp = Number(niftyObj.last_price || niftyObj.ltp || niftyObj.ohlc?.close || 24366.00);
-  const bankNiftyLtp = Number(bankNiftyObj.last_price || bankNiftyObj.ltp || bankNiftyObj.ohlc?.close || 57491.10);
+  const niftyLtp = Number(niftyObj.last_price || niftyObj.ltp || niftyObj.ohlc?.close || 0);
+  const bankNiftyLtp = Number(bankNiftyObj.last_price || bankNiftyObj.ltp || bankNiftyObj.ohlc?.close || 0);
 
   // Phase 6: Live Data Streams
   const uid = (session?.userId && session.userId !== "unknown") ? session.userId : "raghu_primary";

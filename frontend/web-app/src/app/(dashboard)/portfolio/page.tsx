@@ -164,17 +164,17 @@ export default function PortfolioPage() {
   const sensexObj = parsedIndices["51"] || parsedIndices["1"] || indexData["51"] || {};
   const finNiftyObj = parsedIndices["27"] || indexData["27"] || {};
 
-  const niftyLtp = Number(niftyObj.last_price || niftyObj.ltp || niftyObj.ohlc?.close || 24366.00);
-  const niftyChange = niftyObj.ohlc && niftyObj.ohlc.open ? (((niftyLtp - niftyObj.ohlc.open) / niftyObj.ohlc.open) * 100) : -0.12;
+  const niftyLtp = Number(niftyObj.last_price || niftyObj.ltp || niftyObj.ohlc?.close || 0);
+  const niftyChange = niftyObj.ohlc && niftyObj.ohlc.open && niftyLtp > 0 ? (((niftyLtp - niftyObj.ohlc.open) / niftyObj.ohlc.open) * 100) : 0;
 
-  const bankNiftyLtp = Number(bankNiftyObj.last_price || bankNiftyObj.ltp || bankNiftyObj.ohlc?.close || 57491.10);
-  const bankNiftyChange = bankNiftyObj.ohlc && bankNiftyObj.ohlc.open ? (((bankNiftyLtp - bankNiftyObj.ohlc.open) / bankNiftyObj.ohlc.open) * 100) : -0.25;
+  const bankNiftyLtp = Number(bankNiftyObj.last_price || bankNiftyObj.ltp || bankNiftyObj.ohlc?.close || 0);
+  const bankNiftyChange = bankNiftyObj.ohlc && bankNiftyObj.ohlc.open && bankNiftyLtp > 0 ? (((bankNiftyLtp - bankNiftyObj.ohlc.open) / bankNiftyObj.ohlc.open) * 100) : 0;
 
-  const sensexLtp = Number(sensexObj.last_price || sensexObj.ltp || sensexObj.ohlc?.close || 78009.25);
-  const sensexChange = sensexObj.ohlc && sensexObj.ohlc.open ? (((sensexLtp - sensexObj.ohlc.open) / sensexObj.ohlc.open) * 100) : +0.18;
+  const sensexLtp = Number(sensexObj.last_price || sensexObj.ltp || sensexObj.ohlc?.close || 0);
+  const sensexChange = sensexObj.ohlc && sensexObj.ohlc.open && sensexLtp > 0 ? (((sensexLtp - sensexObj.ohlc.open) / sensexObj.ohlc.open) * 100) : 0;
 
-  const finNiftyLtp = Number(finNiftyObj.last_price || finNiftyObj.ltp || finNiftyObj.ohlc?.close || 25680.50);
-  const finNiftyChange = finNiftyObj.ohlc && finNiftyObj.ohlc.open ? (((finNiftyLtp - finNiftyObj.ohlc.open) / finNiftyObj.ohlc.open) * 100) : -0.08;
+  const finNiftyLtp = Number(finNiftyObj.last_price || finNiftyObj.ltp || finNiftyObj.ohlc?.close || 0);
+  const finNiftyChange = finNiftyObj.ohlc && finNiftyObj.ohlc.open && finNiftyLtp > 0 ? (((finNiftyLtp - finNiftyObj.ohlc.open) / finNiftyObj.ohlc.open) * 100) : 0;
 
   return (
     <div className="p-6 space-y-6">
