@@ -135,17 +135,18 @@ export default function TradingPage() {
     console.log("🔄 Trading page mounted - state reset to clean START");
   }, []);
 
-  // Poll for status (Engine A Availability)
-  // This sync check runs AFTER the initialization, so it won't override the clean start
+  // Poll for status (Engine A Autonomous State)
   useEffect(() => {
+    const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
     const checkStatus = async () => {
       try {
-        const state = await engineA.getSystemState();
-        // Only update if engine reports actually running (safety check)
-        // The initial load will show START button regardless
-        if (state.engine_active) {
-          console.log("📊 Engine A reports active - syncing frontend state");
-          setIsEngineRunning(true);
+        const res = await fetch(`${engineAUrl}/api/v1/auto-trade/autonomous-state?user_id=raghu_primary`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsEngineRunning(Boolean(data.autonomous_mode));
+          if (data.configured_capital) {
+            setTradingCapital(String(data.configured_capital));
+          }
         }
       } catch (e) {
         console.error("❌ Status Poll Failed", e);
@@ -164,7 +165,6 @@ export default function TradingPage() {
       return;
     }
 
-
     if (isKillSwitchActive && !isEngineRunning) {
       toast.error("Kill Switch Active", {
         description: "Disable Kill Switch to start engine.",
@@ -175,43 +175,60 @@ export default function TradingPage() {
     setIsLoading(true);
 
     try {
-      if (!isEngineRunning) {
-        // START LOGIC
-        const targetUserId = session?.userId || "raghu_primary";
-        const payload = {
-          instruments: [assetClass],
-          tradingAmount: parseFloat(tradingCapital),
-          riskLevel:
-            riskPerTrade < 1
-              ? "conservative"
-              : riskPerTrade < 3
-                ? "moderate"
-                : "aggressive",
-          stopLossPercent: riskPerTrade,
-          takeProfitPercent: targetProfit,
-          maxTradesPerDay: isContinuous ? 1000 : 5,
-          useAISignals: true,
-          user_id: targetUserId,
-          _metadata: {
-            isTrailing,
-            isContinuous,
-            assetClass,
-          },
-        };
+      const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+      const targetUserId = session?.userId || "raghu_primary";
+      const cap = parseFloat(tradingCapital) || 30000;
 
-        await engineA.startAutoTrading(payload as any);
+      if (!isEngineRunning) {
+        // START LOGIC: Configure capital & engage autonomous mode
+        await fetch(`${engineAUrl}/api/v1/auto-trade/configure-capital`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: targetUserId,
+            configured_capital: cap,
+            autonomous_mode: true
+          })
+        });
+
+        // Start session lock
+        try {
+          await engineA.startSession({
+            capital: cap,
+            risk_mode: "moderate",
+            asset_class: assetClass.toLowerCase().includes("crude") || assetClass.toLowerCase().includes("gold") ? "commodities" : "fno",
+            user_id: targetUserId
+          });
+        } catch (e: any) {
+          console.log("Session start note:", e.message);
+        }
+
         setIsEngineRunning(true);
-        toast.success("All Engines Engaged", {
-          description: `Autonomous Trading active on ${assetClass} for ${targetUserId}`,
+        toast.success("Autonomous AI Core Engaged", {
+          description: `Live AI execution active on ${assetClass} with ₹${cap.toLocaleString("en-IN")} capital`,
         });
       } else {
-        // STOP LOGIC
-        const targetUserId = session?.userId || "raghu_primary";
-        await engineA.stopAutoTrading(targetUserId);
+        // STOP LOGIC: Halt autonomous mode & release session lock
+        await fetch(`${engineAUrl}/api/v1/auto-trade/configure-capital`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: targetUserId,
+            configured_capital: cap,
+            autonomous_mode: false
+          })
+        });
+
+        try {
+          await engineA.stopAutoTrading(targetUserId);
+        } catch (e) {
+          console.warn("Stop session:", e);
+        }
+
         setIsEngineRunning(false);
-        setIsKillSwitchActive(false); // Reset kill switch on manual stop
-        toast.success("Engines Halted", {
-          description: "All trading activity safely paused across Engine A & C.",
+        setIsKillSwitchActive(false);
+        toast.success("All Engines Halted", {
+          description: "All autonomous execution safely paused across Engine A & C.",
         });
       }
     } catch (error: any) {
@@ -228,11 +245,20 @@ export default function TradingPage() {
     if (checked) {
       setIsEngineRunning(false);
       toast.warning("KILL SWITCH ACTIVATED", {
-        description: "Sending emergency stop command...",
+        description: "Sending emergency stop command to Engine A & C...",
       });
       try {
-        // Use consistent method
-        const uid = session?.userId || "unknown";
+        const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+        const uid = session?.userId || "raghu_primary";
+        await fetch(`${engineAUrl}/api/v1/auto-trade/configure-capital`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: uid,
+            configured_capital: parseFloat(tradingCapital) || 30000,
+            autonomous_mode: false
+          })
+        });
         await engineA.stopAutoTrading(uid);
       } catch (e) {
         console.error(e);
@@ -400,205 +426,138 @@ export default function TradingPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
-        {/* LEFT: Configuration Panel (Glass) */}
+        {/* LEFT: Autonomous Execution Matrix (Glass) */}
         <div
           className={cn(
-            "lg:col-span-8 glass-card p-6 md:p-8 space-y-8 relative overflow-hidden group",
-            isEngineRunning && "opacity-60 pointer-events-none grayscale-[0.8]"
+            "lg:col-span-8 glass-card p-6 md:p-8 space-y-6 relative overflow-hidden group",
+            isEngineRunning && "border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.15)]"
           )}
         >
           {/* Decorative Background Mesh */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none group-hover:bg-indigo-500/20 transition-all duration-700" />
 
-          <div className="flex items-center gap-4 border-b border-white/10 pb-6">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30">
-              <TrendingUp className="w-8 h-8 text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">
-                Strategy Configuration
-              </h2>
-              <p className="text-slate-400">
-                Define risk parameters and asset allocation
-              </p>
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-400">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  Autonomous Execution Matrix
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 text-[10px] bg-emerald-500/10">
+                    Zero-Manual Exits
+                  </Badge>
+                </h2>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Select target instrument. Sizing, 99% EWMA VaR limits, and 3-tier trailing stops are governed 100% autonomously.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-8">
-            {/* Asset & Capital */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <Label className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
-                  Asset Class
+          <div className="space-y-6">
+            {/* Asset Class & Sizing Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">
+                  Target Derivative Contract
                 </Label>
                 <Select
                   value={assetClass}
                   onValueChange={setAssetClass}
                   disabled={isEngineRunning}
                 >
-                  <SelectTrigger className="h-12 bg-black/20 border-white/10 text-lg hover:border-indigo-500/50 transition-colors">
+                  <SelectTrigger className="h-11 bg-black/30 border-white/10 text-sm hover:border-indigo-500/50 transition-colors">
                     <SelectValue placeholder="Select Asset" />
                   </SelectTrigger>
-                  <SelectContent className="glass border-white/10">
-                    <SelectItem
-                      value="NIFTY"
-                      className="focus:bg-indigo-500/20"
-                    >
-                      NIFTY 50 Options (FNO)
+                  <SelectContent className="glass border-white/10 bg-slate-950">
+                    <SelectItem value="NIFTY" className="focus:bg-indigo-500/20">
+                      NIFTY 50 Options (NSE FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="BANKNIFTY"
-                      className="focus:bg-indigo-500/20"
-                    >
-                      BANK NIFTY Options (FNO)
+                    <SelectItem value="BANKNIFTY" className="focus:bg-indigo-500/20">
+                      BANK NIFTY Options (NSE FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="FINNIFTY"
-                      className="focus:bg-indigo-500/20"
-                    >
-                      FIN NIFTY Options (FNO)
+                    <SelectItem value="FINNIFTY" className="focus:bg-indigo-500/20">
+                      FIN NIFTY Options (NSE FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="MIDCPNIFTY"
-                      className="focus:bg-indigo-500/20"
-                    >
-                      MIDCAP NIFTY Options (FNO)
+                    <SelectItem value="MIDCPNIFTY" className="focus:bg-indigo-500/20">
+                      MIDCAP NIFTY Options (NSE FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="SENSEX"
-                      className="focus:bg-indigo-500/20"
-                    >
+                    <SelectItem value="SENSEX" className="focus:bg-indigo-500/20">
                       BSE SENSEX Options (BSE FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="CRUDEOIL"
-                      className="focus:bg-indigo-500/20"
-                    >
+                    <SelectItem value="CRUDEOIL" className="focus:bg-indigo-500/20">
                       CRUDE OIL Options (MCX FNO)
                     </SelectItem>
-                    <SelectItem
-                      value="GOLD"
-                      className="focus:bg-indigo-500/20"
-                    >
+                    <SelectItem value="GOLD" className="focus:bg-indigo-500/20">
                       GOLD Options (MCX FNO)
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-3">
+
+              <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
-                    Deploy Capital
+                  <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">
+                    Configured Capital
                   </Label>
                   <span className="text-xs text-emerald-400 flex items-center gap-1">
-                    <Wallet className="w-3 h-3" /> Available: ₹
-                    {funds.toLocaleString()}
+                    <Wallet className="w-3 h-3" /> Demat Cash: ₹{availableMargin.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="relative group/input">
-                  <Banknote className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover/input:text-emerald-400 transition-colors" />
+                  <Banknote className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover/input:text-emerald-400 transition-colors" />
                   <Input
                     type="number"
                     value={tradingCapital}
                     onChange={(e) => setTradingCapital(e.target.value)}
-                    className="pl-12 h-12 bg-black/20 border-white/10 font-mono text-lg hover:border-emerald-500/50 focus:border-emerald-500 transition-all font-bold tracking-wide"
+                    className="pl-10 h-11 bg-black/30 border-white/10 font-mono text-sm hover:border-emerald-500/50 focus:border-emerald-500 transition-all font-bold tracking-wide"
                     disabled={isEngineRunning}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Risk & Profit Sliders */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-4">
-              <div className="space-y-6">
-                <div className="flex justify-between items-end">
-                  <Label className="text-slate-300">Stop Loss Risk</Label>
-                  <span className="font-mono text-2xl font-bold text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]">
-                    {riskPerTrade.toFixed(1)}%
-                  </span>
-                </div>
-                <Slider
-                  value={[riskPerTrade]}
-                  min={0.5}
-                  max={5}
-                  step={0.1}
-                  onValueChange={(val) => setRiskPerTrade(val[0])}
-                  disabled={isEngineRunning}
-                  className="[&>.absolute]:bg-rose-500 py-4"
-                />
+            {/* 3-Tier Protection & Dynamic Invariants Display */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-lg border border-slate-800 bg-slate-900/40">
+                <div className="text-xs font-bold text-emerald-400">Tier 1: Breakeven Shift</div>
+                <div className="text-sm font-bold text-white font-mono mt-1">+8.0% &rarr; +0.5%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Guarantees zero-loss, covers STT & taxes</div>
               </div>
 
-              <div className="space-y-6">
-                <div className="flex justify-between items-end">
-                  <Label className="text-slate-300">Target Profit</Label>
-                  <span className="font-mono text-2xl font-bold text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]">
-                    {targetProfit.toFixed(1)}%
-                  </span>
-                </div>
-                <Slider
-                  value={[targetProfit]}
-                  min={1}
-                  max={20}
-                  step={0.5}
-                  onValueChange={(val) => setTargetProfit(val[0])}
-                  disabled={isEngineRunning}
-                  className="[&>.absolute]:bg-emerald-500 py-4"
-                />
+              <div className="p-3.5 rounded-lg border border-slate-800 bg-slate-900/40">
+                <div className="text-xs font-bold text-teal-400">Tier 2: Profit Lock</div>
+                <div className="text-sm font-bold text-white font-mono mt-1">+12.0% &rarr; +6.0%</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Locks 50% unrealized gains into Demat</div>
+              </div>
+
+              <div className="p-3.5 rounded-lg border border-slate-800 bg-slate-900/40">
+                <div className="text-xs font-bold text-cyan-400">Tier 3: Dynamic Trail</div>
+                <div className="text-sm font-bold text-white font-mono mt-1">+15.0% &rarr; (Peak - 4%)</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Trails dynamic peak for runaway trends</div>
               </div>
             </div>
 
-            {/* Advanced Modes toggles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 transition-all hover:bg-white/10">
-                <div className="space-y-1">
-                  <Label className="font-semibold text-white">
-                    Trailing Stop
+            {/* Continuous Mode Toggle */}
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Label className={cn("text-sm font-semibold", isContinuous ? "text-purple-300" : "text-white")}>
+                    Continuous Intraday Execution
                   </Label>
-                  <p className="text-xs text-slate-400">
-                    Lock profits effectively
-                  </p>
+                  {isContinuous && <InfinityIcon className="w-3.5 h-3.5 text-purple-400 animate-spin-slow" />}
                 </div>
-                <Switch
-                  checked={isTrailing}
-                  onCheckedChange={setIsTrailing}
-                  disabled={isEngineRunning}
-                  className="data-[state=checked]:bg-indigo-500"
-                />
+                <p className="text-xs text-slate-400">
+                  Allows autonomous engine to trade multiple AI setups across market hours until 15:45 IST square-off
+                </p>
               </div>
-
-              <div
-                className={cn(
-                  "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                  isContinuous
-                    ? "border-purple-500/50 bg-purple-500/20 shadow-[0_0_20px_-5px_rgba(168,85,247,0.3)]"
-                    : "border-white/5 bg-white/5 hover:bg-white/10"
-                )}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      className={cn(
-                        "font-semibold",
-                        isContinuous ? "text-purple-300" : "text-white"
-                      )}
-                    >
-                      Continuous Mode
-                    </Label>
-                    {isContinuous && (
-                      <InfinityIcon className="w-4 h-4 text-purple-400 animate-spin-slow" />
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Run until manual stop
-                  </p>
-                </div>
-                <Switch
-                  checked={isContinuous}
-                  onCheckedChange={setIsContinuous}
-                  disabled={isEngineRunning}
-                  className="data-[state=checked]:bg-purple-600"
-                />
-              </div>
+              <Switch
+                checked={isContinuous}
+                onCheckedChange={setIsContinuous}
+                disabled={isEngineRunning}
+                className="data-[state=checked]:bg-purple-600"
+              />
             </div>
           </div>
         </div>

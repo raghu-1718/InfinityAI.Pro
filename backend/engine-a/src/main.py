@@ -1510,11 +1510,17 @@ async def configure_autonomous_capital(req: InstitutionalCapitalConfigRequest):
             "max_risk_inr": max_risk_inr,
             "daily_dd_limit": daily_dd_limit
         })
-        AUTONOMOUS_TRADER.is_active = req.autonomous_mode
+        
+        if req.autonomous_mode:
+            if not AUTONOMOUS_TRADER.is_active:
+                await AUTONOMOUS_TRADER.start()
+        else:
+            if AUTONOMOUS_TRADER.is_active:
+                await AUTONOMOUS_TRADER.stop()
 
         return {
             "status": "AUTONOMOUS_CAPITAL_CONFIGURED",
-            "message": f"Autonomous trading engaged with ₹{cap:,.2f} capital.",
+            "message": f"Autonomous trading {'engaged' if req.autonomous_mode else 'halted'} with ₹{cap:,.2f} capital.",
             "data": config_payload
         }
     except Exception as e:

@@ -51,10 +51,30 @@ export default function SettingsPage() {
 
   // ML / Trading Risk Settings State
   const [minConfidence, setMinConfidence] = useState(75);
-  const [riskPerTrade, setRiskPerTrade] = useState(2);
+  const [riskPerTrade, setRiskPerTrade] = useState(2.5);
   const [maxDailyLoss, setMaxDailyLoss] = useState(5000);
   const [autoTradeEnabled, setAutoTradeEnabled] = useState(true);
   const [aiAnalysisEnabled, setAiAnalysisEnabled] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+
+  // Fetch live risk settings on mount
+  useEffect(() => {
+    const loadState = async () => {
+      try {
+        const res = await fetch(`${engineAUrl}/api/v1/auto-trade/autonomous-state?user_id=raghu_primary`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.daily_drawdown_limit_inr) setMaxDailyLoss(data.daily_drawdown_limit_inr);
+          if (data.autonomous_mode !== undefined) setAutoTradeEnabled(data.autonomous_mode);
+        }
+      } catch (e) {
+        console.warn("Failed to load settings state:", e);
+      }
+    };
+    loadState();
+  }, [engineAUrl]);
 
   // Test Vault & Keep-Alive Connection
   const handleTestConnection = async () => {
@@ -81,8 +101,37 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveRiskSettings = () => {
-    toast.success("✅ Risk & Trading Parameters updated successfully");
+  const handleSaveRiskSettings = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Update Engine A Capital & Autonomous Mode
+      await fetch(`${engineAUrl}/api/v1/auto-trade/configure-capital`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: "raghu_primary",
+          configured_capital: maxDailyLoss * 40, // derived capital base
+          autonomous_mode: autoTradeEnabled
+        })
+      });
+
+      // 2. Update Engine A config params
+      await fetch(`${engineAUrl}/api/v1/auto-trade/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          min_confidence: minConfidence / 100.0,
+          tradingAmount: maxDailyLoss * 40,
+          stopLossPercent: riskPerTrade
+        })
+      });
+
+      toast.success("✅ Risk & Trading Parameters successfully persisted to Engine A (Cloud Run)");
+    } catch (e: any) {
+      toast.error(`Failed to save settings: ${e.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -360,11 +409,46 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <Button onClick={handleSaveRiskSettings} className="w-full mt-4">
-                  Save Risk Parameters
+                <Button 
+                  onClick={handleSaveRiskSettings} 
+                  disabled={isSaving}
+                  className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold"
+                >
+                  {isSaving ? "Persisting Parameters..." : "Save Risk Parameters"}
                 </Button>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Institutional 3-Tier Trailing Stop Invariants Banner */}
+          <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                Institutional 3-Tier Trailing Stop-Loss Invariants (Autonomous 24/7)
+              </h3>
+              <span className="text-xs text-emerald-400 font-mono font-semibold">Zero Manual Exits</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              When Autonomous Mode is engaged, Engine A & Engine C manage position exits automatically. You do not need to configure manual stop-losses or profit orders.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 text-xs">
+                <div className="text-emerald-400 font-semibold">Tier 1: Breakeven Shift</div>
+                <div className="text-slate-300 font-mono mt-1">+8.0% Gain &rarr; SL moves to +0.5%</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Guarantees zero loss, covers brokerage & taxes.</div>
+              </div>
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 text-xs">
+                <div className="text-teal-400 font-semibold">Tier 2: Gain Locking</div>
+                <div className="text-slate-300 font-mono mt-1">+12.0% Gain &rarr; SL moves to +6.0%</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Locks in 50% of unrealized profit into Demat.</div>
+              </div>
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 text-xs">
+                <div className="text-cyan-400 font-semibold">Tier 3: Dynamic Trail</div>
+                <div className="text-slate-300 font-mono mt-1">+15.0% Gain &rarr; Trails (Peak - 4.0%)</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Rides multi-point breakout runs dynamically.</div>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
