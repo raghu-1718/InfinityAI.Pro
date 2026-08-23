@@ -60,11 +60,20 @@ class PreMarketBriefingService:
         dii_net = 940.0
         macro_bias = "BULLISH" if (gift_points > 0 and fii_net > 0) else "NEUTRAL"
 
+        # 2026 Expiry Context: Tuesday for NSE, Thursday for BSE
+        weekday = ist_time.weekday()
+        if weekday == 1:
+            expiry_comment = " ⚡ [NSE WEEKLY EXPIRY TODAY - TUESDAY]: Expect elevated late-afternoon gamma and dynamic theta damping post 13:00 IST."
+        elif weekday == 3:
+            expiry_comment = " ⚡ [BSE WEEKLY EXPIRY TODAY - THURSDAY]: SENSEX & BANKEX weekly settlement active."
+        else:
+            expiry_comment = ""
+
         gemini_synthesis = (
             f"GIFT Nifty indicates a constructive opening with a +{gift_points:.0f} pt gap expectation. "
             f"Brent Crude remains benign at {crude_pct:+.2f}%, easing fiscal pressure. "
             f"FIIs turned net buyers (+₹{fii_net:,.0f} Cr) supported by strong DII liquidity (+₹{dii_net:,.0f} Cr). "
-            f"Opening bias is favorable for Option Buying on Call dips above 24,200 support."
+            f"Opening bias is favorable for Option Buying on Call dips above 24,200 support.{expiry_comment}"
         )
 
         report = {
@@ -85,7 +94,7 @@ class PreMarketBriefingService:
             "institutional_flow_bias": "NET_INFLOW",
             "gemini_macro_synthesis": gemini_synthesis,
             "recommended_opening_bias": "BUY_ON_DIPS",
-            "risk_regime": "LOW_VOLATILITY"
+            "risk_regime": "EXPIRY_DAY_VOLATILITY" if weekday in (1, 3) else "LOW_VOLATILITY"
         }
 
         # 2. Commit to Firestore

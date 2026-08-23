@@ -291,7 +291,15 @@ class MLModelManager:
             if model is None:
                 continue
             try:
-                proba = model.predict_proba(X_scaled)
+                # Handle feature dimension mismatch (e.g. 18 vs 20)
+                n_feats = getattr(model, 'n_features_', getattr(model, 'n_features_in_', X_scaled.shape[1]))
+                if X_scaled.shape[1] > n_feats:
+                    X_input = X_scaled[:, :n_feats]
+                elif X_scaled.shape[1] < n_feats:
+                    X_input = np.pad(X_scaled, ((0, 0), (0, n_feats - X_scaled.shape[1])), mode='constant')
+                else:
+                    X_input = X_scaled
+                proba = model.predict_proba(X_input)
                 if proba.shape[1] == 3:
                     probas[name] = proba.astype(np.float32)
             except Exception as e:

@@ -46,7 +46,7 @@ steps:
         "--subnet",
         "default",
         "--vpc-egress",
-        "all-traffic",
+        "private-ranges-only",
         "--allow-unauthenticated",
         "--memory",
         "1Gi",

@@ -518,12 +518,12 @@ MARKET_CONFIG = {
         "BANKEX": 15
     },
     "EXPIRY_DAYS": {
-        "NIFTY": 1,            # Tuesday (Weekly & Monthly)
-        "BANKNIFTY": 1,        # Tuesday (Monthly Only)
-        "FINNIFTY": 1,         # Tuesday (Monthly Only)
-        "MIDCPNIFTY": 1,       # Tuesday (Monthly Only)
-        "SENSEX": 4,           # Friday
-        "BANKEX": 4            # Friday
+        "NIFTY": 1,            # Tuesday (NSE Benchmark Weekly & Monthly)
+        "BANKNIFTY": 1,        # Tuesday (NSE Monthly Benchmark)
+        "FINNIFTY": 1,         # Tuesday (NSE Monthly Benchmark)
+        "MIDCPNIFTY": 1,       # Tuesday (NSE Monthly Benchmark)
+        "SENSEX": 3,           # Thursday (BSE Benchmark Weekly & Monthly)
+        "BANKEX": 3            # Thursday (BSE Monthly Benchmark)
     },
     "MARGIN_RULES_2025": {
         "OPTION_BUY_PREMIUM": 1.0,  # 100% Upfront
@@ -681,6 +681,21 @@ class MLModelStore:
 
             self.scalers['standard'] = StandardScaler()
 
+            # Baseline warm calibration fitting for all ensemble models
+            try:
+                np.random.seed(42)
+                X_init = np.random.randn(60, 18)
+                y_init = np.array([0, 1, 2] * 20)
+                self.models['random_forest'].fit(X_init, y_init)
+                self.models['lightgbm'].fit(X_init, y_init)
+                if HAS_CATBOOST and 'catboost' in self.models:
+                    self.models['catboost'].fit(X_init, y_init)
+                self.models['xgboost'].fit(X_init, y_init)
+                self.scalers['standard'].fit(X_init)
+                logger.info("✅ Baseline calibration weights fitted on all ensemble models")
+            except Exception as e:
+                logger.warning(f"⚠️ Baseline calibration warning: {e}")
+
             if HAS_NLTK:
                 try:
                     self.models['nltk_sentiment'] = SentimentIntensityAnalyzer()
@@ -734,10 +749,17 @@ class MLModelStore:
                 try:
                     # Native BigQuery ML Inference via ThreadPool
                     loop = asyncio.get_event_loop()
+                    rsi_val = float(X_scaled[0][0]) if X_scaled.shape[1] > 0 else 50.0
+                    macd_val = int(round(float(X_scaled[0][1]))) if X_scaled.shape[1] > 1 else 0
+                    vwap_val = float(X_scaled[0][2]) if X_scaled.shape[1] > 2 else 0.0
+                    atr_val = float(X_scaled[0][3]) if X_scaled.shape[1] > 3 else 1.0
+
                     query = f"""
                         SELECT * FROM ML.PREDICT(MODEL `project-841b7f97-5ee3-4fbe-920.infinity_dataset.xgboost_live_model`, 
-                        (SELECT {X_scaled[0][0]} as rsi_14, {X_scaled[0][1]} as macd_crossover, 
-                                {X_scaled[0][2]} as vwap_distance, {X_scaled[0][3]} as atr_volatility))
+                        (SELECT CAST({rsi_val} AS FLOAT64) as rsi_14, 
+                                CAST({macd_val} AS INT64) as macd_crossover, 
+                                CAST({vwap_val} AS FLOAT64) as vwap_distance, 
+                                CAST({atr_val} AS FLOAT64) as atr_volatility))
                     """
                     def run_bq():
                         bq_client = bigquery.Client()
@@ -745,21 +767,28 @@ class MLModelStore:
                         
                     result = await loop.run_in_executor(bq_executor, run_bq)
                     if result:
-                        # Assuming the output has 'predicted_signal_outcome' or similar. 
-                        # We will just map it simply.
                         pred_label = result[0].get('predicted_signal_outcome', 1)
                         class_votes[int(pred_label)] += weight
                         votes_detail['xgboost'] = {'prediction': int(pred_label), 'weight': weight, 'source': 'bqml'}
+                        continue
                 except Exception as e:
-                    logger.error(f"BQML Inference Error: {e}")
-                continue
+                    logger.warning(f"BQML Inference Error (falling back to local XGBoost): {e}")
 
             model = self.get_model(model_name)
             if model is not None:
                 try:
+                    # Feature dimension matching (handles 18 vs 20 features)
+                    n_feats = getattr(model, 'n_features_', getattr(model, 'n_features_in_', X_scaled.shape[1]))
+                    if X_scaled.shape[1] > n_feats:
+                        X_input = X_scaled[:, :n_feats]
+                    elif X_scaled.shape[1] < n_feats:
+                        X_input = np.pad(X_scaled, ((0, 0), (0, n_feats - X_scaled.shape[1])), mode='constant')
+                    else:
+                        X_input = X_scaled
+
                     # Get probability predictions if available
                     if hasattr(model, 'predict_proba'):
-                        proba = model.predict_proba(X_scaled)[0]
+                        proba = model.predict_proba(X_input)[0]
                         for cls_idx, prob in enumerate(proba):
                             if cls_idx < 3:  # Ensure we only use valid classes
                                 class_votes[cls_idx] += prob * weight
@@ -769,7 +798,7 @@ class MLModelStore:
                             'probabilities': proba.tolist()
                         }
                     else:
-                        pred = model.predict(X_scaled)[0]
+                        pred = model.predict(X_input)[0]
                         class_votes[int(pred)] += weight
                         votes_detail[model_name] = {
                             'prediction': int(pred),

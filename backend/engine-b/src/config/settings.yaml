@@ -12,9 +12,10 @@ india:
     NSE: {open: "08:55", close: "15:45"}
     BSE: {open: "08:55", close: "15:45"}
   expiry_rules_2026:
-    expiry_day: "Tuesday"
-    weekly_indices: ["NIFTY"]
-    monthly_indices: ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
+    nse_expiry_day: "Tuesday"
+    bse_expiry_day: "Thursday"
+    weekly_indices: ["NIFTY", "SENSEX"]
+    monthly_indices: ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX"]
   lot_sizes:
     NIFTY: 65
     BANKNIFTY: 30

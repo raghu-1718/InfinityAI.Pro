@@ -196,7 +196,7 @@ Key Indian Market Regulatory Context (as grounding corpus):
 - SEBI (Securities and Exchange Board of India): Market regulator for NSE/BSE/MCX.
 - FII/FPI: Foreign Institutional Investors / Foreign Portfolio Investors.
   Net FII flow is critical: sustained outflows = bearish for NIFTY.
-- NSE Expiry: Every Thursday (weekly), Last Thursday of month (monthly).
+- 2026 Expiry Schedule: NSE (NIFTY 50, BANKNIFTY, FINNIFTY, MIDCPNIFTY) derivatives expire on Tuesday. BSE (SENSEX, BANKEX) derivatives expire on Thursday. MCX Commodity (Crude Oil) expires on Friday.
 - Taxation: STT on F&O, LTCG/STCG on equity.
 - Key Economic Events: RBI MPC, Union Budget (Feb 1), GST data (monthly),
   IIP/CPI/WPI data, US Fed meetings, crude oil prices.

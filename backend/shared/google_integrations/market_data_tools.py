@@ -814,12 +814,14 @@ def _get_next_expiry(symbol: str) -> str:
     """Get next expiry date for given symbol."""
     today = datetime.now()
 
-    # Weekly expiry days
+    # Weekly & Monthly expiry days (2026 Mandate: NSE=Tuesday, BSE=Thursday)
     expiry_days = {
-        "NIFTY": 3,      # Thursday
-        "BANKNIFTY": 2,  # Wednesday
-        "FINNIFTY": 1,   # Tuesday
-        "MIDCPNIFTY": 0  # Monday
+        "NIFTY": 1,      # Tuesday (NSE Benchmark Weekly & Monthly)
+        "SENSEX": 3,     # Thursday (BSE Benchmark Weekly & Monthly)
+        "BANKNIFTY": 1,  # Tuesday (NSE Monthly)
+        "FINNIFTY": 1,   # Tuesday (NSE Monthly)
+        "MIDCPNIFTY": 1, # Tuesday (NSE Monthly)
+        "BANKEX": 3      # Thursday (BSE Monthly)
     }
 
     symbol_upper = symbol.upper()
@@ -828,7 +830,7 @@ def _get_next_expiry(symbol: str) -> str:
     elif symbol_upper in ["BANKNIFTY", "NIFTYBANK"]:
         symbol_upper = "BANKNIFTY"
 
-    target_day = expiry_days.get(symbol_upper, 3)
+    target_day = expiry_days.get(symbol_upper, 1)
 
     days_ahead = target_day - today.weekday()
     if days_ahead <= 0:
