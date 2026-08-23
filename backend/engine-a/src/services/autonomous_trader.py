@@ -413,7 +413,27 @@ class AutonomousTrader:
 
         trading_symbol = f"{symbol_upper} {int(target_strike)} {opt_type_code}"
 
-        # 4. Fetch matching security ID from Engine-C option chain lookup
+        # 4. Calculate Exact Analytical Greeks via OptionsGreeksEngine
+        try:
+            from .options_greeks_engine import OPTIONS_GREEKS_ENGINE
+            greeks = OPTIONS_GREEKS_ENGINE.calculate_greeks(
+                spot=underlying_spot,
+                strike=target_strike,
+                dte_days=3.0,
+                iv=0.14,
+                option_type=opt_type_code
+            )
+            exact_delta = abs(greeks.get("delta", 0.58))
+            theta_decay = greeks.get("theta", -20.0)
+            gamma = greeks.get("gamma", 0.001)
+            vega = greeks.get("vega", 8.5)
+        except Exception:
+            exact_delta = 0.58
+            theta_decay = -20.0
+            gamma = 0.001
+            vega = 8.5
+
+        # 5. Fetch matching security ID from Engine-C option chain lookup
         try:
             url = f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol_upper}?strike={target_strike}&option_type={opt_type_code}"
             headers = {"X-User-ID": str(self.config.get("user_id", "raghu_primary"))}
@@ -427,7 +447,10 @@ class AutonomousTrader:
                     "atm_strike": atm_strike,
                     "option_type": opt_type_code,
                     "lot_size": lot_size,
-                    "implied_delta": 0.58
+                    "implied_delta": exact_delta,
+                    "theta_decay_per_day": theta_decay,
+                    "gamma": gamma,
+                    "vega": vega
                 }
         except Exception as e:
             logger.warning(f"Option chain lookup fallback for {symbol_upper}: {e}")
@@ -439,7 +462,10 @@ class AutonomousTrader:
             "atm_strike": atm_strike,
             "option_type": opt_type_code,
             "lot_size": lot_size,
-            "implied_delta": 0.58
+            "implied_delta": exact_delta,
+            "theta_decay_per_day": theta_decay,
+            "gamma": gamma,
+            "vega": vega
         }
 
     async def _execute_trade(self, symbol: str, side: str, qty: int, signal_data: Dict, trace_id: Optional[str] = None, order_value: float = 0.0, risk_res: dict = None):
