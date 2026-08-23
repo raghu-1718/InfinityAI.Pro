@@ -108,6 +108,27 @@ class ShadowSignalLogger:
         )
         tax_cost = charges.get("grand_total_charges", 55.0)
 
+        # Expected P&L metrics based on system capability (1 Standard SEBI Lot)
+        capital_required = round(est_premium * actual_lot_size, 2)
+        expected_target_gross = round((target_prem - est_premium) * actual_lot_size, 2)
+        expected_target_net = round(expected_target_gross - tax_cost, 2)
+        max_loss_gross = round((stop_loss_prem - est_premium) * actual_lot_size, 2)
+        max_loss_net = round(max_loss_gross - tax_cost, 2)
+        expected_roi_pct = round((expected_target_net / capital_required * 100), 2) if capital_required > 0 else 0.0
+
+        expected_pnl_payload = {
+            "expected_profit_target_gross": expected_target_gross,
+            "expected_profit_target_net": expected_target_net,
+            "expected_profit_target_pct": round(target_pct * 100, 1),
+            "max_loss_stop_loss_gross": max_loss_gross,
+            "max_loss_stop_loss_net": max_loss_net,
+            "max_loss_stop_loss_pct": round(-stop_loss_pct * 100, 1),
+            "system_capital_required": capital_required,
+            "expected_roi_on_capital_pct": expected_roi_pct,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE"
+        }
+
         payload = {
             "signal_id": signal_id,
             "timestamp_utc": now_utc.isoformat(),
@@ -137,6 +158,10 @@ class ShadowSignalLogger:
                 "risk_reward": "1:1.25 (Trailing)",
                 "lot_size": actual_lot_size
             },
+            "expected_pnl": expected_pnl_payload,
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_net_pnl": 0.0,
+            "current_mtm_roi_pct": 0.0,
             "execution_mode": "SHADOW_OBSERVATION",
             "outcome_status": "OPEN",
             "estimated_tax_brokerage": tax_cost,
@@ -148,11 +173,45 @@ class ShadowSignalLogger:
 
         try:
             self.db.collection(COLLECTION_NAME).document(signal_id).set(payload)
-            logger.info(f"✅ Shadow Signal committed to Firestore: [{signal_id}] -> {decision} on {symbol}")
+            logger.info(f"✅ Shadow Signal committed to Firestore: [{signal_id}] -> {decision} on {symbol} (Exp Net PnL: ₹{expected_target_net:+})")
             return payload
         except Exception as e:
             logger.error(f"❌ Failed to write shadow signal to Firestore: {e}")
             return None
+
+    def update_open_signals_mtm(self, current_spot_prices: Dict[str, float]) -> Dict[str, Any]:
+        """
+        Scans all OPEN shadow signals, recalculates live MTM PnL based on current spot prices,
+        and triggers auto-resolution if targets or stops are hit.
+        """
+        if not self.db or not current_spot_prices:
+            return {"updated": 0, "resolved": 0}
+
+        try:
+            open_docs = list(self.db.collection(COLLECTION_NAME).where("outcome_status", "==", "OPEN").stream())
+            updated_count = 0
+            resolved_count = 0
+
+            for doc in open_docs:
+                data = doc.to_dict()
+                sig_id = data.get("signal_id", doc.id)
+                symbol = data.get("symbol", "").upper()
+                current_spot = current_spot_prices.get(symbol)
+
+                if not current_spot or current_spot <= 0:
+                    continue
+
+                res = self.resolve_signal_outcome(sig_id, current_spot)
+                if res:
+                    if res.get("outcome_status") != "OPEN":
+                        resolved_count += 1
+                    else:
+                        updated_count += 1
+
+            return {"updated": updated_count, "resolved": resolved_count}
+        except Exception as e:
+            logger.error(f"Error updating open signals MTM: {e}")
+            return {"updated": 0, "resolved": 0, "error": str(e)}
 
     def resolve_signal_outcome(
         self,
@@ -161,7 +220,8 @@ class ShadowSignalLogger:
         is_eod_squareoff: bool = False
     ) -> Optional[Dict[str, Any]]:
         """
-        Checks open signal and updates outcome (TARGET_HIT, STOP_LOSS_HIT, or EOD_SQUAREOFF).
+        Checks open signal and updates outcome (TARGET_HIT, STOP_LOSS_HIT, or EOD_SQUAREOFF),
+        or computes live Mark-to-Market (MTM) PnL if still OPEN.
         """
         if not self.db:
             return None
@@ -205,13 +265,15 @@ class ShadowSignalLogger:
         elif is_eod_squareoff:
             outcome_status = "EOD_SQUAREOFF"
 
+        capital_required = entry_prem * lot_size
+        gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
+        net_pnl = gross_pnl - tax_cost
+        roi_pct = (net_pnl / capital_required * 100) if capital_required > 0 else 0.0
+
+        now_utc = datetime.now(timezone.utc)
+        ist_time = now_utc + timedelta(hours=5, minutes=30)
+
         if outcome_status != "OPEN":
-            gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
-            net_pnl = gross_pnl - tax_cost
-            
-            now_utc = datetime.now(timezone.utc)
-            ist_time = now_utc + timedelta(hours=5, minutes=30)
-            
             updates = {
                 "outcome_status": outcome_status,
                 "exit_premium": round(simulated_exit_prem, 2),
@@ -219,10 +281,20 @@ class ShadowSignalLogger:
                 "net_pnl": round(net_pnl, 2),
                 "resolved_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
             }
-            
             doc_ref.update(updates)
             logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} | Net PnL: ₹{net_pnl:+.2f}")
             data.update(updates)
             return data
-
-        return data
+        else:
+            # Update live Mark-to-Market (MTM)
+            updates = {
+                "current_mtm_spot": round(current_spot, 2),
+                "current_mtm_premium": round(simulated_exit_prem, 2),
+                "current_mtm_gross_pnl": round(gross_pnl, 2),
+                "current_mtm_net_pnl": round(net_pnl, 2),
+                "current_mtm_roi_pct": round(roi_pct, 2),
+                "last_mtm_updated_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
+            }
+            doc_ref.update(updates)
+            data.update(updates)
+            return data

@@ -98,10 +98,25 @@ async def lifespan(app: FastAPI):
     # Start Autonomous Trader
     await AUTONOMOUS_TRADER.start()
 
+    # Start Autonomous Continuous Shadow Telemetry Scanner (24/7 Signal & Expected PnL Tracker)
+    try:
+        from src.services.autonomous_shadow_scanner import AUTONOMOUS_SHADOW_SCANNER
+        await AUTONOMOUS_SHADOW_SCANNER.start()
+        logger.info("✅ Autonomous Shadow Scanner initialized (24/7 signal & PnL tracking)")
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to start Autonomous Shadow Scanner: {e}")
+
     yield  # App is running
 
     # Shutdown
     logger.info("🛑 Engine A shutting down...")
+
+    # Stop Autonomous Shadow Scanner
+    try:
+        from src.services.autonomous_shadow_scanner import AUTONOMOUS_SHADOW_SCANNER
+        await AUTONOMOUS_SHADOW_SCANNER.stop()
+    except Exception:
+        pass
 
     # Stop Autonomous Trader
     await AUTONOMOUS_TRADER.stop()
@@ -1801,6 +1816,54 @@ async def get_shadow_signals(limit: int = 50, month: Optional[str] = None):
     except Exception as e:
         logger.error(f"Error fetching shadow signals: {e}")
         return {"status": "error", "message": str(e), "signals": [], "summary": {}}
+
+
+@app.post("/api/v1/shadow-signals/scan-now")
+async def trigger_shadow_scan_now():
+    """
+    Manually triggers an immediate market radar scan and logs signals with expected PnL to Firestore.
+    """
+    try:
+        from src.services.autonomous_shadow_scanner import AUTONOMOUS_SHADOW_SCANNER
+        res = await AUTONOMOUS_SHADOW_SCANNER.scan_once()
+        return {"status": "success", "result": res}
+    except Exception as e:
+        logger.error(f"Manual shadow scan failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/v1/shadow-signals/reconcile-outcomes")
+async def reconcile_shadow_outcomes(req: Optional[Dict[str, Any]] = None):
+    """
+    Reconciles open shadow signals against current spot prices and resolves targets/stops.
+    """
+    try:
+        from src.services.shadow_signal_logger import ShadowSignalLogger
+        logger_svc = ShadowSignalLogger()
+        spot_prices = (req or {}).get("spot_prices")
+        if not spot_prices:
+            import httpx
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(f"{ENGINE_C_URL}/api/dhan/market/quotes")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    items = data.get("data", []) if isinstance(data, dict) else []
+                    spot_prices = {}
+                    for it in items:
+                        sym = it.get("trading_symbol", "").upper()
+                        ltp = float(it.get("ltp", 0.0))
+                        if ltp > 0:
+                            if "NIFTY 50" in sym or sym == "NIFTY": spot_prices["NIFTY"] = ltp
+                            elif "BANKNIFTY" in sym or sym == "BANK NIFTY": spot_prices["BANKNIFTY"] = ltp
+                            elif "FINNIFTY" in sym: spot_prices["FINNIFTY"] = ltp
+                            elif "MIDCP" in sym: spot_prices["MIDCPNIFTY"] = ltp
+                            elif "SENSEX" in sym: spot_prices["SENSEX"] = ltp
+
+        res = logger_svc.update_open_signals_mtm(spot_prices or {})
+        return {"status": "success", "result": res}
+    except Exception as e:
+        logger.error(f"Shadow outcome reconciliation failed: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 @app.post("/api/v1/eod-settlement")
