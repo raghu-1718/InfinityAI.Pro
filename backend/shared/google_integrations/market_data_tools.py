@@ -833,11 +833,23 @@ def _get_next_expiry(symbol: str) -> str:
     target_day = expiry_days.get(symbol_upper, 1)
 
     days_ahead = target_day - today.weekday()
-    if days_ahead <= 0:
+    if days_ahead < 0:
         days_ahead += 7
 
-    next_expiry = today + timedelta(days=days_ahead)
-    return next_expiry.strftime("%Y-%m-%d")
+    scheduled_expiry = (today + timedelta(days=days_ahead)).date()
+
+    # 2026 Official Holiday Set
+    holidays_2026 = {
+        "2026-01-26", "2026-03-03", "2026-03-26", "2026-03-31", "2026-04-03",
+        "2026-04-14", "2026-05-01", "2026-05-28", "2026-06-26", "2026-09-14",
+        "2026-10-02", "2026-10-20", "2026-11-10", "2026-11-24", "2026-12-25"
+    }
+
+    # Backward shift for market holidays
+    while scheduled_expiry.strftime("%Y-%m-%d") in holidays_2026 or scheduled_expiry.weekday() >= 5:
+        scheduled_expiry -= timedelta(days=1)
+
+    return scheduled_expiry.strftime("%Y-%m-%d")
 
 
 # =====================================================================
