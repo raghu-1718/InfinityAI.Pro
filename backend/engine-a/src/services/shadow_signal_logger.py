@@ -8,11 +8,20 @@ without requiring manual trading execution or live capital risk.
 import os
 import time
 import json
+import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
 
 from google.cloud import firestore
+
+try:
+    from .alert_dispatcher import ALERT_DISPATCHER
+except Exception:
+    try:
+        from src.services.alert_dispatcher import ALERT_DISPATCHER
+    except Exception:
+        ALERT_DISPATCHER = None
 
 try:
     from shared.tax_calculator import calculate_options_roundtrip_charges
@@ -174,6 +183,13 @@ class ShadowSignalLogger:
         try:
             self.db.collection(COLLECTION_NAME).document(signal_id).set(payload)
             logger.info(f"✅ Shadow Signal committed to Firestore: [{signal_id}] -> {decision} on {symbol} (Exp Net PnL: ₹{expected_target_net:+})")
+            if ALERT_DISPATCHER:
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(ALERT_DISPATCHER.dispatch_signal_alert(payload))
+                except Exception:
+                    pass
             return payload
         except Exception as e:
             logger.error(f"❌ Failed to write shadow signal to Firestore: {e}")
@@ -284,6 +300,13 @@ class ShadowSignalLogger:
             doc_ref.update(updates)
             logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} | Net PnL: ₹{net_pnl:+.2f}")
             data.update(updates)
+            if ALERT_DISPATCHER:
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(ALERT_DISPATCHER.dispatch_outcome_alert(data))
+                except Exception:
+                    pass
             return data
         else:
             # Update live Mark-to-Market (MTM)

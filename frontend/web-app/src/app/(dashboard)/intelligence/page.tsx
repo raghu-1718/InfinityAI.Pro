@@ -7,6 +7,7 @@ import { Brain, Globe, Sparkles, Newspaper } from "lucide-react";
 import { MLTrendSignalCard, MLSignalPayload } from "@/components/dashboard/MLTrendSignalCard";
 import { InfinityAICopilotPanel } from "@/components/ai-agent";
 import { InstitutionalEODJournalViewer } from "@/components/dashboard/InstitutionalEODJournalViewer";
+import { InstitutionalOptionsPayoffVisualizer } from "@/components/dashboard/InstitutionalOptionsPayoffVisualizer";
 
 export default function IntelligencePage() {
   const { data: marketPrediction, isLoading: isPredicting } = useMarketPrediction("day");
@@ -154,6 +155,11 @@ export default function IntelligencePage() {
         <div className="space-y-6">
           <MLTrendSignalCard data={activeNiftySignal} />
         </div>
+      </div>
+
+      {/* Live Options Greeks & Volatility Surface Visualizer */}
+      <div className="w-full">
+        <InstitutionalOptionsPayoffVisualizer />
       </div>
 
       {/* Automated EOD Trading Journal & Performance Audit */}

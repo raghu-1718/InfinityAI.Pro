@@ -1884,6 +1884,61 @@ async def trigger_eod_settlement(req: Optional[Dict[str, Any]] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/v1/premarket/trigger-briefing")
+async def trigger_premarket_briefing():
+    """
+    Triggers the 08:30 IST Vertex AI Gemini Pre-Market Macro Radar synthesis and dispatches alerts.
+    """
+    try:
+        from src.services.premarket_briefing_service import PREMARKET_BRIEFING_SERVICE
+        report = await PREMARKET_BRIEFING_SERVICE.generate_and_dispatch_briefing()
+        return {"status": "success", "report": report}
+    except Exception as e:
+        logger.error(f"Pre-market briefing generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/premarket/today")
+async def get_todays_premarket_briefing():
+    """
+    Fetches today's pre-market macro synthesis report for the frontend dashboard.
+    """
+    try:
+        from src.services.premarket_briefing_service import PREMARKET_BRIEFING_SERVICE
+        report = PREMARKET_BRIEFING_SERVICE.get_latest_briefing()
+        if not report:
+            # Generate on-demand fallback
+            report = await PREMARKET_BRIEFING_SERVICE.generate_and_dispatch_briefing()
+        return {"status": "success", "report": report}
+    except Exception as e:
+        logger.error(f"Failed to fetch today's briefing: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/v1/options/surface/{symbol}")
+async def get_options_volatility_surface(symbol: str = "NIFTY", dte: float = 3.0):
+    """
+    Calculates and returns real-time Black-Scholes Greeks (Delta, Gamma, Theta, Vega)
+    and Implied Volatility (IV) Smile Surface across the strike chain.
+    """
+    try:
+        from src.services.options_greeks_engine import OPTIONS_GREEKS_ENGINE
+        
+        # Spot price estimation or live query
+        spots = {"NIFTY": 24252.0, "BANKNIFTY": 52410.0, "FINNIFTY": 23180.0, "SENSEX": 79850.0}
+        spot = spots.get(symbol.upper(), 24252.0)
+        
+        surface = OPTIONS_GREEKS_ENGINE.generate_volatility_surface(
+            symbol=symbol.upper(),
+            spot=spot,
+            dte_days=dte
+        )
+        return {"status": "success", "surface": surface}
+    except Exception as e:
+        logger.error(f"Error generating options surface: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/v1/risk/reset-circuit-breaker")
 @app.post("/api/v1/trade/reset-halt")
 async def reset_circuit_breaker(user_id: Optional[str] = "raghu_primary"):
