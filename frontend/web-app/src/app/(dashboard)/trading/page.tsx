@@ -55,6 +55,7 @@ import { useSessionState } from "@/hooks/useSessionState";
 import { SessionStatus } from "@/components/dashboard/session-status";
 import { AuditTimeline } from "@/components/dashboard/audit-timeline";
 import { InstitutionalAutonomousCapitalController } from "@/components/dashboard/InstitutionalAutonomousCapitalController";
+import { InstitutionalOptionsPayoffVisualizer } from "@/components/dashboard/InstitutionalOptionsPayoffVisualizer";
 
 export default function TradingPage() {
   const { userProfile, funds: storeFunds } = useAppStore();
@@ -391,6 +392,11 @@ export default function TradingPage() {
       {/* 100% Autonomous Capital Controller Ribbon */}
       <div className="w-full">
         <InstitutionalAutonomousCapitalController />
+      </div>
+
+      {/* Multi-Leg Options Payoff & Greeks Radar */}
+      <div className="w-full">
+        <InstitutionalOptionsPayoffVisualizer />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
