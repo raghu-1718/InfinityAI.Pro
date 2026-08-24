@@ -1,0 +1,1325 @@
+{
+  "timestamp": "2026-08-24T19:06:23.213651+00:00",
+  "collections": {
+    "ai_signals_ledger_count": 29,
+    "realtime_macro_stream": [
+      {
+        "active_feeds_count": 3,
+        "headlines_count": 12,
+        "top_headlines": [
+          {
+            "published": "Mon, 24 Aug 2026 10:18:35 GMT",
+            "title": "Stock Market Today Highlights: Markets close slightly lower; Sensex falls 172 points, Nifty slips to 24,219.05 - The Times of India",
+            "source": "google_news_market"
+          },
+          {
+            "published": "Mon, 24 Aug 2026 11:01:30 GMT",
+            "title": "Closing Bell: Nifty at 24,220, Sensex down 171 pts; PSU Banks drag, metals shine - Moneycontrol.com",
+            "source": "google_news_market"
+          },
+          {
+            "published": "Mon, 24 Aug 2026 09:48:39 GMT",
+            "title": "Why is Ceigall India stock climbing today? - Investing.com India",
+            "source": "google_news_market"
+          },
+          {
+            "published": "Sun, 23 Aug 2026 08:31:01 GMT",
+            "title": "Kaynes Technology signs MoU with China\u2019s Bosgame to launch computing products in India; stock rises 2% - Upstox",
+            "source": "google_news_market"
+          },
+          {
+            "published": "Mon, 24 Aug 2026 10:18:35 GMT",
+            "title": "Stock Market Today Highlights: Markets close slightly lower; Sensex falls 172 points, Nifty slips to 24,219.05 - The Times of India",
+            "source": "google_news_nifty"
+          },
+          {
+            "published": "Mon, 24 Aug 2026 05:48:00 GMT",
+            "title": "Stock market today: Gift Nifty hints a flat-to-positive start; eight day trading stocks to buy on Monday, 24 August - TradingView",
+            "source": "google_news_nifty"
+          }
+        ],
+        "latest_headline": "Stock Market Today Highlights: Markets close slightly lower; Sensex falls 172 points, Nifty slips to 24,219.05 - The Times of India",
+        "timestamp_ist": "2026-08-25 00:24:53 IST",
+        "sentiment_scalar": 0.1,
+        "breaking_catalyst": "Balanced market breadth across NIFTY & Bank Nifty",
+        "sentiment_direction": "NEUTRAL",
+        "regime_status": "RANGEBOUND_EQUILIBRIUM",
+        "timestamp_utc": "2026-08-24T18:54:53.035742+00:00"
+      }
+    ],
+    "eod_trading_journal": [
+      {
+        "total_signals": 29,
+        "timestamp_utc": "2026-08-24T11:55:22.525753+00:00",
+        "signals_snapshot": [
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 576.51,
+            "timestamp_utc": "2026-08-23T20:32:23.643650+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:50 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 576.51,
+              "option_type": "CE",
+              "stop_loss_percent": 12.0,
+              "lot_size": 30,
+              "contract": "BANKNIFTY 52400 CE",
+              "target_percent": 15.0,
+              "stop_loss_premium": 507.33,
+              "target_premium": 662.99,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 52400
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.32,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2594.4,
+              "expected_profit_target_net": 2539.4,
+              "expected_roi_on_capital_pct": 14.68,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -2130.4,
+              "system_capital_required": 17295.3,
+              "max_loss_stop_loss_gross": -2075.4,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "max_loss_stop_loss_pct": -12.0,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2594.4,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_020223_BANKNIFTY",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 14:17:52 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2539.4,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 52410.0,
+            "symbol": "BANKNIFTY",
+            "timestamp_ist": "2026-08-24 02:02:23 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 662.99,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 52410.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 259.52,
+            "timestamp_utc": "2026-08-23T20:32:23.219189+00:00",
+            "last_mtm_updated_at": "2026-08-24 15:44:30 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 266.77,
+              "option_type": "CE",
+              "stop_loss_percent": 12.0,
+              "lot_size": 65,
+              "contract": "NIFTY 24250 CE",
+              "target_percent": 15.0,
+              "stop_loss_premium": 234.76,
+              "target_premium": 306.79,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 24250
+            },
+            "current_mtm_gross_pnl": -471.18,
+            "current_mtm_roi_pct": -3.03,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2601.3,
+              "expected_profit_target_net": 2546.3,
+              "expected_roi_on_capital_pct": 14.68,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -2135.65,
+              "system_capital_required": 17340.05,
+              "max_loss_stop_loss_gross": -2080.65,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "max_loss_stop_loss_pct": -12.0,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2601.3,
+            "settlement_type": "EOD_1530_AUTORESOLUTION",
+            "signal_id": "SIG_20260824_020223_NIFTY",
+            "confidence_score": 0.74,
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 15:45:01 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2546.3,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 24219.05,
+            "symbol": "NIFTY",
+            "timestamp_ist": "2026-08-24 02:02:23 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 306.79,
+            "current_mtm_net_pnl": -526.18,
+            "spot_price": 24252.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 254.98,
+            "timestamp_utc": "2026-08-23T20:32:24.335776+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:53 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 254.98,
+              "option_type": "CE",
+              "stop_loss_percent": 12.0,
+              "lot_size": 60,
+              "contract": "FINNIFTY 23200 CE",
+              "target_percent": 15.0,
+              "stop_loss_premium": 224.38,
+              "target_premium": 293.23,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 23200
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.36,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2295.0,
+              "expected_profit_target_net": 2240.0,
+              "expected_roi_on_capital_pct": 14.64,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1891.0,
+              "system_capital_required": 15298.8,
+              "max_loss_stop_loss_gross": -1836.0,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "max_loss_stop_loss_pct": -12.0,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2295.0,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_020224_FINNIFTY",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 14:17:58 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2240.0,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 23180.0,
+            "symbol": "FINNIFTY",
+            "timestamp_ist": "2026-08-24 02:02:24 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 293.23,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 23180.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 878.35,
+            "timestamp_utc": "2026-08-23T20:32:25.121918+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:54 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 878.35,
+              "option_type": "CE",
+              "stop_loss_percent": 12.0,
+              "lot_size": 20,
+              "contract": "SENSEX 79850 CE",
+              "target_percent": 15.0,
+              "stop_loss_premium": 772.95,
+              "target_premium": 1010.1,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 79850
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.31,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2635.0,
+              "expected_profit_target_net": 2580.0,
+              "expected_roi_on_capital_pct": 14.69,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -2163.0,
+              "system_capital_required": 17567.0,
+              "max_loss_stop_loss_gross": -2108.0,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "max_loss_stop_loss_pct": -12.0,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": -2108.0,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_020225_SENSEX",
+            "outcome_status": "STOP_LOSS_HIT",
+            "resolved_at": "2026-08-24 14:18:00 IST",
+            "date": "2026-08-24",
+            "net_pnl": -2163.0,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 79850.0,
+            "symbol": "SENSEX",
+            "timestamp_ist": "2026-08-24 02:02:25 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 772.95,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 79850.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 259.52,
+            "confidence_score": 0.74,
+            "last_mtm_updated_at": "2026-08-24 15:44:31 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 266.77,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 65,
+              "stop_loss_premium": 237.43,
+              "target_percent": 15.0,
+              "contract": "NIFTY 24250 CE",
+              "target_premium": 306.79,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 24250
+            },
+            "current_mtm_gross_pnl": -471.18,
+            "current_mtm_roi_pct": -3.03,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2601.3,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1907.1,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1962.1,
+              "system_capital_required": 17340.05,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2546.3,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2601.3,
+            "settlement_type": "EOD_1530_AUTORESOLUTION",
+            "signal_id": "SIG_20260824_094135_NIFTY",
+            "timestamp_utc": "2026-08-24T04:11:35.696263+00:00",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 15:45:01 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2546.3,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 24219.05,
+            "symbol": "NIFTY",
+            "timestamp_ist": "2026-08-24 09:41:35 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 306.79,
+            "current_mtm_net_pnl": -526.18,
+            "spot_price": 24252.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 576.51,
+            "timestamp_utc": "2026-08-24T04:11:36.795205+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:56 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 576.51,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 30,
+              "stop_loss_premium": 513.09,
+              "target_percent": 15.0,
+              "contract": "BANKNIFTY 52400 CE",
+              "target_premium": 662.99,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 52400
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.32,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2594.4,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1902.6,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1957.6,
+              "system_capital_required": 17295.3,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2539.4,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2594.4,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_094136_BANKNIFTY",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 14:18:04 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2539.4,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 52410.0,
+            "symbol": "BANKNIFTY",
+            "timestamp_ist": "2026-08-24 09:41:36 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 662.99,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 52410.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 576.51,
+            "timestamp_utc": "2026-08-24T04:34:47.727118+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:57 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 576.51,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 30,
+              "stop_loss_premium": 513.09,
+              "target_percent": 15.0,
+              "contract": "BANKNIFTY 52400 CE",
+              "target_premium": 662.99,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 52400
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.32,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2594.4,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1902.6,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1957.6,
+              "system_capital_required": 17295.3,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2539.4,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2594.4,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_100447_BANKNIFTY",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 14:18:06 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2539.4,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 52410.0,
+            "symbol": "BANKNIFTY",
+            "timestamp_ist": "2026-08-24 10:04:47 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 662.99,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 52410.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 259.52,
+            "confidence_score": 0.74,
+            "last_mtm_updated_at": "2026-08-24 15:44:32 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 266.77,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 65,
+              "stop_loss_premium": 237.43,
+              "target_percent": 15.0,
+              "contract": "NIFTY 24250 CE",
+              "target_premium": 306.79,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 24250
+            },
+            "current_mtm_gross_pnl": -471.18,
+            "current_mtm_roi_pct": -3.03,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2601.3,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1907.1,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1962.1,
+              "system_capital_required": 17340.05,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2546.3,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2601.3,
+            "settlement_type": "EOD_1530_AUTORESOLUTION",
+            "signal_id": "SIG_20260824_100447_NIFTY",
+            "timestamp_utc": "2026-08-24T04:34:47.195199+00:00",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 15:45:01 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2546.3,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 24219.05,
+            "symbol": "NIFTY",
+            "timestamp_ist": "2026-08-24 10:04:47 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 306.79,
+            "current_mtm_net_pnl": -526.18,
+            "spot_price": 24252.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 259.52,
+            "confidence_score": 0.74,
+            "last_mtm_updated_at": "2026-08-24 15:44:33 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 266.77,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 65,
+              "stop_loss_premium": 237.43,
+              "target_percent": 15.0,
+              "contract": "NIFTY 24250 CE",
+              "target_premium": 306.79,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 24250
+            },
+            "current_mtm_gross_pnl": -471.18,
+            "current_mtm_roi_pct": -3.03,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2601.3,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1907.1,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1962.1,
+              "system_capital_required": 17340.05,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2546.3,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2601.3,
+            "settlement_type": "EOD_1530_AUTORESOLUTION",
+            "signal_id": "SIG_20260824_103217_NIFTY",
+            "timestamp_utc": "2026-08-24T05:02:17.410847+00:00",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 15:45:01 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2546.3,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 24219.05,
+            "symbol": "NIFTY",
+            "timestamp_ist": "2026-08-24 10:32:17 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 306.79,
+            "current_mtm_net_pnl": -526.18,
+            "spot_price": 24252.0
+          },
+          {
+            "decision": "BUY_CALL",
+            "current_mtm_premium": 576.51,
+            "timestamp_utc": "2026-08-24T05:02:18.394348+00:00",
+            "last_mtm_updated_at": "2026-08-24 14:16:59 IST",
+            "model_breakdown": {
+              "xgboost_prob": 0.74,
+              "catboost_prob": 0.74,
+              "lightgbm_prob": 0.74,
+              "gemini_sentiment": "BULLISH (+0.65)"
+            },
+            "trade_bracket": {
+              "entry_premium": 576.51,
+              "option_type": "CE",
+              "stop_loss_percent": 11.0,
+              "lot_size": 30,
+              "stop_loss_premium": 513.09,
+              "target_percent": 15.0,
+              "contract": "BANKNIFTY 52400 CE",
+              "target_premium": 662.99,
+              "trailing_stop_loss_active": true,
+              "risk_reward": "1:1.25 (Trailing)",
+              "strike": 52400
+            },
+            "current_mtm_gross_pnl": 0.0,
+            "current_mtm_roi_pct": -0.32,
+            "expected_pnl": {
+              "expected_profit_target_gross": 2594.4,
+              "max_loss_stop_loss_pct": -11.0,
+              "max_loss_stop_loss_gross": -1902.6,
+              "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+              "max_loss_stop_loss_net": -1957.6,
+              "system_capital_required": 17295.3,
+              "risk_reward_ratio": "1:1.25 (Trailing)",
+              "expected_roi_on_capital_pct": 14.68,
+              "expected_profit_target_net": 2539.4,
+              "expected_profit_target_pct": 15.0
+            },
+            "gross_pnl": 2594.4,
+            "confidence_score": 0.74,
+            "signal_id": "SIG_20260824_103218_BANKNIFTY",
+            "outcome_status": "TARGET_HIT",
+            "resolved_at": "2026-08-24 14:18:11 IST",
+            "date": "2026-08-24",
+            "net_pnl": 2539.4,
+            "execution_mode": "SHADOW_OBSERVATION",
+            "current_mtm_spot": 52410.0,
+            "symbol": "BANKNIFTY",
+            "timestamp_ist": "2026-08-24 10:32:18 IST",
+            "month": "2026-08",
+            "estimated_tax_brokerage": 55.0,
+            "exit_premium": 662.99,
+            "current_mtm_net_pnl": -55.0,
+            "spot_price": 52410.0
+          }
+        ],
+        "gemini_qualitative_review": "## Institutional Post-Market Review: 2026-08-24 - InfinityAI.Pro on Indian Capital Markets\n\nAs your Lead Quantitative Portfolio Manager, here is an institutional review of today's trading activity (2026-08-24) for InfinityAI.Pro, operating in \"SHADOW_OBSERVATION\" mode on NSE/BSE.\n\n1.  **Regime & Edge Analysis:**\n    The Tri-Model Ensemble demonstrated a robust bullish bias, issuing `BUY_CALL` signals with consistently high confidence scores (0.74 across all observed signals). For the 4 unique initial signals generated, the system's simulated performance was strong, with 3 successfully hitting their predefined targets (`TARGET_HIT`) and 1 registering a stop-loss (`STOP_LOSS_HIT`). This indicates that the ensemble effectively identified and capitalized on directional momentum, particularly within Bank Nifty, Nifty, and Finnifty options. The `Gemini_sentiment` of \"BULLISH (+0.65)\" consistently correlated with the models' predictions, validating the ensemble's collective conviction in the market's upward trajectory today. While the overall `Win Rate: 0.0%` and `Net Realized P&L: \u20b9+0.00` in the summary reflects the system operating in non-live \"SHADOW_OBSERVATION\" mode, the underlying signal generation proved highly effective in capturing market opportunities for positive P&L if real capital were deployed.\n\n2.  **Risk & Slippage Execution:**\n    Despite operating in shadow mode, the system rigorously adhered to its predefined risk management parameters. Each signal included clear `stop_loss_percent` (ranging from 11.0% to 12.0%) and `target_percent` (15.0%), alongside active `trailing_stop_loss`. The simulated `STOP_LOSS_HIT` for the SENSEX trade confirms the system's discipline in exiting positions when risk thresholds are breached, preventing further capital erosion. Conversely, the swift resolution of the `TARGET_HIT` trades, often within hours of signal generation, demonstrates effective entry and exit timing which would significantly mitigate theta decay impact in a live environment, particularly for options. The consistent `estimated_tax_brokerage` of \u20b955.0 per trade also points to a comprehensive and realistic P&L calculation for simulated outcomes.\n\n3.  **Tactical Guidance for Tomorrow's Opening Session:**\n    Given today's observed performance, we reinforce our conviction in the Tri-Model Ensemble's ability to identify high-probability momentum trades. For tomorrow's opening session, we recommend prioritizing high-confidence `BUY_CALL` signals, particularly within **NIFTY, BANKNIFTY, and FINNIFTY** indices. These instruments consistently yielded positive simulated returns today, exhibiting the system's edge in capturing short-term directional movements. We should continue to monitor the `system_capability_rating` of \"INSTITUTIONAL_TRI_MODEL_ENSEMBLE\" and activate live trading on high-confidence signals once the market opens, leveraging the demonstrated positive expectancy from today's shadow observations. Further analysis of the single SENSEX `STOP_LOSS_HIT` is warranted to identify any specific market conditions or instrument characteristics that may deviate from the core ensemble's strengths.",
+        "open_signals": 0,
+        "date": "2026-08-24",
+        "estimated_statutory_taxes": 1595.0,
+        "target_hits": 0,
+        "win_rate_pct": 0.0,
+        "timestamp_ist": "2026-08-24 17:25:22 IST",
+        "net_realized_pnl_rupees": 0.0,
+        "gross_pnl_rupees": 0,
+        "stop_loss_hits": 0,
+        "journal_id": "EOD_20260824",
+        "closed_trades": 0,
+        "performance_rating": "CAPITAL_PRESERVATION"
+      }
+    ],
+    "circuit_breaker": [
+      {
+        "Halted": false,
+        "losses": 0,
+        "reason": "Manual reset for live session",
+        "pl": 0.0
+      },
+      {
+        "session_pnl": 0.0,
+        "halt_reason": null,
+        "user_id": "raghu_primary",
+        "updated_at": "2026-08-21T20:48:42.096781+00:00",
+        "consecutive_losses": 0,
+        "halted": false
+      },
+      {
+        "session_pnl": 0.0,
+        "halt_reason": null,
+        "user_id": "system",
+        "updated_at": "2026-08-21T20:48:40.508405+00:00",
+        "consecutive_losses": 0,
+        "halted": false
+      }
+    ],
+    "premarket_macro_reports": [
+      {
+        "us_10y_yield": 4.28,
+        "risk_regime": "LOW_VOLATILITY",
+        "report_date": "2026-08-24",
+        "institutional_flow_bias": "NET_INFLOW",
+        "macro_bias": "BULLISH",
+        "crude_oil_status": "BENIGN",
+        "gift_nifty_points": 45.0,
+        "fii_net_crores": 1250.0,
+        "macro_score": 0.72,
+        "gemini_macro_synthesis": "GIFT Nifty indicates a constructive opening with a +45 pt gap expectation. Brent Crude remains benign at -0.85%, easing fiscal pressure. FIIs turned net buyers (+\u20b91,250 Cr) supported by strong DII liquidity (+\u20b9940 Cr). Opening bias is favorable for Option Buying on Call dips above 24,200 support.",
+        "recommended_opening_bias": "BUY_ON_DIPS",
+        "dxy_index": 103.4,
+        "crude_oil_pct": -0.85,
+        "timestamp_ist": "2026-08-24 17:25:13 IST",
+        "dii_net_crores": 940.0,
+        "expected_gap": "GAP_UP",
+        "report_id": "PREMARKET_20260824",
+        "timestamp_utc": "2026-08-24T11:55:13.536578+00:00"
+      }
+    ],
+    "model_retraining_runs": [
+      {
+        "feature_ranking": [
+          "atr_volatility: 0.1996",
+          "atr_acceleration: 0.1479",
+          "rsi_roll_mean_5: 0.1171",
+          "macd_crossover: 0.1143",
+          "macd_rsi_momentum: 0.0965",
+          "rsi_14: 0.0889",
+          "rsi_vwap_ratio: 0.0835",
+          "volatility_scaled_vwap: 0.0588",
+          "vwap_distance: 0.0523",
+          "vwap_dist_diff: 0.0410"
+        ],
+        "gcs_bucket": "infinity-ai-models-vault",
+        "tri_model_weights": {
+          "extratrees": 0.1,
+          "catboost": 0.35,
+          "xgboost": 0.2,
+          "lightgbm": 0.35
+        },
+        "run_id": "RUN_20260824_090319",
+        "uploaded_artifacts": [
+          "retrained/20260824/lightgbm_model.pkl",
+          "retrained/20260824/catboost_model.cbm",
+          "retrained/20260824/xgboost_model.json",
+          "retrained/20260824/scaler.pkl",
+          "retrained/20260824/feature_cols.json"
+        ],
+        "status": "COMPLETED_VERIFIED",
+        "timestamp": "2026-08-24T09:03:19.623673+00:00",
+        "metrics": {
+          "avg_roc_auc": 0.5236,
+          "avg_accuracy": 0.5185,
+          "avg_brier_score": 0.2526,
+          "fold_breakdown": [
+            {
+              "fold": 1,
+              "log_loss": 0.7048557786087106,
+              "roc_auc": 0.5193129281354784,
+              "recall": 0.21162444113263784,
+              "brier_loss": 0.2551905948871132,
+              "accuracy": 0.5149032595433153,
+              "precision": 0.45991902834008097
+            },
+            {
+              "fold": 2,
+              "log_loss": 0.7019070961765344,
+              "roc_auc": 0.5296377025280282,
+              "recall": 0.19639703285058283,
+              "brier_loss": 0.2538436858553661,
+              "accuracy": 0.5180407878682238,
+              "precision": 0.5315487571701721
+            },
+            {
+              "fold": 3,
+              "log_loss": 0.6957173799490156,
+              "roc_auc": 0.5410892866051232,
+              "recall": 0.15402763734411865,
+              "brier_loss": 0.25117748491944286,
+              "accuracy": 0.49538086107721807,
+              "precision": 0.5427553444180523
+            },
+            {
+              "fold": 4,
+              "log_loss": 0.6946001932991129,
+              "roc_auc": 0.5225537300674804,
+              "recall": 0.31497622820919174,
+              "brier_loss": 0.25063219082296395,
+              "accuracy": 0.5422694788216839,
+              "precision": 0.4698581560283688
+            },
+            {
+              "fold": 5,
+              "log_loss": 0.6977234257837384,
+              "roc_auc": 0.5054900191106564,
+              "recall": 0.16911225238444608,
+              "brier_loss": 0.25215576669449397,
+              "accuracy": 0.521701237580617,
+              "precision": 0.49042553191489363
+            }
+          ],
+          "avg_precision": 0.4989
+        }
+      }
+    ],
+    "model_metadata": [
+      {
+        "decay_factor": 0.85,
+        "trade_history_count": 10,
+        "last_updated": "2026-08-24T16:50:22.864572+00:00",
+        "champion_model": "lightgbm",
+        "moving_losses": {
+          "xgboost": 0.294626,
+          "catboost": 0.251576,
+          "lightgbm": 0.081559
+        },
+        "weights": {
+          "xgboost": 0.2162,
+          "catboost": 0.2624,
+          "lightgbm": 0.5213
+        },
+        "temperature": 4.5
+      },
+      {
+        "last_promotion_timestamp": "2026-08-24T16:56:30.125790+00:00",
+        "previous_champion_brier": 0.2025,
+        "new_champion_brier": 0.0225,
+        "relative_improvement_pct": 88.89,
+        "champion_name": "TriModel_Ensemble_v3.5_Canary",
+        "challenger_name": "TriModel_Ensemble_v3.6_Canary"
+      },
+      {
+        "most_drifted_feature": "order_book_imbalance_5d",
+        "max_feature_psi": 3.9271,
+        "risk_sizing_multiplier": 0.5,
+        "aggregate_psi": 3.6201,
+        "regime_status": "CRITICAL_CONCEPT_DRIFT_ACTION_REQUIRED",
+        "timestamp": "2026-08-24T16:56:28.039347+00:00",
+        "feature_breakdown": {
+          "rsi_14": 3.3132,
+          "order_book_imbalance_5d": 3.9271
+        },
+        "retrain_required": true
+      }
+    ],
+    "options_volatility_surface_count": 1,
+    "options_volatility_surface_sample": [
+      {
+        "risk_free_rate": 0.065,
+        "spot_price": 24252.0,
+        "atm_strike": 24250,
+        "strikes": [
+          {
+            "strike": 24000,
+            "ce": {
+              "ltp": 313.47,
+              "theta": -21.6,
+              "vega": 6.66,
+              "iv": 16.5,
+              "gamma": 0.000835,
+              "delta": 0.7708
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 56.79,
+              "theta": -19.3,
+              "vega": 6.9,
+              "iv": 17.7,
+              "gamma": 0.000807,
+              "delta": -0.2444
+            }
+          },
+          {
+            "strike": 24050,
+            "ce": {
+              "ltp": 271.91,
+              "theta": -22.25,
+              "vega": 7.22,
+              "iv": 15.9,
+              "gamma": 0.000939,
+              "delta": 0.7339
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 65.11,
+              "theta": -19.73,
+              "vega": 7.39,
+              "iv": 17.0,
+              "gamma": 0.000899,
+              "delta": -0.2793
+            }
+          },
+          {
+            "strike": 24100,
+            "ce": {
+              "ltp": 232.04,
+              "theta": -22.69,
+              "vega": 7.75,
+              "iv": 15.3,
+              "gamma": 0.001047,
+              "delta": 0.691
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 74.97,
+              "theta": -19.95,
+              "vega": 7.86,
+              "iv": 16.3,
+              "gamma": 0.000997,
+              "delta": -0.3195
+            }
+          },
+          {
+            "strike": 24150,
+            "ce": {
+              "ltp": 194.16,
+              "theta": -22.86,
+              "vega": 8.21,
+              "iv": 14.7,
+              "gamma": 0.001156,
+              "delta": 0.6417
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 86.68,
+              "theta": -19.91,
+              "vega": 8.27,
+              "iv": 15.6,
+              "gamma": 0.001097,
+              "delta": -0.3659
+            }
+          },
+          {
+            "strike": 24200,
+            "ce": {
+              "ltp": 158.68,
+              "theta": -22.64,
+              "vega": 8.57,
+              "iv": 14.1,
+              "gamma": 0.001257,
+              "delta": 0.5855
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 100.62,
+              "theta": -19.5,
+              "vega": 8.59,
+              "iv": 14.9,
+              "gamma": 0.001192,
+              "delta": -0.4187
+            }
+          },
+          {
+            "strike": 24250,
+            "ce": {
+              "ltp": 126.0,
+              "theta": -21.94,
+              "vega": 8.76,
+              "iv": 13.5,
+              "gamma": 0.001342,
+              "delta": 0.5225
+            },
+            "is_atm": true,
+            "pe": {
+              "ltp": 117.18,
+              "theta": -18.64,
+              "vega": 8.76,
+              "iv": 14.2,
+              "gamma": 0.001276,
+              "delta": -0.4783
+            }
+          },
+          {
+            "strike": 24300,
+            "ce": {
+              "ltp": 104.43,
+              "theta": -22.01,
+              "vega": 8.72,
+              "iv": 13.8,
+              "gamma": 0.001307,
+              "delta": 0.4566
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 145.55,
+              "theta": -18.72,
+              "vega": 8.72,
+              "iv": 14.5,
+              "gamma": 0.001245,
+              "delta": -0.5411
+            }
+          },
+          {
+            "strike": 24350,
+            "ce": {
+              "ltp": 86.01,
+              "theta": -21.58,
+              "vega": 8.46,
+              "iv": 14.1,
+              "gamma": 0.001242,
+              "delta": 0.3946
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 176.94,
+              "theta": -18.33,
+              "vega": 8.49,
+              "iv": 14.8,
+              "gamma": 0.001187,
+              "delta": -0.6003
+            }
+          },
+          {
+            "strike": 24400,
+            "ce": {
+              "ltp": 70.45,
+              "theta": -20.73,
+              "vega": 8.04,
+              "iv": 14.4,
+              "gamma": 0.001154,
+              "delta": 0.3378
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 211.07,
+              "theta": -17.52,
+              "vega": 8.1,
+              "iv": 15.1,
+              "gamma": 0.00111,
+              "delta": -0.6549
+            }
+          },
+          {
+            "strike": 24450,
+            "ce": {
+              "ltp": 57.44,
+              "theta": -19.56,
+              "vega": 7.48,
+              "iv": 14.7,
+              "gamma": 0.001053,
+              "delta": 0.2866
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 247.66,
+              "theta": -16.4,
+              "vega": 7.59,
+              "iv": 15.4,
+              "gamma": 0.00102,
+              "delta": -0.7044
+            }
+          },
+          {
+            "strike": 24500,
+            "ce": {
+              "ltp": 46.64,
+              "theta": -18.17,
+              "vega": 6.86,
+              "iv": 15.0,
+              "gamma": 0.000945,
+              "delta": 0.2413
+            },
+            "is_atm": false,
+            "pe": {
+              "ltp": 286.41,
+              "theta": -15.05,
+              "vega": 7.01,
+              "iv": 15.7,
+              "gamma": 0.000923,
+              "delta": -0.7486
+            }
+          }
+        ],
+        "symbol": "NIFTY",
+        "dte_days": 3.0
+      }
+    ],
+    "user_credentials_count": 2,
+    "trading_sessions_count": 1
+  },
+  "summary": {
+    "signals": {
+      "total_generated": 29,
+      "open_count": 0,
+      "resolved_count": 29,
+      "winning_count": 28,
+      "losing_count": 1,
+      "win_rate_pct": 96.55,
+      "total_gross_pnl": 66468.05,
+      "total_net_pnl": 64873.05,
+      "call_signals_count": 29,
+      "put_signals_count": 0,
+      "recent_5_signals": [
+        {
+          "decision": "BUY_CALL",
+          "current_mtm_premium": 576.51,
+          "spot_price": 52410.0,
+          "last_mtm_updated_at": "2026-08-24 14:16:50 IST",
+          "model_breakdown": {
+            "xgboost_prob": 0.74,
+            "catboost_prob": 0.74,
+            "lightgbm_prob": 0.74,
+            "gemini_sentiment": "BULLISH (+0.65)"
+          },
+          "trade_bracket": {
+            "lot_size": 30,
+            "option_type": "CE",
+            "stop_loss_percent": 12.0,
+            "strike": 52400,
+            "stop_loss_premium": 507.33,
+            "target_percent": 15.0,
+            "contract": "BANKNIFTY 52400 CE",
+            "target_premium": 662.99,
+            "trailing_stop_loss_active": true,
+            "risk_reward": "1:1.25 (Trailing)",
+            "entry_premium": 576.51
+          },
+          "current_mtm_gross_pnl": 0.0,
+          "current_mtm_roi_pct": -0.32,
+          "expected_pnl": {
+            "expected_profit_target_gross": 2594.4,
+            "max_loss_stop_loss_pct": -12.0,
+            "expected_roi_on_capital_pct": 14.68,
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "max_loss_stop_loss_net": -2130.4,
+            "system_capital_required": 17295.3,
+            "max_loss_stop_loss_gross": -2075.4,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "expected_profit_target_net": 2539.4,
+            "expected_profit_target_pct": 15.0
+          },
+          "confidence_score": 0.74,
+          "gross_pnl": 2594.4,
+          "signal_id": "SIG_20260824_020223_BANKNIFTY",
+          "outcome_status": "TARGET_HIT",
+          "resolved_at": "2026-08-24 14:17:52 IST",
+          "date": "2026-08-24",
+          "net_pnl": 2539.4,
+          "execution_mode": "SHADOW_OBSERVATION",
+          "current_mtm_spot": 52410.0,
+          "symbol": "BANKNIFTY",
+          "timestamp_ist": "2026-08-24 02:02:23 IST",
+          "month": "2026-08",
+          "estimated_tax_brokerage": 55.0,
+          "exit_premium": 662.99,
+          "current_mtm_net_pnl": -55.0,
+          "timestamp_utc": "2026-08-23T20:32:23.643650+00:00"
+        },
+        {
+          "decision": "BUY_CALL",
+          "current_mtm_premium": 259.52,
+          "spot_price": 24252.0,
+          "last_mtm_updated_at": "2026-08-24 15:44:30 IST",
+          "model_breakdown": {
+            "xgboost_prob": 0.74,
+            "catboost_prob": 0.74,
+            "lightgbm_prob": 0.74,
+            "gemini_sentiment": "BULLISH (+0.65)"
+          },
+          "trade_bracket": {
+            "lot_size": 65,
+            "option_type": "CE",
+            "stop_loss_percent": 12.0,
+            "strike": 24250,
+            "stop_loss_premium": 234.76,
+            "target_percent": 15.0,
+            "contract": "NIFTY 24250 CE",
+            "target_premium": 306.79,
+            "trailing_stop_loss_active": true,
+            "risk_reward": "1:1.25 (Trailing)",
+            "entry_premium": 266.77
+          },
+          "current_mtm_gross_pnl": -471.18,
+          "current_mtm_roi_pct": -3.03,
+          "expected_pnl": {
+            "expected_profit_target_gross": 2601.3,
+            "max_loss_stop_loss_pct": -12.0,
+            "expected_roi_on_capital_pct": 14.68,
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "max_loss_stop_loss_net": -2135.65,
+            "system_capital_required": 17340.05,
+            "max_loss_stop_loss_gross": -2080.65,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "expected_profit_target_net": 2546.3,
+            "expected_profit_target_pct": 15.0
+          },
+          "confidence_score": 0.74,
+          "settlement_type": "EOD_1530_AUTORESOLUTION",
+          "signal_id": "SIG_20260824_020223_NIFTY",
+          "gross_pnl": 2601.3,
+          "outcome_status": "TARGET_HIT",
+          "resolved_at": "2026-08-24 15:45:01 IST",
+          "date": "2026-08-24",
+          "net_pnl": 2546.3,
+          "execution_mode": "SHADOW_OBSERVATION",
+          "current_mtm_spot": 24219.05,
+          "symbol": "NIFTY",
+          "timestamp_ist": "2026-08-24 02:02:23 IST",
+          "month": "2026-08",
+          "estimated_tax_brokerage": 55.0,
+          "exit_premium": 306.79,
+          "current_mtm_net_pnl": -526.18,
+          "timestamp_utc": "2026-08-23T20:32:23.219189+00:00"
+        },
+        {
+          "decision": "BUY_CALL",
+          "current_mtm_premium": 254.98,
+          "spot_price": 23180.0,
+          "last_mtm_updated_at": "2026-08-24 14:16:53 IST",
+          "model_breakdown": {
+            "xgboost_prob": 0.74,
+            "catboost_prob": 0.74,
+            "lightgbm_prob": 0.74,
+            "gemini_sentiment": "BULLISH (+0.65)"
+          },
+          "trade_bracket": {
+            "lot_size": 60,
+            "option_type": "CE",
+            "stop_loss_percent": 12.0,
+            "strike": 23200,
+            "stop_loss_premium": 224.38,
+            "target_percent": 15.0,
+            "contract": "FINNIFTY 23200 CE",
+            "target_premium": 293.23,
+            "trailing_stop_loss_active": true,
+            "risk_reward": "1:1.25 (Trailing)",
+            "entry_premium": 254.98
+          },
+          "current_mtm_gross_pnl": 0.0,
+          "current_mtm_roi_pct": -0.36,
+          "expected_pnl": {
+            "expected_profit_target_gross": 2295.0,
+            "max_loss_stop_loss_pct": -12.0,
+            "expected_roi_on_capital_pct": 14.64,
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "max_loss_stop_loss_net": -1891.0,
+            "system_capital_required": 15298.8,
+            "max_loss_stop_loss_gross": -1836.0,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "expected_profit_target_net": 2240.0,
+            "expected_profit_target_pct": 15.0
+          },
+          "confidence_score": 0.74,
+          "gross_pnl": 2295.0,
+          "signal_id": "SIG_20260824_020224_FINNIFTY",
+          "outcome_status": "TARGET_HIT",
+          "resolved_at": "2026-08-24 14:17:58 IST",
+          "date": "2026-08-24",
+          "net_pnl": 2240.0,
+          "execution_mode": "SHADOW_OBSERVATION",
+          "current_mtm_spot": 23180.0,
+          "symbol": "FINNIFTY",
+          "timestamp_ist": "2026-08-24 02:02:24 IST",
+          "month": "2026-08",
+          "estimated_tax_brokerage": 55.0,
+          "exit_premium": 293.23,
+          "current_mtm_net_pnl": -55.0,
+          "timestamp_utc": "2026-08-23T20:32:24.335776+00:00"
+        },
+        {
+          "decision": "BUY_CALL",
+          "current_mtm_premium": 878.35,
+          "spot_price": 79850.0,
+          "last_mtm_updated_at": "2026-08-24 14:16:54 IST",
+          "model_breakdown": {
+            "xgboost_prob": 0.74,
+            "catboost_prob": 0.74,
+            "lightgbm_prob": 0.74,
+            "gemini_sentiment": "BULLISH (+0.65)"
+          },
+          "trade_bracket": {
+            "lot_size": 20,
+            "option_type": "CE",
+            "stop_loss_percent": 12.0,
+            "strike": 79850,
+            "stop_loss_premium": 772.95,
+            "target_percent": 15.0,
+            "contract": "SENSEX 79850 CE",
+            "target_premium": 1010.1,
+            "trailing_stop_loss_active": true,
+            "risk_reward": "1:1.25 (Trailing)",
+            "entry_premium": 878.35
+          },
+          "current_mtm_gross_pnl": 0.0,
+          "current_mtm_roi_pct": -0.31,
+          "expected_pnl": {
+            "expected_profit_target_gross": 2635.0,
+            "max_loss_stop_loss_pct": -12.0,
+            "expected_roi_on_capital_pct": 14.69,
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "max_loss_stop_loss_net": -2163.0,
+            "system_capital_required": 17567.0,
+            "max_loss_stop_loss_gross": -2108.0,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "expected_profit_target_net": 2580.0,
+            "expected_profit_target_pct": 15.0
+          },
+          "confidence_score": 0.74,
+          "gross_pnl": -2108.0,
+          "signal_id": "SIG_20260824_020225_SENSEX",
+          "outcome_status": "STOP_LOSS_HIT",
+          "resolved_at": "2026-08-24 14:18:00 IST",
+          "date": "2026-08-24",
+          "net_pnl": -2163.0,
+          "execution_mode": "SHADOW_OBSERVATION",
+          "current_mtm_spot": 79850.0,
+          "symbol": "SENSEX",
+          "timestamp_ist": "2026-08-24 02:02:25 IST",
+          "month": "2026-08",
+          "estimated_tax_brokerage": 55.0,
+          "exit_premium": 772.95,
+          "current_mtm_net_pnl": -55.0,
+          "timestamp_utc": "2026-08-23T20:32:25.121918+00:00"
+        },
+        {
+          "decision": "BUY_CALL",
+          "current_mtm_premium": 259.52,
+          "spot_price": 24252.0,
+          "last_mtm_updated_at": "2026-08-24 15:44:31 IST",
+          "model_breakdown": {
+            "xgboost_prob": 0.74,
+            "catboost_prob": 0.74,
+            "lightgbm_prob": 0.74,
+            "gemini_sentiment": "BULLISH (+0.65)"
+          },
+          "trade_bracket": {
+            "strike": 24250,
+            "option_type": "CE",
+            "stop_loss_percent": 11.0,
+            "lot_size": 65,
+            "contract": "NIFTY 24250 CE",
+            "target_percent": 15.0,
+            "stop_loss_premium": 237.43,
+            "target_premium": 306.79,
+            "trailing_stop_loss_active": true,
+            "risk_reward": "1:1.25 (Trailing)",
+            "entry_premium": 266.77
+          },
+          "current_mtm_gross_pnl": -471.18,
+          "current_mtm_roi_pct": -3.03,
+          "expected_pnl": {
+            "expected_profit_target_gross": 2601.3,
+            "max_loss_stop_loss_gross": -1907.1,
+            "expected_profit_target_net": 2546.3,
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "max_loss_stop_loss_net": -1962.1,
+            "system_capital_required": 17340.05,
+            "risk_reward_ratio": "1:1.25 (Trailing)",
+            "expected_roi_on_capital_pct": 14.68,
+            "max_loss_stop_loss_pct": -11.0,
+            "expected_profit_target_pct": 15.0
+          },
+          "timestamp_utc": "2026-08-24T04:11:35.696263+00:00",
+          "settlement_type": "EOD_1530_AUTORESOLUTION",
+          "signal_id": "SIG_20260824_094135_NIFTY",
+          "gross_pnl": 2601.3,
+          "outcome_status": "TARGET_HIT",
+          "resolved_at": "2026-08-24 15:45:01 IST",
+          "date": "2026-08-24",
+          "net_pnl": 2546.3,
+          "execution_mode": "SHADOW_OBSERVATION",
+          "current_mtm_spot": 24219.05,
+          "symbol": "NIFTY",
+          "timestamp_ist": "2026-08-24 09:41:35 IST",
+          "estimated_tax_brokerage": 55.0,
+          "month": "2026-08",
+          "exit_premium": 306.79,
+          "current_mtm_net_pnl": -526.18,
+          "confidence_score": 0.74
+        }
+      ]
+    }
+  }
+}
