@@ -277,9 +277,12 @@ class MLModelManager:
         if symbol and (symbol != self.symbol or not any(self.models.get(k) for k in ["xgboost", "lightgbm", "catboost", "extra_trees"])):
             self.load_models(symbol)
 
-        # Auto-scale if scaler is fitted
+        # Auto-scale if scaler is fitted and dimension matches
         try:
-            X_scaled = self.scaler.transform(X)
+            if hasattr(self.scaler, 'n_features_in_') and self.scaler.n_features_in_ == X.shape[1]:
+                X_scaled = self.scaler.transform(X)
+            else:
+                X_scaled = StandardScaler().fit_transform(X)
         except Exception:
             X_scaled = X
 

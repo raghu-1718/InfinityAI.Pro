@@ -681,10 +681,11 @@ class MLModelStore:
 
             self.scalers['standard'] = StandardScaler()
 
-            # Baseline warm calibration fitting for all ensemble models
+            # Baseline warm calibration fitting for all ensemble models (20 features)
             try:
                 np.random.seed(42)
-                X_init = np.random.randn(60, 18)
+                n_feats_init = len(MARKET_ENGINE.get_feature_columns())
+                X_init = np.random.randn(60, n_feats_init)
                 y_init = np.array([0, 1, 2] * 20)
                 self.models['random_forest'].fit(X_init, y_init)
                 self.models['lightgbm'].fit(X_init, y_init)
@@ -692,7 +693,7 @@ class MLModelStore:
                     self.models['catboost'].fit(X_init, y_init)
                 self.models['xgboost'].fit(X_init, y_init)
                 self.scalers['standard'].fit(X_init)
-                logger.info("✅ Baseline calibration weights fitted on all ensemble models")
+                logger.info(f"✅ Baseline calibration weights fitted on all ensemble models ({n_feats_init} features)")
             except Exception as e:
                 logger.warning(f"⚠️ Baseline calibration warning: {e}")
 
@@ -2091,7 +2092,7 @@ async def generate_signal(req: SignalRequest):
                     scaler = StandardScaler()
                     MODEL_STORE.scalers['standard'] = scaler
 
-                if not hasattr(scaler, 'mean_') or scaler.mean_ is None:
+                if not hasattr(scaler, 'mean_') or scaler.mean_ is None or getattr(scaler, 'n_features_in_', None) != X.shape[1]:
                     X_scaled = scaler.fit_transform(df_features[feature_cols].values)[-1:]
                 else:
                     X_scaled = scaler.transform(X)
