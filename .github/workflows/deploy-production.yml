@@ -45,7 +45,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Authorize Docker to push to Artifact Registry
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
 
       # Build & Deploy Engine B (ML Intelligence & Model Vault Bundle)
       - name: Build & Deploy Engine B

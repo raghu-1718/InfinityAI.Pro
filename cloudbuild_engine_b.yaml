@@ -6,19 +6,19 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "-f",
         "backend/engine-b/Dockerfile",
         ".",
       ]
 
-  # 2. Push Engine B image to Artifact Registry
+  # 2. Push Engine B image to Artifact Registry (asia-south1)
   - name: "gcr.io/cloud-builders/docker"
     id: "push-engine-b"
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
       ]
     waitFor: ["build-engine-b"]
 
@@ -38,5 +38,5 @@ steps:
     waitFor: ["-"]
 
 images:
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
 timeout: "1800s"
