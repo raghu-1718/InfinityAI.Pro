@@ -226,16 +226,33 @@ class AlertDispatcher:
         if not (tok and chat_id):
             return
         url = f"https://api.telegram.org/bot{tok}/sendMessage"
-        payload = {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown"
-        }
+        
+        # 1. Try Markdown
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                await client.post(url, json=payload)
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                resp = await client.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
+                if resp.status_code == 200:
+                    return
+        except Exception:
+            pass
+
+        # 2. Fallback to HTML
+        try:
+            html_text = text.replace("*", "<b>").replace("`", "<code>").replace("_", "<i>")
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                resp = await client.post(url, json={"chat_id": chat_id, "text": html_text, "parse_mode": "HTML"})
+                if resp.status_code == 200:
+                    return
+        except Exception:
+            pass
+
+        # 3. Final Fallback: Plain unformatted text (guaranteed delivery)
+        try:
+            clean_text = text.replace("*", "").replace("`", "").replace("_", "")
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                await client.post(url, json={"chat_id": chat_id, "text": clean_text})
         except Exception as e:
-            logger.warning(f"Telegram dispatch failed: {e}")
+            logger.warning(f"Telegram dispatch failed across all modes: {e}")
 
     async def _send_whatsapp(self, text: str):
         if not (self._whatsapp_api_token and self._whatsapp_phone_number_id and self._whatsapp_to_number):

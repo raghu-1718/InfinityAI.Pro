@@ -124,6 +124,22 @@ class EODSettlementService:
         # Stream summary to BigQuery if table exists
         self._stream_eod_summary_to_bigquery(today_str, resolved_count, total_gross_pnl, total_net_pnl, total_fees)
 
+        # Trigger Vertex AI Post-Market Performance Review & Telegram Dispatch
+        journal_report = None
+        try:
+            from .eod_ai_journal_service import EOD_AI_JOURNAL_SERVICE
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+                else:
+                    journal_report = loop.run_until_complete(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+            except RuntimeError:
+                journal_report = asyncio.run(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+        except Exception as je:
+            logger.warning(f"Notice generating EOD journal during settlement: {je}")
+
         return {
             "status": "success",
             "date": today_str,
@@ -132,6 +148,7 @@ class EODSettlementService:
             "total_gross_pnl": round(total_gross_pnl, 2),
             "total_net_pnl": round(total_net_pnl, 2),
             "total_fees_taxes": round(total_fees, 2),
+            "journal_report": journal_report,
             "details": details
         }
 
