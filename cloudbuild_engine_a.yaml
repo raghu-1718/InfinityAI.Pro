@@ -48,6 +48,10 @@ steps:
         "--vpc-egress",
         "private-ranges-only",
         "--allow-unauthenticated",
+        "--port",
+        "8080",
+        "--timeout",
+        "600s",
         "--memory",
         "1Gi",
       ]

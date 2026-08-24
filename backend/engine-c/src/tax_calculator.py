@@ -141,3 +141,24 @@ def evaluate_net_profitability_gate(
         "net_roi": round(net_roi, 4),
         "charges_breakdown": charges
     }
+
+
+def calculate_microstructure_slippage(
+    raw_premium: float,
+    obi: float,
+    lot_size: int = 65
+) -> float:
+    """
+    Computes real-world execution decay based on live order book imbalances (OBI 5-Depth).
+    Ensures backtests and live shadow fills strictly reflect exchange liquidity.
+    """
+    if obi <= -0.70:
+        slippage_penalty_pct = 0.015   # 1.5% slippage drop during institutional dumps
+    elif -0.70 < obi <= -0.30:
+        slippage_penalty_pct = 0.005   # 0.5% slippage drop during moderate ask pressure
+    else:
+        slippage_penalty_pct = 0.001   # 0.1% baseline structural bid-ask friction
+        
+    realized_execution_premium = raw_premium * (1.0 - slippage_penalty_pct)
+    return round(realized_execution_premium, 2)
+

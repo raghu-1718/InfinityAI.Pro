@@ -2178,10 +2178,10 @@ async def evaluate_expiry_shield(
     return {"status": "success", "data": res}
 
 @app.post("/api/v1/macro/news-sentiment/refresh")
-async def refresh_news_sentiment():
+async def refresh_news_sentiment(force_execution: bool = False):
     """Polls live Google News & ET RSS feeds, runs AI sentiment grounding, and commits to Firestore"""
     from src.services.news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
-    res = await NEWS_SENTIMENT_INGESTOR.analyze_and_sync_news_sentiment()
+    res = await NEWS_SENTIMENT_INGESTOR.analyze_and_sync_news_sentiment(force_execution=force_execution)
     return {"status": "success", "data": res}
 
 @app.get("/api/v1/macro/news-sentiment/current")
@@ -2190,6 +2190,53 @@ async def get_current_news_sentiment():
     from src.services.news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
     res = NEWS_SENTIMENT_INGESTOR.get_current_macro_bias()
     return {"status": "success", "data": res}
+
+@app.post("/api/v1/options/oi-acceleration/evaluate")
+async def evaluate_options_oi_acceleration(
+    payload: Dict[str, Any]
+):
+    """
+    Evaluates real-time Open Interest accumulation velocity (Delta OI) at ATM +- 3 strikes
+    and detects institutional call/put writing walls using SFATM boundary layer.
+    """
+    from src.services.options_oi_acceleration_tracker import OI_ACCELERATION_TRACKER
+    symbol = payload.get("symbol", "NIFTY")
+    spot_price = float(payload.get("spot_price", 0.0))
+    current_strikes_oi = payload.get("current_strikes_oi", [])
+    res = OI_ACCELERATION_TRACKER.evaluate_oi_velocity(
+        symbol=symbol,
+        spot_price=spot_price,
+        current_strikes_oi=current_strikes_oi
+    )
+    return {"status": "success", "data": res}
+
+
+@app.post("/api/v1/execution/slippage/calculate")
+async def calculate_slippage(
+    raw_premium: float,
+    obi: float,
+    lot_size: int = 65
+):
+    """
+    Computes microstructure order book slippage penalty based on live 5-depth OBI.
+    """
+    from src.services.tax_calculator import calculate_microstructure_slippage
+    realized_prem = calculate_microstructure_slippage(
+        raw_premium=raw_premium,
+        obi=obi,
+        lot_size=lot_size
+    )
+    slippage_pct = round(((raw_premium - realized_prem) / raw_premium) * 100, 3) if raw_premium > 0 else 0.0
+    return {
+        "status": "success",
+        "raw_premium": raw_premium,
+        "realized_premium": realized_prem,
+        "slippage_points": round(raw_premium - realized_prem, 2),
+        "slippage_pct": slippage_pct,
+        "obi": obi,
+        "lot_size": lot_size
+    }
+
 
 
 if __name__ == "__main__":
