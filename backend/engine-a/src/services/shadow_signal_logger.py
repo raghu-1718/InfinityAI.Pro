@@ -328,10 +328,11 @@ class ShadowSignalLogger:
 
         simulated_exit_prem = max(1.0, simulated_exit_prem)
 
-        # Dynamic Multi-Tier Ratchet Profit Lock Evaluation
+        # Dynamic Multi-Tier Ratchet Profit Lock & DRE Risk Evaluation
         highest_prev = data.get("highest_observed_premium", entry_prem)
         highest_now = max(highest_prev, simulated_exit_prem)
         
+        # 1. Evaluate Dynamic Multi-Tier Profit Lock
         try:
             from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
             lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
@@ -346,8 +347,29 @@ class ShadowSignalLogger:
             effective_sl = lock_eval["effective_stop_loss"]
         except Exception:
             outcome_status = "OPEN"
-            active_tier = "BASE_STOP_LOSS"
+            active_tier = "BASE_DYNAMIC_EVAL"
             effective_sl = stop_prem
+
+        # 2. Evaluate Dynamic Risk Engine (DRE) - Non-hardcoded alpha decay & volatility bounds
+        if outcome_status == "OPEN":
+            try:
+                from .dynamic_risk_service import DYNAMIC_RISK_SERVICE
+                from .risk_config import LiveMarketState
+                
+                dre_state = LiveMarketState(
+                    timestamp=datetime.now(timezone.utc),
+                    current_premium=simulated_exit_prem,
+                    entry_premium=entry_prem,
+                    ml_confidence=data.get("confidence_score", 0.55),
+                    order_book_imbalance=0.0,
+                    live_greeks={"IV": 0.1717, "Gamma": 0.00084, "Delta": 0.54}
+                )
+                dre_eval = DYNAMIC_RISK_SERVICE.evaluate_live_signals(dre_state)
+                if dre_eval.get("action") == "EXECUTE_MARKET_EXIT_PAYLOAD":
+                    outcome_status = "DYNAMIC_AI_RISK_EXIT"
+                    active_tier = dre_eval.get("reasons", ["DYNAMIC_RISK_BREACH"])[0]
+            except Exception as dre_err:
+                logger.debug(f"DRE evaluation notice: {dre_err}")
 
         if is_eod_squareoff and outcome_status == "OPEN":
             outcome_status = "EOD_SQUAREOFF"

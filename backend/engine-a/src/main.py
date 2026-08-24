@@ -2097,6 +2097,42 @@ async def evaluate_profit_lock_simulation(
     )
     return {"status": "success", "data": result}
 
+@app.post("/api/v1/risk/dynamic/evaluate")
+async def evaluate_dynamic_risk(
+    entry_premium: float,
+    current_premium: float,
+    ml_confidence: float = 0.55,
+    order_book_imbalance: float = 0.0,
+    iv: float = 0.1717,
+    gamma: float = 0.00084
+):
+    """Evaluates dynamic mathematical risk boundaries (Alpha decay, Volatility floor, Liquidity OBI)"""
+    from src.services.dynamic_risk_service import DYNAMIC_RISK_SERVICE
+    from src.services.risk_config import LiveMarketState
+    from datetime import datetime, timezone
+    
+    state = LiveMarketState(
+        timestamp=datetime.now(timezone.utc),
+        current_premium=current_premium,
+        entry_premium=entry_premium,
+        ml_confidence=ml_confidence,
+        order_book_imbalance=order_book_imbalance,
+        live_greeks={"IV": iv, "Gamma": gamma, "Delta": 0.54}
+    )
+    decision = DYNAMIC_RISK_SERVICE.evaluate_live_signals(state)
+    return {"status": "success", "decision": decision}
+
+@app.get("/api/v1/risk/dynamic/state")
+async def get_dynamic_risk_state():
+    """Fetches persistent internal position and consecutive-loss risk state"""
+    from src.services.dynamic_risk_service import DYNAMIC_RISK_SERVICE
+    return {
+        "status": "success",
+        "consecutive_losses": DYNAMIC_RISK_SERVICE.state.consecutive_losses,
+        "cool_down_active": DYNAMIC_RISK_SERVICE.state.cool_down_active,
+        "last_exit_timestamp": DYNAMIC_RISK_SERVICE.state.last_exit_timestamp.isoformat() if DYNAMIC_RISK_SERVICE.state.last_exit_timestamp else None
+    }
+
 
 if __name__ == "__main__":
     import os

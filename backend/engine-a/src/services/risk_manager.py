@@ -348,6 +348,31 @@ class RiskManager:
             current_premium=current_premium
         )
 
+    def evaluate_dynamic_risk_exit(
+        self,
+        current_premium: float,
+        entry_premium: float,
+        ml_confidence: float = 0.55,
+        order_book_imbalance: float = 0.0,
+        live_greeks: Optional[Dict[str, float]] = None,
+        timestamp: Optional[datetime] = None
+    ) -> Dict[str, Any]:
+        """
+        Evaluates dynamic non-hardcoded exit criteria (Alpha Decay, Volatility Bounds, Liquidity Imbalance).
+        """
+        from .dynamic_risk_service import DYNAMIC_RISK_SERVICE
+        from .risk_config import LiveMarketState
+
+        market_state = LiveMarketState(
+            timestamp=timestamp or datetime.now(timezone.utc),
+            current_premium=current_premium,
+            entry_premium=entry_premium,
+            ml_confidence=ml_confidence,
+            order_book_imbalance=order_book_imbalance,
+            live_greeks=live_greeks or {"IV": 0.1717, "Gamma": 0.00084, "Delta": 0.54}
+        )
+        return DYNAMIC_RISK_SERVICE.evaluate_live_signals(market_state)
+
     def get_comprehensive_metrics(self, returns: np.ndarray,
                                    risk_free_rate: float = 0.05) -> Dict[str, Any]:
         """Get all risk metrics in a single call"""
