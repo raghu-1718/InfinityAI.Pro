@@ -83,22 +83,22 @@ class ShadowSignalLogger:
         # Lot Size determination (Official SEBI / NSE / BSE 2026 Mandate)
         sym_u = symbol.upper()
         if "BANKNIFTY" in sym_u:
-            actual_lot_size = 15
+            actual_lot_size = 30
             strike_step = 100
         elif "FINNIFTY" in sym_u:
-            actual_lot_size = 25
+            actual_lot_size = 60
             strike_step = 50
         elif "MIDCP" in sym_u:
-            actual_lot_size = 50
+            actual_lot_size = 120
             strike_step = 25
         elif "SENSEX" in sym_u:
-            actual_lot_size = 10
+            actual_lot_size = 20
             strike_step = 100
         elif "NIFTY" in sym_u:
-            actual_lot_size = 25
+            actual_lot_size = 65
             strike_step = 50
         else:
-            actual_lot_size = 25
+            actual_lot_size = 65
             strike_step = 50
 
         # Option Bracket Calculation (Option Buying Only)

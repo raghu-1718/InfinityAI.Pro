@@ -30,10 +30,11 @@ STAMP_DUTY_BUY = 0.00003          # 0.003% on buy turnover
 SEBI_TURNOVER_FEE = 0.000001      # ₹10 per crore
 
 LOT_SIZES = {
-    "NIFTY": 25,                  # 2026 SEBI standard lot size
-    "BANKNIFTY": 15,
-    "FINNIFTY": 25,
-    "SENSEX": 10
+    "NIFTY": 65,                  # 2026 Official NSE Lot Size
+    "BANKNIFTY": 30,              # 2026 Official NSE Lot Size
+    "FINNIFTY": 60,               # 2026 Official NSE Lot Size
+    "SENSEX": 20,                 # 2026 Official BSE Lot Size
+    "MIDCPNIFTY": 120             # 2026 Official NSE Lot Size
 }
 
 def calculate_black_scholes_greeks(

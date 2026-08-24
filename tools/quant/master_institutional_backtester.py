@@ -93,7 +93,7 @@ class MasterInstitutionalBacktester:
         self.lot_sizes = {
             "NIFTY": 65,
             "BANKNIFTY": 30,
-            "FINNIFTY": 65,
+            "FINNIFTY": 60,
             "MIDCPNIFTY": 120,
             "SENSEX": 20,
             "CRUDEOIL": 100
