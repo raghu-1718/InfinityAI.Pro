@@ -2177,6 +2177,20 @@ async def evaluate_expiry_shield(
     )
     return {"status": "success", "data": res}
 
+@app.post("/api/v1/macro/news-sentiment/refresh")
+async def refresh_news_sentiment():
+    """Polls live Google News & ET RSS feeds, runs AI sentiment grounding, and commits to Firestore"""
+    from src.services.news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
+    res = await NEWS_SENTIMENT_INGESTOR.analyze_and_sync_news_sentiment()
+    return {"status": "success", "data": res}
+
+@app.get("/api/v1/macro/news-sentiment/current")
+async def get_current_news_sentiment():
+    """Returns active real-time macro news sentiment vector and regime status"""
+    from src.services.news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
+    res = NEWS_SENTIMENT_INGESTOR.get_current_macro_bias()
+    return {"status": "success", "data": res}
+
 
 if __name__ == "__main__":
     import os
