@@ -2148,6 +2148,35 @@ async def calculate_bayesian_consensus(
     res = BAYESIAN_CLIENT.calculate_bayesian_consensus(catboost_prob, lightgbm_prob, xgboost_prob)
     return {"status": "success", "data": res}
 
+@app.post("/api/v1/preflight/trigger-check")
+async def trigger_preflight_check():
+    """Triggers 08:15 IST automated pre-flight readiness audit and dispatches clearance alert"""
+    from src.services.preflight_health_service import PREFLIGHT_HEALTH_SERVICE
+    report = await PREFLIGHT_HEALTH_SERVICE.execute_preflight_check()
+    return {"status": "success", "report": report}
+
+@app.get("/api/v1/expiry/shield/evaluate")
+async def evaluate_expiry_shield(
+    symbol: str = "NIFTY",
+    spot_price: float = 24219.05,
+    entry_premium: float = 99.43,
+    current_premium: float = 105.00,
+    highest_premium: float = 112.00,
+    gamma: float = 0.0018,
+    theta: float = -45.26
+):
+    """Evaluates 0DTE/1DTE Gamma Pinning & Afternoon Theta Shield for Expiry sessions"""
+    from src.services.expiry_gamma_pinning_shield import EXPIRY_GAMMA_SHIELD
+    res = EXPIRY_GAMMA_SHIELD.evaluate_expiry_shield(
+        symbol=symbol,
+        spot_price=spot_price,
+        live_greeks={"Gamma": gamma, "Theta": theta},
+        entry_premium=entry_premium,
+        current_premium=current_premium,
+        highest_observed_premium=highest_premium
+    )
+    return {"status": "success", "data": res}
+
 
 if __name__ == "__main__":
     import os
