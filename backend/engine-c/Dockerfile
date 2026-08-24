@@ -5,31 +5,32 @@
 FROM python:3.11-slim
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Environment variables
+ENV PORT=8080 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DEFAULT_TIMEOUT=1000 \
+    PIP_RETRIES=10 \
+    PYTHONPATH=/app:/app/src:/app/shared \
+    ENGINE_C_MODE=live
+
 # Copy requirements and install dependencies
 COPY backend/engine-c/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --default-timeout=1000 --retries=10 -r requirements.txt
 
-# Copy engine-c source code
+# Copy engine-c source code & shared
 COPY backend/engine-c/src /app/src
 COPY backend/shared /app/shared
 
-# Copy shared modules if they exist (optional)
-# Note: Cloud Build will handle this from the build context
 RUN mkdir -p /app/shared
-
-# Environment variables
-ENV PORT=8080
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app:/app/src:/app/shared
-ENV ENGINE_C_MODE=live
 
 EXPOSE 8080
 
