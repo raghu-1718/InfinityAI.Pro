@@ -1,0 +1,12 @@
+[
+  "rsi_14",
+  "macd_crossover",
+  "vwap_distance",
+  "atr_volatility",
+  "rsi_vwap_ratio",
+  "volatility_scaled_vwap",
+  "macd_rsi_momentum",
+  "rsi_roll_mean_5",
+  "vwap_dist_diff",
+  "atr_acceleration"
+]
