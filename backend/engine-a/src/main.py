@@ -2056,6 +2056,22 @@ async def evaluate_confluence_filter(symbol: str = "NIFTY", signal_type: str = "
     )
     return res
 
+@app.post("/api/v1/stream/cycle")
+async def trigger_live_stream_cycle():
+    """Triggers an instantaneous live market tick publish cycle to GCP Pub/Sub & BigQuery"""
+    from src.services.live_tick_streamer import LIVE_TICK_STREAMER
+    results = await LIVE_TICK_STREAMER.publish_live_stream_cycle()
+    return {"status": "success", "results": results}
+
+@app.get("/api/v1/stream/quote")
+async def get_live_stream_quote(symbol: str = "NIFTY"):
+    """Fetches real-time exchange quote and engineered features for an Indian index"""
+    from src.services.live_tick_streamer import LIVE_TICK_STREAMER
+    quote = LIVE_TICK_STREAMER.fetch_live_quote(symbol)
+    if not quote:
+        raise HTTPException(status_code=404, detail=f"Unable to fetch real-time quote for {symbol}")
+    return {"status": "success", "data": quote}
+
 
 if __name__ == "__main__":
     import os
