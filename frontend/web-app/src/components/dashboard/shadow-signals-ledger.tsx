@@ -408,11 +408,12 @@ export function ShadowSignalsLedger() {
                   const isOpen = sig.outcome_status === "OPEN";
                   const isWin = sig.outcome_status === "TARGET_HIT" || (sig.net_pnl && sig.net_pnl > 0);
 
-                  // Calculate expected profit & loss display if not populated
+                  // Calculate expected profit & loss display if not populated (Dynamic Greek Volatility Floor)
                   const lotSz = sig.trade_bracket?.lot_size || 65;
                   const entryPrem = sig.trade_bracket?.entry_premium || (sig.spot_price * 0.011);
                   const expTargetNet = sig.expected_pnl?.expected_profit_target_net ?? Math.round((entryPrem * 0.15 * lotSz) - 55);
-                  const maxRiskNet = sig.expected_pnl?.max_loss_stop_loss_net ?? Math.round((-entryPrem * 0.11 * lotSz) - 55);
+                  const dynamicSlPct = (sig.trade_bracket?.stop_loss_percent ? sig.trade_bracket.stop_loss_percent / 100 : (sig.trade_bracket?.stop_loss_premium ? (entryPrem - sig.trade_bracket.stop_loss_premium) / entryPrem : 0.065));
+                  const maxRiskNet = sig.expected_pnl?.max_loss_stop_loss_net ?? Math.round((-entryPrem * dynamicSlPct * lotSz) - 55);
                   const capitalReq = sig.expected_pnl?.system_capital_required ?? Math.round(entryPrem * lotSz);
 
                   return (

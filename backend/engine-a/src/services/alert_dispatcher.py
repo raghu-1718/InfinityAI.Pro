@@ -84,7 +84,9 @@ class AlertDispatcher:
             lot_size = bracket.get("lot_size", 65)
             entry_prem = float(bracket.get("entry_premium", 100.0))
             target_prem = float(bracket.get("target_premium", entry_prem * 1.15))
-            stop_prem = float(bracket.get("stop_loss_premium", entry_prem * 0.89))
+            stop_prem = float(bracket.get("stop_loss_premium", entry_prem * 0.94))
+            sl_pct_str = bracket.get("stop_loss_percent_str") or f"-{((entry_prem - stop_prem)/entry_prem*100):.1f}%"
+            tgt_pct_str = bracket.get("target_percent_str", "+15.0%")
             exp_net = float(exp_pnl.get("expected_profit_target_net", (target_prem - entry_prem) * lot_size - 55))
             max_risk = float(exp_pnl.get("max_loss_stop_loss_net", (stop_prem - entry_prem) * lot_size - 55))
             gemini_sent = models.get("gemini_sentiment", "NEUTRAL")
@@ -101,9 +103,9 @@ class AlertDispatcher:
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"💎 *Trade Bracket (1 Lot = {lot_size}):*\n"
                 f"• *ATM Entry Premium:* `₹{entry_prem:.2f}`\n"
-                f"• *Target (+15%):* `₹{target_prem:.2f}` (*Exp Net:* `+₹{exp_net:,.2f}`)\n"
-                f"• *Stop Loss (-11%):* `₹{stop_prem:.2f}` (*Max Risk:* `₹{max_risk:,.2f}`)\n"
-                f"• *Trailing SL Invariants:* `+8% -> BE | +12% -> +6% Lock`\n"
+                f"• *Target ({tgt_pct_str}):* `₹{target_prem:.2f}` (*Exp Net:* `+₹{exp_net:,.2f}`)\n"
+                f"• *Dynamic Volatility Stop ({sl_pct_str}):* `₹{stop_prem:.2f}` (*Max Risk:* `₹{max_risk:,.2f}`)\n"
+                f"• *Trailing SL Invariants:* `+8% -> BE | +12% -> +6% Lock | Uncapped Runners`\n"
                 f"• *Gemini Macro Bias:* `{gemini_sent}`\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🛡️ _Auto-logged to Firestore Ledger & Live MTM Tracker_"
