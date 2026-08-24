@@ -36,6 +36,10 @@ jobs:
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: "access_token"
+          access_token_lifetime: "3600s"
+          create_credentials_file: true
+          export_environment_variables: true
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -74,6 +78,10 @@ jobs:
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: "access_token"
+          access_token_lifetime: "3600s"
+          create_credentials_file: true
+          export_environment_variables: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
