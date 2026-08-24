@@ -1,7 +1,8 @@
 """
 InfinityAI.Pro — Dynamic Trailing Profit Lock & Gamma Scalping Ratchet Engine
 =============================================================================
-Institutional-grade multi-tier profit lock algorithm:
+Institutional-grade multi-tier profit lock algorithm (Zero Hardcoded Stop Loss):
+  • Initial Stop Loss dynamically determined by live Volatility / Greek surface
   • Peak Profit >= +8%  -> Lock in Breakeven +1% (Eliminates winning trades reversing to losses)
   • Peak Profit >= +12% -> Lock in +6% guaranteed profit
   • Peak Profit >= +15% -> Lock in +12% guaranteed profit (Allows trade to run to +20%)
@@ -27,11 +28,30 @@ TIERED_PROFIT_INVARIANTS = [
     (0.08, 0.01, "TIER_1_BREAKEVEN_PLUS_1"),
 ]
 
-class DynamicTrailingProfitLock:
-    """Multi-Tier Ratchet Profit Protection & Gamma Scalp Engine"""
+def calculate_dynamic_volatility_buffer(iv: float = 0.172, gamma: float = 0.001) -> float:
+    """Computes mathematical volatility-adjusted risk buffer (IV * 0.25 + Gamma * 15.0)"""
+    return round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
 
-    def __init__(self, base_stop_loss_pct: float = 0.11):
-        self.base_stop_loss_pct = base_stop_loss_pct
+class DynamicTrailingProfitLock:
+    """Multi-Tier Ratchet Profit Protection & Gamma Scalp Engine with Dynamic Risk Floor"""
+
+    def __init__(self, base_stop_loss_pct: Optional[float] = None):
+        self._custom_stop_loss_pct = base_stop_loss_pct
+
+    def resolve_stop_loss_pct(
+        self,
+        base_stop_loss_pct: Optional[float] = None,
+        live_greeks: Optional[Dict[str, float]] = None
+    ) -> float:
+        """Dynamically resolves stop loss percentage using Greek volatility surface"""
+        if base_stop_loss_pct is not None:
+            return base_stop_loss_pct
+        if self._custom_stop_loss_pct is not None:
+            return self._custom_stop_loss_pct
+        
+        iv = (live_greeks or {}).get("IV", (live_greeks or {}).get("iv", 0.172))
+        gamma = (live_greeks or {}).get("Gamma", (live_greeks or {}).get("gamma", 0.001))
+        return calculate_dynamic_volatility_buffer(iv, gamma)
 
     def evaluate_trailing_lock(
         self,
@@ -39,7 +59,9 @@ class DynamicTrailingProfitLock:
         highest_observed_premium: float,
         current_premium: float,
         lot_size: int = 65,
-        estimated_taxes: float = 55.0
+        estimated_taxes: float = 55.0,
+        base_stop_loss_pct: Optional[float] = None,
+        live_greeks: Optional[Dict[str, float]] = None
     ) -> Dict[str, Any]:
         """
         Evaluates current position against multi-tiered profit lock invariants.
@@ -52,10 +74,12 @@ class DynamicTrailingProfitLock:
         peak_gain_pct = (highest_premium - entry_premium) / entry_premium
         current_pnl_pct = (current_premium - entry_premium) / entry_premium
 
-        initial_stop_loss = round(entry_premium * (1.0 - self.base_stop_loss_pct), 2)
+        # Dynamically calculate the initial risk floor from volatility surface
+        effective_base_sl_pct = self.resolve_stop_loss_pct(base_stop_loss_pct, live_greeks)
+        initial_stop_loss = round(entry_premium * (1.0 - effective_base_sl_pct), 2)
         
         # 1. Determine active tier
-        active_tier_name = "BASE_INITIAL_STOP_LOSS"
+        active_tier_name = "BASE_VOLATILITY_ADAPTIVE_STOP_LOSS"
         locked_gain_pct = 0.0
         trailing_active = False
 
@@ -93,7 +117,7 @@ class DynamicTrailingProfitLock:
         current_gross_pnl = round((current_premium - entry_premium) * lot_size, 2)
         current_net_pnl = round(current_gross_pnl - estimated_taxes, 2)
         locked_gross_pnl = round((effective_stop_loss - entry_premium) * lot_size, 2) if trailing_active else 0.0
-        locked_net_pnl = round(locked_gross_pnl - estimated_taxes, 2) if trailing_active else round(-entry_premium * self.base_stop_loss_pct * lot_size - estimated_taxes, 2)
+        locked_net_pnl = round(locked_gross_pnl - estimated_taxes, 2) if trailing_active else round(-entry_premium * effective_base_sl_pct * lot_size - estimated_taxes, 2)
 
         return {
             "entry_premium": round(entry_premium, 2),

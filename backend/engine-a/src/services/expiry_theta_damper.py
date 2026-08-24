@@ -116,18 +116,24 @@ class ExpiryThetaDamper:
         symbol: str,
         entry_premium: float,
         base_target_pct: float = 0.15,
-        base_stop_loss_pct: float = 0.11,
-        current_dt_ist: Optional[datetime] = None
+        base_stop_loss_pct: Optional[float] = None,
+        current_dt_ist: Optional[datetime] = None,
+        iv: float = 0.172,
+        gamma: float = 0.001
     ) -> Dict[str, Any]:
         """
         Dynamically adapts target and stop-loss on authentic expiry afternoons:
-          • Normal: Target +15%, Stop Loss -11%
-          • Authentic 0 DTE Afternoon (post 13:00 IST): Target tightened to +10%, Stop Loss -9%
+          • Normal: Target +15%, Dynamic Stop Loss (derived from IV & Gamma surface)
+          • Authentic 0 DTE Afternoon (post 13:00 IST): Target tightened to +10%, Stop Loss tightened to 75% of baseline
             to capture quick bursts before rapid extrinsic decay occurs.
         """
         if current_dt_ist is None:
             now_utc = datetime.now(timezone.utc)
             current_dt_ist = now_utc + timedelta(hours=5, minutes=30)
+
+        # Dynamic baseline stop-loss from volatility surface
+        if base_stop_loss_pct is None:
+            base_stop_loss_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
 
         on_expiry = self.is_expiry_day(symbol, current_dt_ist)
         in_afternoon = self.is_afternoon_decay_window(current_dt_ist)
@@ -135,7 +141,7 @@ class ExpiryThetaDamper:
 
         if is_damper_active:
             adapted_target_pct = 0.10      # Tighten to +10% target
-            adapted_stop_loss_pct = 0.09   # Tighten to -9% stop loss
+            adapted_stop_loss_pct = round(max(0.04, base_stop_loss_pct * 0.75), 4)   # Tighten stop loss for 0DTE theta damping
             regime = "EXPIRY_AFTERNOON_THETA_DAMPER_ACTIVE"
         else:
             adapted_target_pct = base_target_pct

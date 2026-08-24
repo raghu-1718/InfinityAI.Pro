@@ -264,10 +264,12 @@ class RiskManager:
         self,
         capital: float,
         risk_per_trade: float = 0.10,
-        stop_loss_pct: float = 0.11,
+        stop_loss_pct: Optional[float] = None,
         symbol: str = "NIFTY",
         premium: float = 100.0,
-        max_lots_cap: int = 10
+        max_lots_cap: int = 10,
+        iv: float = 0.172,
+        gamma: float = 0.001
     ) -> Dict[str, Any]:
         """
         Institutional Margin-Aware Dynamic Lot Sizer for Options Buying.
@@ -276,6 +278,9 @@ class RiskManager:
         2. Fits small capital accounts (e.g. ₹10,000 trades exactly 1 lot safely).
         3. Scales lot count automatically as capital grows.
         """
+        if stop_loss_pct is None:
+            stop_loss_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
+
         sym_u = symbol.upper()
         if "BANKNIFTY" in sym_u:
             lot_size = 30
@@ -295,7 +300,7 @@ class RiskManager:
 
         # Risk-budgeted lot computation
         risk_amount = capital * max(0.01, min(0.30, risk_per_trade))
-        risk_per_lot = cost_per_lot * max(0.05, min(0.50, stop_loss_pct))
+        risk_per_lot = cost_per_lot * max(0.04, min(0.50, stop_loss_pct))
         risk_budgeted_lots = max(1, int(risk_amount // risk_per_lot))
 
         if capital >= cost_per_lot:
@@ -318,7 +323,7 @@ class RiskManager:
             "optimal_lots": optimal_lots,
             "total_units": total_units,
             "cost_per_lot": round(cost_per_lot, 2),
-        "total_margin_required": round(total_margin_required, 2),
+            "total_margin_required": round(total_margin_required, 2),
             "max_risk_amount": round(max_risk, 2),
             "is_viable": is_viable,
             "rejection_reason": rejection_reason,
@@ -330,9 +335,10 @@ class RiskManager:
         entry_premium: float,
         highest_observed_premium: float,
         current_premium: float,
-        min_stop_loss_pct: float = 0.11,
+        min_stop_loss_pct: Optional[float] = None,
         min_profit_target_pct: float = 0.15,
-        trailing_step_pct: float = 0.05
+        trailing_step_pct: float = 0.05,
+        live_greeks: Optional[Dict[str, float]] = None
     ) -> Dict[str, Any]:
         """
         Multi-Tier Dynamic Trailing Stop-Loss & Target Ratchet Engine.
@@ -347,7 +353,9 @@ class RiskManager:
         return DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
             entry_premium=entry_premium,
             highest_observed_premium=highest_observed_premium,
-            current_premium=current_premium
+            current_premium=current_premium,
+            base_stop_loss_pct=min_stop_loss_pct,
+            live_greeks=live_greeks
         )
 
     def evaluate_dynamic_risk_exit(

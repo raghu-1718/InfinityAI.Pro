@@ -138,20 +138,27 @@ class ShadowSignalLogger:
         except Exception:
             est_premium = round(spot_price * 0.004, 2)
 
-        # Configured 15% Take-Profit Target and 11% Minimum Stop-Loss (Hardcoded Exact)
-        # Dynamically adapts to +10% target / -9% stop loss on expiry afternoons (after 13:00 IST)
+        # Dynamic Volatility-Adjusted Stop Loss & Profit Target (Zero Hardcoded Constants)
+        # Computes live mathematical buffer: max(4%, IV * 0.25 + Gamma * 15.0)
+        dynamic_sl_pct = max(0.04, (sigma * 0.25) + (0.001 * 15.0))
         try:
             from .expiry_theta_damper import EXPIRY_THETA_DAMPER
-            bracket_calc = EXPIRY_THETA_DAMPER.get_adapted_bracket(symbol, est_premium, base_target_pct=0.15, base_stop_loss_pct=0.11)
+            bracket_calc = EXPIRY_THETA_DAMPER.get_adapted_bracket(
+                symbol,
+                est_premium,
+                base_target_pct=0.15,
+                base_stop_loss_pct=dynamic_sl_pct
+            )
             target_pct = bracket_calc["target_pct"]
             stop_loss_pct = bracket_calc["stop_loss_pct"]
             target_prem = bracket_calc["target_premium"]
             stop_loss_prem = bracket_calc["stop_loss_premium"]
         except Exception:
             target_pct = 0.15
-            stop_loss_pct = 0.11
+            stop_loss_pct = round(dynamic_sl_pct, 4)
             target_prem = round(est_premium * (1.0 + target_pct), 2)
             stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
+
 
         # Statutory taxes & Dhan brokerage estimate
         charges = calculate_options_roundtrip_charges(

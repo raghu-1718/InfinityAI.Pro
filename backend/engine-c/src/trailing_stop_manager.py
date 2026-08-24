@@ -75,11 +75,16 @@ class TrailingStopManager:
         entry_price: float,
         quantity: int,
         direction: str = "LONG",
-        initial_sl_pct: float = 0.11,
+        initial_sl_pct: Optional[float] = None,
         target_pct: float = 0.15,
-        broker_order_id: Optional[str] = None
+        broker_order_id: Optional[str] = None,
+        iv: float = 0.172,
+        gamma: float = 0.001
     ) -> MonitoredPosition:
-        """Registers a newly opened trade for real-time trailing SL surveillance."""
+        """Registers a newly opened trade for real-time trailing SL surveillance with dynamic risk floor."""
+        if initial_sl_pct is None:
+            initial_sl_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
+
         sl_price = entry_price * (1.0 - initial_sl_pct) if direction == "LONG" else entry_price * (1.0 + initial_sl_pct)
         target_price = entry_price * (1.0 + target_pct) if direction == "LONG" else entry_price * (1.0 - target_pct)
 
