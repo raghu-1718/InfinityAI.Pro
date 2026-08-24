@@ -626,10 +626,26 @@ class MLModelStore:
             cat_blob = bucket.blob('catboost_model.cbm')
             if cat_blob.exists() and HAS_CATBOOST:
                 cat_blob.download_to_filename('/tmp/catboost_model_dl.cbm')
-                model = CatBoostClassifier()
-                model.load_model('/tmp/catboost_model_dl.cbm')
-                self.models['catboost'] = model
+                cat_m = CatBoostClassifier()
+                cat_m.load_model('/tmp/catboost_model_dl.cbm')
+                self.models['catboost'] = cat_m
                 logger.info("✅ Reloaded CatBoost from GCS")
+
+            # Download XGBoost
+            xgb_blob = bucket.blob('xgboost_model.json')
+            if xgb_blob.exists():
+                xgb_blob.download_to_filename('/tmp/xgboost_model_dl.json')
+                xgb_m = xgb.XGBClassifier()
+                xgb_m.load_model('/tmp/xgboost_model_dl.json')
+                self.models['xgboost'] = xgb_m
+                logger.info("✅ Reloaded XGBoost from GCS")
+
+            # Download RandomForest
+            rf_blob = bucket.blob('random_forest_model.pkl')
+            if rf_blob.exists():
+                rf_blob.download_to_filename('/tmp/rf_model_dl.pkl')
+                self.models['random_forest'] = joblib.load('/tmp/rf_model_dl.pkl')
+                logger.info("✅ Reloaded RandomForest from GCS")
                 
         except Exception as e:
             logger.error(f"GCS Reload error: {e}")
@@ -778,8 +794,14 @@ class MLModelStore:
             model = self.get_model(model_name)
             if model is not None:
                 try:
-                    # Feature dimension matching (handles 18 vs 20 features)
-                    n_feats = getattr(model, 'n_features_', getattr(model, 'n_features_in_', X_scaled.shape[1]))
+                    # Feature dimension matching (handles 10 vs 18 vs 20 features)
+                    n_feats = getattr(model, 'n_features_in_', getattr(model, 'n_features_', None))
+                    if n_feats is None or n_feats <= 0:
+                        if hasattr(model, 'feature_names_') and model.feature_names_:
+                            n_feats = len(model.feature_names_)
+                        else:
+                            n_feats = X_scaled.shape[1]
+
                     if X_scaled.shape[1] > n_feats:
                         X_input = X_scaled[:, :n_feats]
                     elif X_scaled.shape[1] < n_feats:
