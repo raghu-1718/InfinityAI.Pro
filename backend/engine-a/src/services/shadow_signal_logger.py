@@ -183,6 +183,14 @@ class ShadowSignalLogger:
             "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE"
         }
 
+        # Real-time Institutional FII/DII Flow Radar Multiplier
+        try:
+            from .fii_dii_flow_radar import FII_DII_FLOW_RADAR
+            adj_conf, flow_data = FII_DII_FLOW_RADAR.apply_multiplier_to_confidence(confidence_score, decision)
+            confidence_score = adj_conf
+        except Exception:
+            flow_data = {"regime": "BALANCED_EQUILIBRIUM", "institutional_multiplier": 1.0}
+
         payload = {
             "signal_id": signal_id,
             "timestamp_utc": now_utc.isoformat(),
@@ -197,7 +205,8 @@ class ShadowSignalLogger:
                 "catboost_prob": round(catboost_prob, 4),
                 "lightgbm_prob": round(lightgbm_prob, 4),
                 "xgboost_prob": round(xgboost_prob, 4),
-                "gemini_sentiment": gemini_sentiment
+                "gemini_sentiment": gemini_sentiment,
+                "institutional_flow": flow_data
             },
             "trade_bracket": {
                 "contract": contract_name,
@@ -209,10 +218,13 @@ class ShadowSignalLogger:
                 "stop_loss_premium": stop_loss_prem,
                 "stop_loss_percent": stop_loss_pct * 100,
                 "trailing_stop_loss_active": True,
+                "trailing_tiers": "Tier 1: +8% -> BE+1% | Tier 2: +12% -> +6% | Tier 3: +15% -> +12% | Tier 4: +20% -> +15% | Tier 5: +30% -> +22%",
                 "risk_reward": "1:1.25 (Trailing)",
                 "lot_size": actual_lot_size
             },
             "expected_pnl": expected_pnl_payload,
+            "highest_observed_premium": est_premium,
+            "active_profit_tier": "BASE_INITIAL_STOP_LOSS",
             "current_mtm_gross_pnl": 0.0,
             "current_mtm_net_pnl": 0.0,
             "current_mtm_roi_pct": 0.0,
@@ -316,14 +328,28 @@ class ShadowSignalLogger:
 
         simulated_exit_prem = max(1.0, simulated_exit_prem)
 
-        outcome_status = "OPEN"
-        if simulated_exit_prem >= target_prem:
-            outcome_status = "TARGET_HIT"
-            simulated_exit_prem = target_prem
-        elif simulated_exit_prem <= stop_prem:
-            outcome_status = "STOP_LOSS_HIT"
-            simulated_exit_prem = stop_prem
-        elif is_eod_squareoff:
+        # Dynamic Multi-Tier Ratchet Profit Lock Evaluation
+        highest_prev = data.get("highest_observed_premium", entry_prem)
+        highest_now = max(highest_prev, simulated_exit_prem)
+        
+        try:
+            from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+            lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+                entry_premium=entry_prem,
+                highest_observed_premium=highest_now,
+                current_premium=simulated_exit_prem,
+                lot_size=lot_size,
+                estimated_taxes=tax_cost
+            )
+            outcome_status = lock_eval["outcome_status"]
+            active_tier = lock_eval["active_tier"]
+            effective_sl = lock_eval["effective_stop_loss"]
+        except Exception:
+            outcome_status = "OPEN"
+            active_tier = "BASE_STOP_LOSS"
+            effective_sl = stop_prem
+
+        if is_eod_squareoff and outcome_status == "OPEN":
             outcome_status = "EOD_SQUAREOFF"
 
         capital_required = entry_prem * lot_size
@@ -338,12 +364,14 @@ class ShadowSignalLogger:
             updates = {
                 "outcome_status": outcome_status,
                 "exit_premium": round(simulated_exit_prem, 2),
+                "highest_observed_premium": round(highest_now, 2),
+                "active_profit_tier": active_tier,
                 "gross_pnl": round(gross_pnl, 2),
                 "net_pnl": round(net_pnl, 2),
                 "resolved_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
             }
             doc_ref.update(updates)
-            logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} | Net PnL: ₹{net_pnl:+.2f}")
+            logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} ({active_tier}) | Net PnL: ₹{net_pnl:+.2f}")
             data.update(updates)
             if ALERT_DISPATCHER:
                 try:
@@ -356,6 +384,9 @@ class ShadowSignalLogger:
             updates = {
                 "current_mtm_spot": round(current_spot, 2),
                 "current_mtm_premium": round(simulated_exit_prem, 2),
+                "highest_observed_premium": round(highest_now, 2),
+                "effective_trailing_stop_loss": round(effective_sl, 2),
+                "active_profit_tier": active_tier,
                 "current_mtm_gross_pnl": round(gross_pnl, 2),
                 "current_mtm_net_pnl": round(net_pnl, 2),
                 "current_mtm_roi_pct": round(roi_pct, 2),

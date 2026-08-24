@@ -2073,6 +2073,31 @@ async def get_live_stream_quote(symbol: str = "NIFTY"):
     return {"status": "success", "data": quote}
 
 
+@app.get("/api/v1/flow/institutional-radar")
+async def get_institutional_flow_radar():
+    """Fetches real-time FII/DII institutional cash & index futures long/short delta metrics"""
+    from src.services.fii_dii_flow_radar import FII_DII_FLOW_RADAR
+    flow = FII_DII_FLOW_RADAR.fetch_live_institutional_flow()
+    return {"status": "success", "data": flow}
+
+@app.post("/api/v1/risk/profit-lock/evaluate")
+async def evaluate_profit_lock_simulation(
+    entry_premium: float,
+    highest_premium: float,
+    current_premium: float,
+    lot_size: int = 65
+):
+    """Simulates and evaluates the multi-tier ratchet dynamic profit lock algorithm"""
+    from src.services.dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+    result = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+        entry_premium=entry_premium,
+        highest_observed_premium=highest_premium,
+        current_premium=current_premium,
+        lot_size=lot_size
+    )
+    return {"status": "success", "data": result}
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))

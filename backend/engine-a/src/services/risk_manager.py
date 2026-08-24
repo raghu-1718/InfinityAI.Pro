@@ -316,7 +316,7 @@ class RiskManager:
             "optimal_lots": optimal_lots,
             "total_units": total_units,
             "cost_per_lot": round(cost_per_lot, 2),
-            "total_margin_required": round(total_margin_required, 2),
+        "total_margin_required": round(total_margin_required, 2),
             "max_risk_amount": round(max_risk, 2),
             "is_viable": is_viable,
             "rejection_reason": rejection_reason,
@@ -333,52 +333,20 @@ class RiskManager:
         trailing_step_pct: float = 0.05
     ) -> Dict[str, Any]:
         """
-        Dynamic Trailing Stop-Loss & Target Ratchet Engine.
-        1. Enforces baseline minimum stop-loss (default 11%, user-adjustable).
-        2. Enforces minimum profit target (default 15%, user-adjustable).
-        3. Once target (+15%) is reached, trailing activates and ratchets up SL
-           locking in profit on every +5% upside surge.
+        Multi-Tier Dynamic Trailing Stop-Loss & Target Ratchet Engine.
+        • Peak Profit >= +8%  -> Lock in Breakeven +1% (Eliminates winning trades reversing to losses)
+        • Peak Profit >= +12% -> Lock in +6% guaranteed profit
+        • Peak Profit >= +15% -> Lock in +12% guaranteed profit (Allows trade to run to +20%)
+        • Peak Profit >= +20% -> Lock in +15% guaranteed profit
+        • Peak Profit >= +30% -> Lock in +22% guaranteed profit
+        • Peak Profit >= +40% -> Lock in +30% guaranteed profit
         """
-        initial_stop_loss = round(entry_premium * (1.0 - min_stop_loss_pct), 2)
-        initial_target = round(entry_premium * (1.0 + min_profit_target_pct), 2)
-
-        pnl_pct = (current_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
-        peak_gain_pct = (highest_observed_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
-
-        trailing_active = peak_gain_pct >= min_profit_target_pct
-
-        if trailing_active:
-            # Trailing stop ratchets: locks in gain with a trailing_step_pct buffer
-            locked_in_gain_pct = peak_gain_pct - trailing_step_pct
-            trailing_sl_price = round(entry_premium * (1.0 + locked_in_gain_pct), 2)
-            effective_stop_loss = max(initial_stop_loss, trailing_sl_price)
-        else:
-            effective_stop_loss = initial_stop_loss
-
-        # Determine outcome state
-        if current_premium <= effective_stop_loss:
-            action = "EXIT_TRAILING_SL" if trailing_active else "EXIT_STOP_LOSS"
-            status = "TRAILING_SL_HIT" if trailing_active else "SL_HIT"
-        elif not trailing_active and current_premium >= initial_target:
-            action = "ACTIVATE_TRAILING"
-            status = "TARGET_HIT_TRAILING_ACTIVE"
-        else:
-            action = "HOLD"
-            status = "OPEN"
-
-        return {
-            "entry_premium": round(entry_premium, 2),
-            "current_premium": round(current_premium, 2),
-            "highest_observed_premium": round(highest_observed_premium, 2),
-            "initial_stop_loss": initial_stop_loss,
-            "initial_target": initial_target,
-            "effective_stop_loss": effective_stop_loss,
-            "trailing_active": trailing_active,
-            "current_pnl_pct": round(pnl_pct * 100, 2),
-            "peak_gain_pct": round(peak_gain_pct * 100, 2),
-            "action": action,
-            "status": status
-        }
+        from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+        return DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+            entry_premium=entry_premium,
+            highest_observed_premium=highest_observed_premium,
+            current_premium=current_premium
+        )
 
     def get_comprehensive_metrics(self, returns: np.ndarray,
                                    risk_free_rate: float = 0.05) -> Dict[str, Any]:
