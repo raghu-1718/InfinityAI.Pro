@@ -2122,16 +2122,31 @@ async def evaluate_dynamic_risk(
     decision = DYNAMIC_RISK_SERVICE.evaluate_live_signals(state)
     return {"status": "success", "decision": decision}
 
-@app.get("/api/v1/risk/dynamic/state")
-async def get_dynamic_risk_state():
-    """Fetches persistent internal position and consecutive-loss risk state"""
-    from src.services.dynamic_risk_service import DYNAMIC_RISK_SERVICE
+@app.get("/api/v1/ml/ensemble-weights")
+async def get_bayesian_ensemble_weights():
+    """Fetches active Bayesian online weights and performance metrics for the Tri-Model ensemble"""
+    from src.services.bayesian_ensemble_client import BAYESIAN_CLIENT
+    weights = BAYESIAN_CLIENT.get_active_weights()
+    champion = max(weights, key=weights.get) if weights else "catboost"
     return {
         "status": "success",
-        "consecutive_losses": DYNAMIC_RISK_SERVICE.state.consecutive_losses,
-        "cool_down_active": DYNAMIC_RISK_SERVICE.state.cool_down_active,
-        "last_exit_timestamp": DYNAMIC_RISK_SERVICE.state.last_exit_timestamp.isoformat() if DYNAMIC_RISK_SERVICE.state.last_exit_timestamp else None
+        "weights": weights,
+        "champion_model": champion,
+        "optimization_mode": "BAYESIAN_ONLINE_UPDATING",
+        "decay_factor": 0.85,
+        "temperature": 4.5
     }
+
+@app.post("/api/v1/ml/consensus")
+async def calculate_bayesian_consensus(
+    catboost_prob: float,
+    lightgbm_prob: float,
+    xgboost_prob: float
+):
+    """Calculates weighted consensus probability using active Bayesian online weights"""
+    from src.services.bayesian_ensemble_client import BAYESIAN_CLIENT
+    res = BAYESIAN_CLIENT.calculate_bayesian_consensus(catboost_prob, lightgbm_prob, xgboost_prob)
+    return {"status": "success", "data": res}
 
 
 if __name__ == "__main__":
