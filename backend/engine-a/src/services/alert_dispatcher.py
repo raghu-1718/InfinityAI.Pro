@@ -130,14 +130,18 @@ class AlertDispatcher:
         tax_cost = float(outcome_data.get("estimated_tax_brokerage", 55.0))
         roi_pct = (net_pnl / (entry_prem * lot_size) * 100) if (entry_prem * lot_size) > 0 else 0.0
 
-        if status == "TARGET_HIT" or net_pnl > 0:
-            header = "🟢 🎉 *INFINITY AI — PROFIT TARGET ACHIEVED (+15%)*"
-            result_badge = f"🏆 *PROFIT: +₹{net_pnl:,.2f}* (`+{roi_pct:.1f}% ROI`)"
-        elif status == "STOP_LOSS_HIT":
-            header = "🔴 🛡️ *INFINITY AI — STOP LOSS TRIGGERED (-11%)*"
-            result_badge = f"⚠️ *LOSS: -₹{abs(net_pnl):,.2f}* (`{roi_pct:.1f}% ROI`)"
+        highest_prem = float(outcome_data.get("highest_observed_premium", exit_prem))
+        peak_gain_pct = ((highest_prem - entry_prem) / entry_prem * 100) if entry_prem > 0 else 0.0
+        active_tier = outcome_data.get("active_profit_tier", "STANDARD_EXIT")
+
+        if "TARGET" in status or "PROFIT" in status or net_pnl > 0:
+            header = f"🟢 🎉 *INFINITY AI — PROFIT SECURED (+{roi_pct:.1f}% NET ROI)*"
+            result_badge = f"🏆 *NET PROFIT: +₹{net_pnl:,.2f}* (`+{roi_pct:.1f}% Net ROI`)"
+        elif "STOP_LOSS" in status or "BREACH" in status or net_pnl < -10:
+            header = "🔴 🛡️ *INFINITY AI — DYNAMIC RISK EXIT*"
+            result_badge = f"⚠️ *NET LOSS: -₹{abs(net_pnl):,.2f}* (`{roi_pct:.1f}% ROI`)"
         else:
-            header = "⏰ 📋 *INFINITY AI — EOD 15:15 INTRADAY AUTO SQUARE-OFF*"
+            header = "⏰ 📋 *INFINITY AI — INTRADAY AUTO SQUARE-OFF*"
             pnl_badge = f"+₹{net_pnl:,.2f}" if net_pnl >= 0 else f"-₹{abs(net_pnl):,.2f}"
             result_badge = f"📊 *NET RESULT: {pnl_badge}* (`{roi_pct:+.1f}% ROI`)"
 
@@ -147,8 +151,10 @@ class AlertDispatcher:
             f"📊 *Contract:* `{contract}`\n"
             f"🏷️ *Signal ID:* `{sig_id}`\n"
             f"💰 *Entry Premium:* `₹{entry_prem:.2f}` ➔ *Exit:* `₹{exit_prem:.2f}`\n"
-            f"💵 *Trade Outcome:* {result_badge}\n"
-            f"🧾 *Gross P&L:* `₹{gross_pnl:+,.2f}` | *Statutory Taxes:* `₹{tax_cost:.2f}`\n"
+            f"🚀 *Highest Peak Hit:* `₹{highest_prem:.2f}` (*+{peak_gain_pct:.1f}% Peak Target!*)\n"
+            f"🔒 *Locked Ratchet Tier:* `{active_tier}`\n"
+            f"💵 *Final Outcome:* {result_badge}\n"
+            f"🧾 *Gross P&L:* `₹{gross_pnl:+,.2f}` | *Statutory Deductions:* `₹{tax_cost:.2f}`\n"
             f"⏱️ *Resolution Time:* `{resolved_at}`\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"✅ _Trade closed & committed to Institutional Performance Ledger_"

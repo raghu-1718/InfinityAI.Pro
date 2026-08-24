@@ -382,18 +382,22 @@ class ShadowSignalLogger:
         now_utc = datetime.now(timezone.utc)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
 
+        peak_achieved_pct = round(((highest_now - entry_prem) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
+
         if outcome_status != "OPEN":
             updates = {
                 "outcome_status": outcome_status,
                 "exit_premium": round(simulated_exit_prem, 2),
                 "highest_observed_premium": round(highest_now, 2),
+                "highest_target_achieved_pct": peak_achieved_pct,
                 "active_profit_tier": active_tier,
                 "gross_pnl": round(gross_pnl, 2),
                 "net_pnl": round(net_pnl, 2),
+                "roi_pct": round(roi_pct, 2),
                 "resolved_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
             }
             doc_ref.update(updates)
-            logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} ({active_tier}) | Net PnL: ₹{net_pnl:+.2f}")
+            logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} ({active_tier}) | Peak: +{peak_achieved_pct}% | Net PnL: ₹{net_pnl:+.2f}")
             data.update(updates)
             if ALERT_DISPATCHER:
                 try:
@@ -407,6 +411,7 @@ class ShadowSignalLogger:
                 "current_mtm_spot": round(current_spot, 2),
                 "current_mtm_premium": round(simulated_exit_prem, 2),
                 "highest_observed_premium": round(highest_now, 2),
+                "highest_target_achieved_pct": peak_achieved_pct,
                 "effective_trailing_stop_loss": round(effective_sl, 2),
                 "active_profit_tier": active_tier,
                 "current_mtm_gross_pnl": round(gross_pnl, 2),
