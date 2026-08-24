@@ -9,28 +9,65 @@ import os
 import asyncio
 import logging
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 logger = logging.getLogger("InfinityAI.AlertDispatcher")
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
-WHATSAPP_API_TOKEN = os.getenv("WHATSAPP_API_TOKEN", "")
-WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
-WHATSAPP_TO_NUMBER = os.getenv("WHATSAPP_TO_NUMBER", "")
-ALERT_WEBHOOK_URL = os.getenv("ALERT_WEBHOOK_URL", "")
-
 class AlertDispatcher:
-    """Multi-channel async notifications dispatcher for Telegram & WhatsApp"""
+    """Multi-channel async notifications dispatcher for Telegram & WhatsApp with dynamic Secret Manager resolution"""
 
     def __init__(self):
-        self.telegram_enabled = bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)
-        self.whatsapp_enabled = bool(WHATSAPP_API_TOKEN and WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TO_NUMBER)
-        self.webhook_enabled = bool(ALERT_WEBHOOK_URL)
-        if self.telegram_enabled:
-            logger.info("✅ Telegram Alert Channel: ENABLED")
-        if self.whatsapp_enabled:
-            logger.info("✅ WhatsApp Alert Channel: ENABLED")
+        self._telegram_bot_token: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
+        self._telegram_chat_id: Optional[str] = os.getenv("TELEGRAM_CHAT_ID")
+        self._whatsapp_api_token: Optional[str] = os.getenv("WHATSAPP_API_TOKEN")
+        self._whatsapp_phone_number_id: Optional[str] = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+        self._whatsapp_to_number: Optional[str] = os.getenv("WHATSAPP_TO_NUMBER")
+        self._alert_webhook_url: Optional[str] = os.getenv("ALERT_WEBHOOK_URL")
+
+    def _resolve_telegram_credentials(self) -> Tuple[Optional[str], Optional[str]]:
+        """Dynamically resolves Telegram bot token and chat ID from env or GCP Secret Manager"""
+        if self._telegram_bot_token and self._telegram_chat_id:
+            return self._telegram_bot_token, self._telegram_chat_id
+
+        # Fallback to GCP Secret Manager
+        try:
+            from google.cloud import secretmanager
+            client = secretmanager.SecretManagerServiceClient()
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+
+            if not self._telegram_bot_token:
+                try:
+                    name_tok = f"projects/{project_id}/secrets/TELEGRAM_BOT_TOKEN/versions/latest"
+                    resp_tok = client.access_secret_version(request={"name": name_tok})
+                    self._telegram_bot_token = resp_tok.payload.data.decode("utf-8").strip()
+                except Exception as e:
+                    logger.debug(f"SecretManager TELEGRAM_BOT_TOKEN lookup skipped: {e}")
+
+            if not self._telegram_chat_id:
+                try:
+                    name_chat = f"projects/{project_id}/secrets/TELEGRAM_CHAT_ID/versions/latest"
+                    resp_chat = client.access_secret_version(request={"name": name_chat})
+                    self._telegram_chat_id = resp_chat.payload.data.decode("utf-8").strip()
+                except Exception as e:
+                    logger.debug(f"SecretManager TELEGRAM_CHAT_ID lookup skipped: {e}")
+
+        except Exception as e:
+            logger.debug(f"GCP SecretManager client unavailable: {e}")
+
+        return self._telegram_bot_token, self._telegram_chat_id
+
+    @property
+    def telegram_enabled(self) -> bool:
+        tok, chat = self._resolve_telegram_credentials()
+        return bool(tok and chat)
+
+    @property
+    def whatsapp_enabled(self) -> bool:
+        return bool(self._whatsapp_api_token and self._whatsapp_phone_number_id and self._whatsapp_to_number)
+
+    @property
+    def webhook_enabled(self) -> bool:
+        return bool(self._alert_webhook_url)
 
     async def dispatch_signal_alert(self, signal_payload: Dict[str, Any]):
         """Dispatches a newly generated high-conviction AI trading signal"""
@@ -136,11 +173,12 @@ class AlertDispatcher:
             logger.warning(f"Sync outcome dispatch error: {e}")
 
     def _send_telegram_sync(self, text: str):
-        if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        tok, chat_id = self._resolve_telegram_credentials()
+        if not (tok and chat_id):
             return
         import urllib.request, json
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}
+        url = f"https://api.telegram.org/bot{tok}/sendMessage"
+        payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
         req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -184,11 +222,12 @@ class AlertDispatcher:
             logger.warning(f"Error dispatching premarket briefing: {e}")
 
     async def _send_telegram(self, text: str):
-        if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        tok, chat_id = self._resolve_telegram_credentials()
+        if not (tok and chat_id):
             return
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{tok}/sendMessage"
         payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
+            "chat_id": chat_id,
             "text": text,
             "parse_mode": "Markdown"
         }
@@ -199,13 +238,13 @@ class AlertDispatcher:
             logger.warning(f"Telegram dispatch failed: {e}")
 
     async def _send_whatsapp(self, text: str):
-        if not (WHATSAPP_API_TOKEN and WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TO_NUMBER):
+        if not (self._whatsapp_api_token and self._whatsapp_phone_number_id and self._whatsapp_to_number):
             return
-        url = f"https://graph.facebook.com/v18.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
-        headers = {"Authorization": f"Bearer {WHATSAPP_API_TOKEN}", "Content-Type": "application/json"}
+        url = f"https://graph.facebook.com/v18.0/{self._whatsapp_phone_number_id}/messages"
+        headers = {"Authorization": f"Bearer {self._whatsapp_api_token}", "Content-Type": "application/json"}
         payload = {
             "messaging_product": "whatsapp",
-            "to": WHATSAPP_TO_NUMBER,
+            "to": self._whatsapp_to_number,
             "type": "text",
             "text": {"body": text}
         }
@@ -216,11 +255,11 @@ class AlertDispatcher:
             logger.warning(f"WhatsApp dispatch failed: {e}")
 
     async def _send_webhook(self, payload: Dict[str, Any]):
-        if not ALERT_WEBHOOK_URL:
+        if not self._alert_webhook_url:
             return
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                await client.post(ALERT_WEBHOOK_URL, json=payload)
+                await client.post(self._alert_webhook_url, json=payload)
         except Exception as e:
             logger.warning(f"Webhook dispatch failed: {e}")
 
@@ -233,11 +272,12 @@ class AlertDispatcher:
             logger.warning(f"Custom message dispatch failed: {e}")
 
     async def _send_telegram_html(self, text: str):
-        if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        tok, chat_id = self._resolve_telegram_credentials()
+        if not (tok and chat_id):
             return
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{tok}/sendMessage"
         payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
+            "chat_id": chat_id,
             "text": text,
             "parse_mode": "HTML"
         }
