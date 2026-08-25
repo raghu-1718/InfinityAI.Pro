@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict
 
 from google.cloud import bigquery, firestore, storage
+from google.cloud.firestore_v1.base_query import FieldFilter
 try:
     from google import genai
     from google.genai import types
@@ -92,7 +93,7 @@ class EODTradeJournalReporter:
         try:
             db = firestore.Client(project=self.project_id)
             signals_ref = db.collection("ai_signals_ledger")
-            docs = signals_ref.where("status", "in", ["CLOSED", "OPEN", "EXECUTED"]).stream()
+            docs = signals_ref.where(filter=FieldFilter("status", "in", ["CLOSED", "OPEN", "EXECUTED"])).stream()
             for doc in docs:
                 d = doc.to_dict()
                 trades_count += 1

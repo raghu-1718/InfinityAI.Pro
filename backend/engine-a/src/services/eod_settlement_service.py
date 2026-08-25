@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from google.cloud import firestore, bigquery
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from src.services.tax_calculator import calculate_options_roundtrip_charges
 
@@ -47,7 +48,7 @@ class EODSettlementService:
 
         open_signals_ref = (
             self.db.collection(COLLECTION_NAME)
-            .where("outcome_status", "==", "OPEN")
+            .where(filter=FieldFilter("outcome_status", "==", "OPEN"))
             .stream()
         )
 

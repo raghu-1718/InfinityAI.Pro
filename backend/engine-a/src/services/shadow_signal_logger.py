@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
 
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 try:
     from .alert_dispatcher import ALERT_DISPATCHER
@@ -268,7 +269,7 @@ class ShadowSignalLogger:
             return {"updated": 0, "resolved": 0}
 
         try:
-            open_docs = list(self.db.collection(COLLECTION_NAME).where("outcome_status", "==", "OPEN").stream())
+            open_docs = list(self.db.collection(COLLECTION_NAME).where(filter=FieldFilter("outcome_status", "==", "OPEN")).stream())
             updated_count = 0
             resolved_count = 0
 

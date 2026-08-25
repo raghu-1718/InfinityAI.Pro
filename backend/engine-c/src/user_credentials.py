@@ -12,6 +12,7 @@ import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 logger = logging.getLogger(__name__)
 
@@ -114,9 +115,10 @@ class UserCredentialsManager:
         try:
             from google.cloud import firestore
             project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
-            # Explicitly pass database="(default)" to prevent the Firestore
-            # client from URL-encoding it as %28default%29 in REST calls.
-            self.db = firestore.Client(project=project_id, database="(default)")
+            
+            # Omit the database argument to hit the default instance
+            self.db = firestore.Client(project=project_id)
+            
             logger.info(f"✅ UserCredentialsManager: Connected to Firestore project '{project_id}'")
         except Exception as e:
             logger.warning(f"⚠️ UserCredentialsManager: Firestore client fallback mode: {e}")
@@ -293,7 +295,7 @@ class UserCredentialsManager:
         if self.db:
             try:
                 users_ref = self.db.collection("user_credentials")
-                query = users_ref.where("dhan_client_id", "==", client_id).limit(1)
+                query = users_ref.where(filter=FieldFilter("dhan_client_id", "==", str(client_id))).limit(1)
                 docs = list(query.stream())
                 for doc in docs:
                     data = doc.to_dict()

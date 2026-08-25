@@ -71,7 +71,7 @@ class PreflightHealthService:
 
         # 2. Firestore Credential Vault
         try:
-            db = firestore.Client(project=self.project_id, database="(default)")
+            db = firestore.Client(project=self.project_id)
             user_doc = db.collection("user_credentials").document("raghu_primary").get()
             if user_doc.exists:
                 checks["dhan_credential_vault"] = "ACTIVE & ENCRYPTED"
