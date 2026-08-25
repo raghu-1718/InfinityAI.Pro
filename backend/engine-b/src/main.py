@@ -129,6 +129,7 @@ async def on_shutdown():
         pass
 
 @app.get("/api/ai/live-state")
+@app.get("/api/v1/ai/live-state")
 async def get_ai_live_state():
     """Returns the sub-millisecond in-memory real-time macro AI state."""
     try:
@@ -138,6 +139,7 @@ async def get_ai_live_state():
         return {"status": "fallback", "error": str(e)}
 
 @app.post("/api/ai/macro-event-miner/trigger")
+@app.post("/api/v1/ai/macro-event-miner/trigger")
 async def trigger_macro_event_mining(
     query: str = Query("Latest RBI Monetary Policy Committee decision announcements and governor speech", description="Search query for policy event"),
     event_name: str = Query("RBI_MPC_POLICY", description="Event identifier")
@@ -154,6 +156,7 @@ async def trigger_macro_event_mining(
         return {"status": "error", "message": str(e)}
 
 @app.get("/api/ai/macro-event-miner/latest")
+@app.get("/api/v1/ai/macro-event-miner/latest")
 async def get_latest_macro_event_sentiment(max_age_hours: float = Query(4.0, description="Max freshness age in hours")):
     """Fetches the latest structured policy event sentiment from Firestore or in-memory cache."""
     try:
