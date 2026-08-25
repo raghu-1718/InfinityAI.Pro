@@ -1969,50 +1969,9 @@ async def reset_circuit_breaker(user_id: Optional[str] = "raghu_primary"):
         raise HTTPException(500, f"Failed to reset circuit breaker: {e}")
 
 
-@app.api_route("/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def proxy_engine_b_v1(path: str, request: Request) -> Response:
-    """
-    Public API gateway for Engine-B /api/v1/* endpoints.
-    Frontend calls Engine-A, Engine-A forwards to private Engine-B VM.
-    """
-    if http_client is None:
-        raise HTTPException(status_code=503, detail="Engine-A HTTP client not initialized")
-
-    upstream_url = f"{ENGINE_B_URL}/api/v1/{path}"
-    body = await request.body()
-    headers: Dict[str, str] = {}
-    for key in ("content-type", "accept", "authorization", "x-trace-id", "x-request-id"):
-        value = request.headers.get(key)
-        if value:
-            headers[key] = value
-
-    try:
-        upstream_response = await http_client.request(
-            method=request.method,
-            url=upstream_url,
-            params=request.query_params,
-            content=body if body else None,
-            headers=headers or None,
-            timeout=60.0,
-        )
-    except httpx.HTTPError as exc:
-        logger.error(f"Engine-B proxy failure for {upstream_url}: {exc}")
-        raise HTTPException(status_code=502, detail=f"Engine-B upstream request failed: {exc}") from exc
-
-    response_headers: Dict[str, str] = {}
-    content_type = upstream_response.headers.get("content-type")
-    if content_type:
-        response_headers["content-type"] = content_type
-
-    return Response(
-        content=upstream_response.content,
-        status_code=upstream_response.status_code,
-        headers=response_headers,
-    )
-
-
 # =====================================================================
 # INSTITUTIONAL AI JOURNAL, CIRCUIT BREAKER & CONFLUENCE ROUTES
+# =====================================================================
 # =====================================================================
 
 @app.post("/api/v1/journal/trigger-eod")
@@ -2237,6 +2196,51 @@ async def calculate_slippage(
         "lot_size": lot_size
     }
 
+
+# =====================================================================
+# FALLBACK WILDCARD PROXY TO PRIVATE ENGINE-B VM
+# =====================================================================
+
+@app.api_route("/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def proxy_engine_b_v1(path: str, request: Request) -> Response:
+    """
+    Public API gateway fallback for Engine-B /api/v1/* endpoints.
+    Frontend calls Engine-A, Engine-A forwards unhandled /api/v1/* routes to private Engine-B VM.
+    """
+    if http_client is None:
+        raise HTTPException(status_code=503, detail="Engine-A HTTP client not initialized")
+
+    upstream_url = f"{ENGINE_B_URL}/api/v1/{path}"
+    body = await request.body()
+    headers: Dict[str, str] = {}
+    for key in ("content-type", "accept", "authorization", "x-trace-id", "x-request-id"):
+        value = request.headers.get(key)
+        if value:
+            headers[key] = value
+
+    try:
+        upstream_response = await http_client.request(
+            method=request.method,
+            url=upstream_url,
+            params=request.query_params,
+            content=body if body else None,
+            headers=headers or None,
+            timeout=60.0,
+        )
+    except httpx.HTTPError as exc:
+        logger.error(f"Engine-B proxy failure for {upstream_url}: {exc}")
+        raise HTTPException(status_code=502, detail=f"Engine-B upstream request failed: {exc}") from exc
+
+    response_headers: Dict[str, str] = {}
+    content_type = upstream_response.headers.get("content-type")
+    if content_type:
+        response_headers["content-type"] = content_type
+
+    return Response(
+        content=upstream_response.content,
+        status_code=upstream_response.status_code,
+        headers=response_headers,
+    )
 
 
 if __name__ == "__main__":
