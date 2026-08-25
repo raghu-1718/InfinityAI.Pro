@@ -36,6 +36,12 @@ class LiveMacroState:
     gemini_synthesis: str = "System initializing warm macro priors..."
     last_updated_utc: str = ""
     is_live: bool = True
+    # Event-Driven Alternative Policy Data
+    policy_event_active: bool = False
+    policy_event_name: str = ""
+    policy_hawkish_score: float = 0.0
+    policy_volatility_expectation: str = "MEDIUM"
+    policy_regime_multiplier: float = 1.0
 
 
 # Global in-memory singleton
@@ -72,6 +78,7 @@ class AsyncMacroIntelligenceWorker:
         """Continuous async grounding loop."""
         logger.info(f"🚀 AsyncMacroIntelligenceWorker loop started (Polling every {self.interval}s).")
         from services.premarket_macro_radar import premarket_macro_radar
+        from services.macro_event_miner import macro_event_miner
 
         while self.running:
             try:
@@ -89,10 +96,27 @@ class AsyncMacroIntelligenceWorker:
                     )
                 )
 
-                # 2. Update shared in-memory state atomically
+                # 2. Check latest event-driven alternative data (RBI MPC / Fed)
+                policy_payload = await loop.run_in_executor(
+                    None,
+                    lambda: macro_event_miner.get_latest_sentiment(max_age_hours=4.0)
+                )
+
+                # 3. Compute blended regime multiplier
+                base_multiplier = 1.20 if report.macro_bias == "BULLISH" else (0.80 if report.macro_bias == "BEARISH" else 1.0)
+                if policy_payload and not policy_payload.is_fallback and policy_payload.regime_multiplier > 1.0:
+                    # Scale baseline multiplier by event policy shock
+                    blended_multiplier = round(base_multiplier * policy_payload.regime_multiplier, 2)
+                    blended_multiplier = max(0.5, min(3.0, blended_multiplier))
+                    policy_active = True
+                else:
+                    blended_multiplier = base_multiplier
+                    policy_active = False
+
+                # 4. Update shared in-memory state atomically
                 _LIVE_AI_STATE.macro_bias = report.macro_bias
                 _LIVE_AI_STATE.macro_score = report.macro_score
-                _LIVE_AI_STATE.regime_multiplier = 1.20 if report.macro_bias == "BULLISH" else (0.80 if report.macro_bias == "BEARISH" else 1.0)
+                _LIVE_AI_STATE.regime_multiplier = blended_multiplier
                 _LIVE_AI_STATE.gift_nifty_points = report.gift_nifty_points
                 _LIVE_AI_STATE.expected_gap = report.expected_gap
                 _LIVE_AI_STATE.crude_oil_status = report.crude_oil_status
@@ -101,9 +125,18 @@ class AsyncMacroIntelligenceWorker:
                 _LIVE_AI_STATE.last_updated_utc = datetime.now(timezone.utc).isoformat()
                 _LIVE_AI_STATE.is_live = True
 
+                # Policy event fields
+                _LIVE_AI_STATE.policy_event_active = policy_active
+                if policy_payload:
+                    _LIVE_AI_STATE.policy_event_name = policy_payload.event_name
+                    _LIVE_AI_STATE.policy_hawkish_score = policy_payload.hawkish_score
+                    _LIVE_AI_STATE.policy_volatility_expectation = policy_payload.volatility_expectation
+                    _LIVE_AI_STATE.policy_regime_multiplier = policy_payload.regime_multiplier
+
                 logger.info(
                     f"🧠 [Real-Time AI State Updated] Macro: {report.macro_bias} "
-                    f"({report.macro_score:+.2f}) | Multiplier: {_LIVE_AI_STATE.regime_multiplier:.2f}x"
+                    f"({report.macro_score:+.2f}) | Multiplier: {_LIVE_AI_STATE.regime_multiplier:.2f}x | "
+                    f"Policy Event Active: {policy_active}"
                 )
 
             except Exception as e:

@@ -137,6 +137,32 @@ async def get_ai_live_state():
     except Exception as e:
         return {"status": "fallback", "error": str(e)}
 
+@app.post("/api/ai/macro-event-miner/trigger")
+async def trigger_macro_event_mining(
+    query: str = Query("Latest RBI Monetary Policy Committee decision announcements and governor speech", description="Search query for policy event"),
+    event_name: str = Query("RBI_MPC_POLICY", description="Event identifier")
+):
+    """
+    On-demand or scheduled event-driven alternative data mining via Vertex AI Gemini 2.5 Flash
+    with Thinking Budget and Google Search Grounding.
+    """
+    try:
+        from services.macro_event_miner import macro_event_miner
+        payload = macro_event_miner.mine_event(event_query=query, event_name=event_name)
+        return {"status": "success", "data": payload.model_dump()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/ai/macro-event-miner/latest")
+async def get_latest_macro_event_sentiment(max_age_hours: float = Query(4.0, description="Max freshness age in hours")):
+    """Fetches the latest structured policy event sentiment from Firestore or in-memory cache."""
+    try:
+        from services.macro_event_miner import macro_event_miner
+        payload = macro_event_miner.get_latest_sentiment(max_age_hours=max_age_hours)
+        return {"status": "success", "data": payload.model_dump()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.post("/api/reports/eod-journal/generate")
 @app.get("/api/reports/eod-journal/generate")
 async def generate_eod_trade_journal(user_id: Optional[str] = Query("raghu_primary", description="User ID")):
