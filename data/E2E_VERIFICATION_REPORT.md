@@ -67,7 +67,7 @@ Max Instance Count: 3 (autoscaling enabled)
 
 ### 1. Cloud Function Deployment ✅
 ```
-Name:      projects/galvanic-pulsar-482815-h0/locations/us-central1/functions/backtest-orchestrator
+Name:      projects/galvanic-pulsar-482815-h0/locations/asia-south1/functions/backtest-orchestrator
 State:     ACTIVE
 Revision:  backtest-orchestrator-00002-voq
 URI:       https://backtest-orchestrator-3acobgd3qa-uc.a.run.app
@@ -260,7 +260,7 @@ Recommendation: Can increase to 5-10 instances for higher throughput
 
 **Geographic Distribution:**
 ```
-Current Region: us-central1
+Current Region: asia-south1
 Latency: ~0.5-0.8 seconds from client
 Recommendation: Consider regional replicas for global users
 ```
@@ -374,7 +374,7 @@ Recommendation: Consider regional replicas for global users
 ```
 
 ### API Ready for Production
-- Endpoint: `https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator`
+- Endpoint: `https://asia-south1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator`
 - Method: POST
 - Content-Type: application/json
 - Timeout: 300 seconds

@@ -68,7 +68,7 @@ class EODTradeJournalReporter:
                 self._genai_client = genai.Client(
                     vertexai=True,
                     project=self.project_id,
-                    location="us-central1"
+                    location="asia-south1"
                 )
             except Exception as e:
                 logger.warning(f"Vertex AI GenAI client initialization note: {e}")

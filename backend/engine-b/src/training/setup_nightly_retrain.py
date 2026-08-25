@@ -42,7 +42,7 @@ SYMBOLS      = ["NIFTY", "BANKNIFTY", "SENSEX", "FINNIFTY", "MIDCPNIFTY"]
 PUBSUB_TOPIC     = "model-retrain-trigger"
 PUBSUB_DRIFT     = "model-drift-alerts"
 SCHEDULER_NAME   = "infinity-nightly-retrain"
-ENGINE_B_URL     = os.getenv("ENGINE_B_URL", "https://engine-b-ml-prod.asia-south1.run.app")
+ENGINE_B_URL     = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
 
 
 def create_pubsub_topics() -> None:

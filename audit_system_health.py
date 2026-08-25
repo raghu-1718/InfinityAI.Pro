@@ -18,7 +18,7 @@ PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
 GCS_BUCKET = "infinity-ai-models-vault"
 BQ_DATASET = "market_data"
 BQ_TABLE = "options_ticks"
-VERTEX_LOCATION = "us-central1"
+VERTEX_LOCATION = "asia-south1"
 VERTEX_MODEL = "gemini-2.5-pro"
 
 ENGINE_ENDPOINTS = {

@@ -83,7 +83,7 @@ class MacroEventMiner:
                 self.genai_client = genai.Client(
                     vertexai=True,
                     project=self.project_id,
-                    location="us-central1"
+                    location="asia-south1"
                 )
                 logger.info(f"[MacroEventMiner] GenAI client initialized with Vertex AI ADC (Project: {self.project_id}).")
         except Exception as e:

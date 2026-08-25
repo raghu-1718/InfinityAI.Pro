@@ -34,7 +34,7 @@ def get_allowed_origins() -> List[str]:
         List of allowed origin URLs
     """
 
-    environment = os.getenv("ENVIRONMENT", "development").lower()
+    environment = os.getenv("ENVIRONMENT", "production").lower()
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 
     # Base production origins (ALWAYS included)

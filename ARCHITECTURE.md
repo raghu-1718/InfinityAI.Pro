@@ -82,7 +82,7 @@ The infrastructure is managed via Terraform (`infra/gcp`). The GCP Project ID is
 - **Cloud Run**: Hosts the serverless, containerized Engine A and Engine C, providing auto-scaling and cost-efficiency.
 - **Vertex AI**: The core of the GenAI capabilities.
     - **Models Used**: `gemini-2.5-pro` (for deep analysis) and `gemini-2.5-flash` (for fast, cost-effective queries).
-    - **Location**: `us-central1`.
+    - **Location**: `asia-south1`.
     - **Usage**: Powers endpoints like `/analyze-options` and provides natural language trading insights.
 - **BigQuery**: The data warehouse for the platform.
     - **Dataset**: `market_data`.

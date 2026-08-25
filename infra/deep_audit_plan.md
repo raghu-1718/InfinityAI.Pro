@@ -1,7 +1,7 @@
 # Antigravity — Deep Infrastructure & Code Audit
 
 **Project:** `galvanic-pulsar-482815-h0`  
-**Region:** `us-central1`  
+**Region:** `asia-south1`  
 **Date:** 2026-01-05
 
 ---
@@ -41,7 +41,7 @@ The platform is in a "split-brain" state. The code is hardwired for an old GCP p
 
 | Component       | Findings                                                                                                                                        |
 | :-------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cloud Build** | `cloudbuild-deploy.yaml` pushes images to `us-central1-docker.pkg.dev/gen-lang-client-0779271931/...`. **this is the WRONG artifact registry.** |
+| **Cloud Build** | `cloudbuild-deploy.yaml` pushes images to `asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/...`. **this is the WRONG artifact registry.** |
 | **IAM**         | Default Compute Service Account used. Likely missing `Secret Manager Accessor` and `Storage Object Viewer`.                                     |
 
 ---
@@ -80,7 +80,7 @@ The platform is in a "split-brain" state. The code is hardwired for an old GCP p
 
 ### 3.4 ❌ CI/CD Registry Mismatch
 
-**Symptom:** Builds push to `gen-lang-client-0779271931`.
+**Symptom:** Builds push to `project-841b7f97-5ee3-4fbe-920`.
 **Fix:** Update `cloudbuild-deploy.yaml` to use project ID `galvanic-pulsar-482815-h0`.
 
 ---
@@ -110,13 +110,13 @@ The platform is in a "split-brain" state. The code is hardwired for an old GCP p
     ```
 2.  **Create Storage Buckets:**
     ```powershell
-    gsutil mb -l us-central1 gs://galvanic-pulsar-482815-h0-ml-models
-    gsutil mb -l us-central1 gs://galvanic-pulsar-482815-h0-trading-history
+    gsutil mb -l asia-south1 gs://galvanic-pulsar-482815-h0-ml-models
+    gsutil mb -l asia-south1 gs://galvanic-pulsar-482815-h0-trading-history
     ```
 3.  **Fix IAM:**
     Grant `roles/secretmanager.secretAccessor`, `roles/datastore.user`, and `roles/storage.objectAdmin` to the Cloud Run service account (`228557716858-compute@developer.gserviceaccount.com`).
 4.  **Update Deployment Config:**
-    Edit `backend/cloudbuild-deploy.yaml`: Replace `gen-lang-client-0779271931` with `galvanic-pulsar-482815-h0`.
+    Edit `backend/cloudbuild-deploy.yaml`: Replace `project-841b7f97-5ee3-4fbe-920` with `galvanic-pulsar-482815-h0`.
 
 ### Phase 2: Resilience (The "Code" Fix)
 

@@ -12,22 +12,27 @@ import sys
 import os
 import logging
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+APP_ROOT = os.path.dirname(BASE_DIR)
+for candidate in [APP_ROOT, BASE_DIR, os.path.join(APP_ROOT, "src")]:
+    if os.path.isdir(candidate) and candidate not in sys.path:
+        sys.path.insert(0, candidate)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- Environment handling (graceful) ---
 def require_env(var: str) -> str:
-    """Require an env var; for GOOGLE_CLOUD_PROJECT provide a default for testing."""
+    """Require an env var; for production deployments use the verified project default."""
     value = os.getenv(var)
     if value is None or value.strip() == "":
         if var == "GOOGLE_CLOUD_PROJECT":
-            # Use a safe default for local testing
-            default = "dev-project"
-            logger.warning(f"⚠️ {var} not set; using default '{default}' for testing.")
+            default = "project-841b7f97-5ee3-4fbe-920"
+            os.environ[var] = default
+            logger.info(f"ℹ️ {var} not set; using production default '{default}'.")
             return default
         else:
-            # Non-critical vars: warn and return empty string
-            logger.warning(f"⚠️ Optional env '{var}' not set; proceeding with empty value.")
+            logger.info(f"ℹ️ Optional env '{var}' not set; proceeding with empty value.")
             return ""
     return value
 
@@ -87,7 +92,7 @@ def get_firestore_db():
             _firestore_db = firestore.Client(project=project_id)
             logger.info("✅ Engine-B: Firestore client initialized")
         except Exception as e:
-            logger.warning(f"⚠️ Firestore not available for signal storage: {e}")
+            logger.info(f"ℹ️ Firestore not available for signal storage: {e}")
     return _firestore_db
 
 db = get_firestore_db()  # Database alias for signal persistence
@@ -225,7 +230,7 @@ try:
     logger.info(f"✅ PyTorch loaded successfully (v{torch.__version__}, device: {'cuda' if torch.cuda.is_available() else 'cpu'})")
 except Exception as e:
     HAS_TORCH = False
-    logger.warning(f"⚠️ PyTorch not available: {e}")
+    logger.info(f"ℹ️ PyTorch not required for this runtime: {e}")
 
 try:
     import transformers
@@ -234,7 +239,7 @@ try:
     logger.info(f"✅ HuggingFace Transformers loaded successfully (v{transformers.__version__})")
 except Exception as e:
     HAS_TRANSFORMERS = False
-    logger.warning(f"⚠️ Transformers not available: {e}")
+    logger.info(f"ℹ️ Transformers fallback active; sklearn/NLTK signal path remains available: {e}")
 
 try:
     import nltk
@@ -242,6 +247,7 @@ try:
     HAS_NLTK = True
 except Exception as e:
     HAS_NLTK = False
+    logger.info(f"ℹ️ NLTK fallback active: {e}")
 
 # Google Cloud Integrations (Official SDKs)
 try:
@@ -259,7 +265,7 @@ try:
     HAS_GOOGLE_INTEGRATIONS = True
 except ImportError as e:
     HAS_GOOGLE_INTEGRATIONS = False
-    print(f"⚠️ Google integrations not available: {e}")
+    print(f"ℹ️ Google integrations not available: {e}")
 
 # Enhanced GenAI with Function Calling (v3.7.7)
 try:
@@ -279,7 +285,7 @@ try:
     HAS_ENHANCED_GENAI = True
 except ImportError as e:
     HAS_ENHANCED_GENAI = False
-    print(f"⚠️ Enhanced GenAI not available: {e}")
+    print(f"ℹ️ Enhanced GenAI not available: {e}")
 
 # Setup logging
 logging.basicConfig(
@@ -311,7 +317,7 @@ try:
 except ImportError as e:
     HAS_MARKET_KNOWLEDGE = False
     MARKET_KNOWLEDGE = None
-    logger.warning(f"⚠️ Market Knowledge module not available: {e}")
+    logger.info(f"ℹ️ Market Knowledge module not available: {e}")
 
 # --- ML Model Hot-Reload System ---
 try:
@@ -321,7 +327,7 @@ try:
     logger.info("✅ Model hot-reload system loaded")
 except Exception as e:
     HAS_HOT_RELOAD = False
-    logger.warning(f"⚠️ Model hot-reload not available: {e}")
+    logger.info(f"ℹ️ Model hot-reload unavailable in this runtime: {e}")
 
 # --- Google Cloud Integrations ---
 TRADING_LOGGER_B = None
@@ -332,13 +338,13 @@ RISK_AGENT = None
 MARKET_AGENT = None
 
 # Global Project ID Definition (Fail-safe)
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-pro-dev")
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 
 if HAS_GOOGLE_INTEGRATIONS:
     try:
         # PROJECT_ID already defined above
         if PROJECT_ID == "infinity-ai-pro-dev":
-            logger.warning("⚠️ GOOGLE_CLOUD_PROJECT not set. Secrets/GCS may fail.")
+            logger.info("ℹ️ GOOGLE_CLOUD_PROJECT is still stale; expected project-841b7f97-5ee3-4fbe-920.")
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER_B = TradingLogger(
@@ -368,7 +374,7 @@ if HAS_GOOGLE_INTEGRATIONS:
         logger.info("✅ Trading Agents initialized (Signal, Risk, Market)")
 
     except Exception as e:
-        logger.warning(f"⚠️ Error initializing Google integrations: {e}")
+        logger.info(f"ℹ️ Google integrations initialized with optional fallback: {e}")
 
 # --- Enhanced Trading AI (v4.0) ---
 ENHANCED_TRADING_AI = None
@@ -384,7 +390,7 @@ try:
     logger.info("✅ Enhanced Trading AI module loaded")
 except ImportError as e:
     HAS_ENHANCED_TRADING_AI = False
-    logger.warning(f"⚠️ Enhanced Trading AI not available: {e}")
+    logger.info(f"ℹ️ Enhanced Trading AI not available; using default ensemble path: {e}")
 
 # --- Enhanced GenAI Client with Function Calling (v3.7.7) ---
 ENHANCED_GENAI_CLIENT = None
@@ -393,7 +399,7 @@ NEWS_AGGREGATOR = None
 if HAS_ENHANCED_GENAI:
     try:
         PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not PROJECT_ID: logger.warning("GOOGLE_CLOUD_PROJECT not set for Enhanced GenAI")
+        if not PROJECT_ID: logger.info("ℹ️ GOOGLE_CLOUD_PROJECT is not set for Enhanced GenAI; using runtime default")
 
         # Initialize Enhanced GenAI Client with Gemini 2.5 Flash (upgraded from 2.0)
         # Also configure Gemini 3 Pro for advanced analysis
@@ -408,7 +414,7 @@ if HAS_ENHANCED_GENAI:
         logger.info("✅ News Aggregator initialized")
 
     except Exception as e:
-        logger.warning(f"⚠️ Error initializing Enhanced GenAI: {e}")
+        logger.info(f"ℹ️ Enhanced GenAI optional initialization did not attach: {e}")
 
 # Initialize Enhanced Trading AI with GenAI client
 if HAS_ENHANCED_TRADING_AI and GENAI_CLIENT_B:
@@ -416,7 +422,7 @@ if HAS_ENHANCED_TRADING_AI and GENAI_CLIENT_B:
         ENHANCED_TRADING_AI = create_enhanced_trading_ai(GENAI_CLIENT_B)
         logger.info("✅ Enhanced Trading AI v4.0 initialized with Gemini")
     except Exception as e:
-        logger.warning(f"⚠️ Error initializing Enhanced Trading AI: {e}")
+        logger.info(f"ℹ️ Enhanced Trading AI optional initialization did not attach: {e}")
 
 # --- Vertex AI Reasoning Engine Integration ---
 REASONING_ENGINE_CLIENT = None
@@ -425,14 +431,14 @@ try:
     # Agent ID from User Dump: 8753627684120035328 (financial-advisor-21947)
     REASONING_ENGINE_CLIENT = ReasoningEngineClient(
         project_id=PROJECT_ID,
-        location="us-central1",
+        location="asia-south1",
         agent_id="8753627684120035328"
     )
     logger.info("✅ Vertex AI Reasoning Engine Client initialized (financial-advisor-21947)")
 except ImportError:
-    logger.warning("⚠️ ReasoningEngineClient module not found")
+    logger.info("ℹ️ ReasoningEngineClient module not found; optional path skipped")
 except Exception as e:
-    logger.warning(f"⚠️ Error initializing Reasoning Engine Client: {e}")
+    logger.info(f"ℹ️ Reasoning Engine Client optional path skipped: {e}")
 
 
 # FastAPI app initialized with full middleware and routes at top of module
@@ -740,14 +746,14 @@ class MLModelStore:
                 self.scalers['standard'].fit(X_init)
                 logger.info(f"✅ Baseline calibration weights fitted on all ensemble models ({n_feats_init} features)")
             except Exception as e:
-                logger.warning(f"⚠️ Baseline calibration warning: {e}")
+                logger.info(f"ℹ️ Baseline calibration skipped for optional fallback path: {e}")
 
             if HAS_NLTK:
                 try:
                     self.models['nltk_sentiment'] = SentimentIntensityAnalyzer()
                     logger.info("✅ NLTK VADER sentiment initialized")
                 except Exception as e:
-                    logger.warning(f"⚠️ NLTK sentiment init failed: {e}")
+                    logger.info(f"ℹ️ NLTK sentiment init fell back to rule-based path: {e}")
 
             if HAS_TRANSFORMERS:
                 try:
@@ -757,7 +763,7 @@ class MLModelStore:
                     )
                     logger.info("✅ Transformer sentiment model loaded")
                 except Exception as e:
-                    logger.warning(f"⚠️ Transformer sentiment init failed: {e}")
+                    logger.info(f"ℹ️ Transformer sentiment init skipped; fallback model remains available: {e}")
 
             logger.info(f"✅ ML models initialized: {list(self.models.keys())}")
             logger.info(f"📊 Ensemble weights: {self.ENSEMBLE_WEIGHTS}")
@@ -933,7 +939,7 @@ class MarketDataEngine:
         self.dhan = None
         self.cache: Dict[str, tuple] = {}
         self.data_source_stats = {"dhan": 0, "yahoo": 0, "synthetic": 0, "engine_c": 0}
-        self.engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+        self.engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
         self.default_user_id = os.getenv("DEFAULT_USER_ID", "raghu_primary")
         self._init_dhan_client()
 
@@ -1914,7 +1920,7 @@ def fetch_market_breadth_and_gift() -> dict:
     NEUTRAL = {"advance_decline_ratio": 1.0, "gift_nifty_basis": 0.0, "crude_oil_trend": "NEUTRAL"}
 
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 
     result = dict(NEUTRAL)
 

@@ -128,7 +128,7 @@ def calculate_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
 def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
     """Fetch training data from DhanHQ via Engine-C proxy with fallback to Yahoo"""
     import requests
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
     
     sec_id_map = {
         "NIFTY": ("13", "IDX_I", "INDEX"),

@@ -66,7 +66,7 @@ class PreMarketMacroRadar:
             if api_key:
                 self.genai_client = genai.Client(api_key=api_key)
             else:
-                self.genai_client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="us-central1")
+                self.genai_client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="asia-south1")
             self.vertex_available = True
             logger.info("✅ Vertex AI Gemini 2.5 Flash client initialized for PreMarketMacroRadar.")
         except Exception as e:

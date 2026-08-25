@@ -45,7 +45,7 @@ def check_secret_manager():
     print("\n--- TEST: Check Secret Manager ---")
     from google.cloud import secretmanager
     client = secretmanager.SecretManagerServiceClient()
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or "gen-lang-client-0779271931"
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or "project-841b7f97-5ee3-4fbe-920"
     
     secret_name = f"projects/{project_id}/secrets/user-creds-{TEST_USER_ID}"
     try:

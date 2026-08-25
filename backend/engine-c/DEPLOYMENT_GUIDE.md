@@ -32,10 +32,10 @@ gcloud config set project galvanic-pulsar-482815-h0
 cd ./backend/engine-c
 gcloud builds submit --tag gcr.io/galvanic-pulsar-482815-h0/engine-c:latest .
 
-# Deploy to Cloud Run (us-central1)
+# Deploy to Cloud Run (asia-south1)
 gcloud run deploy engine-c \
   --image gcr.io/galvanic-pulsar-482815-h0/engine-c:latest \
-  --region us-central1 \
+  --region asia-south1 \
   --platform managed \
   --memory 2Gi \
   --cpu 2 \
@@ -49,11 +49,11 @@ gcloud run deploy engine-c \
 
 ```bash
 # Check deployment status
-gcloud run services describe engine-c --region us-central1
+gcloud run services describe engine-c --region asia-south1
 
 # Get service URL
 SERVICE_URL=$(gcloud run services describe engine-c \
-  --region us-central1 \
+  --region asia-south1 \
   --format='value(status.url)')
 
 echo "Service URL: $SERVICE_URL"
@@ -188,22 +188,22 @@ If issues occur:
 
 ```bash
 # 1. Check previous revisions
-gcloud run revisions list --service=engine-c --region=us-central1
+gcloud run revisions list --service=engine-c --region=asia-south1
 
 # 2. Rollback to previous revision
 PREV_REVISION=$(gcloud run revisions list --service=engine-c \
-  --region=us-central1 \
+  --region=asia-south1 \
   --format='value(name)' \
   --limit=2 | tail -1)
 
 gcloud run services update-traffic engine-c \
   --to-revisions $PREV_REVISION=100 \
-  --region=us-central1
+  --region=asia-south1
 
 # 3. Full redeploy from source
 gcloud run deploy engine-c \
   --source . \
-  --region us-central1 \
+  --region asia-south1 \
   --project=galvanic-pulsar-482815-h0
 ```
 
@@ -275,11 +275,11 @@ gcloud firestore databases list
 
 ```bash
 # Check Cloud Run CPU/Memory usage
-gcloud run services describe engine-c --region=us-central1
+gcloud run services describe engine-c --region=asia-south1
 
 # Scale up if needed
 gcloud run deploy engine-c \
-  --region us-central1 \
+  --region asia-south1 \
   --memory 4Gi \
   --cpu 4
 ```

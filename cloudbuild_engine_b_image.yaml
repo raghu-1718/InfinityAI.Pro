@@ -1,0 +1,15 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest'
+      - '-f'
+      - '/workspace/backend/engine-b/Dockerfile'
+      - '/workspace'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest'
+images:
+  - 'asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest'

@@ -118,3 +118,8 @@ models_test/
 .claude/
 .junie/
 skills-lock.json
+
+# Generated scratch/debug exports
+engine-*.json
+scratch_audit_results.json
+tools/live_diagnostic_report.json

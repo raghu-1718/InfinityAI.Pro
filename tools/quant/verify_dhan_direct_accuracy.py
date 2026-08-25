@@ -29,7 +29,7 @@ DHAN_INDEX_MAP = {
     "FINNIFTY": ("27", "IDX_I", "INDEX")
 }
 
-BASE_ENGINE_C = "https://engine-c-313407263327.asia-south1.run.app"
+BASE_ENGINE_C = "https://engine-c-r2f5flt77q-el.a.run.app"
 USER_ID = "raghu_primary"
 
 fe = FeatureEngineer()

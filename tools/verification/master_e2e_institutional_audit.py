@@ -95,8 +95,8 @@ def audit_layer_1_frontend():
 # ========================================================================================
 def audit_layer_2_cloud_run():
     print_header("⚙️ LAYER 2: CLOUD RUN ENGINE A & ENGINE C AUDIT")
-    engine_a_url = "https://engine-a-313407263327.asia-south1.run.app"
-    engine_c_url = "https://engine-c-313407263327.asia-south1.run.app"
+    engine_a_url = "https://engine-a-r2f5flt77q-el.a.run.app"
+    engine_c_url = "https://engine-c-r2f5flt77q-el.a.run.app"
 
     # 1. Engine A Health
     t0 = time.perf_counter()

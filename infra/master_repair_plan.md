@@ -44,7 +44,7 @@ echo "YOUR_REAL_CLIENT_ID" | gcloud secrets versions add dhan-client-id --data-f
 **Key Changes:**
 
 1.  **`cloudbuild-deploy.yaml`**:
-    - Updated to use new Artifact Registry `us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai`.
+    - Updated to use new Artifact Registry `asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai`.
     - **Hardened**: Injected `DHAN_CLIENT_ID`, `DHAN_ACCESS_TOKEN` secrets as Env Vars for Engine B startup.
     - **Fixed**: Injected `GOOGLE_CLOUD_PROJECT` env var.
 2.  **`engine-b/src/main.py`**:
@@ -87,7 +87,7 @@ _Ensure rewrites point to Cloud Run:_
         "source": "/api/dhan/**",
         "run": {
           "serviceId": "engine-c",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {

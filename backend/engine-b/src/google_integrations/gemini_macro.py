@@ -32,7 +32,7 @@ Implements institutional-grade Gemini 2.5 Flash integration:
 
 Design references:
   - Vertex AI SDK: vertexai.generative_models.GenerativeModel
-  - ADC routing: us-central1 (Vertex AI requirement)
+  - ADC routing: asia-south1 (Vertex AI requirement)
   - Model: gemini-2.5-flash (per system rules)
 """
 
@@ -346,7 +346,7 @@ class GeminiMacroIntelligence:
     TIMEOUT_SECONDS   = 3.0
     CACHE_TTL_MINUTES = 15
     MODEL_ID          = "gemini-2.5-flash"
-    LOCATION          = "us-central1"   # Vertex AI Gemini routing
+    LOCATION          = "asia-south1"   # Vertex AI Gemini routing
 
     def __init__(self, project_id: Optional[str] = None):
         self.project_id    = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")

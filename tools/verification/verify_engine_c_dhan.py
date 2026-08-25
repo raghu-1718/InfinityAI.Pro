@@ -5,8 +5,8 @@ import os
 import sys
 
 # Configuration
-ENGINE_C_URL = os.environ.get("ENGINE_C_URL", "https://engine-c-738553258162.us-central1.run.app")
-PROJECT_ID = "gen-lang-client-0779271931"
+ENGINE_C_URL = os.environ.get("ENGINE_C_URL", "https://engine-c-738553258162.asia-south1.run.app")
+PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
 
 def init_firebase():
     """Initialize Firebase Admin SDK"""

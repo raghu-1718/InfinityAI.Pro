@@ -98,9 +98,9 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-313407263327.asia-south1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-a-313407263327.asia-south1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-313407263327.asia-south1.run.app
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-r2f5flt77q-el.a.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-a-r2f5flt77q-el.a.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-r2f5flt77q-el.a.run.app
 
       - name: Deploy to Firebase Hosting via CLI
         run: npx firebase-tools deploy --only hosting --project ${{ env.GCP_PROJECT_ID }} --non-interactive

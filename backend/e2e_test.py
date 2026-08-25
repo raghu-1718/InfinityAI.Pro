@@ -2,8 +2,8 @@ import requests
 import json
 import time
 
-ENGINE_B_URL = "https://engine-b-313407263327.asia-south1.run.app"
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_B_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 USER_ID = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 
 def main():

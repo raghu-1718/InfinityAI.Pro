@@ -23,7 +23,7 @@ cd backend
 gcloud run deploy engine-a \
   --source=. \
   --dockerfile=engine-a/Dockerfile \
-  --region=us-central1
+  --region=asia-south1
 ```
 
 ## Shared Library Integration

@@ -78,7 +78,7 @@ Graceful Failures:   Yes
 ```
 Service:         Google Cloud Functions (Gen2)
 Name:            backtest-orchestrator
-Region:          us-central1
+Region:          asia-south1
 Runtime:         Python 3.12
 Memory:          1 GB (allocated)
 Timeout:         300 seconds
@@ -92,7 +92,7 @@ URI:             https://backtest-orchestrator-3acobgd3qa-uc.a.run.app
 ```
 Service:         Google Cloud Storage
 Bucket:          gs://infinityai-backtesting-data
-Region:          us-central1
+Region:          asia-south1
 Files:           30 CSV files
 Total Size:      2.9 MB
 Symbols:         6 (NIFTY, BANKNIFTY, FINNIFTY, SENSEX, GOLD, CRUDEOIL)
@@ -343,7 +343,7 @@ Projected 100K/day:   ❌ Would require scaling
 
 ### Endpoint Information
 ```
-URL:               https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator
+URL:               https://asia-south1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator
 Method:            POST
 Content-Type:      application/json
 Timeout:           300 seconds
@@ -352,7 +352,7 @@ Response Format:   JSON
 
 ### Request Example
 ```bash
-curl -X POST https://us-central1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator \
+curl -X POST https://asia-south1-galvanic-pulsar-482815-h0.cloudfunctions.net/backtest-orchestrator \
   -H "Content-Type: application/json" \
   -d '{
     "symbols": "NIFTY,GOLD,CRUDEOIL",

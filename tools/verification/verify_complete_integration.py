@@ -9,7 +9,7 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+ENGINE_C_URL = "https://engine-c-228557716858.asia-south1.run.app"
 
 def test_health():
     """Test health endpoint"""

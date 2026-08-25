@@ -7,9 +7,9 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+      - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
+      - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
       - '-f'
       - 'ml/Dockerfile'
       - 'ml'
@@ -18,10 +18,10 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+      - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
   
   # Step 3: Run training container
-  - name: 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+  - name: 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
     args:
       - '--dataset=gs://${PROJECT_ID}-ml-models/data/ohlcv_latest.csv'
       - '--model_uri=gs://${PROJECT_ID}-ml-models/xgb/model_$BUILD_ID.json'
@@ -44,8 +44,8 @@ steps:
 
 # Push images to registry
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:latest'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ml/xgb-trainer:$BUILD_ID'
 
 # Build options
 options:

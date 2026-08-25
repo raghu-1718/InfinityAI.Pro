@@ -20,9 +20,9 @@ import time
 from datetime import datetime
 
 # Service URLs (Cloud Run - asia-south1)
-ENGINE_A_URL = "https://engine-a-313407263327.asia-south1.run.app"
-ENGINE_B_URL = "https://engine-b-313407263327.asia-south1.run.app"
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_A_URL = "https://engine-a-r2f5flt77q-el.a.run.app"
+ENGINE_B_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 
 # Sandbox credentials
 SANDBOX_CLIENT_ID = "2508215064"

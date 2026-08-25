@@ -4,7 +4,7 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b",
         "-f",
         "engine-b/Dockerfile",
         ".",
@@ -14,7 +14,7 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c",
         "-f",
         "engine-c/Dockerfile",
         ".",
@@ -24,12 +24,12 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a",
         "-f",
         "engine-a/Dockerfile",
         ".",
       ]
 images:
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b"
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c"
-  - "us-central1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-b"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-c"
+  - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/infinityai/engine-a"

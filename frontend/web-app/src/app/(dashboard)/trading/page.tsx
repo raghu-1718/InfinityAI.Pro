@@ -137,7 +137,7 @@ export default function TradingPage() {
 
   // Poll for status (Engine A Autonomous State)
   useEffect(() => {
-    const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+    const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-r2f5flt77q-el.a.run.app";
     const checkStatus = async () => {
       try {
         const res = await fetch(`${engineAUrl}/api/v1/auto-trade/autonomous-state?user_id=raghu_primary`);
@@ -175,7 +175,7 @@ export default function TradingPage() {
     setIsLoading(true);
 
     try {
-      const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+      const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-r2f5flt77q-el.a.run.app";
       const targetUserId = session?.userId || "raghu_primary";
       const cap = parseFloat(tradingCapital) || 30000;
 
@@ -248,7 +248,7 @@ export default function TradingPage() {
         description: "Sending emergency stop command to Engine A & C...",
       });
       try {
-        const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+        const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-r2f5flt77q-el.a.run.app";
         const uid = session?.userId || "raghu_primary";
         await fetch(`${engineAUrl}/api/v1/auto-trade/configure-capital`, {
           method: "POST",

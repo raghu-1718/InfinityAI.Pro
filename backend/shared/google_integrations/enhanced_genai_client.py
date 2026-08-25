@@ -230,7 +230,7 @@ class EnhancedGenAIClient:
     def __init__(
         self,
         project_id: str = None,
-        location: str = "us-central1",
+        location: str = "asia-south1",
         model_id: str = "gemini-2.5-flash",  # Upgraded to 2.5-flash for better performance
         advanced_model_id: str = "gemini-3-pro"  # Use Gemini 3 Pro for complex analysis
     ):
@@ -239,7 +239,7 @@ class EnhancedGenAIClient:
 
         Args:
             project_id: Cloud project ID (default from env)
-            location: GCP region (default us-central1)
+            location: GCP region (default asia-south1)
             model_id: Primary Gemini model (default: gemini-2.5-flash for speed)
             advanced_model_id: Advanced model for complex reasoning (default: gemini-3-pro)
         """

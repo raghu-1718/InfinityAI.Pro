@@ -14,9 +14,9 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Live Production URLs (asia-south1 Mumbai)
-ENGINE_A_URL = "https://engine-a-313407263327.asia-south1.run.app"
-ENGINE_B_URL = "https://engine-b-313407263327.asia-south1.run.app"
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_A_URL = "https://engine-a-r2f5flt77q-el.a.run.app"
+ENGINE_B_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 HOSTING_URL = "https://project-841b7f97-5ee3-4fbe-920.web.app"
 
 TEST_USER_ID = "sandbox_test_user_001"

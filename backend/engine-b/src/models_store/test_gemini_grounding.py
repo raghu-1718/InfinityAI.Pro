@@ -6,7 +6,7 @@ print("=== Testing Vertex AI Gemini 2.5 Flash Grounding ===")
 project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 
 try:
-    client = genai.Client(vertexai=True, project=project_id, location="us-central1")
+    client = genai.Client(vertexai=True, project=project_id, location="asia-south1")
     prompt = "Summarize current Indian monetary policy stance by RBI in 2 bullet points for quantitative equity trading."
     response = client.models.generate_content(
         model="gemini-2.5-flash",

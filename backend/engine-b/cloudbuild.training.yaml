@@ -7,7 +7,7 @@ steps:
     id: "pull-image"
     args:
       - "pull"
-      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+      - "asia-south1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
 
   # Step 2: Run LSTM training with volume mount
   - name: "gcr.io/cloud-builders/docker"
@@ -20,7 +20,7 @@ steps:
       - "/workspace/models:/app/models"
       - "-e"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
-      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+      - "asia-south1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
       - "python"
       - "-m"
       - "training.train_lstm"
@@ -41,7 +41,7 @@ steps:
       - "/workspace/models:/app/models"
       - "-e"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
-      - "us-central1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
+      - "asia-south1-docker.pkg.dev/${PROJECT_ID}/infinityai/engine-b:latest"
       - "python"
       - "-m"
       - "training.train_dqn"

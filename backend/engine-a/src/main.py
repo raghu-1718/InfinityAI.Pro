@@ -474,7 +474,7 @@ async def get_system_state(user_id: Optional[str] = Header(None, alias="X-User-I
                 # I'll assume it's defined in the global scope (which I missed in view).
                 # Actually, I'll use a safe fallback.
 
-                engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+                engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 
                 headers = {"X-User-ID": user_id}
                 resp = await client.get(f"{engine_c_url}/api/system/status", headers=headers, timeout=5.0)
@@ -586,9 +586,9 @@ async def start_session(config: Dict[str, Any] = None):
 DEFAULT_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 ENGINE_B_URL = os.getenv(
     "ENGINE_B_URL",
-    "http://10.160.0.2:8080",
+    "https://engine-b-r2f5flt77q-el.a.run.app",
 )
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", f"https://engine-c-313407263327.asia-south1.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", f"https://engine-c-r2f5flt77q-el.a.run.app")
 
 # --- Health & Root ---
 @app.get("/healthz")

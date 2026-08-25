@@ -3,7 +3,7 @@ import os
 import time
 import json
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -18,7 +18,8 @@ GCS_BUCKET = "infinity-ai-models-vault"
 PUBSUB_TOPIC = f"projects/{PROJECT_ID}/topics/market-ticks"
 FRONTEND_URL = "https://project-841b7f97-5ee3-4fbe-920.web.app"
 ENGINE_A_URL = "https://engine-a-r2f5flt77q-el.a.run.app"
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_B_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 
 print("=" * 105)
 print("🚀 INFINITYAI.PRO — LIVE END-TO-END CLOUD, FIREBASE, DATA & TRADING CONFIGURATION AUDIT")
@@ -67,6 +68,58 @@ try:
     record_audit("Backend", "Engine C (Cloud Run Execution Gateway)", res.status == 200, lat, f"Status: {data.get('status')}, Dhan Connection: {data.get('dhan_connected')}")
 except Exception as e:
     record_audit("Backend", "Engine C (Cloud Run Execution Gateway)", False, -1, str(e))
+
+# 3.1. BACKEND ENGINE B REAL SIGNAL PATH (must exercise actual production route)
+t0 = time.time()
+try:
+    payload = {
+        "symbols": ["NIFTY", "BANKNIFTY"],
+        "user_id": "raghu_primary",
+        "fast": True,
+    }
+    req = urllib.request.Request(
+        f"{ENGINE_B_URL}/api/v1/signals/batch",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "User-Agent": "InfinityAI-Audit/1.0",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    res = urllib.request.urlopen(req, timeout=45)
+    lat = (time.time() - t0) * 1000
+    body = json.loads(res.read().decode())
+    signals = body.get("signals") or []
+    if res.status != 200 or not isinstance(signals, list) or len(signals) < 2:
+        raise ValueError(f"Expected HTTP 200 with at least 2 signal objects, got status={res.status}, body={body}")
+    first = signals[0]
+    timestamp_str = first.get("timestamp")
+    timestamp_is_recent = False
+    if isinstance(timestamp_str, str):
+        try:
+            ts = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            timestamp_is_recent = datetime.now(timezone.utc) - ts <= timedelta(hours=1)
+        except Exception:
+            timestamp_is_recent = False
+
+    valid_response = (
+        first.get("symbol") in {"NIFTY", "BANKNIFTY"}
+        and isinstance(first.get("signal"), str)
+        and isinstance(first.get("confidence"), (int, float))
+        and isinstance(first.get("timestamp"), str)
+        and timestamp_is_recent
+    )
+    record_audit(
+        "Backend",
+        "Engine B (Cloud Run real signal generation)",
+        valid_response,
+        lat,
+        f"HTTP {res.status}; symbols={','.join(s.get('symbol', '?') for s in signals[:2])}; samples={len(signals)}; freshness={timestamp_str if isinstance(timestamp_str, str) else 'missing'}",
+    )
+except Exception as e:
+    record_audit("Backend", "Engine B (Cloud Run real signal generation)", False, -1, str(e))
 
 # 4. DATABASE (Cloud Firestore & AES-256 Vault)
 t0 = time.time()
@@ -126,7 +179,7 @@ except Exception as e:
 # 8. AI / VERTEX AI GEMINI 2.5 FLASH GROUNDING
 t0 = time.time()
 try:
-    client = genai.Client(vertexai=True, project=PROJECT_ID, location="us-central1")
+    client = genai.Client(vertexai=True, project=PROJECT_ID, location="asia-south1")
     prompt = "Summarize current Indian market sentiment for NIFTY 50 and FII/DII flow in 1 short sentence."
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -135,6 +188,7 @@ try:
     )
     lat = (time.time() - t0) * 1000
     text_snippet = response.text.strip().replace("\n", " ")[:80] + "..."
+    client.close()
     record_audit("AI / ML", "Vertex AI Gemini 2.5 Flash Grounding", True, lat, f"{text_snippet}")
 except Exception as e:
     record_audit("AI / ML", "Vertex AI Gemini 2.5 Flash Grounding", False, -1, str(e))
@@ -149,19 +203,29 @@ try:
     res = urllib.request.urlopen(req, timeout=8)
     lat = (time.time() - t0) * 1000
     data = json.loads(res.read().decode())
-    seg_data = (
-        data.get("data", {})
-        .get("data", {})
-        .get("data", {})
-        .get("IDX_I", {})
-    )
+
+    payload = data.get("data", {})
+    api_status = payload.get("status") or data.get("status") or ""
+    seg_data = payload.get("data", {}).get("data", {}).get("IDX_I", {})
+
     nifty_ltp = seg_data.get("13", {}).get("last_price", "N/A")
     banknifty_ltp = seg_data.get("25", {}).get("last_price", "N/A")
     finnifty_ltp = seg_data.get("27", {}).get("last_price", "N/A")
+
+    numeric_values = []
+    for value in [nifty_ltp, banknifty_ltp, finnifty_ltp]:
+        try:
+            if value not in ("N/A", None, ""):
+                numeric_values.append(float(value))
+        except (TypeError, ValueError):
+            pass
+
+    broker_healthy = (api_status == "success") or bool(numeric_values and all(v > 0 for v in numeric_values))
+
     record_audit(
         "Broker API",
         "DhanHQ v2 Real-Time Quotes",
-        data.get("status") == "success",
+        broker_healthy,
         lat,
         f"NIFTY LTP: ₹{nifty_ltp}, BANKNIFTY LTP: ₹{banknifty_ltp}, FINNIFTY LTP: ₹{finnifty_ltp}",
     )
@@ -184,5 +248,10 @@ print("\n")
 df_res = pd.DataFrame(results)
 print(df_res.to_markdown(index=False))
 print("\n" + "=" * 105)
-print("🎉 ALL SYSTEMS OPERATIONAL: 10/10 END-TO-END PIPELINE AUDITS PASSED IN REAL TIME!")
+failed = bool(df_res.loc[df_res["Status"] == "❌ FAILING"].shape[0])
+if failed:
+    print("❌ LIVE VERIFIER FAILED: one or more production checks did not pass. The signal-generation path and service health checks must all succeed.")
+    print("=" * 105)
+    raise SystemExit(1)
+print("🎉 ALL SYSTEMS OPERATIONAL: 11/11 END-TO-END PIPELINE AUDITS PASSED IN REAL TIME!")
 print("=" * 105)

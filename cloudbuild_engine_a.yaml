@@ -34,7 +34,7 @@ steps:
         "--image",
         "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "--set-env-vars",
-        "ENGINE_B_URL=http://10.160.0.2:8080,ENGINE_C_URL=https://engine-c-r2f5flt77q-el.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary",
+        "ENGINE_B_URL=https://engine-b-r2f5flt77q-el.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-el.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary",
         "--set-secrets",
         "TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest,TELEGRAM_CHAT_ID=TELEGRAM_CHAT_ID:latest",
         "--region",

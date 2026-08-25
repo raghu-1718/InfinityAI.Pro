@@ -8,7 +8,7 @@ import sys
 
 PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
 REPOS = [
-    f"us-central1-docker.pkg.dev/{PROJECT_ID}/cloud-run-source-deploy",
+    f"asia-south1-docker.pkg.dev/{PROJECT_ID}/cloud-run-source-deploy",
     f"asia-south1-docker.pkg.dev/{PROJECT_ID}/cloud-run-source-deploy"
 ]
 

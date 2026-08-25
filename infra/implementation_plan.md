@@ -28,7 +28,7 @@ Fully repair, secure, and deploy the InfinityAI.Pro trading platform on the `gal
 #### `backend/cloudbuild-deploy.yaml`
 
 - [MODIFY](file:///c:/workspace/InfinityAI.Pro/backend/cloudbuild-deploy.yaml)
-  - **Hardening**: Use explicit `us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai` registry.
+  - **Hardening**: Use explicit `asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai` registry.
   - **Secret Injection**: Inject `DHAN_CLIENT_ID`, `DHAN_ACCESS_TOKEN` from Secret Manager as Environment Variables for Engine B/C startup compliance.
   - **Project ID**: Inject `GOOGLE_CLOUD_PROJECT` env var.
 

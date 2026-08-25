@@ -158,7 +158,7 @@ class ModelStorage:
             if not self._bucket.exists():
                 self._bucket = self._client.create_bucket(
                     self.bucket_name,
-                    location="us-central1"
+                    location="asia-south1"
                 )
                 logger.info(f"✅ Created GCS bucket: {self.bucket_name}")
 
@@ -416,7 +416,7 @@ class TradingHistoryStorage:
             if not self._bucket.exists():
                 self._bucket = self._client.create_bucket(
                     self.bucket_name,
-                    location="us-central1"
+                    location="asia-south1"
                 )
 
             self._initialized = True

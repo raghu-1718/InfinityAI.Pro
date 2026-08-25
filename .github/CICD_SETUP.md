@@ -92,7 +92,7 @@ The workflow is configured to:
 - Deploy on pushes to `main` branch that modify `functions/trading-signals/**`
 - Can be manually triggered via `workflow_dispatch`
 - Uses Python 3.12 runtime
-- Deploys to `us-central1` region
+- Deploys to `asia-south1` region
 
 ## Function Configurations
 

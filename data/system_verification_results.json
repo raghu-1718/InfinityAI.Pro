@@ -7,7 +7,7 @@
   },
   "architecture": {
     "project_id": "project-841b7f97-5ee3-4fbe-920",
-    "region": "us-central1",
+    "region": "asia-south1",
     "timestamp": "2026-01-23T17:09:42.380028",
     "components": {
       "frontend": {

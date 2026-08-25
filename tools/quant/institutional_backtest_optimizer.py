@@ -51,7 +51,7 @@ from services.ensemble_arbitrator import EnsembleArbitrator
 # Configuration & Constants
 # ==============================================================================
 
-BASE_ENGINE_C = "https://engine-c-313407263327.asia-south1.run.app"
+BASE_ENGINE_C = "https://engine-c-r2f5flt77q-el.a.run.app"
 USER_ID = "raghu_primary"
 
 FNO_INSTRUMENTS = {

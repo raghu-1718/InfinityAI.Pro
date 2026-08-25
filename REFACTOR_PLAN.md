@@ -6,8 +6,8 @@ As the Principal Lead Software Engineer for InfinityAI.Pro, I've reviewed the au
 
 **GCP Project ID:** `project-841b7f97-5ee3-4fbe-920`
 **GCP Region:** `asia-south1`
-**Engine-B VM Name:** `engine-b-ml-prod`
-**Engine-B VM Internal Hostname:** `engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal` (assuming zone `asia-south1-a`)
+**Engine-B VM Name:** `engine-b`
+**Engine-B VM Internal Hostname:** `engine-b.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal` (assuming zone `asia-south1-a`)
 
 ---
 
@@ -97,7 +97,7 @@ As the Principal Lead Software Engineer for InfinityAI.Pro, I've reviewed the au
 
 **Objective:** Ensure all configuration files and environment variable references point Engine-B to its VM internal hostname/IP.
 
-**Target Engine-B Endpoint:** `http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080` (assuming Engine-B's service runs on port 8080).
+**Target Engine-B Endpoint:** `https://engine-b-r2f5flt77q-el.a.run.app` (assuming Engine-B's service runs on port 8080).
 
 **Actionable Steps:**
 
@@ -116,7 +116,7 @@ As the Principal Lead Software Engineer for InfinityAI.Pro, I've reviewed the au
     cd /path/to/your/infinityai-repo
 
     OLD_ENGINE_B_URL_PATTERN="https:\/\/engine-b-service-.*\.a\.run\.app" # Adjust regex if needed
-    NEW_ENGINE_B_URL="http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080"
+    NEW_ENGINE_B_URL="https://engine-b-r2f5flt77q-el.a.run.app"
 
     echo "Searching for and replacing old Engine-B Cloud Run URLs with VM internal hostname..."
 
@@ -144,21 +144,21 @@ As the Principal Lead Software Engineer for InfinityAI.Pro, I've reviewed the au
         # Before
         ENGINE_B_API_URL = "https://engine-b-service-xxxxxx-as.a.run.app"
         # After
-        ENGINE_B_API_URL = "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080"
+        ENGINE_B_API_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
         ```
     *   **`backend/engine_c/config.py` (Example):**
         ```python
         # Before
         ENGINE_B_API_URL = "https://engine-b-service-xxxxxx-as.a.run.app"
         # After
-        ENGINE_B_API_URL = "http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080"
+        ENGINE_B_API_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
         ```
     *   **`.env` (Example):**
         ```ini
         # Before
         ENGINE_B_API_URL=https://engine-b-service-xxxxxx-as.a.run.app
         # After
-        ENGINE_B_API_URL=http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080
+        ENGINE_B_API_URL=https://engine-b-r2f5flt77q-el.a.run.app
         ```
 
 ---
@@ -169,7 +169,7 @@ As the Principal Lead Software Engineer for InfinityAI.Pro, I've reviewed the au
 
 **Assumed Resource Names:**
 *   **Engine-A (Cloud Run):** `engine-a-service` (URL: `https://engine-a-service-infinityai-as.a.run.app`)
-*   **Engine-B (Compute Engine VM):** `engine-b-ml-prod` (Public IP for testing: `34.100.200.150` - *placeholder, replace with actual external IP or load balancer IP if applicable*)
+*   **Engine-B (Compute Engine VM):** `engine-b` (Public IP for testing: `34.100.200.150` - *placeholder, replace with actual external IP or load balancer IP if applicable*)
 *   **Engine-C (Cloud Run):** `engine-c-service` (URL: `https://engine-c-service-infinityai-as.a.run.app`)
 *   **BigQuery Dataset:** `infinityai_data`
 *   **Firebase Project ID:** `project-841b7f97-5ee3-4fbe-920`

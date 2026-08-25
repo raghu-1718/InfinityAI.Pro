@@ -18,8 +18,8 @@ from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
-ENGINE_B_URL = os.getenv("ENGINE_B_URL", "http://10.160.0.2:8080")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 SCAN_INTERVAL_SECONDS = int(os.getenv("SHADOW_SCAN_INTERVAL_SECONDS", "60"))
 
 CORE_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]

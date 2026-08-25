@@ -1,7 +1,7 @@
 # Antigravity — Master Infrastructure Disclosure Report
 
 **Project:** `galvanic-pulsar-482815-h0`  
-**Region:** `us-central1`  
+**Region:** `asia-south1`  
 **Date:** 2026-01-05  
 **Analyst:** Antigravity (AI Agent)
 
@@ -21,9 +21,9 @@ The infrastructure for **InfinityAI.Pro** is in a **Critical / Partially Broken*
 
 | Service      | Region      | Status     | URL Hash        | Accessibility   | Notes                                               |
 | :----------- | :---------- | :--------- | :-------------- | :-------------- | :-------------------------------------------------- |
-| **engine-a** | us-central1 | **ACTIVE** | `...-228557...` | Public          | Orchestrator. Running.                              |
-| **engine-b** | us-central1 | **FAILED** | `...-228557...` | **Unreachable** | "Container failed to start". Critical AI Component. |
-| **engine-c** | us-central1 | **ACTIVE** | `...-228557...` | Public          | Execution. Healthy.                                 |
+| **engine-a** | asia-south1 | **ACTIVE** | `...-228557...` | Public          | Orchestrator. Running.                              |
+| **engine-b** | asia-south1 | **FAILED** | `...-228557...` | **Unreachable** | "Container failed to start". Critical AI Component. |
+| **engine-c** | asia-south1 | **ACTIVE** | `...-228557...` | Public          | Execution. Healthy.                                 |
 
 ### 2.2 Firebase & Frontend
 
@@ -91,9 +91,9 @@ Built on **Python 3.11 / FastAPI**.
 **Severity: CRITICAL**
 
 - **Issue:** `engine-a` code defaults `ENGINE_B_URL` and `ENGINE_C_URL` to:
-  `https://engine-x-429140669077.us-central1.run.app`
+  `https://engine-x-429140669077.asia-south1.run.app`
 - **Reality:** Services are deployed at:
-  `https://engine-x-228557716858.us-central1.run.app`
+  `https://engine-x-228557716858.asia-south1.run.app`
 - **Impact:** `engine-a` will try to call the old project. If that project is down or inaccessible, **all trades will fail** or hang.
 
 ### ❌ 4.2 Missing Secrets

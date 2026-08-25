@@ -246,7 +246,7 @@ def calculate_features(df_ohlcv: pd.DataFrame, df_options: Optional[pd.DataFrame
 def fetch_index_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
     """Fetch institutional index data from DhanHQ via Engine-C proxy with Yahoo fallback"""
     import requests
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 
     sec_id, exchange_seg = INDEX_MASTER_MAP.get(symbol.upper(), ("13", "IDX_I"))
     from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")

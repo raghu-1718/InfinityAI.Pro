@@ -57,7 +57,7 @@ export default function SettingsPage() {
   const [aiAnalysisEnabled, setAiAnalysisEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-313407263327.asia-south1.run.app";
+  const engineAUrl = process.env.NEXT_PUBLIC_ENGINE_A_URL || "https://engine-a-r2f5flt77q-el.a.run.app";
 
   // Fetch live risk settings on mount
   useEffect(() => {

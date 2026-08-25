@@ -93,7 +93,7 @@ print(f"📄 Metadata saved to {metadata_filename}")
 
 # Upload to GCS
 print("\n☁️ Uploading to Google Cloud Storage...")
-bucket_name = "gen-lang-client-0779271931-ml-models"
+bucket_name = "project-841b7f97-5ee3-4fbe-920-ml-models"
 model_path = "xgb/xgboost_baseline/v1.0.0"
 
 try:

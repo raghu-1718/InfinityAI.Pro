@@ -8,7 +8,7 @@
 
 | Component       | Status     | Details                                                          |
 | :-------------- | :--------- | :--------------------------------------------------------------- |
-| **GCP Project** | ✅ Valid   | `galvanic-pulsar-482815-h0` (us-central1)                        |
+| **GCP Project** | ✅ Valid   | `galvanic-pulsar-482815-h0` (asia-south1)                        |
 | **Secrets**     | ✅ Secured | `dhan-client-id`, `dhan-access-token`, `encryption-key` present. |
 | **Storage**     | ✅ Ready   | `*-ml-models` and `*-trading-history` buckets active.            |
 | **Firestore**   | ✅ Active  | Database provisioned.                                            |

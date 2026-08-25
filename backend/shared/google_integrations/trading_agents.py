@@ -461,7 +461,7 @@ class MarketAnalysisAgent(BaseAgent):
     Provides macro and micro market insights.
     """
 
-    def __init__(self):
+    def __init__(self, genai_client=None, ml_models: Optional[Dict] = None):
         """Initialize market analysis agent."""
         super().__init__(
             name="MarketAnalysisAgent",
@@ -471,6 +471,8 @@ class MarketAnalysisAgent(BaseAgent):
             ],
             description="Analyzes market conditions and sentiment"
         )
+        self.genai_client = genai_client
+        self.ml_models = ml_models or {}
 
     async def run(self, context: AgentContext) -> AgentResult:
         """Analyze market conditions."""

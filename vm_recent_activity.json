@@ -1,0 +1,2005 @@
+[
+  {
+    "insertId": "1a2c4ytfftfu31",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:17 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:17.747239589Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:17.440451029Z"
+  },
+  {
+    "insertId": "1a2c4ytfftfu30",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:17 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:17.747239589Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:17.440446981Z"
+  },
+  {
+    "insertId": "15e30kifg4gpzx",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:16 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:17.348342703Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:17.040859963Z"
+  },
+  {
+    "insertId": "tzisu4fge4ukf",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:09 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:09.351776186Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:09.041036200Z"
+  },
+  {
+    "insertId": "tzisu4fge4uke",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:09 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:09.351776186Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:09.041033586Z"
+  },
+  {
+    "insertId": "bzqwjrfm1n6o9",
+    "jsonPayload": {
+      "message": "Aug 25 22:41:08 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:41:09.147631403Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:41:08.840209280Z"
+  },
+  {
+    "insertId": "qoa91lfi8vz48",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:59 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:59.750885825Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:59.440383790Z"
+  },
+  {
+    "insertId": "1k2cu4gffjw2xv",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:50 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:51.355291242Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:51.040935669Z"
+  },
+  {
+    "insertId": "5lrfilfdercxe",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:14 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:14.751364047Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:14.441094775Z"
+  },
+  {
+    "insertId": "5lrfilfdercxd",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:14 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:14.751364047Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:14.441092678Z"
+  },
+  {
+    "insertId": "1a2nip9fh2rc9k",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:14 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:14.549416941Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:14.240176278Z"
+  },
+  {
+    "insertId": "1fmh42wfgwavlh",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:05 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:06.356023072Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:06.040415078Z"
+  },
+  {
+    "insertId": "1fmh42wfgwavlg",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:05 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:06.356023072Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:06.040413511Z"
+  },
+  {
+    "insertId": "13z0q2dfcgizkz",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:05 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.PreMarketMacroRadar:Vertex AI Gemini generation fallback: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:06.145143941Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:05.840172099Z"
+  },
+  {
+    "insertId": "13z0q2dfcgizky",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:05 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 429 Too Many Requests\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:06.145143941Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:05.840169936Z"
+  },
+  {
+    "insertId": "5006f0f1zn10m",
+    "jsonPayload": {
+      "message": "Aug 25 22:40:03 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:40:03.953530688Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:40:03.639997712Z"
+  },
+  {
+    "insertId": "1b75zjlfff1p9u",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:53 engine-b-ml-prod systemd[1]: Finished GCE Workload Certificate refresh."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:53.752154760Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:53.440375360Z"
+  },
+  {
+    "insertId": "1b75zjlfff1p9t",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:53 engine-b-ml-prod systemd[1]: gce-workload-cert-refresh.service: Deactivated successfully."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:53.752154760Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:53.440375030Z"
+  },
+  {
+    "insertId": "1b75zjlfff1p9s",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:53 engine-b-ml-prod gce_workload_cert_refresh[45067]: 2026/08/25 22:39:53: Done"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:53.752154760Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:53.440374666Z"
+  },
+  {
+    "insertId": "1b75zjlfff1p9r",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:53 engine-b-ml-prod systemd[1]: Starting GCE Workload Certificate refresh..."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:53.752154760Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:53.440373363Z"
+  },
+  {
+    "insertId": "15wjofffhen0nq",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:50 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:51.354357203Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:51.040690227Z"
+  },
+  {
+    "insertId": "goebd7fhn0v43",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:18 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:18.748721597Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:18.640307584Z"
+  },
+  {
+    "insertId": "goebd7fhn0v42",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:18 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:18.748721597Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:18.640305376Z"
+  },
+  {
+    "insertId": "goebd7fhn0v41",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:18 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:18.748721597Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:18.440313937Z"
+  },
+  {
+    "insertId": "1lhlstufg96i98",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:07 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:07.751413346Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:07.440945853Z"
+  },
+  {
+    "insertId": "f0qnwife0nqio",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:05 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:06.352106833Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:06.041095184Z"
+  },
+  {
+    "insertId": "f0qnwife0nqin",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:05 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:06.352106833Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:06.041093509Z"
+  },
+  {
+    "insertId": "184c6tbfhzqjj3",
+    "jsonPayload": {
+      "message": "Aug 25 22:39:05 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:39:05.950808911Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:39:05.640870177Z"
+  },
+  {
+    "insertId": "1hvdvrsfii3q08",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:53 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:54.153978372Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:53.839995057Z"
+  },
+  {
+    "insertId": "1gfy6wmfgdq29g",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:22 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:22.747395178Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:22.440044982Z"
+  },
+  {
+    "insertId": "1gfy6wmfgdq29f",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:22 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:22.747395178Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:22.440041834Z"
+  },
+  {
+    "insertId": "1ts3k1jfhksbwv",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:21 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:22.352910111Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:22.040870555Z"
+  },
+  {
+    "insertId": "xvole4fght9t0",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:09 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:09.756552868Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:09.440433173Z"
+  },
+  {
+    "insertId": "1nxpubefgylexu",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:08 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:09.152694884Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:08.840423762Z"
+  },
+  {
+    "insertId": "1nxpubefgylext",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:08 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:09.152694884Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:08.840421380Z"
+  },
+  {
+    "insertId": "1esf0refhtlin5",
+    "jsonPayload": {
+      "message": "Aug 25 22:38:08 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:38:08.751246485Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:38:08.440218989Z"
+  },
+  {
+    "insertId": "1ao4tlufe025q0",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:58 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:58.949806124Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:58.640985918Z"
+  },
+  {
+    "insertId": "a0y8pwfim2pfn",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:24 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:24.748703193Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:24.440687507Z"
+  },
+  {
+    "insertId": "a0y8pwfim2pfm",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:24 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:24.748703193Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:24.440685004Z"
+  },
+  {
+    "insertId": "pkcpiefi3pdc7",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:24 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:24.553516490Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:24.240633549Z"
+  },
+  {
+    "insertId": "1xobjphfi31oew",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:13 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:13.949075105Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:13.640609959Z"
+  },
+  {
+    "insertId": "1xobjphfi31oev",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:13 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:13.949075105Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:13.640608814Z"
+  },
+  {
+    "insertId": "l4qt6gf6li2lr",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:13 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:13.545960695Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:13.240445204Z"
+  },
+  {
+    "insertId": "l4qt6gf6li2lq",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:13 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:13.545960695Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:13.240443320Z"
+  },
+  {
+    "insertId": "1xoaus0ffu2r3j",
+    "jsonPayload": {
+      "message": "Aug 25 22:37:01 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:37:01.946769022Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:37:01.640008415Z"
+  },
+  {
+    "insertId": "12koun6fhvyhzs",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:28 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:28.551287496Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:28.240864599Z"
+  },
+  {
+    "insertId": "12koun6fhvyhzr",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:28 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:28.551287496Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:28.240863347Z"
+  },
+  {
+    "insertId": "zj5kttfdm5dpi",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:27 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:28.350069267Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:28.040508919Z"
+  },
+  {
+    "insertId": "1no8ssafhsbmsu",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:17 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:18.151507284Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:17.840354620Z"
+  },
+  {
+    "insertId": "1sdjp2gfgx1i86",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:16 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:16.948643694Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:16.640696576Z"
+  },
+  {
+    "insertId": "1sdjp2gfgx1i85",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:16 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:16.948643694Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:16.640694078Z"
+  },
+  {
+    "insertId": "l4qt6gf6lgi6z",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:16 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:16.746511358Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:16.440638702Z"
+  },
+  {
+    "insertId": "1vqhfvzfgi2p3a",
+    "jsonPayload": {
+      "message": "Aug 25 22:36:00 engine-b-ml-prod uvicorn[4420]: INFO:     10.160.0.38:59855 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:36:00.949456473Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:36:00.641104976Z"
+  },
+  {
+    "insertId": "1k2h8n7fgzwgh3",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:59 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:59.746646505Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:59.440873989Z"
+  },
+  {
+    "insertId": "gncd8tfh27ou1",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:32 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:33.147620439Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:32.840315289Z"
+  },
+  {
+    "insertId": "gncd8tfh27ou0",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:32 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:33.147620439Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:32.840310962Z"
+  },
+  {
+    "insertId": "v3a7v3fh4fio4",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:32 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:32.753509057Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:32.440659478Z"
+  },
+  {
+    "insertId": "1syttfuf4f2s8h",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:30 engine-b-ml-prod uvicorn[4421]: INFO:     10.160.0.38:53936 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:30.751742095Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:30.440875234Z"
+  },
+  {
+    "insertId": "120o2hmfh3fkfx",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:22 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:22.352801785Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:22.040301655Z"
+  },
+  {
+    "insertId": "1rk4jhkfirjp1o",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:14 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:14.755116318Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:14.440369057Z"
+  },
+  {
+    "insertId": "1rk4jhkfirjp1n",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:14 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:14.755116318Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:14.440367014Z"
+  },
+  {
+    "insertId": "1kc0fo8fg98aho",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:13 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:14.355092607Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:14.040422963Z"
+  },
+  {
+    "insertId": "n1zj5bfgtq44l",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:03 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:04.148033224Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:03.840642882Z"
+  },
+  {
+    "insertId": "18zzrl4ffsyhx6",
+    "jsonPayload": {
+      "message": "Aug 25 22:35:00 engine-b-ml-prod uvicorn[4421]: INFO:     10.160.0.38:29001 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:35:00.550647331Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:35:00.240337843Z"
+  },
+  {
+    "insertId": "nb68sxf2hkd45",
+    "jsonPayload": {
+      "code": "LogPingOpsAgent"
+    },
+    "labels": {
+      "agent.googleapis.com/health/agentKind": "ops-agent",
+      "agent.googleapis.com/health/agentVersion": "2.70.0",
+      "agent.googleapis.com/health/schemaVersion": "v1"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/ops-agent-health",
+    "receiveTimestamp": "2026-08-25T22:34:54.182561010Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "severity": "DEBUG",
+    "timestamp": "2026-08-25T22:34:53.159916779Z"
+  },
+  {
+    "insertId": "12koun6fhvtb68",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:43 engine-b-ml-prod systemd[1]: Finished Update the local ESM caches."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:43.752660171Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:43.440823110Z"
+  },
+  {
+    "insertId": "12koun6fhvtb67",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:43 engine-b-ml-prod systemd[1]: esm-cache.service: Deactivated successfully."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:43.752660171Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:43.440820804Z"
+  },
+  {
+    "insertId": "1pllazefgia531",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:41 engine-b-ml-prod systemd[1]: Finished Update APT News."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:41.951308285Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:41.840913525Z"
+  },
+  {
+    "insertId": "1pllazefgia530",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:41 engine-b-ml-prod systemd[1]: apt-news.service: Deactivated successfully."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:41.951308285Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:41.840911268Z"
+  },
+  {
+    "insertId": "1pllazefgia52z",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:41 engine-b-ml-prod systemd[1]: Starting Update the local ESM caches..."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:41.951308285Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:41.640851990Z"
+  },
+  {
+    "insertId": "1pllazefgia52y",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:41 engine-b-ml-prod systemd[1]: Starting Update APT News..."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:41.951308285Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:41.640849679Z"
+  },
+  {
+    "insertId": "1e8334wffcdyf2",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:37 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:37.165409284Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:37.040979037Z"
+  },
+  {
+    "insertId": "1e8334wffcdyf1",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:37 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:37.165409284Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:37.040968703Z"
+  },
+  {
+    "insertId": "1e8334wffcdyf0",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:36 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:37.165409284Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:36.840689404Z"
+  },
+  {
+    "insertId": "1ie7xwefi72ak2",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:29 engine-b-ml-prod uvicorn[4420]: INFO:     10.160.0.38:55087 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:30.358376879Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:30.041047612Z"
+  },
+  {
+    "insertId": "1oj4ogff1nj30",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:22 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:22.951132884Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:22.640926560Z"
+  },
+  {
+    "insertId": "1i4chpufhyk4q2",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:18 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:19.142155166Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:18.840311696Z"
+  },
+  {
+    "insertId": "1i4chpufhyk4q1",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:18 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:19.142155166Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:18.840309639Z"
+  },
+  {
+    "insertId": "l4nzaqfiollgo",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:18 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:18.946003705Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:18.640282214Z"
+  },
+  {
+    "insertId": "a0y8pwfils8ez",
+    "jsonPayload": {
+      "message": "Aug 25 22:34:08 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:08.751167903Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:08.440366456Z"
+  },
+  {
+    "insertId": "11rermqe96t61",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:59 engine-b-ml-prod uvicorn[4421]: INFO:     10.160.0.38:22479 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:34:00.352637132Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:34:00.040306816Z"
+  },
+  {
+    "insertId": "1i4chpufhyhmai",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:37 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:37.948001209Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:37.639981323Z"
+  },
+  {
+    "insertId": "1i4chpufhyhmah",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:37 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:37.948001209Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:37.639979535Z"
+  },
+  {
+    "insertId": "s1o7ynfe7koue",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:37 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:37.552671516Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:37.239994277Z"
+  },
+  {
+    "insertId": "1aw768vfi60x09",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:29 engine-b-ml-prod uvicorn[4421]: INFO:     10.160.0.38:57280 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:30.148708954Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:29.840326502Z"
+  },
+  {
+    "insertId": "1e97bcjff2rdhx",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:23 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:23.751184126Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:23.440496669Z"
+  },
+  {
+    "insertId": "1e97bcjff2rdhw",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:23 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:23.751184126Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:23.440495456Z"
+  },
+  {
+    "insertId": "rs28t1fip0528",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:22 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:23.350444749Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:23.040664747Z"
+  },
+  {
+    "insertId": "nvin7sfikaekf",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:15 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:15.948933147Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:15.639847874Z"
+  },
+  {
+    "insertId": "1est6u0fhbth3u",
+    "jsonPayload": {
+      "message": "Aug 25 22:33:13 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:33:13.951193856Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:33:13.639997097Z"
+  },
+  {
+    "insertId": "1pvzes0fh7awqu",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:59 engine-b-ml-prod uvicorn[4420]: INFO:     10.160.0.38:48549 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:59.951264996Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:59.640879796Z"
+  },
+  {
+    "insertId": "13p6fezfg5sgna",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:30 engine-b-ml-prod uvicorn[4421]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:30.949075639Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:30.640923228Z"
+  },
+  {
+    "insertId": "13p6fezfg5sgn9",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:30 engine-b-ml-prod uvicorn[4421]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:30.949075639Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:30.640921160Z"
+  },
+  {
+    "insertId": "fbfqwyfez3clx",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:30 engine-b-ml-prod uvicorn[4421]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:30.548755218Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:30.241168774Z"
+  },
+  {
+    "insertId": "1t8ulnufgego3s",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:29 engine-b-ml-prod uvicorn[4420]: INFO:     10.160.0.38:24697 - \"GET /health HTTP/1.1\" 200 OK"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:29.950529925Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:29.640696144Z"
+  },
+  {
+    "insertId": "149mp7cfhgx7qw",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:28 engine-b-ml-prod uvicorn[4420]: INFO:InfinityAI.AsyncMacroIntelligence:? [Real-Time AI State Updated] Macro: BULLISH (+0.53) | Multiplier: 1.20x | Policy Event Active: False"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:28.949240178Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:28.640975585Z"
+  },
+  {
+    "insertId": "149mp7cfhgx7qv",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:28 engine-b-ml-prod uvicorn[4420]: WARNING:InfinityAI.MacroEventMiner:[CIRCUIT BREAKER] Returning neutral macro state for 'NO_ACTIVE_EVENT'. Reason: No fresh policy event recorded"
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:28.949240178Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:28.640972983Z"
+  },
+  {
+    "insertId": "pag0n0fhzeh51",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:28 engine-b-ml-prod uvicorn[4420]: INFO:httpx:HTTP Request: POST https://us-central1-aiplatform.googleapis.com/v1beta1/projects/project-841b7f97-5ee3-4fbe-920/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent \"HTTP/1.1 200 OK\""
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:28.546458602Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:28.240610767Z"
+  },
+  {
+    "insertId": "o63sxmffzihbo",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:20 engine-b-ml-prod uvicorn[4421]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:20.750401024Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:20.440449250Z"
+  },
+  {
+    "insertId": "xusfp2fh1dxhu",
+    "jsonPayload": {
+      "message": "Aug 25 22:32:10 engine-b-ml-prod uvicorn[4420]: INFO:google_genai.models:AFC is enabled with max remote calls: 10."
+    },
+    "labels": {
+      "compute.googleapis.com/resource_name": "engine-b-ml-prod"
+    },
+    "logName": "projects/project-841b7f97-5ee3-4fbe-920/logs/syslog",
+    "receiveTimestamp": "2026-08-25T22:32:10.753636139Z",
+    "resource": {
+      "labels": {
+        "instance_id": "2089443709263434916",
+        "project_id": "project-841b7f97-5ee3-4fbe-920",
+        "zone": "asia-south1-a"
+      },
+      "type": "gce_instance"
+    },
+    "timestamp": "2026-08-25T22:32:10.440381127Z"
+  }
+]

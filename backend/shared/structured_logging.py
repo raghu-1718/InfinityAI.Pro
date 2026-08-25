@@ -238,7 +238,7 @@ if __name__ == "__main__":
     # Log with custom fields
     print("=== Structured Logging Example ===\n")
 
-    logger.info("Application started", version="1.0.0", region="us-central1")
+    logger.info("Application started", version="1.0.0", region="asia-south1")
 
     logger.debug(
         "Processing trade signal",

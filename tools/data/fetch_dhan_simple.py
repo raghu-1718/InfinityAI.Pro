@@ -2,7 +2,7 @@ import requests
 import json
 from datetime import datetime
 
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+ENGINE_C_URL = "https://engine-c-228557716858.asia-south1.run.app"
 CLIENT_ID = "1101302170"
 
 def fetch(endpoint, params=None):

@@ -8,7 +8,7 @@ log = setup_logger("AISignal")
 # Engine B URL for real ML signal validation
 ENGINE_B_URL = os.environ.get(
     "ENGINE_B_URL",
-    "http://10.160.0.2:8080",
+    "https://engine-b-r2f5flt77q-el.a.run.app",
 )
 
 

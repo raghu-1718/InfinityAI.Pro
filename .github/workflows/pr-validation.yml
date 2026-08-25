@@ -52,15 +52,17 @@ jobs:
         working-directory: frontend/web-app
         run: npm run build
         env:
-          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-429140669077.us-central1.run.app
-          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-429140669077.us-central1.run.app
-          NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAnEUI1GqUnAL8h3GFQMmnpBXv7nh6tu3k
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: gen-lang-client-0779271931.firebaseapp.com
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: gen-lang-client-0779271931
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: gen-lang-client-0779271931.firebasestorage.app
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: 429140669077
-          NEXT_PUBLIC_FIREBASE_APP_ID: 1:429140669077:web:e071ad7a136c74a3ea219c
+          NEXT_PUBLIC_SINGLE_USER_MODE: "true"
+          NEXT_PUBLIC_ENGINE_A_URL: https://engine-a-r2f5flt77q-el.a.run.app
+          NEXT_PUBLIC_ENGINE_B_URL: https://engine-b-r2f5flt77q-el.a.run.app
+          NEXT_PUBLIC_ENGINE_C_URL: https://engine-c-r2f5flt77q-el.a.run.app
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
 
   # ============================================
   # Validate Firebase Functions (Gemini/Vertex AI)

@@ -30,8 +30,8 @@ sys.path.insert(0, os.path.abspath("backend/engine-c/src"))
 sys.path.insert(0, os.path.abspath("backend/engine-a/src"))
 sys.path.insert(0, os.path.abspath("backend"))
 
-ENGINE_A_URL = "https://engine-a-313407263327.asia-south1.run.app"
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_A_URL = "https://engine-a-r2f5flt77q-el.a.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 FRONTEND_URL = "https://project-841b7f97-5ee3-4fbe-920.web.app"
 
 def http_get(url: str, timeout: int = 10) -> Tuple[int, Any, float]:

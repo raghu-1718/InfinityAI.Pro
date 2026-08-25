@@ -27,7 +27,7 @@ INITIAL_CAPITAL = 10000.0  # ₹10,000
 MAX_RISK_PER_TRADE = 300.0 # Strict ₹300 max risk per trade (3% of ₹10k)
 SLIPPAGE_PCT = 0.0005
 
-BASE_ENGINE_C = "https://engine-c-313407263327.asia-south1.run.app"
+BASE_ENGINE_C = "https://engine-c-r2f5flt77q-el.a.run.app"
 USER_ID = "raghu_primary"
 
 FNO_SPECS = {

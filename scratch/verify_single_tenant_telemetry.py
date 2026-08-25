@@ -5,7 +5,7 @@ import time
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
+ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
 
 def test_endpoints():
     endpoints = [

@@ -6,8 +6,8 @@ Here are the exact execution steps and file content updates to apply the refacto
 
 **GCP Project ID:** `project-841b7f97-5ee3-4fbe-920`
 **GCP Region:** `asia-south1`
-**Engine-B VM Name:** `engine-b-ml-prod`
-**Engine-B VM Internal Hostname:** `engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal`
+**Engine-B VM Name:** `engine-b`
+**Engine-B VM Internal Hostname:** `engine-b.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal`
 
 ---
 
@@ -67,7 +67,7 @@ steps:
 
 **Objective:** Ensure all configuration files and environment variable references point Engine-B to its VM internal hostname/IP.
 
-**Target Engine-B Endpoint:** `http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080`
+**Target Engine-B Endpoint:** `https://engine-b-r2f5flt77q-el.a.run.app`
 
 #### Step 2.1: Perform Replacements
 
@@ -78,7 +78,7 @@ Execute the following shell commands from your project's root directory. These c
 # cd /path/to/your/infinityai-repo
 
 OLD_ENGINE_B_URL_PATTERN="https:\/\/engine-b-service-.*\.a\.run\.app" # Adjust regex if needed
-NEW_ENGINE_B_URL="http://engine-b-ml-prod.asia-south1-a.c.project-841b7f97-5ee3-4fbe-920.internal:8080"
+NEW_ENGINE_B_URL="https://engine-b-r2f5flt77q-el.a.run.app"
 
 echo "Searching for and replacing old Engine-B Cloud Run URLs with VM internal hostname..."
 
@@ -410,7 +410,7 @@ if __name__ == "__main__":
     # For Compute Engine, it might be instance_id or instance_name.
     # Adjust resource_type and labels as per your Stackdriver Logging setup.
     check_gcp_logs_for_errors("cloud_run_revision", "engine-a-service", hours=1)
-    check_gcp_logs_for_errors("gce_instance", "engine-b-ml-prod", hours=1) # Assuming 'gce_instance' and instance name
+    check_gcp_logs_for_errors("gce_instance", "engine-b", hours=1) # Assuming 'gce_instance' and instance name
     check_gcp_logs_for_errors("cloud_run_revision", "engine-c-service", hours=1)
 
     print("\n24-hour monitoring complete. Review logs for status.")

@@ -2,7 +2,7 @@
 
 **Date:** 2026-01-05
 **Project:** `galvanic-pulsar-482815-h0`
-**Region:** `us-central1`
+**Region:** `asia-south1`
 
 ## 1. Live Health & Config Snapshot
 

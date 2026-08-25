@@ -138,7 +138,7 @@ class EODAIJournalService:
         try:
             import vertexai
             from vertexai.generative_models import GenerativeModel
-            vertexai.init(project=self.project_id, location="us-central1")
+            vertexai.init(project=self.project_id, location="asia-south1")
             model = GenerativeModel("gemini-2.5-flash")
             
             prompt = f"""You are a Lead Quantitative Portfolio Manager reviewing the trading day ({date_str}) for InfinityAI.Pro on Indian Capital Markets (NSE/BSE).

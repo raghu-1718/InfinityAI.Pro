@@ -36,8 +36,8 @@ engine-core/
 # Development (.env)
 PORT=8000
 DEBUG=true
-FIRESTORE_PROJECT=gen-lang-client-0779271931
-CORS_ORIGINS=https://gen-lang-client-0779271931.web.app/
+FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920
+CORS_ORIGINS=https://project-841b7f97-5ee3-4fbe-920.web.app/
 JWT_SECRET_KEY=<from Secret Manager>
 ```
 
@@ -76,8 +76,8 @@ pytest tests/
 # Build and deploy
 gcloud run deploy engine-b \
   --source . \
-  --region us-central1 \
-  --set-env-vars="FIRESTORE_PROJECT=gen-lang-client-0779271931"
+  --region asia-south1 \
+  --set-env-vars="FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920"
 ```
 
 ### Integration Points

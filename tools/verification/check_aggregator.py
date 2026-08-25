@@ -2,7 +2,7 @@
 import requests
 import json
 
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+ENGINE_C_URL = "https://engine-c-228557716858.asia-south1.run.app"
 USER_ID = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
 
 def check(url):

@@ -10,7 +10,7 @@ import json
 # Sandbox Configuration
 SANDBOX_TOKEN = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbkNvbnN1bWVyVHlwZSI6IlNFTEYiLCJwYXJ0bmVySWQiOiIiLCJkaGFuQ2xpZW50SWQiOiIyNTA4MjE1MDY0Iiwid2ViaG9va1VybCI6Imh0dHBzOi8vZW5naW5lLWMtM2Fjb2JnZDNxYS11Yy5hLnJ1bi5hcHAvYXBpL2dhbi9wb3N0YmFjayIsImlzcyI6ImRoYW4iLCJleHAiOjE3NjkwMjI3MTR9.qUauBEyDHG1uZ0naTVOk22kBZUSaHKu_q6zx5fOEf8IgHCFB2HNaOhHaPCZdoDvHJICc2RZkfPJVgc5VlN0yYw"
 SANDBOX_CLIENT_ID = "2508215064"
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"  # Update after deployment
+ENGINE_C_URL = "https://engine-c-228557716858.asia-south1.run.app"  # Update after deployment
 
 def print_section(title):
     print("\n" + "=" * 80)

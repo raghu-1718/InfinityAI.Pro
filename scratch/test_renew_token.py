@@ -22,7 +22,7 @@ def main():
     log("="*70)
 
     # 1. Trigger Engine C Token Renewal Endpoint
-    engine_c_url = "https://engine-c-313407263327.asia-south1.run.app/api/dhan/renew-token?user_id=raghu_primary"
+    engine_c_url = "https://engine-c-r2f5flt77q-el.a.run.app/api/dhan/renew-token?user_id=raghu_primary"
     log(f"\n1. Calling Engine C endpoint: {engine_c_url}")
     try:
         r = requests.post(engine_c_url, timeout=15)

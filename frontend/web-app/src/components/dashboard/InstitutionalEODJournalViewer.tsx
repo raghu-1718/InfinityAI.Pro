@@ -54,7 +54,7 @@ export function InstitutionalEODJournalViewer() {
       // Fetch from Engine B via local or Cloud Run endpoint
       const engineBUrl =
         process.env.NEXT_PUBLIC_ENGINE_B_URL ||
-        "https://engine-a-313407263327.asia-south1.run.app";
+        "https://engine-a-r2f5flt77q-el.a.run.app";
       const res = await fetch(`${engineBUrl}/api/reports/eod-journal/latest?user_id=raghu_primary`);
       if (res.ok) {
         const json = await res.json();

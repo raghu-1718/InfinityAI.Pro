@@ -13,7 +13,7 @@ print('=' * 65)
 
 # 1. Engine C Health & Live Status
 try:
-    req = urllib.request.urlopen('https://engine-c-313407263327.asia-south1.run.app/health', timeout=10)
+    req = urllib.request.urlopen('https://engine-c-r2f5flt77q-el.a.run.app/health', timeout=10)
     res = json.loads(req.read().decode())
     print(f"[1/6] Engine C Live Gateway: ✅ OK (Status: {res.get('status')}, Version: {res.get('version')})")
 except Exception as e:
@@ -29,7 +29,7 @@ except Exception as e:
 
 # 3. Firestore AES-256 Vault Auth & Status
 try:
-    req = urllib.request.urlopen('https://engine-c-313407263327.asia-south1.run.app/api/auth/status?user_id=raghu_primary', timeout=10)
+    req = urllib.request.urlopen('https://engine-c-r2f5flt77q-el.a.run.app/api/auth/status?user_id=raghu_primary', timeout=10)
     res = json.loads(req.read().decode())
     print(f"[3/6] Firestore AES-256 Vault: ✅ Operational ({res.get('auth_type')})")
 except Exception as e:
@@ -37,7 +37,7 @@ except Exception as e:
 
 # 4. Engine C Live Market Quote Test
 try:
-    req = urllib.request.urlopen('https://engine-c-313407263327.asia-south1.run.app/dhan/market/quote/13?security_id=13&exchange_segment=IDX_I', timeout=10)
+    req = urllib.request.urlopen('https://engine-c-r2f5flt77q-el.a.run.app/dhan/market/quote/13?security_id=13&exchange_segment=IDX_I', timeout=10)
     res = json.loads(req.read().decode())
     print(f"[4/6] DhanHQ Live Market Feed: ✅ Responding ({res})")
 except Exception as e:

@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 # Deployed Engine C URL
-ENGINE_C_URL = "https://engine-c-228557716858.us-central1.run.app"
+ENGINE_C_URL = "https://engine-c-228557716858.asia-south1.run.app"
 
 # Sandbox credentials
 SANDBOX_CLIENT_ID = "2508215064"

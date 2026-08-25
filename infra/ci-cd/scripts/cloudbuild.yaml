@@ -5,7 +5,7 @@
 # =====================================================================
 
 substitutions:
-  _REGION: us-central1 # Set your GCP region here or via trigger
+  _REGION: asia-south1 # Set your GCP region here or via trigger
 
 steps:
   # Build and push Engine A

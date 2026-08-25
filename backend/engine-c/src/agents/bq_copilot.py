@@ -26,7 +26,7 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 class InfinityAICopilot:
     def __init__(self):
         self.project_id = PROJECT_ID
-        self.location = "us-central1"
+        self.location = "asia-south1"
         self.model_name = "gemini-2.5-flash"
         self.bq_client = None
         self._init_services()

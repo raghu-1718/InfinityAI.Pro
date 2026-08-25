@@ -19,10 +19,10 @@ class ReasoningEngineClient:
     Client for interacting with Vertex AI Reasoning Engines.
     
     Target Agent: financial-advisor-21947
-    Resource: projects/429140669077/locations/us-central1/reasoningEngines/8753627684120035328
+    Resource: projects/429140669077/locations/asia-south1/reasoningEngines/8753627684120035328
     """
     
-    def __init__(self, project_id: str = "429140669077", location: str = "us-central1", agent_id: str = "8753627684120035328"):
+    def __init__(self, project_id: str = "429140669077", location: str = "asia-south1", agent_id: str = "8753627684120035328"):
         self.project_id = project_id
         self.location = location
         self.agent_id = agent_id

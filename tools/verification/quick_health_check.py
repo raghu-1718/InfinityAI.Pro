@@ -2,9 +2,9 @@ import requests
 import time
 
 ENGINES = {
-    "Engine A": "https://engine-a-228557716858.us-central1.run.app/health",
-    "Engine B": "https://engine-b-228557716858.us-central1.run.app/health",
-    "Engine C": "https://engine-c-228557716858.us-central1.run.app/health"
+    "Engine A": "https://engine-a-228557716858.asia-south1.run.app/health",
+    "Engine B": "https://engine-b-228557716858.asia-south1.run.app/health",
+    "Engine C": "https://engine-c-228557716858.asia-south1.run.app/health"
 }
 
 print("Verifying Backend Health...")

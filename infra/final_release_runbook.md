@@ -2,7 +2,7 @@
 
 **Status:** 🚀 DEPLOYMENT IN PROGRESS
 **Project ID:** `galvanic-pulsar-482815-h0`
-**Region:** `us-central1`
+**Region:** `asia-south1`
 
 ## 1. System Access Points
 

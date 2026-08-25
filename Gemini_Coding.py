@@ -4,7 +4,7 @@ from google import genai
 from google.genai import types
 
 PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
-LOCATION_ID = "us-central1"
+LOCATION_ID = "asia-south1"
 
 def apply_ml_and_ingestion_updates():
     print("🚀 Initializing Gemini 2.5 Flash Executing Agent for ML & Data Ingestion...")

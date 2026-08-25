@@ -48,7 +48,7 @@ def audit():
     # 2. Backend: Engine A (Cloud Run Orchestrator)
     try:
         t0 = time.perf_counter()
-        req = urllib.request.Request("https://engine-a-313407263327.asia-south1.run.app/health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
+        req = urllib.request.Request("https://engine-a-r2f5flt77q-el.a.run.app/health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
         res = urllib.request.urlopen(req, timeout=10)
         lat = (time.perf_counter() - t0) * 1000
         data = json.loads(res.read().decode())
@@ -71,7 +71,7 @@ def audit():
     # 3. AI Intelligence: Engine B (Tri-Model & Sentiment on VPC)
     try:
         t0 = time.perf_counter()
-        req = urllib.request.Request("https://engine-a-313407263327.asia-south1.run.app/api/v1/system/engine-b-health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
+        req = urllib.request.Request("https://engine-a-r2f5flt77q-el.a.run.app/api/v1/system/engine-b-health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
         res = urllib.request.urlopen(req, timeout=10)
         lat = (time.perf_counter() - t0) * 1000
         data = json.loads(res.read().decode())
@@ -97,7 +97,7 @@ def audit():
     # 4. Execution Gateway: Engine C (DhanHQ & AES-256 Vault)
     try:
         t0 = time.perf_counter()
-        req = urllib.request.Request("https://engine-c-313407263327.asia-south1.run.app/health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
+        req = urllib.request.Request("https://engine-c-r2f5flt77q-el.a.run.app/health", headers={'User-Agent': 'InfinityAI-Audit/1.0'})
         res = urllib.request.urlopen(req, timeout=15)
         lat = (time.perf_counter() - t0) * 1000
         data = json.loads(res.read().decode())
@@ -199,7 +199,7 @@ def audit():
         t0 = time.perf_counter()
         from google import genai
         from google.genai import types
-        client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="us-central1")
+        client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="asia-south1")
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents='Provide a 1-sentence institutional sentiment summary for NIFTY 50 options today.',

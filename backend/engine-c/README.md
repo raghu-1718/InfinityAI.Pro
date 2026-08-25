@@ -42,7 +42,7 @@ engine-execution/
 # Development (.env)
 PORT=8002
 DEBUG=true
-FIRESTORE_PROJECT=gen-lang-client-0779271931
+FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920
 DHAN_CLIENT_ID=your-client-id
 DHAN_CLIENT_SECRET=your-client-secret
 DHAN_REDIRECT_URI=http://localhost:8002/api/dhan/callback
@@ -99,9 +99,9 @@ pytest tests/
 ```bash
 gcloud run deploy engine-c \
   --source . \
-  --region us-central1 \
+  --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars="DHAN_CLIENT_ID=projects/gen-lang-client-0779271931/secrets/dhan-client-id/versions/latest"
+  --set-env-vars="DHAN_CLIENT_ID=projects/project-841b7f97-5ee3-4fbe-920/secrets/dhan-client-id/versions/latest"
 ```
 
 ### Dhan OAuth Flow

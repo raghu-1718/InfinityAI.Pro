@@ -5,7 +5,7 @@ export const getEngineBUrl = () => {
   return (
     process.env.NEXT_PUBLIC_ENGINE_B_URL ||
     process.env.NEXT_PUBLIC_ENGINE_A_URL ||
-    "https://engine-a-313407263327.asia-south1.run.app"
+    "https://engine-a-r2f5flt77q-el.a.run.app"
   );
 };
 

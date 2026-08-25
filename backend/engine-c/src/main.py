@@ -197,7 +197,7 @@ def _get_env(var: str, default: str = None) -> str:
 
 ENGINE_B_URL = _get_env(
     "ENGINE_B_URL",
-    "http://10.160.0.2:8080",
+    "https://engine-b-r2f5flt77q-el.a.run.app",
 )
 ENGINE_A_URL = _get_env("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
 

@@ -34,10 +34,10 @@ class SystemVerifier:
         }
 
         self.cloud_functions = {
-            'get-live-prices': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices',
-            'detect-momentum-signals': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/detect-momentum-signals',
-            'get-price-history': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-price-history',
-            'live-data-ingestion': 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/live-data-ingestion'
+            'get-live-prices': 'https://asia-south1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices',
+            'detect-momentum-signals': 'https://asia-south1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/detect-momentum-signals',
+            'get-price-history': 'https://asia-south1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-price-history',
+            'live-data-ingestion': 'https://asia-south1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/live-data-ingestion'
         }
 
         self.engine_c_endpoints = {
@@ -182,7 +182,7 @@ class SystemVerifier:
         # Test 2: Frontend → Cloud Functions path
         print(f"{BLUE}Testing: Frontend → Cloud Functions communication...{RESET}")
         try:
-            cf_url = 'https://us-central1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices'
+            cf_url = 'https://asia-south1-project-841b7f97-5ee3-4fbe-920.cloudfunctions.net/get-live-prices'
             response = requests.get(cf_url, timeout=10)
             # Any response means the function is reachable
             if response.status_code in [200, 400, 403, 405]:
@@ -234,7 +234,7 @@ class SystemVerifier:
         """Generate current architecture state summary"""
         return {
             "project_id": "project-841b7f97-5ee3-4fbe-920",
-            "region": "us-central1",
+            "region": "asia-south1",
             "timestamp": self.results['timestamp'],
             "components": {
                 "frontend": {
@@ -315,7 +315,7 @@ class SystemVerifier:
 
         print(f"\nTimestamp: {self.results['timestamp']}")
         print(f"Project: project-841b7f97-5ee3-4fbe-920")
-        print(f"Region: us-central1")
+        print(f"Region: asia-south1")
 
     def run_full_verification(self):
         """Run complete system verification"""

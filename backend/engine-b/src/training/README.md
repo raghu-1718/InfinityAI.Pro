@@ -193,7 +193,7 @@ Execute training directly in the deployed Cloud Run service:
 ```bash
 # SSH into Cloud Run container
 gcloud run services proxy engine-b \
-  --region=us-central1 \
+  --region=asia-south1 \
   --project=galvanic-pulsar-482815-h0
 
 # Inside container:
@@ -216,7 +216,7 @@ steps:
       - "run"
       - "--rm"
       - "--network=host"
-      - "us-central1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest"
+      - "asia-south1-docker.pkg.dev/galvanic-pulsar-482815-h0/infinityai/engine-b:latest"
       - "python"
       - "-m"
       - "training.train_all"
@@ -244,12 +244,12 @@ Retrain models weekly/monthly:
 # Create Cloud Scheduler job
 gcloud scheduler jobs create http train-ml-models-weekly \
   --schedule="0 2 * * 0" \
-  --uri="https://engine-b-313407263327.asia-south1.run.app/admin/train-models" \
+  --uri="https://engine-b-r2f5flt77q-el.a.run.app/admin/train-models" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
   --message-body='{"symbol":"NIFTY","days":730,"upload_gcs":true}' \
   --time-zone="Asia/Kolkata" \
-  --location=us-central1 \
+  --location=asia-south1 \
   --project=galvanic-pulsar-482815-h0
 ```
 

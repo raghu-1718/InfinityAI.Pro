@@ -17,7 +17,7 @@ Docker Build (TA-Lib guaranteed)
      ↓
 Train XGBoost Model
      ↓
-Upload to GCS (gs://gen-lang-client-0779271931-ml-models/)
+Upload to GCS (gs://project-841b7f97-5ee3-4fbe-920-ml-models/)
      ↓
 Engine B loads latest model on startup
 ```
@@ -40,8 +40,8 @@ docker build -t xgb-trainer .
 docker run --rm \
   -v ~/.config/gcloud:/root/.config/gcloud \
   xgb-trainer \
-  --dataset=gs://gen-lang-client-0779271931-ml-models/data/ohlcv_latest.csv \
-  --model_uri=gs://gen-lang-client-0779271931-ml-models/xgb/model_manual.json
+  --dataset=gs://project-841b7f97-5ee3-4fbe-920-ml-models/data/ohlcv_latest.csv \
+  --model_uri=gs://project-841b7f97-5ee3-4fbe-920-ml-models/xgb/model_manual.json
 ```
 
 ## Cloud Build Training
@@ -59,7 +59,7 @@ Weekly retraining runs every Sunday at 2 AM UTC via Cloud Scheduler.
 ```bash
 # Create Cloud Build trigger
 gcloud builds triggers create manual retrain-xgb \
-  --region=us-central1 \
+  --region=asia-south1 \
   --build-config=ml/cloudbuild.yaml \
   --repo=https://github.com/YOUR_REPO \
   --branch=main
@@ -67,8 +67,8 @@ gcloud builds triggers create manual retrain-xgb \
 # Create Cloud Scheduler job
 gcloud scheduler jobs create http retrain-xgb \
   --schedule="0 2 * * 0" \
-  --location=us-central1 \
-  --uri="https://cloudbuild.googleapis.com/v1/projects/gen-lang-client-0779271931/triggers/TRIGGER_ID:run" \
+  --location=asia-south1 \
+  --uri="https://cloudbuild.googleapis.com/v1/projects/project-841b7f97-5ee3-4fbe-920/triggers/TRIGGER_ID:run" \
   --http-method=POST \
   --oauth-service-account-email=429140669077@cloudbuild.gserviceaccount.com
 ```
@@ -90,7 +90,7 @@ import xgboost as xgb
 
 # Download latest model
 client = storage.Client()
-bucket = client.bucket("gen-lang-client-0779271931-ml-models")
+bucket = client.bucket("project-841b7f97-5ee3-4fbe-920-ml-models")
 bucket.blob("xgb/latest.json").download_to_filename("/tmp/model.json")
 
 # Load model
@@ -121,7 +121,7 @@ gcloud logging read 'resource.type="cloud_build"' --limit=20
 
 **Check model accuracy:**
 ```bash
-gsutil cat gs://gen-lang-client-0779271931-ml-models/xgb/latest_metadata.json
+gsutil cat gs://project-841b7f97-5ee3-4fbe-920-ml-models/xgb/latest_metadata.json
 ```
 
 ## Cost

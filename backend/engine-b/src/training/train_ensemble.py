@@ -160,7 +160,7 @@ def fetch_raw_ohlcv(symbol: str, days: int = 730) -> pd.DataFrame:
     """
     import requests
 
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
     INDEX_MAP    = {
         "NIFTY": ("13", "IDX_I"), "NIFTY50": ("13", "IDX_I"),
         "BANKNIFTY": ("25", "IDX_I"), "SENSEX": ("51", "IDX_I"),

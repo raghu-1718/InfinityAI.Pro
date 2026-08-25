@@ -43,7 +43,7 @@ class MockSignal:
         self.data_source = "mock"
 
 class FinanceAIModel:
-    def __init__(self, project_id: Optional[str] = None, location: str = "us-central1"):
+    def __init__(self, project_id: Optional[str] = None, location: str = "asia-south1"):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "dev-project")
         self.location = location
         self._client = None

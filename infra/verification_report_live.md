@@ -1,7 +1,7 @@
 # InfinityAI.Pro – End-to-End Verification Report (Rerun) – 2026-01-05
 
 **Project:** `galvanic-pulsar-482815-h0`
-**Region:** `us-central1`
+**Region:** `asia-south1`
 **Status:** ⚠️ **PARTIAL FAIL (Frontend Config)**
 
 ## 1. Live Deployment & Health Summary
@@ -28,7 +28,7 @@ The deployed frontend was built with **DEAD URLs** from a previous deployment/pr
 
 ### ⚠️ Backend Environment Variables
 
-Engine A and C have `ENGINE_B_URL` set to `https://engine-b-228557716858.us-central1.run.app`.
+Engine A and C have `ENGINE_B_URL` set to `https://engine-b-228557716858.asia-south1.run.app`.
 
 - While this _might_ resolve internally via private DNS, it differs from the standard `run.app` URL.
 - **Recommendation:** No immediate action if inter-service calls work, but recommended to update to standard URLs in next deployment.
@@ -36,7 +36,7 @@ Engine A and C have `ENGINE_B_URL` set to `https://engine-b-228557716858.us-cent
 ## 3. Storage & Secrets
 
 - **Secrets**: ✅ All required secrets (`dhan-client-id` etc.) are present in Secret Manager.
-- **Buckets**: ✅ `*-ml-models` and `*-trading-history` exist in `us-central1`.
+- **Buckets**: ✅ `*-ml-models` and `*-trading-history` exist in `asia-south1`.
 - **Firestore**: ✅ Database is active. Rules are correctly configured for `dhan_credentials` (Write-Only for users).
 
 ## 4. End-to-End Test Scenario (Simulation)

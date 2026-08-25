@@ -13,7 +13,7 @@
 ### 🚀 100% Autonomous Multi-Engine Algorithmic Trading Platform for Indian Capital Markets (NSE / BSE / MCX)
 
 **[Live Platform URL](https://project-841b7f97-5ee3-4fbe-920.web.app)** | **GCP Project**: `project-841b7f97-5ee3-4fbe-920` | **Primary Region**: `asia-south1` (Mumbai)  
-**Static Egress NAT IP**: `8.234.94.95` | **Engine B AI/ML VM**: `10.160.0.2:8080` | **Telegram Bot**: `@Raghu1718_bot`
+**Static Egress NAT IP**: `8.234.94.95` | **Engine B (Inference)**: `https://engine-b-r2f5flt77q-el.a.run.app` | **Telegram Bot**: `@Raghu1718_bot`
 
 </div>
 
@@ -50,7 +50,7 @@ flowchart TB
         PubSub --> BQ_Hist["BigQuery Historical Vault<br/>(infinity_dataset.market_ticks_history)<br/>34,124+ Historical Ticks"]
     end
 
-    subgraph Intelligence ["3. Engine B — Dual-Track AI Core (Compute Engine VM 10.160.0.2:8080)"]
+    subgraph Intelligence ["3. Engine B — Dual-Track AI Core (Cloud Run asia-south1)"]
         GCS["GCS Model Vault<br/>(gs://infinity-ai-models-vault)"] --> Ensemble["Tri-Model Ensemble (CatBoost 15%, LightGBM 30%,<br/>XGBoost 40%, RandomForest 15%)"]
         
         subgraph DualTrack ["Dual-Track AI Intelligence"]
@@ -101,7 +101,7 @@ flowchart TB
 | :--- | :--- | :--- | :--- |
 | **Frontend** | Firebase Hosting | Next.js 15 App Router dashboard, capital slider, shadow ledger, options Greeks payoff, and EOD journal viewer. | Global SSL Edge CDN distribution (`project-841b7f97-5ee3-4fbe-920.web.app`). |
 | **Engine A (Orchestrator)** | GCP Cloud Run (`asia-south1`) | 99% Dynamic EWMA VaR, margin-aware lot sizing, options Greeks engine, 24/7 shadow scanner, and Telegram dispatcher. | Revision `engine-a-00064-r8s`, automatic halt at $>2.5\%$ daily loss, private VPC egress. |
-| **Engine B (AI/ML Core)** | Compute Engine VM (`asia-south1-a`) | Tri-Model Ensemble (CatBoost, LightGBM, XGBoost, RF), Dynamic Arbitrator, and Dual-Track Gemini 2.5 Macro Radar in warm RAM. | Dedicated `e2-standard-4` (4 vCPUs, 16 GB RAM), internal IP `10.160.0.2:8080`, systemd service `engine-b.service`. |
+| **Engine B (AI/ML Core)** | GCP Cloud Run (`asia-south1`) | Tri-Model Ensemble (CatBoost, LightGBM, XGBoost, RF), dynamic arbitrator, and Gemini 2.5 macro grounding via public service endpoints. | CPU-only Cloud Run service with 4 vCPU / 16 GiB memory, autoscaling, no VM dependency or internal IP requirement. |
 | **Engine C (Execution Gateway)**| GCP Cloud Run (`asia-south1`) | Multi-leg strategy execution, DhanHQ API v2 routing, AES-256 vault decryption, and 3-tier trailing daemon. | `aiolimiter` capped at $9\text{ req/s}$, strict 30-char `correlationId`, market hours gate (09:15–15:30 IST). |
 | **Network Egress** | Serverless VPC + Cloud NAT | Static egress IP whitelisting for Dhan broker communication. | Dedicated **Static Cloud NAT IP (`8.234.94.95`)**. |
 | **Data Ingestion** | GCP Pub/Sub & BigQuery | Real-time tick streaming and historical analytical store. | Partitioned tables: `market_data.live_ticks`, `market_data.options_ticks`, and `infinity_dataset.market_ticks_history` (34,124+ ticks). |
@@ -197,7 +197,7 @@ sequenceDiagram
     participant CB as Google Cloud Build
     participant CR as Cloud Run (Engine A & C)
     participant GCS as GCS Model Vault (gs://infinity-ai-models-vault)
-    participant VM as Compute Engine VM (engine-b-ml-prod)
+    participant VM as Compute Engine VM (engine-b)
     participant FB as Firebase Hosting
 
     Dev->>GHA: Push commit to main branch
@@ -225,7 +225,7 @@ sequenceDiagram
 1. **GitHub Actions / Cloud Build (`cloudbuild_engine_b.yaml`):**
    * Packages `backend/engine-b/*` and `backend/shared/*` into `/tmp/engine-b-pkg.tar.gz`.
    * Uploads the archive to `gs://infinity-ai-models-vault/engine-b-pkg.tar.gz`.
-2. **Compute Engine VM (`engine-b-ml-prod`):**
+2. **Compute Engine VM (`engine-b`):**
    * Runs `startup_vm.sh` on startup (or via `systemctl restart engine-b`).
    * Downloads `engine-b-pkg.tar.gz` and all serialized model binaries from GCS.
    * Starts `uvicorn main:app --host 0.0.0.0 --port 8080 --workers 2` in warm memory.
@@ -250,13 +250,13 @@ python tools/quant/master_institutional_backtester.py
 python scratch/verify_telegram_connection.py
 
 # 4. Trigger 08:30 IST Pre-Market Macro Radar Briefing
-python -c "import urllib.request; req = urllib.request.Request('https://engine-a-313407263327.asia-south1.run.app/api/v1/premarket/trigger-briefing', data=b'{}', headers={'Content-Type': 'application/json'}); urllib.request.urlopen(req)"
+python -c "import urllib.request; req = urllib.request.Request('https://engine-a-r2f5flt77q-el.a.run.app/api/v1/premarket/trigger-briefing', data=b'{}', headers={'Content-Type': 'application/json'}); urllib.request.urlopen(req)"
 
 # 5. Trigger Immediate Autonomous Market Radar Scan
-python -c "import urllib.request; req = urllib.request.Request('https://engine-a-313407263327.asia-south1.run.app/api/v1/shadow-signals/scan-now?force=true', data=b'{}', headers={'Content-Type': 'application/json'}); urllib.request.urlopen(req)"
+python -c "import urllib.request; req = urllib.request.Request('https://engine-a-r2f5flt77q-el.a.run.app/api/v1/shadow-signals/scan-now?force=true', data=b'{}', headers={'Content-Type': 'application/json'}); urllib.request.urlopen(req)"
 
 # 6. Options Greeks & Implied Volatility Surface Probe
-python -c "import urllib.request, json; resp = urllib.request.urlopen('https://engine-a-313407263327.asia-south1.run.app/api/v1/options/surface/NIFTY'); print(json.loads(resp.read().decode('utf-8')))"
+python -c "import urllib.request, json; resp = urllib.request.urlopen('https://engine-a-r2f5flt77q-el.a.run.app/api/v1/options/surface/NIFTY'); print(json.loads(resp.read().decode('utf-8')))"
 ```
 
 ---

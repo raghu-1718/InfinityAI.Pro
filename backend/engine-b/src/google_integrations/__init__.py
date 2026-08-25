@@ -45,7 +45,7 @@ class TradingRecommendation:
 class GenAIClient:
     """Wrapper around Vertex AI Gemini SDK with ADC support."""
 
-    def __init__(self, project_id: Optional[str] = None, location: str = "us-central1", model_id: str = "gemini-2.5-flash"):
+    def __init__(self, project_id: Optional[str] = None, location: str = "asia-south1", model_id: str = "gemini-2.5-flash"):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
         self.location = location
         self.model_id = model_id
@@ -181,8 +181,9 @@ class RiskAssessmentAgent:
 class MarketAnalysisAgent:
     """AI agent for market analysis via Gemini."""
 
-    def __init__(self, genai_client: GenAIClient):
+    def __init__(self, genai_client: Optional[GenAIClient] = None, **kwargs):
         self.client = genai_client
+        self.kwargs = kwargs
 
     def analyze_market(self, symbol: str, context: str) -> Dict[str, Any]:
         if not self.client.is_available():
