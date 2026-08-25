@@ -16,6 +16,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any, AsyncGenerator, Optional
 from collections import deque, defaultdict
+import threading
 
 from dhanhq import marketfeed
 from google.cloud import bigquery
@@ -34,6 +35,10 @@ _db_client = None
 _event_queue = deque(maxlen=1000)  # Global circular buffer for events (deprecated)
 _user_event_queues: Dict[str, deque] = defaultdict(lambda: deque(maxlen=500))  # Per-user queues
 logger = logging.getLogger(__name__)
+
+_feed_thread: Optional[threading.Thread] = None
+_feed_loop: Optional[asyncio.AbstractEventLoop] = None
+_feed_instance = None
 
 
 def on_message(tick: Dict[str, Any]):
@@ -115,31 +120,97 @@ async def initialize_realtime(db_client=None):
 
     # 3. Connect to DhanHQ Market Feed
     try:
+        global _feed_thread, _feed_loop, _feed_instance
+
+        if _feed_thread and _feed_thread.is_alive():
+            logger.info("ℹ️ DhanHQ market feed already running; skipping duplicate initialization")
+            return
+
         logger.info(f"Connecting to DhanHQ market feed for client_id: {client_id}...")
         instruments = [(1, '13'), (1, '26000')]
 
         def _run_feed():
+            global _feed_loop, _feed_instance
+            feed = None
+            loop = None
             try:
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                _feed_loop = loop
                 feed = marketfeed.DhanFeed(
                     client_id=client_id,
                     access_token=access_token,
                     instruments=instruments,
                     version='v2'
                 )
+                _feed_instance = feed
                 logger.info(f"✅ DhanHQ market feed thread starting for: {instruments}")
                 feed.run_forever()
             except Exception as fe:
                 logger.warning(f"DhanHQ feed loop note: {fe}")
+            finally:
+                try:
+                    if feed is not None:
+                        # Ensure websocket keepalive tasks are cancelled before loop teardown
+                        try:
+                            feed.close_connection()
+                        except Exception:
+                            pass
+                        try:
+                            feed.disconnect()
+                        except Exception:
+                            pass
+                finally:
+                    try:
+                        if loop is not None and not loop.is_closed():
+                            pending = asyncio.all_tasks(loop)
+                            for task in pending:
+                                task.cancel()
+                            if pending:
+                                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                            loop.close()
+                    except Exception as close_err:
+                        logger.warning(f"Market feed loop cleanup warning: {close_err}")
 
-        import threading
-        t = threading.Thread(target=_run_feed, daemon=True)
-        t.start()
+        _feed_thread = threading.Thread(target=_run_feed, daemon=False)
+        _feed_thread.start()
         logger.info(f"✅ DhanHQ market feed started in background thread for instruments: {instruments}")
 
     except Exception as e:
         logger.error(f"❌ Failed to start DhanHQ market feed: {e}")
+
+
+async def stop_realtime() -> None:
+    """Gracefully stop DhanHQ market feed and release resources."""
+    global _feed_thread, _feed_loop, _feed_instance
+
+    try:
+        if _feed_instance is not None:
+            try:
+                _feed_instance.close_connection()
+            except Exception:
+                pass
+            try:
+                _feed_instance.disconnect()
+            except Exception:
+                pass
+
+        if _feed_loop is not None and not _feed_loop.is_closed():
+            try:
+                _feed_loop.call_soon_threadsafe(lambda: None)
+            except Exception:
+                pass
+
+        if _feed_thread is not None and _feed_thread.is_alive():
+            _feed_thread.join(timeout=5)
+            if _feed_thread.is_alive():
+                logger.warning("⚠️ DhanHQ market feed thread did not stop within timeout")
+            else:
+                logger.info("✅ DhanHQ market feed thread stopped")
+    finally:
+        _feed_thread = None
+        _feed_loop = None
+        _feed_instance = None
 
 
 async def store_postback_event(order_id: str, client_id: str, event_data: Dict[str, Any]) -> bool:

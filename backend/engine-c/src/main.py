@@ -72,6 +72,7 @@ except ImportError:
 try:
     from src.realtime_enhancements import (
         initialize_realtime,
+        stop_realtime,
         store_postback_event,
         update_portfolio_position,
         broadcast_realtime_event,
@@ -300,6 +301,12 @@ async def lifespan(app: FastAPI):
             logger.info("✅ Graceful shutdown complete")
         except Exception as e:
             logger.warning(f"Shutdown warning: {e}")
+
+    if REALTIME_ENABLED:
+        try:
+            await with_timeout(stop_realtime(), 10, "stop_realtime")
+        except Exception as e:
+            logger.warning(f"Real-time shutdown warning: {e}")
 
 
 app = FastAPI(
