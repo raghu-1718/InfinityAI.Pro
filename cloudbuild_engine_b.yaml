@@ -22,20 +22,40 @@ steps:
       ]
     waitFor: ["build-engine-b"]
 
-  # 3. Package Engine B bundle and upload to GCS Vault
+  # 3. Deploy to Cloud Run in asia-south1
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    id: "package-engine-b-bundle"
-    entrypoint: bash
+    id: "deploy-engine-b"
+    entrypoint: gcloud
     args:
-      - "-c"
-      - |
-        mkdir -p /tmp/pkg/engine-b
-        cp -r backend/engine-b/* /tmp/pkg/engine-b/
-        mkdir -p /tmp/pkg/engine-b/shared
-        cp -r backend/shared/* /tmp/pkg/engine-b/shared/
-        tar -czf /tmp/engine-b-pkg.tar.gz -C /tmp/pkg .
-        gcloud storage cp /tmp/engine-b-pkg.tar.gz gs://infinity-ai-models-vault/engine-b-pkg.tar.gz
-    waitFor: ["-"]
+      [
+        "run",
+        "deploy",
+        "engine-b",
+        "--image",
+        "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
+        "--set-env-vars",
+        "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,GCP_PROJECT_ID=project-841b7f97-5ee3-4fbe-920,GCS_MODELS_BUCKET=project-841b7f97-5ee3-4fbe-920-ml-models,ENVIRONMENT=production",
+        "--region",
+        "asia-south1",
+        "--platform",
+        "managed",
+        "--network",
+        "default",
+        "--subnet",
+        "default",
+        "--vpc-egress",
+        "private-ranges-only",
+        "--allow-unauthenticated",
+        "--port",
+        "8080",
+        "--timeout",
+        "600s",
+        "--cpu",
+        "4",
+        "--memory",
+        "16Gi",
+      ]
+    waitFor: ["push-engine-b"]
 
 images:
   - "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
