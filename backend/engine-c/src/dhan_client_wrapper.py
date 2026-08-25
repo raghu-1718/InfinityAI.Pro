@@ -49,8 +49,12 @@ class DhanClient:
     """
     
     def __init__(self, client_id: str, access_token: str, environment: str = None):
-        self.client_id = client_id
-        self.access_token = access_token
+        # CRITICAL: Strip trailing \r\n and whitespace from credentials.
+        # Dhan token renewal responses and Firestore reads can inject trailing
+        # newlines that cause "Invalid leading whitespace, reserved character(s)"
+        # HTTP header errors when the token is passed in the access-token header.
+        self.client_id = str(client_id).strip()
+        self.access_token = str(access_token).strip()
         
         # Determine environment
         if environment is None:
@@ -59,8 +63,8 @@ class DhanClient:
         self.environment = environment.lower()
         self.is_sandbox = (self.environment == DhanEnvironment.SANDBOX)
         
-        # Initialize the underlying dhanhq client
-        self._client = dhanhq(client_id, access_token)
+        # Initialize the underlying dhanhq client with sanitized credentials
+        self._client = dhanhq(self.client_id, self.access_token)
         
         # Override base URL if sandbox
         if self.is_sandbox:

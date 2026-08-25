@@ -114,7 +114,9 @@ class UserCredentialsManager:
         try:
             from google.cloud import firestore
             project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
-            self.db = firestore.Client(project=project_id)
+            # Explicitly pass database="(default)" to prevent the Firestore
+            # client from URL-encoding it as %28default%29 in REST calls.
+            self.db = firestore.Client(project=project_id, database="(default)")
             logger.info(f"✅ UserCredentialsManager: Connected to Firestore project '{project_id}'")
         except Exception as e:
             logger.warning(f"⚠️ UserCredentialsManager: Firestore client fallback mode: {e}")
@@ -155,7 +157,10 @@ class UserCredentialsManager:
                 ).decryptor()
 
                 data = decryptor.update(ciphertext) + decryptor.finalize()
-                return data.decode()
+                # CRITICAL: Strip trailing \r\n from decrypted tokens.
+                # Token renewal responses may inject trailing newlines that
+                # cause HTTP header errors when passed to DhanHQ SDK.
+                return data.decode().strip()
         except Exception as e:
             logger.warning(
                 f"GCM Decrypt notice: payload format mismatch ({e}). Checking raw string..."
@@ -175,7 +180,9 @@ class UserCredentialsManager:
     ) -> Dict[str, Any]:
         """Save user's Dhan credentials securely in Firestore"""
         resolved_id = await self.resolve_user_id(user_id)
-        enc_token = self._encrypt(access_token)
+        # CRITICAL: Strip whitespace from token before encryption.
+        # Prevents \r\n from being encrypted into the vault.
+        enc_token = self._encrypt(access_token.strip() if access_token else access_token)
         enc_secret = self._encrypt(api_secret) if api_secret else None
 
         doc_data = {

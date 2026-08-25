@@ -54,6 +54,10 @@ class DhanClientPool:
     
     async def get_client(self, client_id: str, access_token: str) -> dhanhq:
         """Get a DhanHQ client from pool or create new one"""
+        # CRITICAL: Strip trailing \r\n from credentials to prevent HTTP header errors
+        client_id = str(client_id).strip()
+        access_token = str(access_token).strip()
+
         async with self.pool_lock:
             # Try to find existing client for this user
             for item in self.pool:

@@ -892,8 +892,8 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
                         logger.info(f"🔄 Token for {resolved_user_id} is >20h old. Executing Auto-Refresh.")
                         renew_url = "https://api.dhan.co/v2/RenewToken"
                         headers = {
-                            "dhanClientId": client_id,
-                            "access-token": access_token
+                            "dhanClientId": str(client_id).strip(),
+                            "access-token": str(access_token).strip()
                         }
                         async with aiohttp.ClientSession() as session:
                             async with session.get(renew_url, headers=headers) as token_resp:
@@ -902,6 +902,7 @@ async def get_dhan_client_async(user_id: str, start_time: Optional[float] = None
                                     # Dhan token response mapping
                                     new_token = renew_data.get("accessToken") or renew_data.get("access_token") or (renew_data.get("data") or {}).get("accessToken")
                                     if new_token:
+                                        new_token = str(new_token).strip()  # Strip \r\n from renewed token
                                         # Save to Vault (this securely encrypts and writes to Firestore)
                                         await creds_manager.save_user_credentials(
                                             user_id=resolved_user_id,
@@ -1038,8 +1039,8 @@ async def renew_dhan_tokens_endpoint(
 
             renew_url = "https://api.dhan.co/v2/RenewToken"
             headers = {
-                "dhanClientId": str(client_id),
-                "access-token": str(access_token)
+                "dhanClientId": str(client_id).strip(),
+                "access-token": str(access_token).strip()
             }
 
             async with aiohttp.ClientSession() as session:
@@ -1056,6 +1057,7 @@ async def renew_dhan_tokens_endpoint(
                             (renew_data.get("data") or {}).get("access_token")
                         )
                         if new_token:
+                            new_token = str(new_token).strip()  # Strip \r\n from renewed token
                             await manager.save_user_credentials(
                                 user_id=resolved_id,
                                 client_id=client_id,

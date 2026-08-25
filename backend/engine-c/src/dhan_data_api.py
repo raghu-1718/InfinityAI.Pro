@@ -47,6 +47,12 @@ async def get_dhan_client_for_user(user_id: Optional[str] = None):
     if not client_id or not access_token:
         raise HTTPException(status_code=401, detail="Missing client_id or access_token in credentials vault")
 
+    # CRITICAL: Strip trailing \r\n from decrypted credentials.
+    # Dhan token renewal and Firestore reads can inject trailing newlines
+    # causing 'Invalid leading whitespace, reserved character(s)' HTTP header errors.
+    client_id = str(client_id).strip()
+    access_token = str(access_token).strip()
+
     return create_dhan_client(client_id, access_token), client_id, resolved_id
 
 
@@ -63,7 +69,11 @@ async def get_dhan_funds(user_id: Optional[str] = Query(None, description="User 
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         funds_resp = client.get_fund_limits()
         
-        funds_data = funds_resp.get("data", {}) if isinstance(funds_resp, dict) and "data" in funds_resp else funds_resp
+        # Safe parsing: Dhan SDK may return a string on auth/network failure instead of dict
+        if isinstance(funds_resp, str):
+            logger.error(f"Dhan get_fund_limits returned string instead of dict: {funds_resp[:200]}")
+            raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {funds_resp[:200]}")
+        funds_data = funds_resp.get("data", {}) if isinstance(funds_resp, dict) and "data" in funds_resp else (funds_resp if isinstance(funds_resp, dict) else {})
         return {
             "status": "success",
             "user_id": resolved_id,
@@ -93,6 +103,10 @@ async def get_dhan_positions(user_id: Optional[str] = Query(None, description="U
     try:
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         pos_resp = client.get_positions()
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(pos_resp, str):
+            logger.error(f"Dhan get_positions returned string instead of dict: {pos_resp[:200]}")
+            raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {pos_resp[:200]}")
         pos_list = pos_resp.get("data", []) if isinstance(pos_resp, dict) and "data" in pos_resp else (pos_resp if isinstance(pos_resp, list) else [])
         
         total_unrealized = sum(p.get("unrealizedProfit", 0) for p in pos_list if isinstance(p, dict))
@@ -126,6 +140,10 @@ async def get_dhan_holdings(user_id: Optional[str] = Query(None, description="Us
     try:
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         hold_resp = client.get_holdings()
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(hold_resp, str):
+            logger.error(f"Dhan get_holdings returned string instead of dict: {hold_resp[:200]}")
+            raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {hold_resp[:200]}")
         hold_list = hold_resp.get("data", []) if isinstance(hold_resp, dict) and "data" in hold_resp else (hold_resp if isinstance(hold_resp, list) else [])
         
         total_value = sum(h.get("currentValue", 0) or (h.get("buyAvg", 0) * h.get("totalQty", 0)) for h in hold_list if isinstance(h, dict))
@@ -159,6 +177,10 @@ async def get_dhan_orders(user_id: Optional[str] = Query(None, description="User
     try:
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         orders_resp = client.get_order_list()
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(orders_resp, str):
+            logger.error(f"Dhan get_order_list returned string instead of dict: {orders_resp[:200]}")
+            raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {orders_resp[:200]}")
         orders_list = orders_resp.get("data", []) if isinstance(orders_resp, dict) and "data" in orders_resp else (orders_resp if isinstance(orders_resp, list) else [])
         
         return {
@@ -184,6 +206,10 @@ async def get_dhan_trades(user_id: Optional[str] = Query(None, description="User
     try:
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         trades_resp = client.get_trade_book()
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(trades_resp, str):
+            logger.error(f"Dhan get_trade_book returned string instead of dict: {trades_resp[:200]}")
+            raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {trades_resp[:200]}")
         trades_list = trades_resp.get("data", []) if isinstance(trades_resp, dict) and "data" in trades_resp else (trades_resp if isinstance(trades_resp, list) else [])
         
         return {
@@ -334,6 +360,18 @@ async def get_market_quotes(
         securities = {norm_seg: sec_ids}
         ohlc_response = client.ohlc_data(securities=securities)
         
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(ohlc_response, str):
+            logger.error(f"Dhan ohlc_data returned string instead of dict: {ohlc_response[:200]}")
+            return {
+                "status": "error",
+                "message": f"Dhan API returned unexpected format. Token may need renewal.",
+                "raw_response": ohlc_response[:200],
+                "exchange_segment": norm_seg,
+                "security_ids": sec_ids,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
         # Check for Dhan API failure response
         if isinstance(ohlc_response, dict) and ohlc_response.get("status") == "failed":
             error_data = ohlc_response.get("data", {})
@@ -386,6 +424,18 @@ async def get_market_ltp(
         client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
         securities = {norm_seg: sec_ids}
         ohlc_resp = client.ohlc_data(securities=securities)
+
+        # Safe parsing: Dhan SDK may return a string on auth/network failure
+        if isinstance(ohlc_resp, str):
+            logger.error(f"Dhan ohlc_data (LTP) returned string instead of dict: {ohlc_resp[:200]}")
+            return {
+                "status": "error",
+                "security_id": primary_id,
+                "exchange_segment": norm_seg,
+                "message": f"Dhan API returned unexpected format. Token may need renewal.",
+                "raw_response": ohlc_resp[:200],
+                "timestamp": datetime.utcnow().isoformat()
+            }
         
         ohlc_dict = ohlc_resp.get("data", {}) if isinstance(ohlc_resp, dict) and "data" in ohlc_resp else (ohlc_resp if isinstance(ohlc_resp, dict) else {})
         
