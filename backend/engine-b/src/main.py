@@ -791,7 +791,7 @@ class MLModelStore:
             available_weights = {k: v/total for k, v in available_weights.items()}
         return available_weights
 
-    async def weighted_ensemble_predict(self, X_scaled: np.ndarray) -> tuple:
+    async def weighted_ensemble_predict(self, X_scaled: np.ndarray, feature_dict: Dict[str, Any] = None) -> tuple:
         """
         Make weighted ensemble prediction.
         Returns (predicted_class, confidence, votes_detail)
@@ -799,24 +799,47 @@ class MLModelStore:
         weights = self.get_ensemble_weights()
         class_votes = {0: 0.0, 1: 0.0, 2: 0.0}  # SELL, HOLD, BUY
         votes_detail = {}
+        features = feature_dict or {}
 
         for model_name, weight in weights.items():
             if model_name == 'xgboost':
                 try:
-                    # Native BigQuery ML Inference via ThreadPool
+                    # Native BigQuery ML Inference with 15 Enriched Alpha Features
                     loop = asyncio.get_event_loop()
-                    rsi_val = float(X_scaled[0][0]) if X_scaled.shape[1] > 0 else 50.0
-                    macd_val = int(round(float(X_scaled[0][1]))) if X_scaled.shape[1] > 1 else 0
-                    vwap_val = float(X_scaled[0][2]) if X_scaled.shape[1] > 2 else 0.0
-                    atr_val = float(X_scaled[0][3]) if X_scaled.shape[1] > 3 else 1.0
+                    rsi_14 = float(features.get('rsi_14', float(X_scaled[0][0]) if X_scaled.shape[1] > 0 else 50.0))
+                    macd_line = float(features.get('macd_line', 0.0))
+                    macd_signal = float(features.get('macd_signal', 0.0))
+                    macd_hist = float(features.get('macd_hist', 0.0))
+                    macd_crossover = int(features.get('macd_crossover', int(round(float(X_scaled[0][1]))) if X_scaled.shape[1] > 1 else 0))
+                    vwap_distance = float(features.get('vwap_distance', float(X_scaled[0][2]) if X_scaled.shape[1] > 2 else 0.0))
+                    atr_volatility = float(features.get('atr_volatility', float(X_scaled[0][3]) if X_scaled.shape[1] > 3 else 1.0))
+                    atr_ratio = float(features.get('atr_ratio', 0.005))
+                    adx_14 = float(features.get('adx_14', 20.0))
+                    adx_slope = float(features.get('adx_slope', 0.0))
+                    bollinger_bandwidth = float(features.get('bollinger_bandwidth', 0.01))
+                    bb_pct = float(features.get('bb_pct', 0.5))
+                    return_15m_past = float(features.get('return_15m_past', 0.0))
+                    return_5m_past = float(features.get('return_5m_past', 0.0))
+                    trend_aligned = int(features.get('trend_aligned', 0))
 
                     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
                     query = f"""
                         SELECT * FROM ML.PREDICT(MODEL `{project_id}.infinity_dataset.xgboost_live_model`, 
-                        (SELECT CAST({rsi_val} AS FLOAT64) as rsi_14, 
-                                CAST({macd_val} AS INT64) as macd_crossover, 
-                                CAST({vwap_val} AS FLOAT64) as vwap_distance, 
-                                CAST({atr_val} AS FLOAT64) as atr_volatility))
+                        (SELECT CAST({rsi_14} AS FLOAT64) as rsi_14, 
+                                CAST({macd_line} AS FLOAT64) as macd_line,
+                                CAST({macd_signal} AS FLOAT64) as macd_signal,
+                                CAST({macd_hist} AS FLOAT64) as macd_hist,
+                                CAST({macd_crossover} AS INT64) as macd_crossover, 
+                                CAST({vwap_distance} AS FLOAT64) as vwap_distance, 
+                                CAST({atr_volatility} AS FLOAT64) as atr_volatility,
+                                CAST({atr_ratio} AS FLOAT64) as atr_ratio,
+                                CAST({adx_14} AS FLOAT64) as adx_14,
+                                CAST({adx_slope} AS FLOAT64) as adx_slope,
+                                CAST({bollinger_bandwidth} AS FLOAT64) as bollinger_bandwidth,
+                                CAST({bb_pct} AS FLOAT64) as bb_pct,
+                                CAST({return_15m_past} AS FLOAT64) as return_15m_past,
+                                CAST({return_5m_past} AS FLOAT64) as return_5m_past,
+                                CAST({trend_aligned} AS INT64) as trend_aligned))
                     """
                     def run_bq():
                         bq_client = bigquery.Client(project=project_id, location="asia-south1")
@@ -2186,8 +2209,27 @@ async def generate_signal(req: SignalRequest):
                 else:
                     X_scaled = scaler.transform(X)
 
+                # Extract 15 Enriched Alpha Features for BigQuery ML
+                feature_dict = {
+                    'rsi_14': float(latest.get('RSI_14', 50.0)),
+                    'macd_line': float(latest.get('MACD_12_26_9', 0.0)),
+                    'macd_signal': float(latest.get('MACDs_12_26_9', 0.0)),
+                    'macd_hist': float(latest.get('MACDh_12_26_9', 0.0)),
+                    'macd_crossover': 1 if float(latest.get('MACDh_12_26_9', 0.0)) > 0 else (-1 if float(latest.get('MACDh_12_26_9', 0.0)) < 0 else 0),
+                    'vwap_distance': (float(current_price) - float(latest.get('vwap', current_price))) / (float(latest.get('vwap', current_price)) or 1.0),
+                    'atr_volatility': float(latest.get('ATRr_14', 1.0)),
+                    'atr_ratio': float(latest.get('ATRr_14', 1.0)) / (float(current_price) or 1.0),
+                    'adx_14': float(latest.get('ADX_14', 20.0)),
+                    'adx_slope': float(df_features['ADX_14'].diff(3).iloc[-1]) if 'ADX_14' in df_features.columns and len(df_features) >= 3 else 0.0,
+                    'bollinger_bandwidth': (float(latest.get('BBU_20_2.0', current_price)) - float(latest.get('BBL_20_2.0', current_price))) / (float(latest.get('BBM_20_2.0', current_price)) or 1.0),
+                    'bb_pct': (float(current_price) - float(latest.get('BBL_20_2.0', current_price))) / (float(latest.get('BBU_20_2.0', current_price)) - float(latest.get('BBL_20_2.0', current_price)) + 1e-6),
+                    'return_15m_past': float(df_features['close'].pct_change(3).iloc[-1]) if 'close' in df_features.columns and len(df_features) >= 3 else 0.0,
+                    'return_5m_past': float(df_features['close'].pct_change(1).iloc[-1]) if 'close' in df_features.columns and len(df_features) >= 1 else 0.0,
+                    'trend_aligned': 1 if float(current_price) > float(latest.get('EMA_50', current_price)) else (-1 if float(current_price) < float(latest.get('EMA_50', current_price)) else 0)
+                }
+
                 # Ensemble Prediction
-                ml_class, ml_confidence, votes_detail = await MODEL_STORE.weighted_ensemble_predict(X_scaled)
+                ml_class, ml_confidence, votes_detail = await MODEL_STORE.weighted_ensemble_predict(X_scaled, feature_dict=feature_dict)
                 model_breakdown_detail = votes_detail
 
                 # ML Influence on Score

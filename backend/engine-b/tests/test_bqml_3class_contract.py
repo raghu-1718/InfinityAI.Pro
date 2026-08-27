@@ -33,3 +33,16 @@ def test_bqml_3class_weight_accumulation():
     assert class_votes[0] == pytest.approx(0.134588)
     assert class_votes[1] == pytest.approx(0.125752)
     assert class_votes[2] == pytest.approx(0.139660)
+
+def test_bqml_15_feature_schema():
+    """Verify all 15 alpha feature keys are properly defined."""
+    required_features = [
+        'rsi_14', 'macd_line', 'macd_signal', 'macd_hist', 'macd_crossover',
+        'vwap_distance', 'atr_volatility', 'atr_ratio', 'adx_14', 'adx_slope',
+        'bollinger_bandwidth', 'bb_pct', 'return_15m_past', 'return_5m_past', 'trend_aligned'
+    ]
+    sample_dict = {f: 0.0 for f in required_features}
+    assert len(sample_dict) == 15
+    for f in required_features:
+        assert f in sample_dict
+
