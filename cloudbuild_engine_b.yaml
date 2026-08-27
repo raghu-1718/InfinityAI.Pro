@@ -51,9 +51,11 @@ steps:
         "--timeout",
         "600s",
         "--cpu",
-        "4",
+        "2",
         "--memory",
-        "16Gi",
+        "8Gi",
+        "--cpu-throttling",
+        "--startup-cpu-boost",
       ]
     waitFor: ["push-engine-b"]
 
