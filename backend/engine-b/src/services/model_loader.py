@@ -19,8 +19,8 @@ if not os.getenv("GOOGLE_CLOUD_PROJECT"):
     # BUCKET_NAME will be constructed with this fallback.
 
 
-BUCKET_NAME = f"{PROJECT_ID}-ml-models"
-MODEL_PREFIX = "xgb/"
+BUCKET_NAME = os.getenv("GCS_MODELS_BUCKET", "infinity-ai-models-vault")
+MODEL_PREFIX = os.getenv("MODEL_PREFIX", "xgb/")
 
 
 def fetch_latest_model() -> Tuple[Any, str, Any]:

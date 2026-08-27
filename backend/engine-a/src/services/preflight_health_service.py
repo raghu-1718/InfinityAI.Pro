@@ -35,8 +35,7 @@ from .alert_dispatcher import ALERT_DISPATCHER
 logger = logging.getLogger("InfinityAI.PreflightHealthService")
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "project-841b7f97-5ee3-4fbe-920")
-ENGINE_A_URL = os.getenv("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
 
 class PreflightHealthService:
     """Automated Pre-Market Operational Readiness & Self-Healing Service"""
@@ -54,7 +53,7 @@ class PreflightHealthService:
 
         checks = {}
 
-        # 1. Cloud Run Fleet
+        # 1. Cloud Run Fleet (Engines A, B, C)
         try:
             credentials, _ = google.auth.default()
             authed_session = AuthorizedSession(credentials)
@@ -64,12 +63,18 @@ class PreflightHealthService:
             checks["engine_a"] = f"ERROR: {e}"
 
         try:
+            resp_b = authed_session.get(f"{ENGINE_B_URL}/health", timeout=5)
+            checks["engine_b"] = "ONLINE (HTTP 200)" if resp_b.status_code == 200 else f"WARN (HTTP {resp_b.status_code})"
+        except Exception as e:
+            checks["engine_b"] = f"ERROR: {e}"
+
+        try:
             resp_c = authed_session.get(f"{ENGINE_C_URL}/health", timeout=5)
             checks["engine_c"] = "ONLINE (HTTP 200)" if resp_c.status_code == 200 else f"WARN (HTTP {resp_c.status_code})"
         except Exception as e:
             checks["engine_c"] = f"ERROR: {e}"
 
-        # 2. Firestore Credential Vault
+        # 2. Firestore Credential Vault & Live DhanHQ Quote Probe
         try:
             db = firestore.Client(project=self.project_id)
             user_doc = db.collection("user_credentials").document("raghu_primary").get()
@@ -79,6 +84,15 @@ class PreflightHealthService:
                 checks["dhan_credential_vault"] = "MISSING_DOC"
         except Exception as e:
             checks["dhan_credential_vault"] = f"ERROR: {e}"
+
+        try:
+            q_resp = authed_session.get(f"{ENGINE_C_URL}/api/dhan/market/quotes?security_ids=1333&exchange_segment=NSE_EQ", timeout=6)
+            if q_resp.status_code == 200 and "live" in q_resp.text:
+                checks["dhan_market_data_link"] = "CONNECTED (Live Quotes Verified)"
+            else:
+                checks["dhan_market_data_link"] = f"WARN (HTTP {q_resp.status_code})"
+        except Exception as e:
+            checks["dhan_market_data_link"] = f"NOTICE: {e}"
 
         # 3. BigQuery Ingestion Tables
         try:
@@ -97,14 +111,6 @@ class PreflightHealthService:
             checks["gcs_model_vault"] = f"ONLINE ({len(blobs)} Artifacts Verified)"
         except Exception as e:
             checks["gcs_model_vault"] = f"ERROR: {e}"
-
-        # 5. Engine B Warm Boot Schedule & VM Probe
-        checks["engine_b_boot_schedule"] = "ALIGNED (08:40 IST / 15m Warm-Up Buffer)"
-        try:
-            # Check internal or model server health
-            checks["engine_b_model_probe"] = "WARM_RAM_CACHED (CatBoost/LightGBM/XGBoost)"
-        except Exception as e:
-            checks["engine_b_model_probe"] = f"NOTICE: {e}"
 
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         all_passed = all("ONLINE" in str(v) or "ACTIVE" in str(v) or "ALIGNED" in str(v) or "WARM" in str(v) for v in checks.values())

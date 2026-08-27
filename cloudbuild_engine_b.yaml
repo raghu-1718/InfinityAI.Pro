@@ -34,7 +34,7 @@ steps:
         "--image",
         "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "--set-env-vars",
-        "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,GCP_PROJECT_ID=project-841b7f97-5ee3-4fbe-920,GCS_MODELS_BUCKET=project-841b7f97-5ee3-4fbe-920-ml-models,ENVIRONMENT=production",
+        "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,GCP_PROJECT_ID=project-841b7f97-5ee3-4fbe-920,GCS_MODELS_BUCKET=infinity-ai-models-vault,ENVIRONMENT=production",
         "--region",
         "asia-south1",
         "--platform",

@@ -23,7 +23,10 @@ DEFAULT_SYMBOLS_WHITELIST = {
     "AXISBANK", "LT", "COALINDIA", "ONGC",
 }
 
-# Market trading & execution operational hours: 8:55 AM - 3:45 PM IST weekdays
+# Market Execution Gateway Window: 08:55 AM - 03:45 PM IST (Weekdays only)
+# Note: Institutional 2-Tier Architecture:
+# - Tier 1 (08:55 - 15:45 IST): Gateway allows container warmup, keepalive checks, token renewals, and EOD squareoff.
+# - Tier 2 (09:15 - 15:30 IST): Active entry signals generated strictly during live market exchange hours.
 MARKET_OPEN_HOUR = int(os.getenv("MARKET_OPEN_HOUR", "8"))
 MARKET_OPEN_MIN = int(os.getenv("MARKET_OPEN_MIN", "55"))
 MARKET_CLOSE_HOUR = int(os.getenv("MARKET_CLOSE_HOUR", "15"))

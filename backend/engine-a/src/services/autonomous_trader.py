@@ -375,10 +375,21 @@ class AutonomousTrader:
         logger.info(f"✅ Trade APPROVED: {signal_type} {safe_quantity} {symbol} (₹{order_value:,.2f} | Net ROI: {profitability.get('net_roi', 0):.2%}). Sending to Execution Engine.")
         await self._execute_trade(symbol, signal_type, safe_quantity, signal, trace_id, order_value, risk_res)
 
-    async def resolve_optimal_option_strike(self, underlying_symbol: str, underlying_spot: float, option_type: str) -> dict:
+def _get_oidc_token(target_audience: str) -> Optional[str]:
+    """Generates Google Cloud IAM OIDC JWT token for service-to-service auth"""
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2 import id_token
+        auth_req = Request()
+        return id_token.fetch_id_token(auth_req, target_audience)
+    except Exception:
+        return None
+
+    async def resolve_optimal_option_strike(self, underlying_symbol: str, underlying_spot: float, option_type: str) -> Optional[dict]:
         """
         Automatically scans the DhanHQ option chain via Engine-C proxy 
-        to select the ideal ITM-1 strike for long Call/Put buying (Delta ~0.50 to 0.65).
+        to select the ideal ITM-1 strike for long Call/Put buying (Delta ~0.55 to 0.65).
+        STRICT SAFETY RULE: Never falls back to dummy security IDs. Returns None if unresolvable.
         """
         symbol_upper = underlying_symbol.upper()
         # 1. Determine strike interval and lot size based on underlying (SEBI 2026 Mandate)
@@ -402,9 +413,7 @@ class AutonomousTrader:
         atm_strike = round(underlying_spot / interval) * interval
 
         # 3. Select ITM-1 for option buying to ensure higher delta protection (SEBI 2026 Mandate)
-        # For Call (CE): ITM-1 is one strike below spot (atm_strike - interval)
-        # For Put (PE): ITM-1 is one strike above spot (atm_strike + interval)
-        if option_type.upper() in ["CE", "BUY", "CALL"]:
+        if option_type.upper() in ["CE", "BUY", "CALL", "BUY_CALL"]:
             target_strike = atm_strike - interval
             opt_type_code = "CE"
         else:
@@ -413,7 +422,7 @@ class AutonomousTrader:
 
         trading_symbol = f"{symbol_upper} {int(target_strike)} {opt_type_code}"
 
-        # 4. Calculate Exact Analytical Greeks via OptionsGreeksEngine
+        # 4. Calculate Analytical Greeks via OptionsGreeksEngine
         try:
             from .options_greeks_engine import OPTIONS_GREEKS_ENGINE
             greeks = OPTIONS_GREEKS_ENGINE.calculate_greeks(
@@ -433,43 +442,49 @@ class AutonomousTrader:
             gamma = 0.001
             vega = 8.5
 
-        # 5. Fetch matching security ID from Engine-C option chain lookup
+        # 5. Fetch matching live security ID from Engine-C option chain lookup
         try:
             url = f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol_upper}?strike={target_strike}&option_type={opt_type_code}"
-            headers = {"X-User-ID": str(self.config.get("user_id", "raghu_primary"))}
+            headers = {
+                "X-User-ID": str(self.config.get("user_id", "raghu_primary")),
+                "X-Engine-Source": "engine-a"
+            }
+            oidc_tok = _get_oidc_token(ENGINE_C_URL)
+            if oidc_tok:
+                headers["Authorization"] = f"Bearer {oidc_tok}"
+
             chain_resp = await self.http_client.get(url, headers=headers)
             if chain_resp.status_code == 200:
                 data = chain_resp.json()
-                return {
-                    "security_id": str(data.get("securityId", data.get("security_id", "45123"))),
-                    "trading_symbol": data.get("tradingSymbol", trading_symbol),
-                    "strike": target_strike,
-                    "atm_strike": atm_strike,
-                    "option_type": opt_type_code,
-                    "lot_size": lot_size,
-                    "implied_delta": exact_delta,
-                    "theta_decay_per_day": theta_decay,
-                    "gamma": gamma,
-                    "vega": vega
-                }
+                sec_id = str(data.get("securityId") or data.get("security_id") or "")
+                if sec_id and sec_id != "45123":
+                    return {
+                        "security_id": sec_id,
+                        "trading_symbol": data.get("tradingSymbol", trading_symbol),
+                        "strike": target_strike,
+                        "atm_strike": atm_strike,
+                        "option_type": opt_type_code,
+                        "lot_size": lot_size,
+                        "implied_delta": exact_delta,
+                        "theta_decay_per_day": theta_decay,
+                        "gamma": gamma,
+                        "vega": vega,
+                        "bid_price": float(data.get("bid_price", 0.0) or data.get("best_bid", 0.0)),
+                        "ask_price": float(data.get("ask_price", 0.0) or data.get("best_ask", 0.0)),
+                        "open_interest": int(data.get("open_interest", 0) or data.get("oi", 0))
+                    }
+                else:
+                    logger.error(f"❌ Option chain lookup returned invalid security_id '{sec_id}' for {symbol_upper}")
+                    return None
+            else:
+                logger.error(f"❌ Option chain lookup failed HTTP {chain_resp.status_code} for {symbol_upper} strike {target_strike}")
+                return None
         except Exception as e:
-            logger.warning(f"Option chain lookup fallback for {symbol_upper}: {e}")
-
-        return {
-            "security_id": "45123",
-            "trading_symbol": trading_symbol,
-            "strike": target_strike,
-            "atm_strike": atm_strike,
-            "option_type": opt_type_code,
-            "lot_size": lot_size,
-            "implied_delta": exact_delta,
-            "theta_decay_per_day": theta_decay,
-            "gamma": gamma,
-            "vega": vega
-        }
+            logger.error(f"❌ Option chain lookup exception for {symbol_upper}: {e}")
+            return None
 
     async def _execute_trade(self, symbol: str, side: str, qty: int, signal_data: Dict, trace_id: Optional[str] = None, order_value: float = 0.0, risk_res: dict = None):
-        """Send execution command to Engine C (with Super Order / ITM-1 Option support)"""
+        """Send execution command to Engine C (with Super Order / ITM-1 Option support & Live Guard)"""
         uid = self.config.get("user_id", "system")
         try:
             current_price = signal_data.get("current_price", 100.0)
@@ -479,20 +494,61 @@ class AutonomousTrader:
             asset_class = self.config.get("asset_class", "fno")
             symbol_upper = symbol.upper()
 
+            # ---------------------------------------------------------
+            # OPENING VOLATILITY COOLDOWN GATE (09:15 - 09:20 IST)
+            # ---------------------------------------------------------
+            try:
+                import pytz
+                ist_now = datetime.now(pytz.timezone('Asia/Kolkata'))
+                if ist_now.hour == 9 and ist_now.minute < 20:
+                    logger.info(f"⏳ Opening volatility cooldown active (09:15-09:20 IST) - Skipping trade entry for {symbol_upper}")
+                    return
+            except Exception:
+                pass
+
             # Handle F&O Options Execution with ITM-1 Strike Selection
             if asset_class in ["fno", "options"] or symbol_upper in ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]:
                 opt_info = await self.resolve_optimal_option_strike(
                     underlying_symbol=symbol_upper,
                     underlying_spot=current_price,
-                    option_type="CE" if side.upper() == "BUY" else "PE"
+                    option_type="CE" if side.upper() in ["BUY", "BUY_CALL"] else "PE"
                 )
+                if not opt_info or not opt_info.get("security_id"):
+                    logger.error(f"🛑 TRADE ABORTED: Live Option Strike could not be resolved for {symbol_upper} spot {current_price}")
+                    self.audit_logger.log_trade_rejected(uid, symbol_upper, "STRIKE_UNAVAILABLE", {"spot": current_price})
+                    return
+
+                # Bid-Ask Spread & Liquidity validation
+                bid = opt_info.get("bid_price", 0.0)
+                ask = opt_info.get("ask_price", 0.0)
+                if bid > 0 and ask > 0:
+                    mid = (bid + ask) / 2.0
+                    spread_pct = (ask - bid) / mid
+                    if spread_pct > 0.015:  # 1.5% max spread threshold
+                        logger.warning(f"🛑 REJECTED: Wide Bid-Ask Spread ({spread_pct:.2%}) exceeds 1.5% limit for {opt_info['trading_symbol']}")
+                        self.audit_logger.log_trade_rejected(uid, symbol_upper, "EXCESSIVE_SPREAD", {"spread_pct": spread_pct, "bid": bid, "ask": ask})
+                        return
+
                 sec_id = opt_info["security_id"]
                 lot_size = opt_info["lot_size"]
-                # Convert Lots to Exchange Units (Qty * LotSize)
                 total_units = max(1, qty) * lot_size
                 segment = "NSE_FNO"
 
                 logger.info(f"🎯 ITM-1 Strike Locked: {opt_info['trading_symbol']} (Units: {total_units}, Delta: {opt_info['implied_delta']})")
+
+                # Live vs Paper Mode Gatekeeper (Phase 0 Safety Hardening)
+                live_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() in ["true", "1", "yes"]
+                if not live_enabled:
+                    logger.info(f"🛡️ LIVE_TRADING_ENABLED=false: Simulated Paper Trade recorded for {symbol_upper} (Units: {total_units}, Value: ₹{order_value:,.2f})")
+                    self.current_session_exposure += order_value
+                    self.audit_logger.log_event(uid, "PAPER_TRADE_EXECUTED", {
+                        "symbol": symbol_upper,
+                        "side": side,
+                        "units": total_units,
+                        "order_value": order_value,
+                        "mode": "PAPER_SIMULATION"
+                    })
+                    return
 
                 # Dispatch via DhanHQ Bracket Super Order
                 super_order_payload = {
@@ -514,6 +570,9 @@ class AutonomousTrader:
                     "X-Engine-Source": "engine-a",
                     "X-User-ID": str(uid)
                 }
+                oidc_tok = _get_oidc_token(ENGINE_C_URL)
+                if oidc_tok:
+                    headers["Authorization"] = f"Bearer {oidc_tok}"
 
                 resp = await self.http_client.post(url, json=super_order_payload, headers=headers)
             else:
@@ -521,6 +580,20 @@ class AutonomousTrader:
                 sec_id = signal_data.get("security_id", "0")
                 if symbol_upper in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]:
                     segment = "MCX_COMM"
+
+                # Live vs Paper Mode Gatekeeper
+                live_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() in ["true", "1", "yes"]
+                if not live_enabled:
+                    logger.info(f"🛡️ LIVE_TRADING_ENABLED=false: Simulated Paper Trade recorded for {symbol_upper} (Qty: {qty}, Value: ₹{order_value:,.2f})")
+                    self.current_session_exposure += order_value
+                    self.audit_logger.log_event(uid, "PAPER_TRADE_EXECUTED", {
+                        "symbol": symbol_upper,
+                        "side": side,
+                        "qty": qty,
+                        "order_value": order_value,
+                        "mode": "PAPER_SIMULATION"
+                    })
+                    return
 
                 payload = {
                     "transaction_type": side.upper(),
@@ -539,6 +612,9 @@ class AutonomousTrader:
                     "X-Engine-Source": "engine-a",
                     "X-User-ID": str(uid)
                 }
+                oidc_tok = _get_oidc_token(ENGINE_C_URL)
+                if oidc_tok:
+                    headers["Authorization"] = f"Bearer {oidc_tok}"
 
                 resp = await self.http_client.post(url, json=payload, headers=headers)
 

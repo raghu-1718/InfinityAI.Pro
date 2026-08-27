@@ -185,9 +185,9 @@ Evaluated across 1-year of authentic 5-minute ticks from **BigQuery (`infinity_d
 
 ---
 
-## 🚀 8. CI/CD Pipeline & Compute Engine VM Deployment Flow
+## 🚀 8. CI/CD Pipeline & 100% Serverless Cloud Run Deployment Flow
 
-The entire platform is deployed automatically via **GitHub Actions** (`.github/workflows/deploy-production.yml`) utilizing **Google Workload Identity Federation (WIF)**:
+The entire platform is deployed automatically via **GitHub Actions** (`.github/workflows/deploy-production.yml`) utilizing **Google Workload Identity Federation (WIF)** natively to **GCP Cloud Run** (`asia-south1`):
 
 ```mermaid
 sequenceDiagram
@@ -195,43 +195,43 @@ sequenceDiagram
     participant Dev as Git Push (main)
     participant GHA as GitHub Actions (WIF)
     participant CB as Google Cloud Build
-    participant CR as Cloud Run (Engine A & C)
+    participant CR_A as Cloud Run (Engine A)
+    participant CR_B as Cloud Run (Engine B - 4 CPU / 16Gi)
+    participant CR_C as Cloud Run (Engine C)
     participant GCS as GCS Model Vault (gs://infinity-ai-models-vault)
-    participant VM as Compute Engine VM (engine-b)
     participant FB as Firebase Hosting
 
     Dev->>GHA: Push commit to main branch
     GHA->>GHA: Authenticate with GCP via Workload Identity Federation
     
-    par Deploy Cloud Run & Package VM Bundle
+    par Deploy Serverless Cloud Run Engines
         GHA->>CB: Submit cloudbuild_engine_a.yaml
-        CB->>CR: Deploy Engine A (Orchestrator & Telegram Dispatcher)
-        
-        GHA->>CB: Submit cloudbuild_engine_c.yaml
-        CB->>CR: Deploy Engine C (Execution Gateway)
+        CB->>CR_A: Deploy Engine A (Orchestrator & Risk Gateway)
         
         GHA->>CB: Submit cloudbuild_engine_b.yaml
-        CB->>GCS: Package & Upload engine-b-pkg.tar.gz
+        CB->>CR_B: Deploy Engine B (AI/ML Tri-Model Ensemble)
+        
+        GHA->>CB: Submit cloudbuild_engine_c.yaml
+        CB->>CR_C: Deploy Engine C (Execution Gateway & DhanHQ Proxy)
     and Deploy Frontend
         GHA->>FB: Build Next.js 15 App & Deploy to Firebase Hosting
     end
 
-    Note over VM: Daily at 08:55 IST or upon reboot:
-    VM->>GCS: Download engine-b-pkg.tar.gz + Model Weights (*.cbm, *.pkl)
-    VM->>VM: Unpack to /opt/infinityai/engine-b/ & restart systemd (engine-b.service)
+    Note over CR_B,GCS: Model Loading & Nightly Retraining:
+    CR_B->>GCS: Downloads updated model binaries (CatBoost, LightGBM, XGBoost, RF)
+    Note over CR_A,CR_C: Schedulers scale min-instances (08:55 market-open / 15:45 market-close)
 ```
 
-### 📦 How Engine B Deploys to the Compute Engine VM
-1. **GitHub Actions / Cloud Build (`cloudbuild_engine_b.yaml`):**
-   * Packages `backend/engine-b/*` and `backend/shared/*` into `/tmp/engine-b-pkg.tar.gz`.
-   * Uploads the archive to `gs://infinity-ai-models-vault/engine-b-pkg.tar.gz`.
-2. **Compute Engine VM (`engine-b`):**
-   * Runs `startup_vm.sh` on startup (or via `systemctl restart engine-b`).
-   * Downloads `engine-b-pkg.tar.gz` and all serialized model binaries from GCS.
-   * Starts `uvicorn main:app --host 0.0.0.0 --port 8080 --workers 2` in warm memory.
-3. **Cloud Scheduler Cost Optimization:**
-   * `start-engine-b-vm-scheduler` starts the VM at **08:55 IST** on trading days.
-   * `stop-engine-b-vm-scheduler` stops the VM at **15:45 IST**, saving **$\approx 70\%$ of VM compute costs**.
+### 📦 Serverless Engine Topology & Schedulers
+1. **Engine A (Orchestration & Risk):** 1 vCPU / 1 GiB RAM Cloud Run service handling trade lifecycle, VaR calculation, and Telegram notifications.
+2. **Engine B (AI/ML Intelligence):** 4 vCPU / 16 GiB RAM Cloud Run service with high in-memory concurrency (640) for tabular gradient boosting and Vertex AI Gemini 2.5 Flash macro grounding.
+3. **Engine C (Execution Gateway):** 1 vCPU / 512 MiB RAM Cloud Run service attached via Direct VPC Egress to Static Cloud NAT (`8.234.94.95`) for DhanHQ API v2 routing with strict 9 req/s rate limiting.
+4. **Automated Market Schedule Lifecycle:**
+   * `market-open` job: Scales Engine A & C `min-instances=1` at **08:55 IST** on trading days for zero-cold-start warmup.
+   * `09:15 - 15:30 IST`: Active signal evaluation and trade execution window.
+   * `eod-settlement-scheduler`: Triggers EOD settlement and reconciliation at **15:35 IST**.
+   * `market-close` job: Scales Engine A & C `min-instances=0` at **15:45 IST** after squareoff, reducing idle compute costs.
+   * `trigger-model-retraining`: Runs nightly 9-model ensemble retraining job at **17:30 IST** (`0 12 * * 1-5`), committing updated weights to `gs://infinity-ai-models-vault`.
 
 ---
 

@@ -269,26 +269,57 @@ async def place_bracket_super_order(order: BracketSuperOrderRequest):
     }
 
     url = "https://api.dhan.co/v2/super/orders"
+    assert len(correlation_id) <= 30, f"Correlation ID exceeds 30 chars: {correlation_id}"
 
-    logger.info(f"🚀 Dispatching Super Order for {order.security_id} (Qty: {order.quantity}) | SL: {order.stop_loss_price} | TGT: {order.target_price}")
+    logger.info(f"🚀 Dispatching Super Order for {order.security_id} (Qty: {order.quantity}) | Correlation: {correlation_id} | SL: {order.stop_loss_price} | TGT: {order.target_price}")
 
     import httpx
-    async with httpx.AsyncClient(http2=True, timeout=15.0) as client:
-        response = await safe_dhan_request(
-            client=client,
-            method="POST",
-            url=url,
-            json=payload,
-            headers=headers
-        )
+    import time
+    t_start = time.perf_counter()
+    response = None
+    timeout_occurred = False
 
-    if response.get("status") == "error":
-        logger.error(f"Super Order Failed: {response}")
-        raise HTTPException(status_code=502, detail=response.get("message", "Super Order Placement Failed"))
+    async with httpx.AsyncClient(http2=True, timeout=15.0) as client:
+        try:
+            response = await safe_dhan_request(
+                client=client,
+                method="POST",
+                url=url,
+                json=payload,
+                headers=headers
+            )
+        except Exception as exc:
+            logger.warning(f"⚠️ DhanHQ Super Order dispatch timeout/exception: {exc}. Initiating correlation reconciliation...")
+            timeout_occurred = True
+
+        # Timeout Reconciliation: Check order book to verify if order landed at exchange
+        if timeout_occurred or (response and response.get("status") == "error" and "timeout" in str(response).lower()):
+            try:
+                orders_url = "https://api.dhan.co/v2/orders"
+                orders_resp = await safe_dhan_request(client=client, method="GET", url=orders_url, headers=headers)
+                if orders_resp and isinstance(orders_resp.get("data"), list):
+                    for o in orders_resp["data"]:
+                        if o.get("correlationId") == correlation_id:
+                            logger.info(f"✅ Reconciled order from DhanHQ order book: {o.get('orderId')}")
+                            response = {
+                                "status": "success",
+                                "orderId": o.get("orderId"),
+                                "orderStatus": o.get("orderStatus", "CONFIRMED"),
+                                "reconciled": True
+                            }
+                            break
+            except Exception as rec_err:
+                logger.error(f"Reconciliation check error: {rec_err}")
+
+    elapsed_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+
+    if not response or response.get("status") == "error":
+        logger.error(f"Super Order Failed ({elapsed_ms}ms): {response}")
+        raise HTTPException(status_code=502, detail=str((response or {}).get("message", "Super Order Placement Failed")))
 
     order_id = str(response.get("orderId", response.get("data", {}).get("orderId", uuid.uuid4().hex[:12])))
 
-    # Store order audit in Firestore
+    # Store order audit in Firestore with latency metrics
     try:
         if manager.db:
             order_doc = {
@@ -303,6 +334,8 @@ async def place_bracket_super_order(order: BracketSuperOrderRequest):
                 "trailing_jump": order.trailing_jump,
                 "status": response.get("orderStatus", "PENDING"),
                 "correlation_id": correlation_id,
+                "dispatch_latency_ms": elapsed_ms,
+                "reconciled": response.get("reconciled", False),
                 "created_at": datetime.utcnow().isoformat(),
             }
             manager.db.collection("trades").document(order_id).set(order_doc)
@@ -314,6 +347,8 @@ async def place_bracket_super_order(order: BracketSuperOrderRequest):
         "orderId": order_id,
         "orderStatus": response.get("orderStatus", "PENDING"),
         "correlationId": correlation_id,
+        "dispatch_latency_ms": elapsed_ms,
+        "reconciled": response.get("reconciled", False),
         "user_id": resolved_uid
     }
 
