@@ -1,0 +1,4 @@
+Fill Model,Entry Slippage,Exit Slippage,Spread Penalty,Trades,Win Rate (%),Combined Net P&L (Rs)
+OPTIMISTIC,0.00%,0.00%,0.00%,3403,48.52,886424.32
+REALISTIC,0.30%,0.30%,0.50%,3395,45.24,626116.95
+CONSERVATIVE,0.80%,0.80%,1.00%,3407,43.85,235051.81

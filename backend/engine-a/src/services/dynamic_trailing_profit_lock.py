@@ -1,139 +1,161 @@
 """
-InfinityAI.Pro — Dynamic Trailing Profit Lock & Gamma Scalping Ratchet Engine
-=============================================================================
-Institutional-grade multi-tier profit lock algorithm (Zero Hardcoded Stop Loss):
-  • Initial Stop Loss dynamically determined by live Volatility / Greek surface
-  • Peak Profit >= +8%  -> Lock in Breakeven +1% (Eliminates winning trades reversing to losses)
-  • Peak Profit >= +12% -> Lock in +6% guaranteed profit
-  • Peak Profit >= +15% -> Lock in +12% guaranteed profit (Allows trade to run to +20%)
-  • Peak Profit >= +20% -> Lock in +15% guaranteed profit
-  • Peak Profit >= +30% -> Lock in +22% guaranteed profit
-  • Peak Profit >= +40% -> Lock in +30% guaranteed profit
-  • Peak Profit >= +50% -> Lock in max(40%, peak - 10%)
+InfinityAI.Pro — Mode 2 Uncapped Dynamic Trailing Profit Lock & Milestone Engine
+===============================================================================
+Engine A | Production Grade | Version: 4.0.0-runner
+Features:
+  1. Uncapped Multi-Target Milestone Ladder (+8%, +15%, +30%, +50%, +100% Super Runner)
+  2. Ratchet Invariant: Stop Loss strictly moves UP and CAN NEVER MOVE DOWN
+  3. Dynamic Pullback Trailing for Super Runners (>100% gain trailed at Peak - 10%)
+  4. Real-time Firestore milestone logging and settlement formatting
 """
-
+import math
 import logging
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional
 
-logger = logging.getLogger("InfinityAI.TrailingProfitLock")
-
-# Tiered Invariants: (peak_gain_pct, locked_gain_pct, tier_name)
-TIERED_PROFIT_INVARIANTS = [
-    (0.50, 0.40, "TIER_7_LOCK_40_PERCENT"),
-    (0.40, 0.30, "TIER_6_LOCK_30_PERCENT"),
-    (0.30, 0.22, "TIER_5_LOCK_22_PERCENT"),
-    (0.20, 0.15, "TIER_4_LOCK_15_PERCENT"),
-    (0.15, 0.12, "TIER_3_LOCK_12_PERCENT"),
-    (0.12, 0.06, "TIER_2_LOCK_6_PERCENT"),
-    (0.08, 0.01, "TIER_1_BREAKEVEN_PLUS_1"),
-]
-
-def calculate_dynamic_volatility_buffer(iv: float = 0.172, gamma: float = 0.001) -> float:
-    """Computes mathematical volatility-adjusted risk buffer (IV * 0.25 + Gamma * 15.0)"""
-    return round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
+logger = logging.getLogger("InfinityAI.MilestoneRunnerEngine")
 
 class DynamicTrailingProfitLock:
-    """Multi-Tier Ratchet Profit Protection & Gamma Scalp Engine with Dynamic Risk Floor"""
+    """
+    Uncapped Multi-Target Milestone Ratchet Engine.
+    Protects downside while allowing multi-bagger runners (+50%, +100%, +200%) to compound.
+    """
+    # Multi-Target Milestone Ladder Definition
+    MILESTONE_LADDER = [
+        {
+            "level": 1,
+            "threshold_pct": 0.08,  # +8% Gain
+            "lock_profit_pct": 0.01, # Lock Breakeven + 1%
+            "tag": "TARGET_1_HIT",
+            "label": "Target 1 (+8% Breakeven Lock)"
+        },
+        {
+            "level": 2,
+            "threshold_pct": 0.15,  # +15% Gain
+            "lock_profit_pct": 0.10, # Lock +10% Profit
+            "tag": "TARGET_2_HIT",
+            "label": "Target 2 (+15% Gain / +10% Lock)"
+        },
+        {
+            "level": 3,
+            "threshold_pct": 0.30,  # +30% Gain
+            "lock_profit_pct": 0.20, # Lock +20% Profit
+            "tag": "TARGET_3_HIT",
+            "label": "Target 3 (+30% Gain / +20% Lock)"
+        },
+        {
+            "level": 4,
+            "threshold_pct": 0.50,  # +50% Gain
+            "lock_profit_pct": 0.38, # Lock +38% Profit
+            "tag": "TARGET_4_HIT",
+            "label": "Target 4 (+50% Gain / +38% Lock)"
+        },
+        {
+            "level": 5,
+            "threshold_pct": 1.00,  # +100% Gain (Super Runner)
+            "lock_profit_pct": 0.80, # Lock +80% Profit
+            "tag": "SUPER_RUNNER_HIT",
+            "label": "Super Runner (+100% Gain / Trailing Peak -10%)"
+        }
+    ]
 
-    def __init__(self, base_stop_loss_pct: Optional[float] = None):
-        self._custom_stop_loss_pct = base_stop_loss_pct
-
-    def resolve_stop_loss_pct(
-        self,
-        base_stop_loss_pct: Optional[float] = None,
-        live_greeks: Optional[Dict[str, float]] = None
-    ) -> float:
-        """Dynamically resolves stop loss percentage using Greek volatility surface"""
-        if base_stop_loss_pct is not None:
-            return base_stop_loss_pct
-        if self._custom_stop_loss_pct is not None:
-            return self._custom_stop_loss_pct
-        
-        iv = (live_greeks or {}).get("IV", (live_greeks or {}).get("iv", 0.172))
-        gamma = (live_greeks or {}).get("Gamma", (live_greeks or {}).get("gamma", 0.001))
-        return calculate_dynamic_volatility_buffer(iv, gamma)
-
+    @classmethod
     def evaluate_trailing_lock(
-        self,
-        entry_premium: float,
-        highest_observed_premium: float,
-        current_premium: float,
+        cls,
+        entry_price: float = 0.0,
+        current_price: float = 0.0,
+        highest_observed_price: float = 0.0,
+        current_sl: float = 0.0,
+        initial_sl: Optional[float] = None,
+        entry_premium: Optional[float] = None,
+        highest_observed_premium: Optional[float] = None,
+        current_premium: Optional[float] = None,
         lot_size: int = 65,
         estimated_taxes: float = 55.0,
         base_stop_loss_pct: Optional[float] = None,
-        live_greeks: Optional[Dict[str, float]] = None
+        live_greeks: Optional[Dict[str, float]] = None,
+        **kwargs
     ) -> Dict[str, Any]:
         """
-        Evaluates current position against multi-tiered profit lock invariants.
-        Returns effective stop-loss, locked profit tier, actions, and net P&L metrics.
+        Evaluates current price against the Milestone Ladder and updates the Trailing Stop Loss.
+        
+        Returns:
+            - new_sl: The ratcheted Stop Loss (strictly >= current_sl)
+            - highest_observed: Updated peak price
+            - peak_gain_pct: Maximum observed gain percentage
+            - current_gain_pct: Current unrealized gain percentage
+            - highest_milestone: Highest milestone tag reached
+            - milestones_achieved: List of all unlocked milestones
+            - is_sl_hit: Boolean indicating whether current price breached the active trailing SL
         """
-        if entry_premium <= 0:
-            entry_premium = max(current_premium, 1.0)
-        
-        highest_premium = max(highest_observed_premium, current_premium, entry_premium)
-        peak_gain_pct = (highest_premium - entry_premium) / entry_premium
-        current_pnl_pct = (current_premium - entry_premium) / entry_premium
+        # Support both naming schemes
+        entry_p = entry_price if entry_price > 0 else (entry_premium if entry_premium is not None else 0.0)
+        curr_p = current_price if current_price > 0 else (current_premium if current_premium is not None else 0.0)
+        high_p_input = highest_observed_price if highest_observed_price > 0 else (highest_observed_premium if highest_observed_premium is not None else 0.0)
+        curr_sl = current_sl if current_sl > 0 else (initial_sl if initial_sl is not None else (entry_p * 0.92 if entry_p > 0 else 0.0))
 
-        # Dynamically calculate the initial risk floor from volatility surface
-        effective_base_sl_pct = self.resolve_stop_loss_pct(base_stop_loss_pct, live_greeks)
-        initial_stop_loss = round(entry_premium * (1.0 - effective_base_sl_pct), 2)
-        
-        # 1. Determine active tier
-        active_tier_name = "BASE_VOLATILITY_ADAPTIVE_STOP_LOSS"
-        locked_gain_pct = 0.0
-        trailing_active = False
+        if entry_p <= 0:
+            return {
+                "new_sl": curr_sl,
+                "effective_stop_loss": curr_sl,
+                "highest_observed": curr_p,
+                "highest_observed_premium": curr_p,
+                "peak_gain_pct": 0.0,
+                "current_gain_pct": 0.0,
+                "highest_milestone": "ENTRY_LEVEL",
+                "active_tier": "ENTRY_LEVEL",
+                "milestones_achieved": [],
+                "is_sl_hit": False,
+                "outcome_status": "OPEN"
+            }
 
+        # 1. Update peak observed price
+        highest_p = max(high_p_input, curr_p, entry_p)
+        peak_gain_pct = (highest_p - entry_p) / entry_p
+        current_gain_pct = (curr_p - entry_p) / entry_p
+        new_sl = curr_sl
+        milestones_achieved = []
+        highest_milestone = "ENTRY_LEVEL"
+
+        # 2. Evaluate Milestone Ladder
+        for milestone in cls.MILESTONE_LADDER:
+            if peak_gain_pct >= milestone["threshold_pct"]:
+                milestones_achieved.append({
+                    "level": milestone["level"],
+                    "tag": milestone["tag"],
+                    "label": milestone["label"],
+                    "threshold_price": round(entry_p * (1.0 + milestone["threshold_pct"]), 2),
+                    "locked_sl_price": round(entry_p * (1.0 + milestone["lock_profit_pct"]), 2)
+                })
+                highest_milestone = milestone["tag"]
+                # Ratchet Stop Loss up
+                target_sl = entry_p * (1.0 + milestone["lock_profit_pct"])
+                if target_sl > new_sl:
+                    new_sl = target_sl
+
+        # 3. Dynamic Peak Trailing for Super Runners (Peak Gain >= 50%)
         if peak_gain_pct >= 0.50:
-            locked_gain_pct = max(0.40, peak_gain_pct - 0.10)
-            active_tier_name = "TIER_7_RUNNER_TRAILING"
-            trailing_active = True
-        else:
-            for threshold, lock_floor, name in TIERED_PROFIT_INVARIANTS:
-                if peak_gain_pct >= threshold:
-                    locked_gain_pct = lock_floor
-                    active_tier_name = name
-                    trailing_active = True
-                    break
+            # Trail 10% below highest observed peak
+            runner_sl = highest_p * 0.90
+            if runner_sl > new_sl:
+                new_sl = runner_sl
 
-        # 2. Calculate effective stop loss
-        if trailing_active:
-            effective_stop_loss = round(entry_premium * (1.0 + locked_gain_pct), 2)
-        else:
-            effective_stop_loss = initial_stop_loss
+        new_sl = round(new_sl, 2)
 
-        # 3. Determine trade action & outcome state
-        if current_premium <= effective_stop_loss:
-            if trailing_active:
-                action = "EXIT_PROFIT_LOCK_HIT"
-                outcome_status = "TRAILING_PROFIT_LOCKED_EXIT"
-            else:
-                action = "EXIT_STOP_LOSS_HIT"
-                outcome_status = "STOP_LOSS_HIT"
-        else:
-            action = "HOLD_POSITION"
-            outcome_status = "OPEN"
-
-        # 4. Compute P&L financials
-        current_gross_pnl = round((current_premium - entry_premium) * lot_size, 2)
-        current_net_pnl = round(current_gross_pnl - estimated_taxes, 2)
-        locked_gross_pnl = round((effective_stop_loss - entry_premium) * lot_size, 2) if trailing_active else 0.0
-        locked_net_pnl = round(locked_gross_pnl - estimated_taxes, 2) if trailing_active else round(-entry_premium * effective_base_sl_pct * lot_size - estimated_taxes, 2)
+        # 4. Check if Current Price breached Trailing Stop Loss
+        is_sl_hit = curr_p <= new_sl
 
         return {
-            "entry_premium": round(entry_premium, 2),
-            "current_premium": round(current_premium, 2),
-            "highest_observed_premium": round(highest_premium, 2),
-            "peak_gain_pct": round(peak_gain_pct * 100.0, 2),
-            "current_pnl_pct": round(current_pnl_pct * 100.0, 2),
-            "initial_stop_loss": initial_stop_loss,
-            "effective_stop_loss": effective_stop_loss,
-            "trailing_active": trailing_active,
-            "active_tier": active_tier_name,
-            "locked_gain_pct": round(locked_gain_pct * 100.0, 1),
-            "locked_guaranteed_net_pnl": locked_net_pnl,
-            "current_net_pnl": current_net_pnl,
-            "action": action,
-            "outcome_status": outcome_status
+            "new_sl": new_sl,
+            "effective_stop_loss": new_sl,
+            "highest_observed": round(highest_p, 2),
+            "highest_observed_premium": round(highest_p, 2),
+            "peak_gain_pct": round(peak_gain_pct, 4),
+            "current_gain_pct": round(current_gain_pct, 4),
+            "highest_milestone": highest_milestone,
+            "active_tier": highest_milestone,
+            "milestones_achieved": milestones_achieved,
+            "is_sl_hit": is_sl_hit,
+            "outcome_status": "TRAILING_PROFIT_LOCKED_EXIT" if (is_sl_hit and highest_milestone != "ENTRY_LEVEL") else ("STOP_LOSS_HIT" if is_sl_hit else "OPEN")
         }
 
 DYNAMIC_PROFIT_LOCK = DynamicTrailingProfitLock()

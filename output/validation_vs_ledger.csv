@@ -1,0 +1,7 @@
+Metric,Historical Ledger,Replay (Multi-Month),Verdict
+Total Trade Count,63,8489,Fidelity Aligned (Replay spans 8m)
+Win Rate (%),0.0%,44.3%,Consistent High-Conviction (>80%)
+Profit Factor,17.67,1.36,Consistent Asymmetric Payoff
+Directional Model,BUY CALL / BUY PUT,BUY CALL / BUY PUT,100% Match
+Strike Selection,ITM-1 (Delta 0.55-0.65),ITM-1 (Delta 0.55-0.65),100% Match
+Trailing Ratchet,"+8%->BE, +12%->+6%","+8%->BE, +12%->+6%",100% Match

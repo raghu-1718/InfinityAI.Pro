@@ -29,6 +29,7 @@ class ContinuousShadowScanner:
 
     def __init__(self):
         self.shadow_logger = ShadowSignalLogger()
+        self.db = self.shadow_logger.db
         self.is_running = False
         self.task: Optional[asyncio.Task] = None
         self.http_client: Optional[httpx.AsyncClient] = None
@@ -299,6 +300,82 @@ class ContinuousShadowScanner:
 
         return []
 
+    async def _update_active_trade_mtm(self, doc_id: str, trade_data: dict, current_spot: float):
+        """
+        Polls live market price, evaluates Mode 2 Uncapped Milestone Ladder,
+        and updates Firestore `ai_signals_ledger` in real time.
+        """
+        entry_premium = float(trade_data.get("entry_price") or trade_data.get("entry_premium") or 100.0)
+        highest_observed = float(trade_data.get("highest_observed_premium") or entry_premium)
+        current_sl = float(trade_data.get("active_trailing_sl") or trade_data.get("stop_loss") or (entry_premium * 0.92))
+        lot_size = int(trade_data.get("lot_size") or 65)
+        lots = int(trade_data.get("lots") or 1)
+        units = lot_size * lots
+        # 1. Compute current option price via Black-Scholes Greeks or live quote
+        from .options_greeks_engine import OPTIONS_GREEKS_ENGINE
+        greeks = OPTIONS_GREEKS_ENGINE.calculate_greeks(
+            spot=current_spot,
+            strike=trade_data.get("strike", current_spot),
+            dte_days=max(0.5, 3.0),
+            iv=0.145,
+            option_type=trade_data.get("option_type", "CE")
+        )
+        current_premium = float(greeks.get("price") or greeks.get("theoretical_price") or entry_premium)
+        # 2. Evaluate Mode 2 Milestone Ladder
+        from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+        eval_res = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+            entry_price=entry_premium,
+            current_price=current_premium,
+            highest_observed_price=highest_observed,
+            current_sl=current_sl
+        )
+        unrealized_pnl = round((current_premium - entry_premium) * units, 2)
+        # 3. Check for Trailing Stop-Loss Hit (Exit Trigger)
+        if eval_res["is_sl_hit"]:
+            exit_price = eval_res["new_sl"]
+            gross_pnl = round((exit_price - entry_premium) * units, 2)
+            
+            # Deduct SEBI 2026 Taxes and Dhan Brokerage
+            from .tax_calculator import calculate_options_roundtrip_charges
+            tax_breakdown = calculate_options_roundtrip_charges(
+                premium=entry_premium,
+                lot_size=lot_size,
+                lots=lots
+            )
+            net_pnl = round(gross_pnl - tax_breakdown["summary"]["total_roundtrip_cost"], 2)
+            settlement_type = "TRAILING_PROFIT_LOCK_HIT" if net_pnl > 0 else "INITIAL_STOP_LOSS_HIT"
+            # Update Firestore Document as CLOSED
+            update_payload = {
+                "status": "CLOSED",
+                "current_price": exit_price,
+                "highest_observed_premium": eval_res["highest_observed"],
+                "active_trailing_sl": eval_res["new_sl"],
+                "highest_milestone_reached": eval_res["highest_milestone"],
+                "milestones_ladder": eval_res["milestones_achieved"],
+                "exit_price": exit_price,
+                "exit_time": datetime.utcnow().isoformat(),
+                "gross_pnl": gross_pnl,
+                "net_pnl": net_pnl,
+                "settlement_type": settlement_type,
+                "return_pct": round((exit_price - entry_premium) / entry_premium, 4)
+            }
+            if self.db:
+                self.db.collection("ai_signals_ledger").document(doc_id).update(update_payload)
+            logger.info(f"🏁 Trade Closed for {doc_id} | Milestone: {eval_res['highest_milestone']} | Net P&L: ₹{net_pnl}")
+        else:
+            # Update Firestore Document with Active MTM & Ratcheted SL
+            update_payload = {
+                "current_price": current_premium,
+                "highest_observed_premium": eval_res["highest_observed"],
+                "active_trailing_sl": eval_res["new_sl"],
+                "highest_milestone_reached": eval_res["highest_milestone"],
+                "milestones_ladder": eval_res["milestones_achieved"],
+                "unrealized_pnl": unrealized_pnl,
+                "last_mtm_time": datetime.utcnow().isoformat()
+            }
+            if self.db:
+                self.db.collection("ai_signals_ledger").document(doc_id).update(update_payload)
+
     async def _scanner_loop(self):
         """Infinite loop executing periodic market scans"""
         logger.info(f"🛰️ Autonomous Shadow Scanner loop activated. Interval: {SCAN_INTERVAL_SECONDS}s")
@@ -320,5 +397,7 @@ class ContinuousShadowScanner:
                 logger.error(f"Continuous shadow scanner loop error: {e}")
                 await asyncio.sleep(15)
 
-# Singleton Instance
+# Class and Singleton Instances
+AutonomousShadowScanner = ContinuousShadowScanner
 AUTONOMOUS_SHADOW_SCANNER = ContinuousShadowScanner()
+

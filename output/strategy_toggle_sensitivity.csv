@@ -1,0 +1,6 @@
+Parameter Test,Trades,Win Rate (%),Net P&L (Rs),Max DD (%)
+Opening Cooldown ON (09:20 Entry),1703,44.16,193438.02,61.94
+Opening Cooldown OFF (09:15 Entry),1711,44.54,208198.69,57.86
+ADX Conviction Gate (18),1885,43.55,183005.12,69.83
+ADX Conviction Gate (22),1703,44.16,193438.02,61.94
+ADX Conviction Gate (28),1398,45.28,206182.29,63.81

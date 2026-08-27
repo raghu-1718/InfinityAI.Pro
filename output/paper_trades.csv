@@ -1,0 +1,2 @@
+id,symbol,option_symbol,entry_time,strike,option_type,lots,units,entry_premium,highest_premium,target,stop_loss,status,mode
+PAPER-1787792038,NIFTY,NIFTY 24750 CE,2026-08-27 06:23:58,24750,CE,1,65,164.29,164.29,188.93,151.15,OPEN,PAPER_FORWARD_TEST
