@@ -61,18 +61,21 @@ class ShadowSignalLogger:
         xgboost_prob: float,
         gemini_sentiment: str = "NEUTRAL",
         lot_size: int = 65,
-        risk_reward_ratio: str = "1:2.0"
+        risk_reward_ratio: str = "1:2.0",
+        live_option_quote: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Logs a generated trading signal into Firestore in SHADOW_OBSERVATION mode.
+        Supports live market depth pricing (Ask-entry / Bid-exit) with liquidity and spread safeguards.
         """
         if not self.db:
             logger.warning("Firestore client not initialized. Skipping signal log.")
             return None
 
-        # Filter out low conviction noise (<0.55 and >0.45)
-        if decision == "NEUTRAL" or (0.45 < confidence_score < 0.55):
-            logger.info(f"Signal for {symbol} is neutral/low confidence ({confidence_score:.3f}). Skipping ledger commit.")
+        # Strict filter: only execute on explicit directional decisions with sufficient confidence (>= 0.60)
+        valid_trade_decisions = ["BUY_CALL", "BUY_PUT", "LONG_CALL", "LONG_PUT"]
+        if decision not in valid_trade_decisions or confidence_score < 0.60:
+            logger.info(f"Signal for {symbol} is {decision} (conf: {confidence_score:.3f}). Skipping trade ledger commit.")
             return None
 
         now_utc = datetime.now(timezone.utc)
@@ -107,37 +110,76 @@ class ShadowSignalLogger:
         option_type = "CE" if "CALL" in decision.upper() else "PE"
         contract_name = f"{symbol} {int(strike)} {option_type}"
 
-        # Analytical Black-Scholes Option Pricing (DTE to 2026 Single Expiry + IV)
-        try:
-            import math
-            from scipy.stats import norm
-            # 2026 Single Expiry Calendar: NSE = Tuesday (1), BSE = Thursday (3)
-            target_weekday = 3 if "SENSEX" in sym_u else 1
-            today_weekday = ist_time.weekday()
-            days_to_exp = (target_weekday - today_weekday) % 7
-            if days_to_exp == 0:
-                # Same day expiry
-                hours_left = max(15.5 - (ist_time.hour + ist_time.minute / 60.0), 0.25)
-                dte_years = max(hours_left / (24.0 * 365.0), 1e-4)
+        # ── Realistic Pricing Model (Live Ask-Entry vs Black-Scholes Fallback) ──
+        pricing_source = "THEORETICAL_BLACK_SCHOLES"
+        spread_pct = 0.0
+        
+        if live_option_quote and isinstance(live_option_quote, dict):
+            ask_p = float(live_option_quote.get("ask_price", live_option_quote.get("ask", 0.0)))
+            bid_p = float(live_option_quote.get("bid_price", live_option_quote.get("bid", 0.0)))
+            ltp_p = float(live_option_quote.get("ltp", live_option_quote.get("last_price", 0.0)))
+            oi = int(live_option_quote.get("open_interest", live_option_quote.get("oi", 50000)))
+            vol = int(live_option_quote.get("volume", live_option_quote.get("vol", 10000)))
+
+            # Liquidity Safeguard: Minimum OI & Volume
+            if oi < 10000 or vol < 1000:
+                logger.warning(f"⚠️ Liquidity filter failed for {contract_name} (OI: {oi}, Vol: {vol}) — Skipping trade.")
+                return None
+
+            # Spread Safeguard: Reject if Ask-Bid spread > 4% of LTP
+            ref_p = max(ltp_p, ask_p, 1.0)
+            if ask_p > 0 and bid_p > 0:
+                spread = ask_p - bid_p
+                spread_pct = round((spread / ref_p) * 100.0, 2)
+                if spread / ref_p > 0.04:
+                    logger.warning(f"⚠️ Wide spread veto for {contract_name} ({spread_pct}% > 4%) — Skipping trade.")
+                    return None
+                # Realistic Entry: Taker buys at Ask Price
+                est_premium = round(ask_p, 2)
+                pricing_source = "LIVE_MARKET_DEPTH_ASK"
+            elif ltp_p > 0:
+                # 1.0% synthetic spread penalty on LTP
+                est_premium = round(ltp_p * 1.01, 2)
+                pricing_source = "LIVE_LTP_SPREAD_ADJUSTED"
             else:
-                dte_years = max(days_to_exp / 365.0, 1e-4)
+                est_premium = None
+        else:
+            est_premium = None
 
-            # ATM Implied Volatility estimated from live market volatility regime
-            atm_iv = 0.172  # Standard ~17.2% ATM Implied Volatility
-            r = 0.065
-            sigma = max(atm_iv, 0.01)
+        # Fallback to Analytical Black-Scholes Option Pricing if Live Depth Unavailable
+        if est_premium is None or est_premium <= 0:
+            try:
+                import math
+                from scipy.stats import norm
+                target_weekday = 3 if "SENSEX" in sym_u else 1
+                today_weekday = ist_time.weekday()
+                days_to_exp = (target_weekday - today_weekday) % 7
+                if days_to_exp == 0:
+                    hours_left = max(15.5 - (ist_time.hour + ist_time.minute / 60.0), 0.25)
+                    dte_years = max(hours_left / (24.0 * 365.0), 1e-4)
+                else:
+                    dte_years = max(days_to_exp / 365.0, 1e-4)
 
-            d1 = (math.log(spot_price / strike) + (r + 0.5 * sigma ** 2) * dte_years) / (sigma * math.sqrt(dte_years))
-            d2 = d1 - sigma * math.sqrt(dte_years)
+                atm_iv = 0.172
+                r = 0.065
+                sigma = max(atm_iv, 0.01)
 
-            if option_type == "CE":
-                bs_price = spot_price * norm.cdf(d1) - strike * math.exp(-r * dte_years) * norm.cdf(d2)
-            else:
-                bs_price = strike * math.exp(-r * dte_years) * norm.cdf(-d2) - spot_price * norm.cdf(-d1)
+                d1 = (math.log(spot_price / strike) + (r + 0.5 * sigma ** 2) * dte_years) / (sigma * math.sqrt(dte_years))
+                d2 = d1 - sigma * math.sqrt(dte_years)
 
-            est_premium = max(round(float(bs_price), 2), 5.0)
-        except Exception:
-            est_premium = round(spot_price * 0.004, 2)
+                if option_type == "CE":
+                    bs_price = spot_price * norm.cdf(d1) - strike * math.exp(-r * dte_years) * norm.cdf(d2)
+                else:
+                    bs_price = strike * math.exp(-r * dte_years) * norm.cdf(-d2) - spot_price * norm.cdf(-d1)
+
+                # Add 1.0% synthetic spread friction to theoretical pricing
+                est_premium = max(round(float(bs_price) * 1.01, 2), 5.0)
+                pricing_source = "THEORETICAL_BS_SPREAD_ADJUSTED"
+            except Exception:
+                est_premium = round(spot_price * 0.004, 2)
+                pricing_source = "ESTIMATED_RULE_OF_THUMB"
+        else:
+            sigma = 0.172
 
         # Dynamic Volatility-Adjusted Stop Loss & Profit Target (Zero Hardcoded Constants)
         # Computes live mathematical buffer: max(4%, IV * 0.25 + Gamma * 15.0)
@@ -228,7 +270,9 @@ class ShadowSignalLogger:
                 "trailing_stop_loss_active": True,
                 "trailing_tiers": "Tier 1: +8% -> BE+1% | Tier 2: +12% -> +6% | Tier 3: +15% -> +12% | Tier 4: +20% -> +15% | Tier 5: +30% -> +22%",
                 "risk_reward": "1:1.25 (Trailing)",
-                "lot_size": actual_lot_size
+                "lot_size": actual_lot_size,
+                "pricing_source": pricing_source,
+                "spread_pct": spread_pct
             },
             "expected_pnl": expected_pnl_payload,
             "highest_observed_premium": est_premium,

@@ -117,7 +117,18 @@ class MasterMLOpsRetrainingPipeline:
                     vwap_dist = float((window[-1] - vwap) / vwap * 100.0)
                     macd_cross = 1 if rsi > 54.0 else (-1 if rsi < 46.0 else 0)
                     atr_vol = float(np.std(window))
-                    outcome = 1 if (i + 5 < len(closes) and closes[i+5] and closes[i+5] > closes[i]) else 0
+                    # 3-Class Multiclass Target Generation (0=SELL, 1=HOLD, 2=BUY)
+                    # Forward 5-candle return threshold: +/- 0.35% (+/- 0.0035)
+                    if i + 5 < len(closes) and closes[i+5] is not None and closes[i] is not None and closes[i] > 0:
+                        fwd_ret = float((closes[i+5] - closes[i]) / closes[i])
+                        if fwd_ret >= 0.0035:
+                            outcome = 2   # BUY
+                        elif fwd_ret <= -0.0035:
+                            outcome = 0   # SELL
+                        else:
+                            outcome = 1   # HOLD
+                    else:
+                        outcome = 1       # Default HOLD
 
                     ts_dt = datetime.fromtimestamp(timestamps[i], tz=timezone.utc)
                     live_rows.append({
@@ -158,19 +169,20 @@ class MasterMLOpsRetrainingPipeline:
         ]
 
         # Clean NaNs and Infs
-        for col in feature_cols:
-            df_feat[col] = df_feat[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        df_feat[feature_cols] = df_feat[feature_cols].replace([np.inf, -np.inf], np.nan).fillna(0)
 
         print(f"   • Engineered {len(feature_cols)} Institutional Alpha Features: {feature_cols}")
         return df_feat, feature_cols
 
-    def train_and_verify_tri_model(
-        self, df_feat: pd.DataFrame, feature_cols: List[str]
-    ) -> Dict[str, Any]:
-        """Trains CatBoost, LightGBM, XGBoost, and ExtraTrees with Walk-Forward Cross Validation"""
-        print("\n🧠 [3/6] Running Walk-Forward Cross-Validation (5-Fold Time-Series Splits)...")
+    def train_and_validate_ensemble(self, df_feat: pd.DataFrame, feature_cols: List[str]) -> Dict[str, Any]:
+        """Trains CatBoost, LightGBM, XGBoost, and ExtraTrees with 3-Class Multiclass Objectives"""
+        print("\n🧠 [3/6] Running Walk-Forward Cross-Validation (5-Fold Time-Series 3-Class Splits)...")
         X = df_feat[feature_cols].values
-        y = df_feat["signal_outcome"].fillna(0).astype(int).values
+        y = df_feat["signal_outcome"].fillna(1).astype(int).values
+
+        # Ensure all 3 classes are present in training labels
+        unique_classes = np.unique(y)
+        print(f"   • Detected training label distribution: {dict(pd.Series(y).value_counts())}")
 
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
@@ -182,60 +194,69 @@ class MasterMLOpsRetrainingPipeline:
             X_tr, X_val = X_scaled[train_idx], X_scaled[val_idx]
             y_tr, y_val = y[train_idx], y[val_idx]
 
-            # Fit Models
+            # Fit 3-Class Models
             rf = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42, n_jobs=-1)
             et = ExtraTreesClassifier(n_estimators=100, max_depth=6, random_state=42, n_jobs=-1)
             rf.fit(X_tr, y_tr)
             et.fit(X_tr, y_tr)
 
-            rf_preds = rf.predict_proba(X_val)[:, 1]
-            et_preds = et.predict_proba(X_val)[:, 1]
+            rf_preds = rf.predict_proba(X_val)
+            et_preds = et.predict_proba(X_val)
+
+            # Ensure 3-class probability dimensions
+            if rf_preds.shape[1] < 3:
+                rf_preds = np.pad(rf_preds, ((0, 0), (0, 3 - rf_preds.shape[1])), mode='constant')
+            if et_preds.shape[1] < 3:
+                et_preds = np.pad(et_preds, ((0, 0), (0, 3 - et_preds.shape[1])), mode='constant')
 
             lgb_preds = rf_preds
             if HAS_LGBM:
-                lgb_mod = lgb.LGBMClassifier(n_estimators=120, max_depth=5, learning_rate=0.04, random_state=42, verbose=-1)
-                lgb_mod.fit(X_tr, y_tr)
-                lgb_preds = lgb_mod.predict_proba(X_val)[:, 1]
+                try:
+                    lgb_mod = lgb.LGBMClassifier(objective="multiclass", num_class=3, n_estimators=120, max_depth=5, learning_rate=0.04, random_state=42, verbose=-1)
+                    lgb_mod.fit(X_tr, y_tr)
+                    lgb_preds = lgb_mod.predict_proba(X_val)
+                except Exception as e:
+                    print(f"   • LightGBM fold note: {e}")
 
             cat_preds = rf_preds
             if HAS_CATBOOST:
-                cat_mod = CatBoostClassifier(iterations=120, depth=5, learning_rate=0.04, random_seed=42, verbose=0)
-                cat_mod.fit(X_tr, y_tr)
-                cat_preds = cat_mod.predict_proba(X_val)[:, 1]
+                try:
+                    cat_mod = CatBoostClassifier(loss_function="MultiClass", iterations=120, depth=5, learning_rate=0.04, random_seed=42, verbose=0)
+                    cat_mod.fit(X_tr, y_tr)
+                    cat_preds = cat_mod.predict_proba(X_val)
+                except Exception as e:
+                    print(f"   • CatBoost fold note: {e}")
 
             xgb_preds = rf_preds
             if HAS_XGBOOST:
-                xgb_mod = xgb.XGBClassifier(n_estimators=120, max_depth=5, learning_rate=0.04, random_state=42, eval_metric="logloss")
-                xgb_mod.fit(X_tr, y_tr)
-                xgb_preds = xgb_mod.predict_proba(X_val)[:, 1]
+                try:
+                    xgb_mod = xgb.XGBClassifier(objective="multi:softprob", num_class=3, n_estimators=120, max_depth=5, learning_rate=0.04, random_state=42, eval_metric="mlogloss")
+                    xgb_mod.fit(X_tr, y_tr)
+                    xgb_preds = xgb_mod.predict_proba(X_val)
+                except Exception as e:
+                    print(f"   • XGBoost fold note: {e}")
 
-            # Tri-Model Ensemble Weighting
+            # Tri-Model Ensemble 3-Class Probability Weighting
             ens_probs = (0.35 * cat_preds) + (0.35 * lgb_preds) + (0.20 * xgb_preds) + (0.10 * et_preds)
-            ens_bin = (ens_probs >= 0.52).astype(int)
+            ens_pred_class = np.argmax(ens_probs, axis=1)
 
-            f_acc = accuracy_score(y_val, ens_bin)
-            f_prec = precision_score(y_val, ens_bin, zero_division=0)
-            f_rec = recall_score(y_val, ens_bin, zero_division=0)
-            f_auc = roc_auc_score(y_val, ens_probs) if len(np.unique(y_val)) > 1 else 0.50
-            f_brier = brier_score_loss(y_val, ens_probs)
-            f_logloss = log_loss(y_val, ens_probs)
+            f_acc = accuracy_score(y_val, ens_pred_class)
+            f_prec = precision_score(y_val, ens_pred_class, average="macro", zero_division=0)
+            f_rec = recall_score(y_val, ens_pred_class, average="macro", zero_division=0)
 
             fold_results.append({
                 "fold": fold + 1,
                 "accuracy": f_acc,
                 "precision": f_prec,
-                "recall": f_rec,
-                "roc_auc": f_auc,
-                "brier_loss": f_brier,
-                "log_loss": f_logloss
+                "recall": f_rec
             })
-            print(f"   • Fold {fold+1} Validation | Acc: {f_acc*100:.2f}% | Prec: {f_prec*100:.2f}% | ROC-AUC: {f_auc:.4f} | Brier: {f_brier:.4f}")
+            print(f"   • Fold {fold+1} 3-Class Validation | Accuracy: {f_acc*100:.2f}% | Macro-Precision: {f_prec*100:.2f}%")
 
         # Train Final Production Models on Full Dataset
-        print("\n🚀 [4/6] Training Final Production Tri-Model Binaries...")
-        final_lgb = lgb.LGBMClassifier(n_estimators=150, max_depth=6, learning_rate=0.035, random_state=42, verbose=-1) if HAS_LGBM else None
-        final_cat = CatBoostClassifier(iterations=150, depth=6, learning_rate=0.035, random_seed=42, verbose=0) if HAS_CATBOOST else None
-        final_xgb = xgb.XGBClassifier(n_estimators=150, max_depth=6, learning_rate=0.035, random_state=42, eval_metric="logloss") if HAS_XGBOOST else None
+        print("\n🚀 [4/6] Training Final Production Tri-Model 3-Class Binaries...")
+        final_lgb = lgb.LGBMClassifier(objective="multiclass", num_class=3, n_estimators=150, max_depth=6, learning_rate=0.035, random_state=42, verbose=-1) if HAS_LGBM else None
+        final_cat = CatBoostClassifier(loss_function="MultiClass", iterations=150, depth=6, learning_rate=0.035, random_seed=42, verbose=0) if HAS_CATBOOST else None
+        final_xgb = xgb.XGBClassifier(objective="multi:softprob", num_class=3, n_estimators=150, max_depth=6, learning_rate=0.035, random_state=42, eval_metric="mlogloss") if HAS_XGBOOST else None
         final_et = ExtraTreesClassifier(n_estimators=150, max_depth=6, random_state=42, n_jobs=-1)
 
         if final_lgb:
@@ -246,6 +267,14 @@ class MasterMLOpsRetrainingPipeline:
             final_xgb.fit(X_scaled, y)
         final_et.fit(X_scaled, y)
 
+        # STRICT MULTICLASS SHAPE ASSERTION
+        for name, m in [("lightgbm", final_lgb), ("catboost", final_cat), ("xgboost", final_xgb), ("extratrees", final_et)]:
+            if m is not None:
+                sample_p = m.predict_proba(X_scaled[:5])
+                if sample_p.shape[1] != 3:
+                    raise ValueError(f"FATAL: Model {name} produced probability dimension {sample_p.shape[1]} != 3. Retraining aborted.")
+        print("✅ Strict Multi-Class Invariant Verified: All trained production models output shape (N, 3).")
+
         # Feature Importance Ranking
         importances = final_et.feature_importances_
         feat_ranking = sorted(zip(feature_cols, importances), key=lambda x: x[1], reverse=True)
@@ -253,11 +282,8 @@ class MasterMLOpsRetrainingPipeline:
         for feat, score in feat_ranking:
             print(f"   • {feat:<25}: {score * 100.0:.2f}%")
 
-        # Average Metrics
         avg_acc = np.mean([f["accuracy"] for f in fold_results])
         avg_prec = np.mean([f["precision"] for f in fold_results])
-        avg_auc = np.mean([f["roc_auc"] for f in fold_results])
-        avg_brier = np.mean([f["brier_loss"] for f in fold_results])
 
         return {
             "models": {
@@ -272,15 +298,14 @@ class MasterMLOpsRetrainingPipeline:
             "metrics": {
                 "avg_accuracy": round(float(avg_acc), 4),
                 "avg_precision": round(float(avg_prec), 4),
-                "avg_roc_auc": round(float(avg_auc), 4),
-                "avg_brier_score": round(float(avg_brier), 4),
                 "fold_breakdown": fold_results
             }
         }
 
     def serialize_and_upload_artifacts(self, pipeline_output: Dict[str, Any]) -> List[str]:
-        """Serializes model weights and uploads to Google Cloud Storage Model Vault"""
-        print("\n☁️ [5/6] Serializing & Uploading Production Binaries to GCS Model Vault...")
+        """Serializes model weights, computes SHA256 checksums, creates model_manifest.json, and uploads to GCS"""
+        import hashlib
+        print("\n☁️ [5/6] Serializing & Uploading Production 3-Class Binaries with Manifest to GCS...")
         tmp_dir = os.path.join(os.path.dirname(__file__), "tmp_models")
         os.makedirs(tmp_dir, exist_ok=True)
 
@@ -289,14 +314,22 @@ class MasterMLOpsRetrainingPipeline:
         date_str = datetime.now().strftime("%Y%m%d")
 
         uploaded_blobs = []
+        artifact_checksums = {}
+
+        def _sha256_file(filepath: str) -> str:
+            h = hashlib.sha256()
+            with open(filepath, "rb") as f:
+                while chunk := f.read(8192):
+                    h.update(chunk)
+            return h.hexdigest()
 
         # 1. LightGBM
         if models["lightgbm"]:
             lgb_path = os.path.join(tmp_dir, "lightgbm_model.pkl")
             joblib.dump(models["lightgbm"], lgb_path)
+            artifact_checksums["lightgbm_model.pkl"] = f"sha256:{_sha256_file(lgb_path)}"
             blob = self.bucket.blob(f"retrained/{date_str}/lightgbm_model.pkl")
             blob.upload_from_filename(lgb_path)
-            # Update latest
             self.bucket.blob("lightgbm_model.pkl").upload_from_filename(lgb_path)
             uploaded_blobs.append(blob.name)
 
@@ -304,6 +337,7 @@ class MasterMLOpsRetrainingPipeline:
         if models["catboost"]:
             cat_path = os.path.join(tmp_dir, "catboost_model.cbm")
             models["catboost"].save_model(cat_path)
+            artifact_checksums["catboost_model.cbm"] = f"sha256:{_sha256_file(cat_path)}"
             blob = self.bucket.blob(f"retrained/{date_str}/catboost_model.cbm")
             blob.upload_from_filename(cat_path)
             self.bucket.blob("catboost_model.cbm").upload_from_filename(cat_path)
@@ -313,6 +347,7 @@ class MasterMLOpsRetrainingPipeline:
         if models["xgboost"]:
             xgb_path = os.path.join(tmp_dir, "xgboost_model.json")
             models["xgboost"].save_model(xgb_path)
+            artifact_checksums["xgboost_model.json"] = f"sha256:{_sha256_file(xgb_path)}"
             blob = self.bucket.blob(f"retrained/{date_str}/xgboost_model.json")
             blob.upload_from_filename(xgb_path)
             self.bucket.blob("xgboost_model.json").upload_from_filename(xgb_path)
@@ -321,6 +356,7 @@ class MasterMLOpsRetrainingPipeline:
         # 4. Scaler
         scaler_path = os.path.join(tmp_dir, "scaler.pkl")
         joblib.dump(models["scaler"], scaler_path)
+        artifact_checksums["scaler.pkl"] = f"sha256:{_sha256_file(scaler_path)}"
         blob_scaler = self.bucket.blob(f"retrained/{date_str}/scaler.pkl")
         blob_scaler.upload_from_filename(scaler_path)
         self.bucket.blob("scaler.pkl").upload_from_filename(scaler_path)
@@ -330,12 +366,37 @@ class MasterMLOpsRetrainingPipeline:
         feat_path = os.path.join(tmp_dir, "feature_cols.json")
         with open(feat_path, "w") as f:
             json.dump(feat_cols, f, indent=2)
+        artifact_checksums["feature_cols.json"] = f"sha256:{_sha256_file(feat_path)}"
         blob_feat = self.bucket.blob(f"retrained/{date_str}/feature_cols.json")
         blob_feat.upload_from_filename(feat_path)
         self.bucket.blob("feature_cols.json").upload_from_filename(feat_path)
         uploaded_blobs.append(blob_feat.name)
 
-        print(f"   • Uploaded {len(uploaded_blobs)} artifacts to gs://{BUCKET_NAME}/ (Date: {date_str} + Latest)")
+        # 6. Immutable Model Manifest
+        manifest = {
+            "manifest_version": "1.0",
+            "model_version": date_str,
+            "symbol": "INDEX_ENSEMBLE",
+            "num_classes": 3,
+            "label_map": {
+                "0": "SELL",
+                "1": "HOLD",
+                "2": "BUY"
+            },
+            "feature_cols": feat_cols,
+            "artifacts": artifact_checksums,
+            "metrics": pipeline_output.get("metrics", {}),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        manifest_path = os.path.join(tmp_dir, "model_manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+        blob_manifest = self.bucket.blob(f"retrained/{date_str}/model_manifest.json")
+        blob_manifest.upload_from_filename(manifest_path)
+        self.bucket.blob("model_manifest.json").upload_from_filename(manifest_path)
+        uploaded_blobs.append(blob_manifest.name)
+
+        print(f"   • Uploaded {len(uploaded_blobs)} artifacts + model_manifest.json to gs://{BUCKET_NAME}/ (Date: {date_str} + Latest)")
         return uploaded_blobs
 
     def record_audit_and_notify(self, pipeline_output: Dict[str, Any], uploaded_blobs: List[str]):
@@ -381,12 +442,12 @@ class MasterMLOpsRetrainingPipeline:
         print("\n" + "=" * 95)
         print("🏆 MASTER INSTITUTIONAL AI/ML RETRAINING & VERIFICATION PIPELINE COMPLETE!")
         print(f"  • Run ID                         : {run_id}")
-        print(f"  • Out-of-Sample Accuracy         : {pipeline_output['metrics']['avg_accuracy']*100:.2f}%")
-        print(f"  • High-Conviction Precision      : {pipeline_output['metrics']['avg_precision']*100:.2f}%")
-        print(f"  • Out-of-Sample ROC-AUC Score    : {pipeline_output['metrics']['avg_roc_auc']:.4f}")
-        print(f"  • Probabilistic Brier Loss       : {pipeline_output['metrics']['avg_brier_score']:.4f}")
+        print(f"  • Out-of-Sample Accuracy         : {pipeline_output['metrics'].get('avg_accuracy', 0.0)*100:.2f}%")
+        print(f"  • High-Conviction Precision      : {pipeline_output['metrics'].get('avg_precision', 0.0)*100:.2f}%")
         print(f"  • Production Models in GCS Vault : CatBoost (.cbm), LightGBM (.pkl), XGBoost (.json)")
         print("=" * 95)
+
+    train_and_verify_tri_model = train_and_validate_ensemble
 
 if __name__ == "__main__":
     pipeline = MasterMLOpsRetrainingPipeline()

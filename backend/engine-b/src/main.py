@@ -232,14 +232,18 @@ except Exception as e:
     HAS_TORCH = False
     logger.info(f"ℹ️ PyTorch not required for this runtime: {e}")
 
-try:
-    import transformers
-    from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-    HAS_TRANSFORMERS = True
-    logger.info(f"✅ HuggingFace Transformers loaded successfully (v{transformers.__version__})")
-except Exception as e:
-    HAS_TRANSFORMERS = False
-    logger.info(f"ℹ️ Transformers fallback active; sklearn/NLTK signal path remains available: {e}")
+HAS_TRANSFORMERS = False
+if os.name != 'nt' or os.getenv("ENABLE_WINDOWS_TRANSFORMERS", "0") == "1":
+    try:
+        import transformers
+        from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+        HAS_TRANSFORMERS = True
+        logger.info(f"✅ HuggingFace Transformers loaded successfully (v{transformers.__version__})")
+    except Exception as e:
+        HAS_TRANSFORMERS = False
+        logger.info(f"ℹ️ Transformers fallback active; sklearn/NLTK signal path remains available: {e}")
+else:
+    logger.info("ℹ️ Transformers disabled on Windows host to prevent native C++ DLL conflicts; container runtime will use full GPU/Linux stack.")
 
 try:
     import nltk
@@ -2225,9 +2229,15 @@ async def generate_signal(req: SignalRequest):
             "score": score,
             "asset_class": asset_class,
             "model_breakdown": model_breakdown_detail,
-            "catboost_prob": 0.65 if ml_used and signal == "BUY" else 0.35 if ml_used and signal == "SELL" else 0.50,
-            "lightgbm_prob": 0.68 if ml_used and signal == "BUY" else 0.32 if ml_used and signal == "SELL" else 0.50,
-            "xgboost_prob": 0.70 if ml_used and signal == "BUY" else 0.30 if ml_used and signal == "SELL" else 0.50
+            "veto_active": conviction.get("veto_triggered", False),
+            "veto_reason": conviction.get("reason"),
+            "fallback_used": not ml_used,
+            "p_sell": round(float(model_breakdown_detail.get("ensemble_probabilities", [0.33, 0.34, 0.33])[0]), 4) if isinstance(model_breakdown_detail, dict) and "ensemble_probabilities" in model_breakdown_detail else 0.33,
+            "p_hold": round(float(model_breakdown_detail.get("ensemble_probabilities", [0.33, 0.34, 0.33])[1]), 4) if isinstance(model_breakdown_detail, dict) and "ensemble_probabilities" in model_breakdown_detail else 0.34,
+            "p_buy": round(float(model_breakdown_detail.get("ensemble_probabilities", [0.33, 0.34, 0.33])[2]), 4) if isinstance(model_breakdown_detail, dict) and "ensemble_probabilities" in model_breakdown_detail else 0.33,
+            "catboost_prob": round(float(model_breakdown_detail.get("catboost", {}).get("probabilities", [0.33, 0.34, 0.33])[2 if signal == "BUY" else 0 if signal == "SELL" else 1]), 4) if isinstance(model_breakdown_detail, dict) and "catboost" in model_breakdown_detail else (0.65 if ml_used and signal == "BUY" else 0.35 if ml_used and signal == "SELL" else 0.50),
+            "lightgbm_prob": round(float(model_breakdown_detail.get("lightgbm", {}).get("probabilities", [0.33, 0.34, 0.33])[2 if signal == "BUY" else 0 if signal == "SELL" else 1]), 4) if isinstance(model_breakdown_detail, dict) and "lightgbm" in model_breakdown_detail else (0.68 if ml_used and signal == "BUY" else 0.32 if ml_used and signal == "SELL" else 0.50),
+            "xgboost_prob": round(float(model_breakdown_detail.get("xgboost", {}).get("probabilities", [0.33, 0.34, 0.33])[2 if signal == "BUY" else 0 if signal == "SELL" else 1]), 4) if isinstance(model_breakdown_detail, dict) and "xgboost" in model_breakdown_detail else (0.70 if ml_used and signal == "BUY" else 0.30 if ml_used and signal == "SELL" else 0.50)
         }
     )
 

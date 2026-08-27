@@ -102,6 +102,7 @@ class ContinuousShadowScanner:
 
             # 4. Process each signal, evaluate expected PnL, and log to Firestore
             for sig in raw_signals:
+                now_utc = datetime.now(timezone.utc)
                 sym = sig.get("symbol", "").upper()
                 if not sym:
                     continue
@@ -115,12 +116,29 @@ class ContinuousShadowScanner:
                 if spot <= 0:
                     spot = float(sig.get("current_price", 1000.0))
 
-                # Normalize decision
-                decision = "NEUTRAL"
-                if "BUY" in signal_dir or "CALL" in signal_dir or conf >= 0.55:
+                # Model breakdowns & technical analysis
+                models = sig.get("analysis", {})
+                adx = float(models.get("adx", 25.0))
+                key_factors = models.get("key_factors", [])
+                veto_in_factors = any("VETO" in str(k).upper() for k in key_factors)
+                veto_active = models.get("veto_active", False) or veto_in_factors or (adx < 22.0)
+
+                # Strict fail-closed directional decision framework
+                if veto_active or signal_dir in ["HOLD", "NEUTRAL", "NO_TRADE", ""]:
+                    decision = "NO_TRADE"
+                    logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f}, Veto: {veto_active}). No trade executed.")
+                elif ("BUY" in signal_dir or "CALL" in signal_dir) and conf >= 0.60:
                     decision = "BUY_CALL"
-                elif "SELL" in signal_dir or "PUT" in signal_dir or conf <= 0.45:
+                elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= 0.60:
                     decision = "BUY_PUT"
+                else:
+                    decision = "NO_TRADE"
+                    logger.info(f"⏸️ Signal for {sym} ({signal_dir}, conf: {conf:.2f}) did not meet conviction threshold (0.60).")
+
+                # If NO_TRADE, record observation telemetry and skip trade ledger execution
+                if decision == "NO_TRADE":
+                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "NO_TRADE"}
+                    continue
 
                 # 1. Circuit Breaker Gatekeeper (India VIX & Flash Crash check)
                 breaker_status = BLACK_SWAN_BREAKER.update_market_vitals(
@@ -145,23 +163,25 @@ class ContinuousShadowScanner:
 
                 # 3. Check deduplication window (don't create duplicate identical signal within 15 min unless price moved > 0.4%)
                 last_sig = self.last_signals_cache.get(sym)
-                now_utc = datetime.now(timezone.utc)
                 if last_sig:
                     last_time = last_sig.get("time", datetime.min.replace(tzinfo=timezone.utc))
                     last_spot = last_sig.get("spot", 0.0)
                     time_diff = (now_utc - last_time).total_seconds()
                     price_diff_pct = abs(spot - last_spot) / last_spot if last_spot > 0 else 1.0
 
-                    if time_diff < 900 and price_diff_pct < 0.004:
+                    if time_diff < 900 and price_diff_pct < 0.004 and last_sig.get("decision") == decision:
                         # Skip duplicate commit to avoid spamming the ledger
                         continue
 
-                # Model breakdowns
-                models = sig.get("analysis", {})
-                catboost_p = float(sig.get("catboost_prob", conf))
-                lightgbm_p = float(sig.get("lightgbm_prob", conf))
-                xgboost_p = float(sig.get("xgboost_prob", conf))
-                gemini_sentiment = str(sig.get("sentiment_score") or ("BULLISH (+0.65)" if decision == "BUY_CALL" else "NEUTRAL"))
+                catboost_p = float(models.get("catboost_prob", conf))
+                lightgbm_p = float(models.get("lightgbm_prob", conf))
+                xgboost_p = float(models.get("xgboost_prob", conf))
+                gemini_sentiment = str(sig.get("sentiment_score") or (
+                    "BULLISH (+0.65)" if decision == "BUY_CALL" else ("BEARISH (-0.65)" if decision == "BUY_PUT" else "NEUTRAL")
+                ))
+
+                # Fetch live Dhan market depth for realistic Ask/Bid entry if Engine C is reachable
+                live_quote = await self._fetch_option_quote(sym, spot, decision)
 
                 logged_payload = self.shadow_logger.log_shadow_signal(
                     symbol=sym,
@@ -171,7 +191,8 @@ class ContinuousShadowScanner:
                     catboost_prob=catboost_p,
                     lightgbm_prob=lightgbm_p,
                     xgboost_prob=xgboost_p,
-                    gemini_sentiment=gemini_sentiment
+                    gemini_sentiment=gemini_sentiment,
+                    live_option_quote=live_quote
                 )
 
                 if logged_payload:
@@ -282,7 +303,7 @@ class ContinuousShadowScanner:
             resp = await self.http_client.post(
                 f"{ENGINE_B_URL}/api/v1/signals/batch",
                 json=payload,
-                timeout=15.0
+                timeout=30.0
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -299,6 +320,29 @@ class ContinuousShadowScanner:
             logger.warning(f"Failed to query Engine B batch signals: {e}")
 
         return []
+
+    async def _fetch_option_quote(self, symbol: str, spot: float, decision: str) -> Optional[dict]:
+        """Queries Engine C for real-time Dhan ATM option chain depth (Ask, Bid, LTP, OI)"""
+        try:
+            if not self.http_client or self.http_client.is_closed:
+                self.http_client = httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=3.0))
+
+            sym_u = symbol.upper()
+            strike_step = 100 if "BANKNIFTY" in sym_u or "SENSEX" in sym_u else (25 if "MIDCP" in sym_u else 50)
+            strike = round(spot / strike_step) * strike_step
+            opt_type = "CE" if "CALL" in decision.upper() else "PE"
+
+            resp = await self.http_client.get(
+                f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol}?strike={strike}&option_type={opt_type}",
+                timeout=2.5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, dict) and (data.get("ltp") or data.get("ask_price")):
+                    return data
+        except Exception as e:
+            logger.debug(f"Option quote query notice for {symbol}: {e}")
+        return None
 
     async def _update_active_trade_mtm(self, doc_id: str, trade_data: dict, current_spot: float):
         """

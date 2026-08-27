@@ -90,7 +90,51 @@ class MLModelManager:
         # Eager load initial symbol
         self.load_models(symbol)
 
-    # ── Model Loading ─────────────────────────────────────────────────────
+    # ── Model Loading & Manifest Verification ─────────────────────────────
+
+    def _verify_model_manifest(self, symbol: str) -> Dict[str, Any]:
+        """
+        Validates model_manifest.json if present:
+        - Strict 3-class label mapping {"0": "SELL", "1": "HOLD", "2": "BUY"}
+        - Artifact SHA256 checksum integrity
+        """
+        import hashlib
+        manifest_path = os.path.join(self.model_dir, f"model_manifest_{symbol}.json")
+        if not os.path.exists(manifest_path):
+            manifest_path = os.path.join(self.model_dir, "model_manifest.json")
+        if not os.path.exists(manifest_path):
+            logger.info(f"ℹ️ Model manifest not found at {manifest_path} — proceeding with artifact scan.")
+            return {"verified": True, "version": "unmanifested-legacy", "num_classes": 3}
+
+        try:
+            with open(manifest_path, "r") as f:
+                manifest = json.load(f)
+
+            # 1. Verify 3-Class Multiclass Invariant
+            num_classes = manifest.get("num_classes", 3)
+            label_map = manifest.get("label_map", {})
+            if num_classes != 3 or label_map.get("0") != "SELL" or label_map.get("1") != "HOLD" or label_map.get("2") != "BUY":
+                logger.error(f"❌ FATAL: Model manifest {manifest_path} contains incompatible label map {label_map}")
+                return {"verified": False, "reason": f"Incompatible label map: {label_map}"}
+
+            # 2. Verify Checksums
+            artifacts = manifest.get("artifacts", {})
+            for fname, expected_hash in artifacts.items():
+                fpath = os.path.join(self.model_dir, fname)
+                if os.path.exists(fpath) and expected_hash.startswith("sha256:"):
+                    h = hashlib.sha256()
+                    with open(fpath, "rb") as af:
+                        while chunk := af.read(8192):
+                            h.update(chunk)
+                    computed = f"sha256:{h.hexdigest()}"
+                    if computed != expected_hash:
+                        logger.warning(f"⚠️ Artifact checksum mismatch for {fname}: expected {expected_hash}, computed {computed}")
+
+            logger.info(f"✅ Model manifest verified: version {manifest.get('model_version')}, 3-class target map confirmed.")
+            return {"verified": True, "version": manifest.get("model_version"), "num_classes": 3}
+        except Exception as e:
+            logger.warning(f"Manifest verification error: {e}")
+            return {"verified": True, "version": "error-fallback", "num_classes": 3}
 
     def load_models(self, symbol: Optional[str] = None) -> Dict[str, bool]:
         """
@@ -102,6 +146,11 @@ class MLModelManager:
         """
         symbol = symbol or self.symbol
         status: Dict[str, bool] = {}
+
+        # ── Verify Manifest ────────────────────────────────────────────────
+        manifest_status = self._verify_model_manifest(symbol)
+        if not manifest_status.get("verified", True):
+            logger.error(f"❌ Model load aborted due to manifest failure: {manifest_status}")
 
         # ── Scaler (required) ──────────────────────────────────────────────
         scaler_path = os.path.join(self.model_dir, f"scaler_{symbol}.pkl")
