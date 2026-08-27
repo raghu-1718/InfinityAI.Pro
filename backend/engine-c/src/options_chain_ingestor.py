@@ -305,4 +305,44 @@ class OptionsChainIngestor:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
+    async def _streaming_loop(self, interval_seconds: int = 60, user_id: str = "raghu_primary"):
+        """Continuous background streaming loop running during market hours"""
+        logger.info("🚀 OptionsChainIngestor background worker started")
+        self._is_running = True
+        while self._is_running:
+            try:
+                # Market hours check (09:15 to 15:30 IST)
+                now_ist = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+                is_weekday = now_ist.weekday() < 5
+                market_open = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
+                market_close = now_ist.replace(hour=15, minute=30, second=0, microsecond=0)
+
+                if is_weekday and (market_open <= now_ist <= market_close or os.getenv("FORCE_OPTIONS_STREAMING")):
+                    logger.info(f"⚡ Streaming live options chain for supported indices at {now_ist.strftime('%H:%M:%S IST')}...")
+                    await self.ingest_live_option_chains(user_id=user_id)
+                else:
+                    logger.debug("Market closed - skipping live options snapshot")
+            except Exception as e:
+                logger.error(f"Error in options streaming background loop: {e}")
+
+            await asyncio.sleep(interval_seconds)
+
+    def start_background_streaming(self, interval_seconds: int = 60, user_id: str = "raghu_primary"):
+        """Start non-blocking continuous options streaming worker"""
+        if self._streaming_task is None or self._streaming_task.done():
+            loop = asyncio.get_event_loop()
+            self._streaming_task = loop.create_task(self._streaming_loop(interval_seconds=interval_seconds, user_id=user_id))
+            logger.info("✅ Options streaming background task spawned")
+            return {"status": "started", "interval_seconds": interval_seconds}
+        return {"status": "already_running"}
+
+    def stop_background_streaming(self):
+        """Stop background options streaming worker"""
+        self._is_running = False
+        if self._streaming_task and not self._streaming_task.done():
+            self._streaming_task.cancel()
+            logger.info("🛑 Options streaming background task stopped")
+            return {"status": "stopped"}
+        return {"status": "not_running"}
+
 options_ingestor = OptionsChainIngestor()

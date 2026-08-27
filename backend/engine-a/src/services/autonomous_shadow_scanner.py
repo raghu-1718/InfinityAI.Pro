@@ -300,9 +300,11 @@ class ContinuousShadowScanner:
                 "fast": True,
                 "user_id": "shadow_telemetry_scanner"
             }
+            internal_token = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
             resp = await self.http_client.post(
                 f"{ENGINE_B_URL}/api/v1/signals/batch",
                 json=payload,
+                headers={"X-Internal-Token": internal_token},
                 timeout=30.0
             )
             if resp.status_code == 200:

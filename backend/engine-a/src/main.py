@@ -660,7 +660,13 @@ async def proxy_trade_signal(req: Dict[str, Any]):
     if not ENGINE_B_URL:
         raise HTTPException(500, "ENGINE_B_URL not configured")
     try:
-        res = await http_client.post(f"{ENGINE_B_URL}/api/v1/signal", json=req, timeout=20.0)
+        internal_token = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+        res = await http_client.post(
+            f"{ENGINE_B_URL}/api/v1/signal",
+            json=req,
+            headers={"X-Internal-Token": internal_token},
+            timeout=20.0
+        )
         res.raise_for_status()
         return res.json()
     except httpx.HTTPStatusError as e:

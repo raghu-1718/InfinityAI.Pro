@@ -54,6 +54,8 @@ steps:
         "600s",
         "--memory",
         "1Gi",
+        "--service-account",
+        "sa-engine-a@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com",
       ]
     waitFor: ["push-engine-a"]
 

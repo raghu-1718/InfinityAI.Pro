@@ -42,6 +42,8 @@ steps:
         "--cpu",
         "1",
         "--allow-unauthenticated",
+        "--service-account",
+        "sa-engine-c@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com",
       ]
     waitFor: ["push-engine-c"]
 

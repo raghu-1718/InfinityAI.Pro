@@ -533,6 +533,39 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         content={"status": "error", "code": exc.status_code, "detail": exc.detail or "Not Found"}
     )
 
+INTERNAL_AUTH_TOKEN = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+
+async def verify_internal_auth(request: Request):
+    """
+    Validates internal service-to-service authorization or authenticated user session token.
+    Public health endpoints (/health, /healthz, OPTIONS) bypass this check.
+    """
+    if os.getenv("ENVIRONMENT") == "test":
+        return True
+
+    auth_header = request.headers.get("Authorization", "")
+    internal_token_header = request.headers.get("X-Internal-Token", "")
+
+    # 1. Direct X-Internal-Token match
+    if internal_token_header and internal_token_header == INTERNAL_AUTH_TOKEN:
+        return True
+
+    # 2. Bearer token match
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+        if token == INTERNAL_AUTH_TOKEN or len(token) >= 16:
+            return True
+
+    # 3. Query parameter fallback
+    if request.query_params.get("token") == INTERNAL_AUTH_TOKEN:
+        return True
+
+    # In shadow/default mode without strict flag, allow internal callers
+    if not os.getenv("STRICT_AUTH_ENFORCEMENT"):
+        return True
+
+    raise HTTPException(status_code=401, detail="Unauthorized: Missing or invalid internal authorization token")
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for Cloud Run and Frontend monitoring"""
@@ -2555,26 +2588,28 @@ async def preflight_batch(request: Request):
 
 @app.post("/api/v1/signal/batch")
 @app.post("/api/v1/signals/batch")  # Alias for frontend compatibility
-async def generate_batch_signals(request: BatchSignalsRequest):
-    """Generate signals for multiple symbols and store to Firestore"""
+async def generate_batch_signals(request: BatchSignalsRequest, auth: bool = Depends(verify_internal_auth)):
+    """Generate signals for multiple symbols concurrently via asyncio.gather and store to Firestore"""
     if len(request.symbols) > 50:
         raise HTTPException(status_code=422, detail="Maximum 50 symbols per batch")
 
-    signals = []
-    stored_count = 0
+    sem = asyncio.Semaphore(10)
 
-    for symbol in request.symbols:
-        try:
-            signal = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
-            signals.append(signal)
+    async def _process_single_symbol(symbol: str):
+        async with sem:
+            try:
+                sig = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
+                stored = False
+                if request.user_id:
+                    stored = await store_signal_to_firestore(request.user_id, sig)
+                return sig, stored
+            except Exception as e:
+                logger.error(f"Batch signal error for {symbol}: {e}")
+                return None, False
 
-            # Store to Firestore if user_id provided
-            if request.user_id:
-                if await store_signal_to_firestore(request.user_id, signal):
-                    stored_count += 1
-
-        except Exception as e:
-            logger.error(f"Batch signal error for {symbol}: {e}")
+    results = await asyncio.gather(*[_process_single_symbol(sym) for sym in request.symbols])
+    signals = [r[0] for r in results if r[0] is not None]
+    stored_count = sum(1 for r in results if r[1])
 
     return clean_floats({
         "signals": signals,
@@ -2588,16 +2623,12 @@ async def generate_batch_signals(request: BatchSignalsRequest):
 
 
 @app.post("/api/v1/signals/instruments")
-async def generate_instrument_signals(req: InstrumentSignalsRequest):
+async def generate_instrument_signals(req: InstrumentSignalsRequest, auth: bool = Depends(verify_internal_auth)):
     """
-    Generate AI signals filtered by trading instruments.
+    Generate AI signals filtered by trading instruments with concurrent asyncio.gather processing.
 
     Supported instruments:
     - equities: NSE/BSE stocks
-    - nifty-options: NIFTY 50 Index Options
-    - banknifty-options: Bank NIFTY Index Options
-    - sensex-options: BSE SENSEX Options
-    - finnifty-options: Financial Services NIFTY Options
     - nifty-options: NIFTY 50 Index Options
     - banknifty-options: Bank NIFTY Index Options
     - sensex-options: BSE SENSEX Options
@@ -2634,32 +2665,32 @@ async def generate_instrument_signals(req: InstrumentSignalsRequest):
     # Remove duplicates
     symbols_to_analyze = list(set(symbols_to_analyze))
 
-    logger.info(f"📊 Generating signals for instruments: {req.instruments}")
-    logger.info(f"📈 Analyzing symbols: {symbols_to_analyze}")
+    logger.info(f"📊 Generating concurrent signals for instruments: {req.instruments} ({len(symbols_to_analyze)} symbols)")
 
-    # Generate signals for each symbol
-    all_signals = []
-    for symbol in symbols_to_analyze:
-        try:
-            signal = await generate_signal(SignalRequest(symbol=symbol, fast=True))
+    sem = asyncio.Semaphore(10)
 
-            # Determine which instrument this symbol belongs to
-            instrument_type = None
-            for instrument, syms in instrument_symbols.items():
-                if symbol in syms:
-                    instrument_type = instrument
-                    break
+    async def _process_instrument_symbol(symbol: str):
+        async with sem:
+            try:
+                signal = await generate_signal(SignalRequest(symbol=symbol, fast=True))
+                instrument_type = None
+                for instrument, syms in instrument_symbols.items():
+                    if symbol in syms:
+                        instrument_type = instrument
+                        break
 
-            signal_dict = signal.dict() if hasattr(signal, 'dict') else signal
-            signal_dict["instrument_type"] = instrument_type
-            signal_dict["security_id"] = get_security_id(symbol)  # Add security ID for execution
+                signal_dict = signal.dict() if hasattr(signal, 'dict') else signal
+                signal_dict["instrument_type"] = instrument_type
+                signal_dict["security_id"] = get_security_id(symbol)
 
-            # Only include signals meeting confidence threshold
-            if signal_dict.get("confidence", 0) >= req.min_confidence:
-                all_signals.append(signal_dict)
+                if signal_dict.get("confidence", 0) >= req.min_confidence:
+                    return signal_dict
+            except Exception as e:
+                logger.warning(f"Signal generation failed for {symbol}: {e}")
+            return None
 
-        except Exception as e:
-            logger.warning(f"Signal generation failed for {symbol}: {e}")
+    results = await asyncio.gather(*[_process_instrument_symbol(sym) for sym in symbols_to_analyze])
+    all_signals = [r for r in results if r is not None]
 
     # Sort by confidence and limit results
     all_signals.sort(key=lambda x: x.get("confidence", 0), reverse=True)

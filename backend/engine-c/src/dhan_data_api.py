@@ -519,6 +519,10 @@ async def get_option_chain(
 
 @data_router.post("/api/dhan/options/sync-bigquery")
 @data_router.get("/api/dhan/options/sync-bigquery")
+@data_router.post("/api/v1/options/sync-bigquery")
+@data_router.get("/api/v1/options/sync-bigquery")
+@data_router.post("/api/v1/options/stream/trigger")
+@data_router.get("/api/v1/options/stream/trigger")
 @data_router.post("/api/dhan/options/stream-surface")
 @data_router.get("/api/dhan/options/stream-surface")
 async def sync_options_to_bigquery(
@@ -532,7 +536,29 @@ async def sync_options_to_bigquery(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync options surface: {e}")
 
+@data_router.post("/api/v1/options/stream/start")
+async def start_options_streaming(
+    interval_seconds: int = Query(60, description="Streaming interval in seconds"),
+    user_id: Optional[str] = Query("raghu_primary", description="User ID for credentials")
+):
+    """Start autonomous background streaming loop during market hours"""
+    try:
+        from .options_chain_ingestor import options_ingestor
+        return options_ingestor.start_background_streaming(interval_seconds=interval_seconds, user_id=user_id or "raghu_primary")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@data_router.post("/api/v1/options/stream/stop")
+async def stop_options_streaming():
+    """Stop autonomous background streaming loop"""
+    try:
+        from .options_chain_ingestor import options_ingestor
+        return options_ingestor.stop_background_streaming()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @data_router.get("/api/dhan/options/surface-summary/{symbol}")
+@data_router.get("/api/v1/options/surface-summary/{symbol}")
 async def get_volatility_surface_summary(symbol: str = "NIFTY"):
     """Fetches real-time IV Smile, ATM IV, 25-Delta Put Skew, Max Pain, and PCR for an index."""
     try:
