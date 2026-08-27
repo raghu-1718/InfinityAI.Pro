@@ -810,22 +810,46 @@ class MLModelStore:
                     vwap_val = float(X_scaled[0][2]) if X_scaled.shape[1] > 2 else 0.0
                     atr_val = float(X_scaled[0][3]) if X_scaled.shape[1] > 3 else 1.0
 
+                    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
                     query = f"""
-                        SELECT * FROM ML.PREDICT(MODEL `project-841b7f97-5ee3-4fbe-920.infinity_dataset.xgboost_live_model`, 
+                        SELECT * FROM ML.PREDICT(MODEL `{project_id}.infinity_dataset.xgboost_live_model`, 
                         (SELECT CAST({rsi_val} AS FLOAT64) as rsi_14, 
                                 CAST({macd_val} AS INT64) as macd_crossover, 
                                 CAST({vwap_val} AS FLOAT64) as vwap_distance, 
                                 CAST({atr_val} AS FLOAT64) as atr_volatility))
                     """
                     def run_bq():
-                        bq_client = bigquery.Client()
-                        return list(bq_client.query(query).result())
+                        bq_client = bigquery.Client(project=project_id, location="asia-south1")
+                        return list(bq_client.query(query, location="asia-south1").result())
                         
                     result = await loop.run_in_executor(bq_executor, run_bq)
                     if result:
-                        pred_label = result[0].get('predicted_signal_outcome', 1)
-                        class_votes[int(pred_label)] += weight
-                        votes_detail['xgboost'] = {'prediction': int(pred_label), 'weight': weight, 'source': 'bqml'}
+                        row = dict(result[0])
+                        pred_label = int(row.get('predicted_signal_outcome', 1))
+                        probs_raw = row.get('predicted_signal_outcome_probs', [])
+                        if probs_raw and isinstance(probs_raw, list):
+                            prob_map = {int(p.get('label', i)): float(p.get('prob', 0.0)) for i, p in enumerate(probs_raw)}
+                            p0 = prob_map.get(0, 0.0)
+                            p1 = prob_map.get(1, 0.0)
+                            p2 = prob_map.get(2, 0.0)
+                            class_votes[0] += p0 * weight
+                            class_votes[1] += p1 * weight
+                            class_votes[2] += p2 * weight
+                            votes_detail['xgboost'] = {
+                                'prediction': pred_label,
+                                'weight': weight,
+                                'probabilities': [p0, p1, p2],
+                                'source': 'bqml'
+                            }
+                        else:
+                            class_votes[pred_label] += weight
+                            votes_detail['xgboost'] = {
+                                'prediction': pred_label,
+                                'weight': weight,
+                                'probabilities': [0.0, 1.0, 0.0] if pred_label == 1 else ([1.0, 0.0, 0.0] if pred_label == 0 else [0.0, 0.0, 1.0]),
+                                'source': 'bqml'
+                            }
+                        logger.info(f"✅ BQML Primary Inference Executed (xgboost): prediction={pred_label}, source=bqml, probabilities={votes_detail['xgboost'].get('probabilities')}")
                         continue
                 except Exception as e:
                     logger.warning(f"BQML Inference Error (falling back to local XGBoost): {e}")
@@ -870,9 +894,13 @@ class MLModelStore:
                     logger.warning(f"Ensemble prediction failed for {model_name}: {e}")
 
         # Get final prediction
-        final_class = max(class_votes.items(), key=lambda x: x[1])[0]
         total_weight = sum(class_votes.values())
+        final_class = max(class_votes.items(), key=lambda x: x[1])[0]
         confidence = class_votes[final_class] / total_weight if total_weight > 0 else 0.5
+        if total_weight > 0:
+            votes_detail['ensemble_probabilities'] = [class_votes[0] / total_weight, class_votes[1] / total_weight, class_votes[2] / total_weight]
+        else:
+            votes_detail['ensemble_probabilities'] = [0.33, 0.34, 0.33]
 
         return final_class, confidence, votes_detail
 

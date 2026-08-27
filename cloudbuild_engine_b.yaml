@@ -55,7 +55,7 @@ steps:
         "--memory",
         "8Gi",
         "--cpu-throttling",
-        "--startup-cpu-boost",
+        "--cpu-boost",
       ]
     waitFor: ["push-engine-b"]
 
