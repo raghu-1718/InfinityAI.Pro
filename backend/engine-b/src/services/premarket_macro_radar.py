@@ -66,28 +66,71 @@ class PreMarketMacroRadar:
             if api_key:
                 self.genai_client = genai.Client(api_key=api_key)
             else:
-                self.genai_client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="asia-south1")
+                self.genai_client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="us-central1")
             self.vertex_available = True
             logger.info("✅ Vertex AI Gemini 2.5 Flash client initialized for PreMarketMacroRadar.")
         except Exception as e:
             self.genai_client = None
             self.vertex_available = False
 
+    def fetch_live_search_telemetry(self) -> Dict[str, Any]:
+        """Fetches live real-time pre-market indicators via Vertex AI Search Grounding"""
+        if not self.vertex_available or not self.genai_client:
+            return {}
+        try:
+            import re
+            from google.genai import types
+            prompt = (
+                "Search real-time live Indian pre-market data for today:\n"
+                "1. GIFT NIFTY live point movement / expected Nifty opening gap.\n"
+                "2. Brent Crude Oil percentage movement.\n"
+                "3. FII & DII cash market net activity from yesterday in INR Crores.\n"
+                "4. US 10Y Yield and DXY Dollar Index.\n\n"
+                "Output ONLY a raw valid JSON object (enclosed in ```json ... ```) with keys: "
+                "gift_nifty_points (float), brent_crude_pct (float), fii_net_crores (float), dii_net_crores (float), "
+                "us_10y_yield (float), dxy_index (float), macro_bias (str), macro_synthesis (str)."
+            )
+            resp = self.genai_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    tools=[types.Tool(google_search=types.GoogleSearch())]
+                )
+            )
+            match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', resp.text, re.DOTALL)
+            raw = match.group(1) if match else resp.text.strip()
+            return json.loads(raw)
+        except Exception as e:
+            logger.warning(f"Live search grounding failed in PreMarketMacroRadar: {e}")
+            return {}
+
     def generate_radar_report(
         self,
-        gift_nifty_gap: float = 65.0,
-        crude_oil_pct: float = -0.85,
-        us_10y_yield: float = 4.28,
-        dxy_index: float = 103.5,
-        fii_net_crores: float = 1250.0,
-        dii_net_crores: float = 950.0,
+        gift_nifty_gap: Optional[float] = None,
+        crude_oil_pct: Optional[float] = None,
+        us_10y_yield: Optional[float] = None,
+        dxy_index: Optional[float] = None,
+        fii_net_crores: Optional[float] = None,
+        dii_net_crores: Optional[float] = None,
         override_prompt: Optional[str] = None
     ) -> MacroRadarReport:
         """
-        Generates full pre-market briefing with quantitative scoring and Gemini narrative.
+        Generates full pre-market briefing with quantitative scoring and dynamic Gemini synthesis.
         """
         now_utc = datetime.now(timezone.utc)
         report_date = now_utc.strftime("%Y-%m-%d")
+
+        # Auto-fetch real-time search telemetry if arguments are omitted
+        live_data = {}
+        if gift_nifty_gap is None or crude_oil_pct is None or fii_net_crores is None:
+            live_data = self.fetch_live_search_telemetry()
+
+        gift_nifty_gap = gift_nifty_gap if gift_nifty_gap is not None else float(live_data.get("gift_nifty_points", 45.0))
+        crude_oil_pct = crude_oil_pct if crude_oil_pct is not None else float(live_data.get("brent_crude_pct", -0.85))
+        us_10y_yield = us_10y_yield if us_10y_yield is not None else float(live_data.get("us_10y_yield", 4.28))
+        dxy_index = dxy_index if dxy_index is not None else float(live_data.get("dxy_index", 103.5))
+        fii_net_crores = fii_net_crores if fii_net_crores is not None else float(live_data.get("fii_net_crores", 1250.0))
+        dii_net_crores = dii_net_crores if dii_net_crores is not None else float(live_data.get("dii_net_crores", 950.0))
 
         # 1. Quantitative Factor Scoring
         # GIFT NIFTY Weight: 35%
