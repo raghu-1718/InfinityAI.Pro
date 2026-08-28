@@ -48,39 +48,60 @@ except ImportError as e:
     UNIFIED_STRATEGY_AVAILABLE = False
 
 try:
-    from src.news_aggregator import news_aggregator, get_latest_news, get_sentiment
+    try:
+        from src.news_aggregator import news_aggregator, get_latest_news, get_sentiment
+    except ImportError:
+        from news_aggregator import news_aggregator, get_latest_news, get_sentiment
     NEWS_AGGREGATOR_AVAILABLE = True
-except ImportError as e:
+except Exception as e:
     logger_init = logging.getLogger("news_aggregator_import")
     logger_init.warning(f"⚠️ News aggregator not available: {e}")
     NEWS_AGGREGATOR_AVAILABLE = False
 
 try:
-    from src.user_credentials import get_credentials_manager
+    try:
+        from src.user_credentials import get_credentials_manager
+    except ImportError:
+        from user_credentials import get_credentials_manager
     ENHANCED_CREDENTIALS_AVAILABLE = True
-except ImportError as e:
+except Exception as e:
     ENHANCED_CREDENTIALS_AVAILABLE = False
 
 # Register Dhan Data API router for market data (Phase 2)
 try:
-    from src.dhan_data_api import data_router
+    try:
+        from src.dhan_data_api import data_router
+    except ImportError:
+        from dhan_data_api import data_router
     DATA_ROUTER_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    logger.warning(f"⚠️ Dhan Data API router error: {e}")
     DATA_ROUTER_AVAILABLE = False
 
 # Import Real-Time Enhancements Module
 try:
-    from src.realtime_enhancements import (
-        initialize_realtime,
-        stop_realtime,
-        store_postback_event,
-        update_portfolio_position,
-        broadcast_realtime_event,
-        sse_event_generator,
-        ndjson_event_generator
-    )
+    try:
+        from src.realtime_enhancements import (
+            initialize_realtime,
+            stop_realtime,
+            store_postback_event,
+            update_portfolio_position,
+            broadcast_realtime_event,
+            sse_event_generator,
+            ndjson_event_generator
+        )
+    except ImportError:
+        from realtime_enhancements import (
+            initialize_realtime,
+            stop_realtime,
+            store_postback_event,
+            update_portfolio_position,
+            broadcast_realtime_event,
+            sse_event_generator,
+            ndjson_event_generator
+        )
     REALTIME_ENABLED = True
-except ImportError as e:
+except Exception as e:
     logger_init = logging.getLogger("realtime_import")
     logger_init.warning(f"⚠️ Real-time enhancements not available: {e}")
     REALTIME_ENABLED = False
@@ -373,7 +394,10 @@ else:
 
 # Register DhanHQ API v2 Complete Router
 try:
-    from src.dhan_v2_endpoints import dhan_v2_router
+    try:
+        from src.dhan_v2_endpoints import dhan_v2_router
+    except ImportError:
+        from dhan_v2_endpoints import dhan_v2_router
     app.include_router(dhan_v2_router)
     logger.info("✅ DhanHQ API v2 Complete endpoints enabled")
 except Exception as e:
@@ -381,26 +405,35 @@ except Exception as e:
 
 # Register Option Strategies Router (Phase 2: Advanced Strategies)
 try:
-    from src.options_strategy_api import router as strategy_router
+    try:
+        from src.options_strategy_api import router as strategy_router
+    except ImportError:
+        from options_strategy_api import router as strategy_router
     app.include_router(strategy_router)
     logger.info("✅ Option Strategy API endpoints enabled")
-except ImportError as e:
+except Exception as e:
     logger.error(f"⚠️ Option Strategy API not available: {e}")
 
 # Register Super Order Router
 try:
-    from src.super_order_api import super_order_router
+    try:
+        from src.super_order_api import super_order_router
+    except ImportError:
+        from super_order_api import super_order_router
     app.include_router(super_order_router)
     logger.info("✅ Super Order API endpoints enabled")
-except ImportError as e:
+except Exception as e:
     logger.warning(f"⚠️ Super Order API not available: {e}")
 
 # Register Frontend WebSocket Router
 try:
-    from src.frontend_websocket import ws_router
+    try:
+        from src.frontend_websocket import ws_router
+    except ImportError:
+        from frontend_websocket import ws_router
     app.include_router(ws_router)
     logger.info("✅ Frontend WebSocket endpoints enabled")
-except ImportError as e:
+except Exception as e:
     logger.warning(f"⚠️ Frontend WebSocket not available: {e}")
 
 # Register Unified Strategy API (NEW)
