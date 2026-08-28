@@ -33,4 +33,14 @@ export const firebaseApp = isFirebaseConfigured
     : initializeApp(firebaseConfig)
   : null;
 
-export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
+export const firebaseAuth =
+  typeof window !== "undefined" && firebaseApp
+    ? (() => {
+        try {
+          return getAuth(firebaseApp);
+        } catch {
+          return null;
+        }
+      })()
+    : null;
+
