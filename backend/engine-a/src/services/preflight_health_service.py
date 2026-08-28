@@ -15,6 +15,7 @@ the 08:30 Pre-Market Macro Briefing and opening bell):
 
 import os
 import time
+import asyncio
 import logging
 import urllib.request
 from datetime import datetime, timezone, timedelta
@@ -35,7 +36,10 @@ from .alert_dispatcher import ALERT_DISPATCHER
 logger = logging.getLogger("InfinityAI.PreflightHealthService")
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "project-841b7f97-5ee3-4fbe-920")
+ENGINE_A_URL = os.getenv("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
 ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+INTERNAL_AUTH_TOKEN = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
 
 class PreflightHealthService:
     """Automated Pre-Market Operational Readiness & Self-Healing Service"""
@@ -45,75 +49,84 @@ class PreflightHealthService:
 
     async def execute_preflight_check(self) -> Dict[str, Any]:
         """
-        Runs comprehensive full-stack pre-flight diagnostics.
+        Runs comprehensive full-stack pre-flight diagnostics concurrently.
         """
         t0 = time.perf_counter()
         now_utc = datetime.now(timezone.utc)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
 
-        checks = {}
+        headers = {"X-Internal-Token": INTERNAL_AUTH_TOKEN}
+        credentials, _ = google.auth.default()
+        authed_session = AuthorizedSession(credentials)
 
-        # 1. Cloud Run Fleet (Engines A, B, C)
-        try:
-            credentials, _ = google.auth.default()
-            authed_session = AuthorizedSession(credentials)
-            resp_a = authed_session.get(f"{ENGINE_A_URL}/health", timeout=5)
-            checks["engine_a"] = "ONLINE (HTTP 200)" if resp_a.status_code == 200 else f"WARN (HTTP {resp_a.status_code})"
-        except Exception as e:
-            checks["engine_a"] = f"ERROR: {e}"
+        async def _check_engine_a():
+            try:
+                resp = await asyncio.to_thread(authed_session.get, f"{ENGINE_A_URL}/health", headers=headers, timeout=20)
+                return "engine_a", "ONLINE (HTTP 200)" if resp.status_code == 200 else f"WARN (HTTP {resp.status_code})"
+            except Exception as e:
+                return "engine_a", f"ERROR: {e}"
 
-        try:
-            resp_b = authed_session.get(f"{ENGINE_B_URL}/health", timeout=5)
-            checks["engine_b"] = "ONLINE (HTTP 200)" if resp_b.status_code == 200 else f"WARN (HTTP {resp_b.status_code})"
-        except Exception as e:
-            checks["engine_b"] = f"ERROR: {e}"
+        async def _check_engine_b():
+            try:
+                resp = await asyncio.to_thread(authed_session.get, f"{ENGINE_B_URL}/health", headers=headers, timeout=20)
+                return "engine_b", "ONLINE (HTTP 200)" if resp.status_code == 200 else f"WARN (HTTP {resp.status_code})"
+            except Exception as e:
+                return "engine_b", f"ERROR: {e}"
 
-        try:
-            resp_c = authed_session.get(f"{ENGINE_C_URL}/health", timeout=5)
-            checks["engine_c"] = "ONLINE (HTTP 200)" if resp_c.status_code == 200 else f"WARN (HTTP {resp_c.status_code})"
-        except Exception as e:
-            checks["engine_c"] = f"ERROR: {e}"
+        async def _check_engine_c():
+            try:
+                resp = await asyncio.to_thread(authed_session.get, f"{ENGINE_C_URL}/health", headers=headers, timeout=20)
+                return "engine_c", "ONLINE (HTTP 200)" if resp.status_code == 200 else f"WARN (HTTP {resp.status_code})"
+            except Exception as e:
+                return "engine_c", f"ERROR: {e}"
 
-        # 2. Firestore Credential Vault & Live DhanHQ Quote Probe
-        try:
-            db = firestore.Client(project=self.project_id)
-            user_doc = db.collection("user_credentials").document("raghu_primary").get()
-            if user_doc.exists:
-                checks["dhan_credential_vault"] = "ACTIVE & ENCRYPTED"
-            else:
-                checks["dhan_credential_vault"] = "MISSING_DOC"
-        except Exception as e:
-            checks["dhan_credential_vault"] = f"ERROR: {e}"
+        async def _check_firestore():
+            try:
+                db = firestore.Client(project=self.project_id)
+                doc = await asyncio.to_thread(lambda: db.collection("user_credentials").document("raghu_primary").get())
+                return "dhan_credential_vault", "ACTIVE & ENCRYPTED" if doc.exists else "MISSING_DOC"
+            except Exception as e:
+                return "dhan_credential_vault", f"ERROR: {e}"
 
-        try:
-            q_resp = authed_session.get(f"{ENGINE_C_URL}/api/dhan/market/quotes?security_ids=1333&exchange_segment=NSE_EQ", timeout=6)
-            if q_resp.status_code == 200 and "live" in q_resp.text:
-                checks["dhan_market_data_link"] = "CONNECTED (Live Quotes Verified)"
-            else:
-                checks["dhan_market_data_link"] = f"WARN (HTTP {q_resp.status_code})"
-        except Exception as e:
-            checks["dhan_market_data_link"] = f"NOTICE: {e}"
+        async def _check_dhan_quotes():
+            try:
+                resp = await asyncio.to_thread(authed_session.get, f"{ENGINE_C_URL}/api/dhan/market/quotes?security_ids=1333&exchange_segment=NSE_EQ", headers=headers, timeout=8)
+                if resp.status_code == 200 and "live" in resp.text:
+                    return "dhan_market_data_link", "CONNECTED (Live Quotes Verified)"
+                return "dhan_market_data_link", f"WARN (HTTP {resp.status_code})"
+            except Exception as e:
+                return "dhan_market_data_link", f"NOTICE: {e}"
 
-        # 3. BigQuery Ingestion Tables
-        try:
-            bq_client = bigquery.Client(project=self.project_id)
-            q_cnt = "SELECT COUNT(1) as total FROM `project-841b7f97-5ee3-4fbe-920.infinity_dataset.market_ticks_history`"
-            total_ticks = list(bq_client.query(q_cnt).result())[0].total
-            checks["bigquery_data_pipeline"] = f"ONLINE ({total_ticks:,} Golden Ticks)"
-        except Exception as e:
-            checks["bigquery_data_pipeline"] = f"ERROR: {e}"
+        async def _check_bigquery():
+            try:
+                bq = bigquery.Client(project=self.project_id)
+                q = "SELECT COUNT(1) as total FROM `project-841b7f97-5ee3-4fbe-920.infinity_dataset.market_ticks_history`"
+                res = await asyncio.to_thread(lambda: list(bq.query(q).result())[0].total)
+                return "bigquery_data_pipeline", f"ONLINE ({res:,} Golden Ticks)"
+            except Exception as e:
+                return "bigquery_data_pipeline", f"ERROR: {e}"
 
-        # 4. GCS Model Vault
-        try:
-            gcs_client = storage.Client(project=self.project_id)
-            bucket = gcs_client.bucket("infinity-ai-models-vault")
-            blobs = list(bucket.list_blobs(max_results=5))
-            checks["gcs_model_vault"] = f"ONLINE ({len(blobs)} Artifacts Verified)"
-        except Exception as e:
-            checks["gcs_model_vault"] = f"ERROR: {e}"
+        async def _check_gcs():
+            try:
+                gcs = storage.Client(project=self.project_id)
+                blobs = await asyncio.to_thread(lambda: list(gcs.bucket("infinity-ai-models-vault").list_blobs(max_results=5)))
+                return "gcs_model_vault", f"ONLINE ({len(blobs)} Artifacts Verified)"
+            except Exception as e:
+                return "gcs_model_vault", f"ERROR: {e}"
 
+        results = await asyncio.gather(
+            _check_engine_a(),
+            _check_engine_b(),
+            _check_engine_c(),
+            _check_firestore(),
+            _check_dhan_quotes(),
+            _check_bigquery(),
+            _check_gcs(),
+        )
+
+        checks = dict(results)
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
-        all_passed = all("ONLINE" in str(v) or "ACTIVE" in str(v) or "ALIGNED" in str(v) or "WARM" in str(v) for v in checks.values())
+        all_passed = all("ONLINE" in str(v) or "ACTIVE" in str(v) or "CONNECTED" in str(v) or "ALIGNED" in str(v) or "WARM" in str(v) for v in checks.values())
 
         report = {
             "timestamp_ist": ist_time.strftime("%Y-%m-%d %H:%M:%S IST"),
@@ -148,7 +161,7 @@ class PreflightHealthService:
                 f"📋 *Sub-System Diagnostics:*\n"
                 f"• *Engine A (Orchestrator & DRE):* `{checks.get('engine_a', 'N/A')}`\n"
                 f"• *Engine C (Execution & Cloud NAT):* `{checks.get('engine_c', 'N/A')}`\n"
-                f"• *Engine B Model Boot:* `{checks.get('engine_b_boot_schedule', 'N/A')}`\n"
+                f"• *Engine B Model Boot:* `{checks.get('engine_b', 'N/A')}`\n"
                 f"• *Dhan Credential Vault (AES-256):* `{checks.get('dhan_credential_vault', 'N/A')}`\n"
                 f"• *BigQuery Streaming Pipeline:* `{checks.get('bigquery_data_pipeline', 'N/A')}`\n"
                 f"• *GCS Model Vault:* `{checks.get('gcs_model_vault', 'N/A')}`\n"
@@ -158,6 +171,6 @@ class PreflightHealthService:
 
             await ALERT_DISPATCHER._send_telegram(tg_text)
         except Exception as e:
-            logger.warning(f"Failed to dispatch preflight telegram: {e}")
+            logger.error(f"Failed to dispatch Preflight Telegram telemetry: {e}")
 
 PREFLIGHT_HEALTH_SERVICE = PreflightHealthService()
