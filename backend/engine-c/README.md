@@ -1,170 +1,68 @@
-# backend/engine-execution/README.md
+# Engine C — Broker Gateway, Execution & Cryptographic Vault
 
-## Engine Execution - Trade Execution & Real-time Coordination
+<div align="center">
 
-**Purpose**: Secure trade execution via Dhan broker OAuth, WebSocket data aggregation, order management, and multi-engine orchestration (formerly Engine D responsibilities).
+![Engine C](https://img.shields.io/badge/Engine--C-Broker%20Execution%20Gateway-brightgreen?style=for-the-badge&logo=googlecloud)
+![Runtime](https://img.shields.io/badge/Runtime-Python%203.11%20%2F%20FastAPI-blue?style=for-the-badge&logo=python)
+![Cloud Run](https://img.shields.io/badge/Cloud%20Run-asia--south1%20(VPC%20NAT)-orange?style=for-the-badge&logo=googlecloud)
+![Static IP](https://img.shields.io/badge/Static%20NAT-8.234.94.95-blueviolet?style=for-the-badge)
+![Identity](https://img.shields.io/badge/IAM-sa--engine--c-purple?style=for-the-badge)
 
-**Technology**: Python, FastAPI, WebSocket, Dhan OAuth, Firestore
+</div>
 
-### Directory Structure
+---
 
-```
-engine-execution/
-├── src/
-│   ├── api/
-│   │   ├── routes_public/    # Order, trade, WebSocket endpoints
-│   │   └── routes_internal/  # Health, orchestration
-│   ├── services/
-│   │   ├── dhan_broker/      # Dhan OAuth, order execution
-│   │   ├── order_manager/    # Order tracking, risk management
-│   │   ├── ws_manager/       # WebSocket aggregation (migrated from Engine D)
-│   │   ├── event_broadcaster/  # Real-time event distribution (Engine D)
-│   │   ├── auth_service/     # JWT validation (Engine D)
-│   │   ├── health_orchestrator/  # Multi-engine health monitoring (Engine D)
-│   │   ├── chatbot/          # AI chatbot service (Engine D)
-│   │   ├── firestore/        # Firestore R/W
-│   │   └── orchestrators/    # Service orchestration
-│   ├── models/               # Order schemas, execution models
-│   ├── config/               # Config, risk rules
-│   └── __init__.py
-├── tests/
-│   ├── unit/                 # Order, risk management tests
-│   └── integration/          # Dhan OAuth, Firestore
-├── Dockerfile
-├── cloudrun.yaml
-├── requirements.txt
-└── README.md
-```
+## 📡 1. Engine Role & Responsibilities
 
-### Environment Variables
+**Engine C** is the secure execution proxy, broker gateway, and WebSocket multiplexer for **InfinityAI.Pro**. It interfaces directly with **DhanHQ API v2**, manages the cryptographic credential vault, enforces network-level IP whitelisting, and oversees automated trade execution.
 
-```bash
-# Development (.env)
-PORT=8002
-DEBUG=true
-FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920
-DHAN_CLIENT_ID=your-client-id
-DHAN_CLIENT_SECRET=your-client-secret
-DHAN_REDIRECT_URI=http://localhost:8002/api/dhan/callback
-ENGINE_CORE_URL=http://localhost:8000
-ENGINE_ANALYTICS_URL=http://localhost:8001
-JWT_SECRET_KEY=dev-key
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+### Core Responsibilities:
+1. **DhanHQ API v2 Client & Session Pool:**
+   * Interfaces with DhanHQ REST and WebSocket marketfeed endpoints.
+   * Manages 24/7 keepalive token renewals (`dhan-token-keepalive-job` at 06:00 and 18:00 IST).
+2. **Cryptographic Credential Vault (`user_credentials.py`):**
+   * Implements authenticated **AES-256-GCM encryption/decryption** with a random 12-byte initialization vector (`IV`), 16-byte authentication tag, and zero plaintext exposure in Firestore (`user_credentials/raghu_primary`).
+   * Dynamic Secret Manager key resolution from `USER_CREDENTIALS_KEY`.
+3. **Strict Network & Execution Guardrails:**
+   * **Static Cloud NAT IP Egress:** All outbound Dhan traffic routes via Serverless VPC Access to `8.234.94.95` (Dhan server IP whitelisted).
+   * **Rate Limiting:** Enforces `aiolimiter` strictly throttled to **9 req/s** (below broker 10 req/s threshold).
+   * **Idempotency:** Generates and validates 30-character alphanumeric `correlationId` on every trade ticket.
+   * **Market Hours Protection:** Hardcodes HTTP 403 blocks for order placement outside **08:55–15:45 IST**.
+4. **Three-Tier Dynamic Trailing Stop Engine:**
+   * Monitors live LTP and executes automated profit locks:
+     * `Tier 1 (+8% Gain)` $\to$ Moves Stop-Loss to Breakeven.
+     * `Tier 2 (+12% Gain)` $\to$ Trailing Lock at $+6\%$ Net Profit.
+     * `Tier 3 (+15% Gain)` $\to$ Dynamic Trail / Runner Expansion.
+5. **SEBI 2026 Statutory Tax & Charge Calculator:**
+   * Computes exchange turnover, STT, SEBI regulatory fees, stamp duty, and GST ($18\%$) on every potential setup to enforce a positive net edge before trade release.
 
-# Production (from Secret Manager)
-DHAN_CLIENT_ID=<from Secret Manager>
-DHAN_CLIENT_SECRET=<from Secret Manager>
-DHAN_REDIRECT_URI=https://engine-c.infinityai.pro/api/dhan/callback
-```
+---
 
-### API Endpoints
+## ⚙️ 2. Cloud Infrastructure & Service Specs
 
-#### Public
-- `GET /ws/dashboard` - WebSocket: Real-time market, signals, orders to frontend
-- `POST /api/orders` - Place trade order
-- `GET /api/orders/{order_id}` - Order status
-- `POST /api/dhan/callback` - Dhan OAuth callback
-- `GET /api/dhan/authorize` - Initiate OAuth flow
+* **Deployment Target:** Google Cloud Run (`asia-south1`)
+* **Service Account:** `sa-engine-c@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com`
+* **Static Egress NAT IP:** `8.234.94.95` (Serverless VPC Access connector)
+* **CPU / Memory Allocation:** 1 vCPU / 512Mi RAM
+* **Live Service URL:** `https://engine-c-r2f5flt77q-el.a.run.app`
 
-#### WebSocket Messages
-```json
-{
-  "type": "market_update|signal|order_update|chatbot_message",
-  "data": {...},
-  "timestamp": "2025-01-15T10:30:00Z"
-}
-```
+---
 
-#### Internal
-- `GET /health` - Multi-engine health check
-- `POST /api/internal/signals/subscribe` - Receive Engine Analytics signals
+## 📡 3. Key Endpoints
 
-### Local Development
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Service health status and Dhan gateway readiness. |
+| `GET` | `/api/dhan/connection/status` | Live 24/7 probe verifying active Dhan authentication & token validity. |
+| `GET` | `/api/dhan/funds` | Live available margin, SOD limit, collateral, and withdrawable balance. |
+| `GET` | `/api/dhan/positions` | Real-time open positions, quantities, and MTM unrealized P&L. |
+| `GET` | `/api/dhan/holdings` | Equity holdings, invested value, current value, and day's P&L. |
+| `GET` | `/api/dhan/trades` | Completed trade book execution logs and fill timestamps. |
+| `GET` | `/api/dhan/market/quotes` | Live Dhan marketfeed OHLCV quotes across NSE/BSE segments. |
+| `POST` | `/api/dhan/credentials/update` | Encrypts and persists updated Dhan client ID and tokens to Firestore Vault. |
 
-```bash
-# Setup
-cp config/env/dev/engine-execution.env.example .env
-# Update DHAN credentials
-pip install -r requirements.txt
+---
 
-# Run server
-python src/main.py
-
-# Run tests
-pytest tests/
-```
-
-### Cloud Run Deployment
-
-```bash
-gcloud run deploy engine-c \
-  --source . \
-  --region asia-south1 \
-  --allow-unauthenticated \
-  --set-env-vars="DHAN_CLIENT_ID=projects/project-841b7f97-5ee3-4fbe-920/secrets/dhan-client-id/versions/latest"
-```
-
-### Dhan OAuth Flow
-
-1. User clicks "Connect Dhan Broker" in frontend
-2. Frontend redirects to `/api/dhan/authorize`
-3. User logs into Dhan and authorizes
-4. Dhan redirects to `/api/dhan/callback` with auth code
-5. Engine Execution exchanges code for access token (stored in Secret Manager)
-6. Frontend receives JWT token for API access
-
-### Order Management
-
-**Risk Management Rules** (from `config/trading_config.ini`):
-- Max single order size: 5% portfolio
-- Max daily loss: 2% portfolio
-- Max open positions: 10
-- Min stop loss: 0.5%
-
-### WebSocket Integration
-
-Aggregates real-time data and broadcasts to frontend:
-- Market data updates from Engine Core
-- Trading signals from Engine Analytics
-- Order execution status
-- Chatbot responses
-- System health alerts
-
-### Integration Points
-
-- **Subscribes to**: Engine Core (`/api/market-data/*`), Engine Analytics (`/api/ai-signals/*`)
-- **Authenticates**: Via Dhan OAuth (user broking account)
-- **Executes**: Orders via Dhan NSE/BSE bridge
-- **Publishes**: Order updates, execution status to Firestore and WebSocket
-- **Frontend**: Connected via `/ws/dashboard` WebSocket
-
-### Chatbot Service (Migrated from Engine D)
-
-Handles user inquiries about:
-- Portfolio status
-- Signal explanations
-- Order management
-- Market analysis
-- Risk metrics
-
-Access via WebSocket message: `{"type": "chatbot_message", "message": "..."}`
-
-### Monitoring
-
-```bash
-# Check order execution pipeline
-curl http://localhost:8002/api/orders/status | jq '.pending | length'
-
-# Monitor WebSocket connections
-curl http://localhost:8002/health | jq '.components.websocket.active_connections'
-
-# Check Dhan OAuth status
-curl http://localhost:8002/health | jq '.components.dhan_broker.authorized'
-```
-
-### Troubleshooting
-
-- **Dhan OAuth fails**: Verify client ID/secret in Secret Manager; check redirect URI matches exactly
-- **WebSocket drops**: Ensure frontend reconnection logic enabled; check Cloud Run memory (min 512MB)
-- **Order execution timeout**: Verify Dhan API status; check market hours (NSE 9:15-15:30, BSE 9:15-15:30)
-- **High WebSocket latency**: Monitor Firestore write throughput; may need to increase Cloud Run CPU
+<div align="center">
+  <sub>InfinityAI.Pro Engine C — Broker Gateway & Cryptographic Execution Engine.</sub>
+</div>

@@ -1,101 +1,62 @@
-# backend/engine-core/README.md
+# Engine B — AI & Machine Learning Intelligence Core
 
-## Engine Core - Market Data Ingestion
+<div align="center">
 
-**Purpose**: Real-time market data aggregation from NSE/BSE with technical analysis and broadcasting to other engines.
+![Engine B](https://img.shields.io/badge/Engine--B-AI%20%26%20ML%20Intelligence-brightgreen?style=for-the-badge&logo=googlecloud)
+![Runtime](https://img.shields.io/badge/Runtime-Python%203.11%20%2F%20FastAPI-blue?style=for-the-badge&logo=python)
+![Cloud Run](https://img.shields.io/badge/Cloud%20Run-asia--south1%20(2Gi%20Memory)-orange?style=for-the-badge&logo=googlecloud)
+![Identity](https://img.shields.io/badge/IAM-sa--engine--b-purple?style=for-the-badge)
 
-**Technology**: Python, FastAPI, Firestore, WebSocket
+</div>
 
-### Directory Structure
+---
 
-```
-engine-core/
-├── src/
-│   ├── api/
-│   │   ├── routes_public/    # Public API endpoints (market data, symbols)
-│   │   └── routes_internal/  # Internal endpoints (health, orchestration)
-│   ├── services/
-│   │   ├── orchestrators/    # Service orchestration logic
-│   │   ├── auth/             # JWT token validation
-│   │   └── firestore/        # Firestore R/W operations
-│   ├── models/               # Pydantic models, TypedDict schemas
-│   ├── config/               # Configuration loading
-│   └── __init__.py
-├── tests/
-│   ├── unit/                 # Unit tests for services
-│   └── integration/          # Integration tests with Firestore
-├── Dockerfile
-├── cloudrun.yaml
-├── requirements.txt
-└── README.md
-```
+## 🧠 1. Engine Role & Responsibilities
 
-### Environment Variables
+**Engine B** is the high-performance AI and Machine Learning core of **InfinityAI.Pro**. It executes multi-model probability inference, feature extraction, continuous model synchronization, and institutional market regime arbitration.
 
-```bash
-# Development (.env)
-PORT=8000
-DEBUG=true
-FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920
-CORS_ORIGINS=https://project-841b7f97-5ee3-4fbe-920.web.app/
-JWT_SECRET_KEY=<from Secret Manager>
-```
+### Core Responsibilities:
+1. **Three-Class Primary Inference ($P_{\text{SELL}}, P_{\text{HOLD}}, P_{\text{BUY}}$):**
+   * Computes normalized probability triplets satisfying $\sum P = 1.0000$.
+   * Utilizes **BigQuery ML Boosted Trees** (`ML.PREDICT` on `project-841b7f97-5ee3-4fbe-920.infinity_dataset.xgboost_live_model`) as the primary inference engine (latency: 52–67 ms per query job).
+2. **Tri-Model MLOps Ensemble & Model Vault:**
+   * Synchronizes with **48 production model artifacts** stored in Google Cloud Storage (`gs://infinity-ai-models-vault/`):
+     * **CatBoost Models:** `.cbm` artifacts for non-linear categorical interactions.
+     * **LightGBM Models:** `.pkl` gradient boosted trees for high-speed feature splits.
+     * **XGBoost Models:** `.json` optimized trees for structural tabular data.
+     * **Statistical Modules:** Kalman Filters, Hidden Markov Model (HMM) regime detectors, and ARIMA trend predictors.
+3. **Dynamic ADX Trend Strength Gate & Chop Veto:**
+   * Calculates 14-period Wilder's ADX from raw continuous candle streams.
+   * Enforces the **Institutional Capital Preservation Invariant**:
+     $$\text{If } \text{ADX} < 25.0 \implies \text{VETO ACTIVATED} \implies \text{Action: } \mathbf{HOLD}$$
+     $$\text{If } \text{ADX} \ge 25.0 \implies \text{VETO RELEASED} \implies \text{Action: } \mathbf{BUY\_CALL} \text{ / } \mathbf{BUY\_PUT}$$
+4. **Vertex AI & Natural Language Processing (NLP):**
+   * Integrates NLTK VADER and Vertex AI Gemini models for real-time news sentiment and macroeconomic event mining.
 
-### API Endpoints
+---
 
-#### Public
-- `GET /api/market-data/{symbol}` - Live OHLCV data for symbol
-- `GET /api/symbols` - List available symbols (NSE/BSE/MCX)
-- `GET /api/indices` - Index data (Nifty50, Sensex, Bank Nifty)
+## ⚙️ 2. Cloud Infrastructure & Service Specs
 
-#### Internal
-- `GET /health` - Health check with service status
-- `POST /api/internal/broadcast` - Receive market updates (from data feeds)
+* **Deployment Target:** Google Cloud Run (`asia-south1`)
+* **Service Account:** `sa-engine-b@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com`
+* **CPU / Memory Allocation:** 2 vCPU / 2Gi RAM *(Mandatory for ML inference libraries)*
+* **Database Access:** BigQuery `ML.PREDICT` and Cloud Firestore `signals` collection.
+* **Live Service URL:** `https://engine-b-r2f5flt77q-el.a.run.app`
 
-### Local Development
+---
 
-```bash
-# Set environment variables
-cp config/env/dev/engine-core.env.example .env
-# Edit .env with local values
+## 📡 3. Key Endpoints
 
-# Install dependencies
-pip install -r requirements.txt
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Service health check and loaded model status. |
+| `POST` | `/api/v1/predict` | Single-symbol multi-model alpha signal generation. |
+| `POST` | `/api/v1/predict/batch` | Parallelized multi-symbol BQML batch inference across 5 major indices. |
+| `POST` | `/api/v1/market/analyze-options`| Vertex AI options open interest and volatility surface intelligence. |
+| `POST` | `/api/v1/models/sync` | Re-downloads latest model artifacts from `gs://infinity-ai-models-vault/`. |
 
-# Run server
-python src/main.py
+---
 
-# Run tests
-pytest tests/
-```
-
-### Cloud Run Deployment
-
-```bash
-# Build and deploy
-# Build and deploy
-gcloud run deploy engine-b \
-  --source . \
-  --region asia-south1 \
-  --set-env-vars="FIRESTORE_PROJECT=project-841b7f97-5ee3-4fbe-920"
-```
-
-### Integration Points
-
-- **Receives from**: Market data feeds (NSE, BSE, MCX APIs)
-- **Sends to**: Engine Analytics (signals), Engine Execution (market context)
-- **Firestore collections**: `market_data`, `symbols`, `indices`
-- **Frontend**: WebSocket relay via Engine Execution
-
-### Health Monitoring
-
-```bash
-curl http://localhost:8000/health
-# Response: {"status": "healthy", "timestamp": "...", "components": {...}}
-```
-
-### Troubleshooting
-
-- **Firestore permission denied**: Ensure GOOGLE_APPLICATION_CREDENTIALS set or Cloud Run service account has Datastore roles
-- **Market data stale**: Check data feed connectivity; verify feed API keys in Secret Manager
-- **High latency**: Check Firestore query indexes; verify regional configuration matches deployment
+<div align="center">
+  <sub>InfinityAI.Pro Engine B — Institutional AI / ML Quantitative Engine.</sub>
+</div>

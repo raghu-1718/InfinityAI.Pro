@@ -248,8 +248,7 @@ if GOOGLE_INTEGRATIONS_AVAILABLE:
         PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
         if not PROJECT_ID:
             logger.error("❌ GOOGLE_CLOUD_PROJECT environment variable not set")
-            # Fail fast or handle appropriately, but do not use hardcoded ID
-            PROJECT_ID = "infinity-ai-pro-dev" # Optional safe default or simply None
+            PROJECT_ID = "project-841b7f97-5ee3-4fbe-920" # Production default
 
         # Initialize Trading Logger for structured logging
         TRADING_LOGGER = TradingLogger(

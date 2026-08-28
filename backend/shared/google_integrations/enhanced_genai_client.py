@@ -245,8 +245,8 @@ class EnhancedGenAIClient:
         """
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
         if not self.project_id:
-             logger.warning("⚠️ GCP_PROJECT_ID not set. Gemini API may fail.")
-             self.project_id = "infinity-ai-pro-dev" # Fallback
+             logger.warning("⚠️ GOOGLE_CLOUD_PROJECT not set. Using verified production default.")
+             self.project_id = "project-841b7f97-5ee3-4fbe-920" # Production Default
         self.location = location
         self.model_id = model_id
         self.advanced_model_id = advanced_model_id

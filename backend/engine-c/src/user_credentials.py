@@ -36,6 +36,17 @@ def get_encryption_key() -> bytes:
     Local dev (ENV=local): generates a random ephemeral key (logged as warning).
     """
     env_key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
+    if not env_key:
+        try:
+            from google.cloud import secretmanager
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+            sm = secretmanager.SecretManagerServiceClient()
+            sec_name = f"projects/{project_id}/secrets/USER_CREDENTIALS_KEY/versions/latest"
+            resp = sm.access_secret_version(request={"name": sec_name})
+            env_key = resp.payload.data.decode("utf-8").strip()
+            logger.info("✅ Dynamically resolved USER_CREDENTIALS_KEY from GCP Secret Manager.")
+        except Exception as e:
+            logger.debug(f"SecretManager USER_CREDENTIALS_KEY lookup skipped: {e}")
 
     if env_key:
         try:

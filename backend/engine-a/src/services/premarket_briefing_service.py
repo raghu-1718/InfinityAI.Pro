@@ -164,9 +164,25 @@ class PreMarketBriefingService:
             3
         )
 
+        # Canonical Gap Classification
         expected_gap = "GAP_UP" if gift_points > 25.0 else ("GAP_DOWN" if gift_points < -25.0 else "FLAT")
         crude_status = "BENIGN" if crude_pct <= 0 else ("HEADWIND" if crude_pct > 1.5 else "NEUTRAL")
         flow_status = "NET_INFLOW" if (fii_net + dii_net) > 500.0 else ("NET_OUTFLOW" if (fii_net + dii_net) < -500.0 else "BALANCED")
+
+        # Canonical Gap Narrative Reconciliation (Ensures zero semantic contradiction between JSON numbers and text)
+        if expected_gap == "GAP_UP":
+            canonical_gap_text = f"GIFT Nifty indicates a constructive gap-up expectation (+{gift_points:.1f} pts)."
+        elif expected_gap == "GAP_DOWN":
+            canonical_gap_text = f"GIFT Nifty indicates a defensive gap-down expectation ({gift_points:.1f} pts)."
+        else:
+            canonical_gap_text = f"GIFT Nifty indicates a flat/neutral opening expectation ({gift_points:+.1f} pts)."
+
+        # Ensure synthesis text does not contradict validated numeric fields
+        if not gemini_synthesis or ("lower gap" in gemini_synthesis.lower() and expected_gap == "GAP_UP") or ("gap up" in gemini_synthesis.lower() and expected_gap == "GAP_DOWN"):
+            gemini_synthesis = (
+                f"{canonical_gap_text} Brent Crude is at {crude_pct:+.2f}%, while institutional FIIs logged {fii_net:+.2f} Cr and DIIs {dii_net:+.2f} Cr. "
+                f"Opening directional bias is {macro_bias}."
+            )
 
         # 2026 Expiry Context: Tuesday for NSE, Thursday for BSE
         weekday = ist_time.weekday()

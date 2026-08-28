@@ -57,9 +57,20 @@ class EODAIJournalService:
 
         # 1. Fetch today's signals from Firestore
         signals: List[Dict[str, Any]] = []
+        raw_scans = []
         if self.db:
             try:
-                # Query docs where timestamp starts with date_str or date matches
+                # 1a. Query all inference scans from signals collection
+                start_iso = f"{date_str}T03:45:00"
+                end_iso = f"{date_str}T10:00:00"
+                scan_docs = self.db.collection("signals").where("timestamp", ">=", start_iso).where("timestamp", "<=", end_iso).stream()
+                for sdoc in scan_docs:
+                    raw_scans.append(sdoc.to_dict())
+            except Exception as e:
+                logger.warning(f"Warning fetching raw signals for EOD journal: {e}")
+
+            try:
+                # 1b. Query executed trade setups from ai_signals_ledger
                 docs = self.db.collection(LEDGER_COLLECTION).stream()
                 for doc in docs:
                     data = doc.to_dict()
@@ -69,7 +80,12 @@ class EODAIJournalService:
             except Exception as e:
                 logger.error(f"Error fetching ledger for EOD journal: {e}")
 
-        # 2. Compute Performance Metrics
+        # 2. Compute Multi-Tier Metrics
+        market_hours_scans = len(raw_scans)
+        directional_candidates = sum(1 for s in raw_scans if s.get("signal") in ["BUY", "SELL", "BUY_CALL", "BUY_PUT"] or s.get("analysis", {}).get("veto_active"))
+        risk_vetoed_candidates = sum(1 for s in raw_scans if s.get("analysis", {}).get("veto_active") or "veto" in str(s.get("analysis", {}).get("veto_reason", "")).lower())
+        eligible_trade_setups = len(signals)
+
         total_signals = len(signals)
         target_hits = sum(1 for s in signals if s.get("status") in ["TARGET_HIT", "WIN", "PROFIT"])
         sl_hits = sum(1 for s in signals if s.get("status") in ["STOP_LOSS_HIT", "LOSS"])
@@ -100,6 +116,15 @@ class EODAIJournalService:
             "date": date_str,
             "timestamp_ist": ist_time.strftime("%Y-%m-%d %H:%M:%S IST"),
             "timestamp_utc": now_utc.isoformat(),
+            # Granular Multi-Tier Scan & Execution Schema
+            "market_hours_scans": market_hours_scans,
+            "directional_model_candidates": directional_candidates,
+            "risk_vetoed_candidates": risk_vetoed_candidates,
+            "eligible_trade_setups": eligible_trade_setups,
+            "executed_shadow_trades": eligible_trade_setups,
+            "closed_shadow_trades": closed_trades,
+            "open_shadow_positions": open_signals,
+            # Performance & PnL Accounting
             "total_signals": total_signals,
             "closed_trades": closed_trades,
             "target_hits": target_hits,
@@ -109,7 +134,7 @@ class EODAIJournalService:
             "gross_pnl_rupees": net_realized_pnl,
             "estimated_statutory_taxes": total_taxes,
             "net_realized_pnl_rupees": net_after_tax,
-            "performance_rating": "INSTITUTIONAL_OUTPERFORM" if win_rate >= 70 else "NOMINAL_EXECUTION" if win_rate >= 50 else "CAPITAL_PRESERVATION",
+            "performance_rating": "INSTITUTIONAL_OUTPERFORM" if win_rate >= 70 else ("NOMINAL_EXECUTION" if win_rate >= 50 else "CAPITAL_PRESERVATION"),
             "gemini_qualitative_review": gemini_critique,
             "signals_snapshot": signals[:10]  # Store first 10 for quick UI review
         }

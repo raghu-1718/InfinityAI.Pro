@@ -36,7 +36,7 @@ except Exception as e:
 genai_client = None
 if HAS_ENHANCED_GENAI:
     try:
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "infinity-ai-pro-dev")
+        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
         genai_client = EnhancedGenAIClient(project_id=PROJECT_ID)
         logger.info("✅ EnhancedGenAIClient initialized for market analysis route.")
     except Exception as e:
