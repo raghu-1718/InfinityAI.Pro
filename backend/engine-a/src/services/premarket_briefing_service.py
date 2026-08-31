@@ -62,17 +62,18 @@ class PreMarketBriefingService:
         self._init_genai()
 
     def _init_genai(self):
-        """Initializes Vertex AI or Gemini Developer API client"""
+        """Initializes Vertex AI Gemini 2.5 Flash client via Application Default Credentials (ADC)"""
         if not genai:
             return
         try:
-            api_key = os.getenv("GEMINI_API_KEY")
-            if api_key:
-                self.genai_client = genai.Client(api_key=api_key)
-            else:
-                self.genai_client = genai.Client(vertexai=True, project=self.project_id, location="us-central1")
+            # Strictly use Vertex AI with ADC (us-central1) for enterprise Google Search Grounding
+            self.genai_client = genai.Client(
+                vertexai=True,
+                project=self.project_id,
+                location="us-central1"
+            )
             self.genai_available = True
-            logger.info("✅ Vertex AI Gemini Client initialized for PreMarketBriefingService.")
+            logger.info("✅ Vertex AI Gemini Client initialized via ADC (us-central1) for PreMarketBriefingService.")
         except Exception as e:
             logger.warning(f"Vertex AI GenAI initialization warning: {e}")
             self.genai_client = None

@@ -1,0 +1,29 @@
+{
+  "displayName": "InfinityAI - Pre-Market Macro Radar Failure (P0)",
+  "documentation": {
+    "content": "P0 ALERT: Engine A failed to generate or ground the 08:30 IST Pre-Market Intelligence Briefing via Vertex AI Gemini 2.5 Flash. Check Cloud Run engine-a logs immediately.",
+    "mimeType": "text/markdown"
+  },
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "Pre-market generation error log count > 0",
+      "conditionThreshold": {
+        "filter": "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"engine-a\" AND metric.type = \"logging.googleapis.com/user/premarket_generation_errors\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0.0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "60s",
+            "perSeriesAligner": "ALIGN_DELTA"
+          }
+        ]
+      }
+    }
+  ],
+  "notificationChannels": [
+    "projects/project-841b7f97-5ee3-4fbe-920/notificationChannels/12717702577017173446"
+  ],
+  "enabled": true
+}

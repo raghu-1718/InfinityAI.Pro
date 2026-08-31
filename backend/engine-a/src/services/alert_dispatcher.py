@@ -229,6 +229,45 @@ class AlertDispatcher:
         except Exception as e:
             logger.warning(f"Error dispatching premarket briefing: {e}")
 
+    async def dispatch_market_regime_heartbeat(self, regime_data: Dict[str, Any]):
+        """Dispatches scheduled Market Regime & Volatility Heartbeat digests (10:30, 12:00, 14:00 IST)"""
+        try:
+            time_ist = regime_data.get("timestamp_ist", "Current")
+            regime = regime_data.get("regime", "RANGEBOUND_CONSOLIDATION")
+            status_badge = regime_data.get("status_badge", "CHOP FILTER ACTIVE")
+            nifty_spot = float(regime_data.get("nifty_spot", 0.0))
+            banknifty_spot = float(regime_data.get("banknifty_spot", 0.0))
+            sensex_spot = float(regime_data.get("sensex_spot", 0.0))
+            vix = float(regime_data.get("india_vix", 13.5))
+            adx_avg = float(regime_data.get("adx_avg", 15.0))
+            active_vetoes = regime_data.get("active_vetoes", [])
+            guidance = regime_data.get("guidance", "Option Buying Suppressed — Preserving Capital in Low-Trend Regime.")
+
+            veto_str = ", ".join(active_vetoes) if active_vetoes else "None"
+
+            tg_text = (
+                f"⚡ *INFINITY AI — HOURLY MARKET REGIME RADAR*\n"
+                f"⏱️ *Time:* `{time_ist}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📊 *Market Regime:* *{regime}* (`{status_badge}`)\n"
+                f"📍 *Index Spot Prices:*\n"
+                f"   • *NIFTY 50:* `₹{nifty_spot:,.2f}`\n"
+                f"   • *BANKNIFTY:* `₹{banknifty_spot:,.2f}`\n"
+                f"   • *SENSEX:* `₹{sensex_spot:,.2f}`\n"
+                f"   • *INDIA VIX:* `{vix:.2f}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🛡️ *Volatility Filter:* Avg ADX `{adx_avg:.1f}` | Active Veto: `{veto_str}`\n"
+                f"💡 *Actionable Directive:* {guidance}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🚀 _Engine B scanning live ticks. Continuous 1-min shadow risk enforcement active._"
+            )
+
+            await self._send_telegram(tg_text)
+            await self._send_whatsapp(tg_text.replace("*", "").replace("`", ""))
+            await self._send_webhook({"event": "MARKET_REGIME_HEARTBEAT", "data": regime_data})
+        except Exception as e:
+            logger.warning(f"Error dispatching market regime heartbeat: {e}")
+
     async def _send_telegram(self, text: str):
         tok, chat_id = self._resolve_telegram_credentials()
         if not (tok and chat_id):

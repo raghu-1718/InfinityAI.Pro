@@ -1903,6 +1903,20 @@ async def trigger_premarket_briefing():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/v1/market/regime-heartbeat")
+async def trigger_market_regime_heartbeat():
+    """
+    Triggers the scheduled Market Regime & Volatility Heartbeat digest (10:30, 12:00, 14:00 IST).
+    """
+    try:
+        from src.services.market_regime_heartbeat_service import MARKET_REGIME_HEARTBEAT_SERVICE
+        result = await MARKET_REGIME_HEARTBEAT_SERVICE.generate_and_dispatch_heartbeat()
+        return {"status": "success", "heartbeat": result}
+    except Exception as e:
+        logger.error(f"Market regime heartbeat generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/v1/premarket/today")
 async def get_todays_premarket_briefing():
     """
