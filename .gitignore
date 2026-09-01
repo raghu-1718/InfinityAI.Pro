@@ -124,3 +124,5 @@ engine-*.json
 scratch_audit_results.json
 tools/live_diagnostic_report.json
 output/
+trained_models/
+*.joblib

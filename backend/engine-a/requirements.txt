@@ -23,6 +23,7 @@ google-cloud-storage>=2.14.0
 google-cloud-logging>=3.8.0
 google-cloud-secret-manager>=2.16.0
 google-cloud-bigquery>=3.14.0
+google-cloud-pubsub>=2.18.0
 # Gemini
 google-genai>=1.0.0
 

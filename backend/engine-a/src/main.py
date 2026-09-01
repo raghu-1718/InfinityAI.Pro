@@ -13,10 +13,10 @@ def require_env(var: str) -> str:
     if value is None or value.strip() == "":
         if var == "GOOGLE_CLOUD_PROJECT":
             default = "dev-project"
-            logger.warning(f"⚠️ {var} not set; using default '{default}' for testing.")
+            logger.warning(f"[WARN] {var} not set; using default '{default}' for testing.")
             return default
         else:
-            logger.warning(f"⚠️ Optional env '{var}' not set; proceeding with empty value.")
+            logger.warning(f"[WARN] Optional env '{var}' not set; proceeding with empty value.")
             return ""
     return value
 
@@ -45,7 +45,7 @@ from pydantic import BaseModel
 import httpx
 import uvicorn
 from src.trace_middleware import TraceIDMiddleware
-from src.api.routes import research  # <-- ADDED: Import your new research router
+from src.api.routes import research, equity
 
 # ML Libraries for Risk & Portfolio Management
 import numpy as np
@@ -197,9 +197,10 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
     )
 
 
-# --- ADDED: Register the research router ---
+# --- Register routers ---
 app.include_router(research.router)
-# -------------------------------------------
+app.include_router(equity.router)
+# ------------------------
 
 
 @app.get("/health")
