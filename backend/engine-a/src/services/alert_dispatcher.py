@@ -117,6 +117,80 @@ class AlertDispatcher:
         except Exception as e:
             logger.warning(f"Error dispatching signal alert: {e}")
 
+    async def dispatch_equity_signal_alert(self, signal_payload: Dict[str, Any]):
+        """Dispatches a newly scanned institutional Equity swing/momentum signal"""
+        try:
+            sym = signal_payload.get("symbol", "EQUITY")
+            buy_p = float(signal_payload.get("buy_price", 0.0))
+            tgt_p = float(signal_payload.get("target_price", 0.0))
+            sl_p = float(signal_payload.get("stop_loss_price", 0.0))
+            conf = float(signal_payload.get("confidence_score", 0.70)) * 100
+            time_ist = signal_payload.get("scan_timestamp_ist", "")
+            method = signal_payload.get("analysis_method", {})
+            tgt_pct = method.get("target_pct", 3.5)
+            sl_pct = method.get("stop_loss_pct", 2.0)
+            rr = method.get("risk_reward_ratio", "1:1.8")
+            rsi = method.get("rsi_14", 55.0)
+            adx = method.get("adx_14", 25.0)
+            sector = method.get("sector", "NSE Large Cap")
+
+            tg_text = (
+                f"📈 🎯 *INFINITY AI — INSTITUTIONAL EQUITY SIGNAL*\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🏢 *Stock:* `{sym}` ({sector})\n"
+                f"🧭 *Strategy:* *QUANT MOMENTUM BREAKOUT* (Conviction: `{conf:.1f}%`)\n"
+                f"⏱ *Scan Time:* `{time_ist}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"💰 *Entry Buy Price:* `₹{buy_p:,.2f}`\n"
+                f"🎯 *Target Price (+{tgt_pct:.1f}%):* `₹{tgt_p:,.2f}`\n"
+                f"🛡️ *Stop Loss Price (-{sl_pct:.1f}%):* `₹{sl_p:,.2f}`\n"
+                f"⚖️ *Risk/Reward:* `{rr}` | *RSI:* `{rsi}` | *ADX:* `{adx}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"📊 _Committed to Firestore equity_signals_ledger & BigQuery sync._"
+            )
+
+            await self._send_telegram(tg_text)
+            await self._send_whatsapp(tg_text.replace("*", "").replace("`", ""))
+            await self._send_webhook({"event": "EQUITY_SIGNAL_GENERATED", "data": signal_payload})
+        except Exception as e:
+            logger.warning(f"Error dispatching equity signal alert: {e}")
+
+    async def dispatch_equity_outcome_alert(self, outcome_data: Dict[str, Any]):
+        """Dispatches an alert when an open equity position reaches Target or Stop Loss"""
+        try:
+            sym = outcome_data.get("symbol", "EQUITY")
+            status = outcome_data.get("status", "CLOSED")
+            buy_p = float(outcome_data.get("buy_price", 0.0))
+            exit_p = float(outcome_data.get("actual_exit_price", 0.0))
+            ret_pct = float(outcome_data.get("returns_pct", 0.0))
+            time_str = outcome_data.get("time_to_target_str", "N/A")
+            sig_id = outcome_data.get("signal_id", "")
+
+            if "TARGET" in status or ret_pct > 0:
+                header = f"🟢 🎉 *INFINITY AI — EQUITY TARGET HIT (+{ret_pct:+.2f}%)*"
+                result_badge = f"🏆 *RESULT: PROFIT TARGET HIT* (`+{ret_pct:.2f}%`)"
+            else:
+                header = f"🔴 🛡️ *INFINITY AI — EQUITY STOP LOSS HIT ({ret_pct:+.2f}%)*"
+                result_badge = f"⚠️ *RESULT: STOP LOSS EXECUTED* (`{ret_pct:.2f}%`)"
+
+            tg_text = (
+                f"{header}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🏢 *Stock:* `{sym}`\n"
+                f"🏷️ *Signal ID:* `{sig_id}`\n"
+                f"💵 *Entry:* `₹{buy_p:,.2f}` ➔ *Exit:* `₹{exit_p:,.2f}`\n"
+                f"📊 {result_badge}\n"
+                f"⏱️ *Duration to Target:* `{time_str}`\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"✅ _Position updated in Firestore & BigQuery historical archive._"
+            )
+
+            await self._send_telegram(tg_text)
+            await self._send_whatsapp(tg_text.replace("*", "").replace("`", ""))
+            await self._send_webhook({"event": "EQUITY_OUTCOME_RESOLVED", "data": outcome_data})
+        except Exception as e:
+            logger.warning(f"Error dispatching equity outcome alert: {e}")
+
     def _format_outcome_text(self, outcome_data: Dict[str, Any]) -> str:
         sig_id = outcome_data.get("signal_id", "")
         sym = outcome_data.get("symbol", "NIFTY")

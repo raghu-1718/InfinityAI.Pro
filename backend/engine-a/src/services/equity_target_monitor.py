@@ -21,6 +21,7 @@ except ImportError:
     pubsub_v1 = None
 from google.cloud.firestore_v1.base_query import FieldFilter
 import httpx
+from src.services.alert_dispatcher import ALERT_DISPATCHER
 
 logger = logging.getLogger("InfinityAI.EquityTargetMonitor")
 
@@ -222,13 +223,20 @@ class EquityTargetMonitor:
                 self.db.collection(COLLECTION_NAME).document(sig_id).update(update_payload)
                 logger.info(f"Equity Signal Resolved: [{sig_id}] -> {new_status} | Exit: Rs {exit_price} | Ret: {returns_pct:+}% | Duration: {time_str}")
 
+                event_data = {**data, **update_payload}
+
                 # Publish event to Pub/Sub
                 if self.publisher and self.topic_path:
                     try:
-                        event_data = {**data, **update_payload}
                         self.publisher.publish(self.topic_path, data=json.dumps(event_data).encode("utf-8"), signal_id=sig_id, status=new_status)
                     except Exception as ex:
                         logger.warning(f"Pub/Sub publish error: {ex}")
+
+                # Dispatch Telegram & Multi-Channel Alert
+                try:
+                    await ALERT_DISPATCHER.dispatch_equity_outcome_alert(event_data)
+                except Exception as ex:
+                    logger.warning(f"Telegram equity outcome alert error: {ex}")
 
                 results["resolved_signals"].append({
                     "signal_id": sig_id,

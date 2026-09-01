@@ -21,6 +21,7 @@ try:
 except ImportError:
     pubsub_v1 = None
 import httpx
+from src.services.alert_dispatcher import ALERT_DISPATCHER
 
 logger = logging.getLogger("InfinityAI.EquityScanner")
 
@@ -261,6 +262,12 @@ class EquityScanner:
                     logger.info(f"Published Pub/Sub event for {setup['signal_id']}")
                 except Exception as e:
                     logger.warning(f"Pub/Sub publish notice: {e}")
+
+            # 5. Dispatch Telegram & Multi-Channel Alert
+            try:
+                await ALERT_DISPATCHER.dispatch_equity_signal_alert(setup)
+            except Exception as e:
+                logger.warning(f"Telegram equity alert notice: {e}")
 
             generated_signals.append(setup)
 
