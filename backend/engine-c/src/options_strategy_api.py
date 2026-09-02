@@ -201,7 +201,22 @@ async def analyze_strategy_legacy(req: Dict[str, Any] = Body(...)):
     """
     try:
         strat_name = req.get("strategy_name", "Short Straddle")
-        spot = float(req.get("spot_price", 24500.0))
+        spot = float(req.get("spot_price") or 0.0)
+        if spot <= 0:
+            try:
+                from google.cloud import firestore
+                fdb = firestore.Client()
+                history = list(fdb.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+                if history:
+                    last_doc = history[0].to_dict()
+                    sym_name = req.get("symbol", "NIFTY").upper()
+                    sym_key = "banknifty_spot" if "BANK" in sym_name else ("sensex_spot" if "SENSEX" in sym_name else "nifty_spot")
+                    spot = float(last_doc.get(sym_key) or 0.0)
+            except Exception as e:
+                logger.warning(f"Dynamic spot resolution failed in analyze_strategy_legacy: {e}")
+
+        if spot <= 0:
+            raise HTTPException(status_code=422, detail="Valid positive spot_price is required for strategy analysis.")
         p = req.get("params", {})
         qty = int(p.get("quantity", 1))
 

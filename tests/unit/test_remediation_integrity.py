@@ -17,13 +17,13 @@ ENGINE_A_DIR = os.path.join(BASE_DIR, "backend", "engine-a")
 ENGINE_B_DIR = os.path.join(BASE_DIR, "backend", "engine-b")
 ENGINE_C_DIR = os.path.join(BASE_DIR, "backend", "engine-c")
 
-for d in [ENGINE_A_DIR, ENGINE_C_DIR]:
+for d in [ENGINE_A_DIR, ENGINE_B_DIR, ENGINE_C_DIR]:
     if d not in sys.path:
         sys.path.insert(0, d)
 
-# Ensure src namespace package includes both engine-a/src and engine-c/src
+# Ensure src namespace package includes engine-a/src, engine-b/src, and engine-c/src
 import src
-for p in [os.path.join(ENGINE_A_DIR, "src"), os.path.join(ENGINE_C_DIR, "src")]:
+for p in [os.path.join(ENGINE_A_DIR, "src"), os.path.join(ENGINE_B_DIR, "src"), os.path.join(ENGINE_C_DIR, "src")]:
     if hasattr(src, "__path__") and p not in src.__path__:
         src.__path__.append(p)
 
@@ -135,3 +135,70 @@ def test_engine_b_synthetic_generation_prohibited():
     assert "def _generate_synthetic_data" in content
     assert "raise RuntimeError(" in content
     assert "Synthetic market data generation" in content
+
+
+def test_expiry_gamma_pinning_shield_empty_data():
+    """Verify compute_max_pain_strike returns None when strikes are empty, never hardcoded 24200"""
+    from src.services.expiry_gamma_pinning_shield import EXPIRY_GAMMA_SHIELD
+
+    res = EXPIRY_GAMMA_SHIELD.compute_max_pain_strike([])
+    assert res["max_pain_strike"] is None
+    assert res["pinning_probability"] == 0.0
+    assert res["status"] == "NO_STRIKES_DATA"
+
+
+def test_microstructure_feature_store_positive_spot():
+    """Verify MicrostructureFeatureStore requires valid positive spot price"""
+    import importlib.util
+    store_file = os.path.join(ENGINE_B_DIR, "src", "services", "microstructure_feature_store.py")
+    spec = importlib.util.spec_from_file_location("microstructure_feature_store", store_file)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    MicrostructureFeatureStore = mod.MicrostructureFeatureStore
+
+    store = MicrostructureFeatureStore()
+    with pytest.raises(ValueError, match="Valid positive spot_price is required"):
+        store.generate_institutional_feature_vector(
+            rsi_14=55.0,
+            macd_crossover=1,
+            vwap_distance=0.002,
+            atr_volatility=15.0,
+            spot_price=0.0
+        )
+
+
+def test_google_integrations_no_fake_overview():
+    """Verify get_nifty_overview never returns fake 24500 / 52000 prices"""
+    if ENGINE_B_DIR not in sys.path:
+        sys.path.insert(0, ENGINE_B_DIR)
+    from src.google_integrations import get_nifty_overview
+
+    res = get_nifty_overview()
+    assert isinstance(res, dict)
+    # Must NOT be the old fake baseline
+    if res.get("status") == "DEGRADED":
+        assert res.get("data_source") == "UNAVAILABLE"
+        assert res.get("nifty50") is None
+    else:
+        assert res.get("nifty50") != 24500.0 or res.get("banknifty") != 52000.0
+
+
+def test_bq_copilot_no_hardcoded_options_context():
+    """Verify bq_copilot does not contain hardcoded 24231.30 spot price in live_options_context"""
+    copilot_file = os.path.join(ENGINE_C_DIR, "src", "agents", "bq_copilot.py")
+    with open(copilot_file, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    assert "24231.30" not in code
+    assert "firestore_options_volatility_surface" in code
+
+
+def test_institutional_backtest_optimizer_prohibits_synthetic():
+    """Verify institutional_backtest_optimizer raises RuntimeError on data fetch error"""
+    backtest_file = os.path.join(BASE_DIR, "tools", "quant", "institutional_backtest_optimizer.py")
+    with open(backtest_file, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    assert "Synthetic data generation is prohibited" in code
+    assert "raise RuntimeError(" in code
+

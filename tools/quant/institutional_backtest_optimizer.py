@@ -241,14 +241,11 @@ class InstitutionalBacktestOptimizer:
         try:
             df = self.fetch_dhan_historical(symbol, spec)
         except Exception as e:
-            print(f"   ⚠️ DhanHQ fetch error: {e}. Generating synthetic fallback...")
-            np.random.seed(42)
-            base_spot = 24500.0 if symbol == "NIFTY" else (52000.0 if symbol == "BANKNIFTY" else 23000.0)
-            returns = np.random.normal(0.0006, 0.012, 250)
-            closes = base_spot * np.cumprod(1 + returns)
-            df = pd.DataFrame({
-                "open": closes * 0.998, "high": closes * 1.005, "low": closes * 0.995, "close": closes, "volume": [1000000]*250
-            })
+            logger.error(f"DhanHQ historical data fetch failed for {symbol}: {e}")
+            raise RuntimeError(
+                f"DhanHQ historical data fetch failed for {symbol}: {e}. "
+                "Synthetic data generation is prohibited in production backtesting."
+            )
 
         # 2. Extract 59 Quantitative & Technical Features
         df_feat, feat_cols = self.fe.generate_all_features(df)

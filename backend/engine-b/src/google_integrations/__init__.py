@@ -216,23 +216,81 @@ INFINITYAI_SYSTEM_PROMPT = """You are InfinityAI, an expert quantitative trading
 You analyze NIFTY50, BANKNIFTY, and NSE/BSE equity data using technical indicators, sentiment, and macro-economic factors.
 Provide actionable BUY/SELL/HOLD signals with confidence scores and risk assessments."""
 
-def get_stock_quote(symbol: str) -> Dict[str, Any]:
-    return {"symbol": symbol, "price": 0.0, "change_pct": 0.0, "source": "fallback"}
+def get_stock_quote(symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
+    try:
+        from shared.google_integrations.market_data_tools import get_stock_quote as _real_get_stock_quote
+        return _real_get_stock_quote(symbol, exchange)
+    except Exception:
+        pass
+    try:
+        from backend.shared.google_integrations.market_data_tools import get_stock_quote as _real_get_stock_quote
+        return _real_get_stock_quote(symbol, exchange)
+    except Exception:
+        pass
+    return {"symbol": symbol, "price": None, "change_pct": None, "status": "DEGRADED", "data_source": "UNAVAILABLE"}
 
 def get_nifty_overview() -> Dict[str, Any]:
-    return {"nifty50": 24500.0, "banknifty": 52000.0, "vix": 14.5}
+    try:
+        from shared.google_integrations.market_data_tools import get_nifty_overview as _real_overview
+        res = _real_overview()
+        if res and res.get("nifty50"):
+            return res
+    except Exception:
+        pass
+    try:
+        from google.cloud import firestore
+        fdb = firestore.Client()
+        history = list(fdb.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+        if history:
+            doc = history[0].to_dict()
+            return {
+                "nifty50": doc.get("nifty_spot"),
+                "banknifty": doc.get("banknifty_spot"),
+                "sensex": doc.get("sensex_spot"),
+                "vix": doc.get("india_vix"),
+                "data_source": doc.get("data_source", "firestore_heartbeat"),
+                "status": "success"
+            }
+    except Exception:
+        pass
+    return {"nifty50": None, "banknifty": None, "vix": None, "status": "DEGRADED", "data_source": "UNAVAILABLE"}
 
-def get_technical_indicators(symbol: str) -> Dict[str, Any]:
-    return {"symbol": symbol, "rsi": 55.0, "macd": 12.0, "sma_50": 24350.0}
+def get_technical_indicators(symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
+    try:
+        from shared.google_integrations.market_data_tools import get_technical_indicators as _real_tech
+        return _real_tech(symbol, exchange)
+    except Exception:
+        pass
+    try:
+        from backend.shared.google_integrations.market_data_tools import get_technical_indicators as _real_tech
+        return _real_tech(symbol, exchange)
+    except Exception:
+        pass
+    return {"symbol": symbol, "status": "DEGRADED", "rsi": None, "macd": None, "sma_50": None}
 
-def get_market_news(symbol: str) -> List[str]:
-    return [f"Market news for {symbol}: stable economic conditions."]
+def get_market_news(symbol: str = "NIFTY") -> List[str]:
+    try:
+        from shared.google_integrations.market_data_tools import get_market_news as _real_news
+        return _real_news(symbol)
+    except Exception:
+        pass
+    return [f"Market news service currently in degraded state for {symbol}."]
 
-def get_option_chain_data(symbol: str, expiry: str) -> Dict[str, Any]:
-    return {"symbol": symbol, "expiry": expiry, "pcr": 1.2}
+def get_option_chain_data(symbol: str = "NIFTY", expiry: Optional[str] = None) -> Dict[str, Any]:
+    try:
+        from shared.google_integrations.market_data_tools import get_option_chain_data as _real_oc
+        return _real_oc(symbol, expiry)
+    except Exception:
+        pass
+    return {"symbol": symbol, "expiry": expiry, "pcr": None, "status": "DEGRADED"}
 
 def get_fii_dii_activity() -> Dict[str, Any]:
-    return {"fii_net": 500.0, "dii_net": 300.0, "unit": "crore INR"}
+    try:
+        from shared.google_integrations.market_data_tools import get_fii_dii_activity as _real_fii
+        return _real_fii()
+    except Exception:
+        pass
+    return {"fii_net": None, "dii_net": None, "status": "DEGRADED"}
 
 # ─── Finance AI Model (backward compat) ────────────────────────────────────
 

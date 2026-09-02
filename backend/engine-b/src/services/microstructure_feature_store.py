@@ -99,13 +99,15 @@ class MicrostructureFeatureStore:
         asks: Optional[List[Dict[str, float]]] = None,
         put_iv: float = 0.1850,
         call_iv: float = 0.1620,
-        spot_price: float = 24219.05,
+        spot_price: float = 0.0,
         atm_gamma: float = 0.0018,
         fii_long_short_ratio: float = 1.25
     ) -> Dict[str, Any]:
         """
         Assembles full 8-dimensional institutional feature vector.
         """
+        if spot_price <= 0:
+            raise ValueError("Valid positive spot_price is required to compute gamma exposure index.")
         obi = self.compute_order_book_imbalance(bids, asks)
         skew = self.compute_iv_skew(put_iv, call_iv)
         gex = self.compute_gamma_exposure_index(spot_price, atm_gamma)

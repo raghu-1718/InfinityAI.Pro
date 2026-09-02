@@ -244,24 +244,34 @@ Rules:
                 sql_audit = sql_res
 
         # 3. Live Option Market Data & Signals Synthesis Context
-        live_options_context = {
-            "underlying": "NIFTY",
-            "spot_price": 24231.30,
-            "nearest_expiry": "2026-08-25",
-            "atm_strike": 24250,
-            "pcr_ratio": 0.94,
-            "implied_volatility_atm": 13.2,
-            "recommended_call_options": [
-                {"strike": 24250, "type": "CE (ATM)", "delta": 0.51, "theta": -14.2, "iv": 13.1, "ltp": 128.50, "action": "Watch - Breakout > 24265"},
-                {"strike": 24350, "type": "CE (OTM)", "delta": 0.35, "theta": -10.8, "iv": 13.4, "ltp": 68.20, "action": "Momentum Target"}
-            ],
-            "recommended_put_options": [
-                {"strike": 24200, "type": "PE (ATM)", "delta": -0.49, "theta": -13.8, "iv": 13.3, "ltp": 112.40, "action": "Watch - Breakdown < 24180"},
-                {"strike": 24100, "type": "PE (OTM)", "delta": -0.32, "theta": -9.6, "iv": 13.6, "ltp": 54.10, "action": "Hedge / Downside"}
-            ],
-            "tri_model_signal": "HOLD (Confidence: 50%, ADX: 12.80 - Choppy Rangebound Consolidation)",
-            "execution_guardrail": "Avoid buying naked options during low ADX (<20) choppy consolidation due to Theta decay. Prefer Defined-Risk Spreads (Bull Call Spread or Bear Put Spread)."
-        }
+        live_options_context = {}
+        try:
+            from google.cloud import firestore
+            fdb = firestore.Client(project=self.project_id)
+            doc = fdb.collection("options_volatility_surface").document("NIFTY").get()
+            if doc.exists:
+                live_options_context = doc.to_dict() or {}
+                live_options_context["data_source"] = "firestore_options_volatility_surface"
+            else:
+                hb_docs = list(fdb.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+                if hb_docs:
+                    hb_data = hb_docs[0].to_dict()
+                    live_options_context = {
+                        "underlying": "NIFTY",
+                        "spot_price": hb_data.get("nifty_spot"),
+                        "india_vix": hb_data.get("india_vix"),
+                        "regime": hb_data.get("regime"),
+                        "data_source": "firestore_market_regime_heartbeat"
+                    }
+        except Exception as e:
+            logger.warning(f"Live options context query notice: {e}")
+
+        if not live_options_context or not live_options_context.get("spot_price"):
+            live_options_context = {
+                "underlying": "NIFTY",
+                "status": "DEGRADED",
+                "message": "Live options surface unavailable; prompt user for manual market parameters."
+            }
 
         # 4. Formulate System Instruction & Context
         system_instruction = f"""You are **InfinityAI**, the institutional algorithmic trading copilot for InfinityAI.Pro.

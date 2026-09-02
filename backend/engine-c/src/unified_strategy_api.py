@@ -224,8 +224,25 @@ async def execute_strategy(
     try:
         logger.info(f"Executing {request.strategy} for user {x_user_id}")
         
-        # Get spot price (use provided or default)
-        spot_price = request.spot_price or 24455.75
+        # Get spot price: use provided or resolve dynamically from live feed
+        spot_price = float(request.spot_price or 0.0)
+        if spot_price <= 0:
+            try:
+                from google.cloud import firestore
+                fdb = firestore.Client()
+                history = list(fdb.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+                if history:
+                    last_doc = history[0].to_dict()
+                    sym_key = "banknifty_spot" if "BANK" in request.symbol.upper() else "nifty_spot"
+                    spot_price = float(last_doc.get(sym_key) or 0.0)
+            except Exception as e:
+                logger.warning(f"Dynamic spot resolution failed in strategy execution: {e}")
+
+        if spot_price <= 0:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Valid positive spot_price is required for {request.symbol} execution and live feed is offline."
+            )
         
         # Determine lot size (August 2026 NSE specs: NIFTY=65, BANKNIFTY=30)
         lot_size = 65 if "NIFTY" in request.symbol and "BANK" not in request.symbol else (30 if "BANK" in request.symbol else 40)

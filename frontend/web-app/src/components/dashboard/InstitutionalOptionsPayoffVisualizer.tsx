@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -107,27 +107,73 @@ const STRATEGIES: StrategyPreset[] = [
   },
 ];
 
-const INDEX_UNDERLYINGS = [
-  { symbol: "NIFTY", name: "NIFTY 50", spot: 24366.0, lotSize: 65, step: 50 },
-  { symbol: "BANKNIFTY", name: "BANK NIFTY", spot: 57491.1, lotSize: 30, step: 100 },
-  { symbol: "FINNIFTY", name: "FIN NIFTY", spot: 25680.5, lotSize: 65, step: 50 },
+const INDEX_CONFIGS = [
+  { symbol: "NIFTY", name: "NIFTY 50", lotSize: 65, step: 50 },
+  { symbol: "BANKNIFTY", name: "BANK NIFTY", lotSize: 30, step: 100 },
+  { symbol: "FINNIFTY", name: "FIN NIFTY", lotSize: 65, step: 50 },
 ];
 
 export function InstitutionalOptionsPayoffVisualizer() {
   const [selectedSymbol, setSelectedSymbol] = useState("NIFTY");
   const [selectedStrategyId, setSelectedStrategyId] = useState("iron_condor");
   const [isExecuting, setIsExecuting] = useState(false);
+  const [liveSpots, setLiveSpots] = useState<Record<string, number>>({});
 
-  const activeIndex = INDEX_UNDERLYINGS.find((i) => i.symbol === selectedSymbol) || INDEX_UNDERLYINGS[0];
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchSpots() {
+      try {
+        const resp = await fetch("/api/dhan/market/quotes?security_ids=13,25,27&exchange_segment=IDX_I");
+        if (resp.ok) {
+          const raw = await resp.json();
+          let d = raw;
+          while (d && typeof d === "object" && "data" in d && !("IDX_I" in d) && !("idx_i" in d)) {
+            d = d.data;
+          }
+          const idxMap = (d?.IDX_I || d?.idx_i || {}) as Record<string, any>;
+          const spots: Record<string, number> = {};
+          if (idxMap["13"]?.last_price) spots["NIFTY"] = Number(idxMap["13"].last_price);
+          if (idxMap["25"]?.last_price) spots["BANKNIFTY"] = Number(idxMap["25"].last_price);
+          if (idxMap["27"]?.last_price) spots["FINNIFTY"] = Number(idxMap["27"].last_price);
+
+          if (isMounted && Object.keys(spots).length > 0) {
+            setLiveSpots(spots);
+          }
+        }
+      } catch (err) {
+        console.warn("Live quotes notice in visualizer:", err);
+      }
+    }
+    fetchSpots();
+    const interval = setInterval(fetchSpots, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const activeCfg = INDEX_CONFIGS.find((i) => i.symbol === selectedSymbol) || INDEX_CONFIGS[0];
+  const activeSpot = liveSpots[selectedSymbol] || 0.0;
+  const activeIndex = {
+    symbol: activeCfg.symbol,
+    name: activeCfg.name,
+    spot: activeSpot,
+    lotSize: activeCfg.lotSize,
+    step: activeCfg.step,
+  };
   const activeStrategy = STRATEGIES.find((s) => s.id === selectedStrategyId) || STRATEGIES[0];
 
   const legs = useMemo(() => {
-    return activeStrategy.getLegs(activeIndex.spot);
-  }, [activeStrategy, activeIndex]);
+    if (activeSpot <= 0) return [];
+    return activeStrategy.getLegs(activeSpot);
+  }, [activeStrategy, activeSpot]);
 
   // Compute 40-point Payoff Curve at Expiry
   const { payoffData, maxProfit, maxLoss, breakevens, netPremium } = useMemo(() => {
     const spot = activeIndex.spot;
+    if (spot <= 0 || legs.length === 0) {
+      return { payoffData: [], maxProfit: 0, maxLoss: 0, breakevens: [], netPremium: 0 };
+    }
     const rangePct = 0.035; // +/- 3.5% range
     const minPrice = spot * (1 - rangePct);
     const maxPrice = spot * (1 + rangePct);
@@ -218,19 +264,22 @@ export function InstitutionalOptionsPayoffVisualizer() {
 
           {/* Underlyings Toggle */}
           <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-lg border border-white/10">
-            {INDEX_UNDERLYINGS.map((u) => (
-              <button
-                key={u.symbol}
-                onClick={() => setSelectedSymbol(u.symbol)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                  selectedSymbol === u.symbol
-                    ? "bg-purple-600 text-white shadow-lg"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {u.name} (₹{u.spot.toLocaleString("en-IN")})
-              </button>
-            ))}
+            {INDEX_CONFIGS.map((u) => {
+              const spotVal = liveSpots[u.symbol] || 0.0;
+              return (
+                <button
+                  key={u.symbol}
+                  onClick={() => setSelectedSymbol(u.symbol)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                    selectedSymbol === u.symbol
+                      ? "bg-purple-600 text-white shadow-lg"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {u.name} {spotVal > 0 ? `(₹${spotVal.toLocaleString("en-IN")})` : "(Syncing...)"}
+                </button>
+              );
+            })}
           </div>
         </div>
       </CardHeader>

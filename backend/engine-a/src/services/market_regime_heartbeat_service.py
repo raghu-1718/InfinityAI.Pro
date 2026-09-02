@@ -120,9 +120,26 @@ class MarketRegimeHeartbeatService:
                     spot_prices["NIFTY"] = last_doc.get("nifty_spot")
                     spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
                     spot_prices["SENSEX"] = last_doc.get("sensex_spot")
-                    spot_prices["INDIAVIX"] = last_doc.get("india_vix", 13.5)
+                    spot_prices["INDIAVIX"] = last_doc.get("india_vix")
+                    spot_prices["FINNIFTY"] = last_doc.get("finnifty_spot")
+                    spot_prices["MIDCPNIFTY"] = last_doc.get("midcpnifty_spot")
                     spot_prices["data_source"] = f"verified_cache_{last_doc.get('heartbeat_id', 'unknown')}"
-                    logger.info(f"Retrieved verified baseline from previous heartbeat: {spot_prices['NIFTY']}")
+                    
+                    ts_val = last_doc.get("timestamp_utc") or last_doc.get("timestamp")
+                    spot_prices["source_timestamp"] = str(ts_val) if ts_val else None
+                    freshness_age = None
+                    if ts_val:
+                        try:
+                            from datetime import datetime, timezone
+                            dt = datetime.fromisoformat(str(ts_val).replace("Z", "+00:00"))
+                            freshness_age = round((datetime.now(timezone.utc) - dt).total_seconds(), 1)
+                        except Exception:
+                            pass
+                    spot_prices["freshness_age_seconds"] = freshness_age
+                    if freshness_age is not None and freshness_age > 900:
+                        spot_prices["is_degraded"] = True
+                        spot_prices["degraded_reason"] = f"FIRESTORE_CACHE_STALE_{freshness_age}s"
+                    logger.info(f"Retrieved verified baseline from previous heartbeat: {spot_prices['NIFTY']} (age: {freshness_age}s)")
             except Exception as fe:
                 logger.error(f"Firestore fallback lookup failed: {fe}")
         
@@ -131,6 +148,8 @@ class MarketRegimeHeartbeatService:
         if spot_prices["NIFTY"] is None or spot_prices["BANKNIFTY"] is None:
             spot_prices["data_source"] = "DEGRADED_BROKER_FEED_UNAVAILABLE"
             spot_prices["is_degraded"] = True
+            spot_prices["degraded_reason"] = "All live broker gateways and Firestore caches offline"
+            spot_prices["freshness_age_seconds"] = None
             logger.critical("🚨 CRITICAL: Live market quotes unavailable from Engine C and Firestore cache. Entering degraded mode.")
 
         return spot_prices

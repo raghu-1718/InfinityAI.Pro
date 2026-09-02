@@ -22,7 +22,7 @@ def _score_features(features: Dict[str, float], model_name: str) -> float:
     Score normalized features for a specific model in the ensemble.
     Computes a directional probability bounded in [-1.0, 1.0].
     """
-    close = features.get("close", 24000.0)
+    close = features.get("close", 0.0)
     rsi = features.get("rsi_14", 50.0)
     macd = features.get("macd", 0.0)
     volatility = features.get("volatility_20", 0.15)

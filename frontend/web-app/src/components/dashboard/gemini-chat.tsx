@@ -107,7 +107,7 @@ export function GeminiChat({ className, expanded = false, onToggleExpand }: Gemi
 
         response = await engineB.getFinanceAIOptionsStrategy({
           index: isBankNifty ? 'BANKNIFTY' : 'NIFTY',
-          spot_price: isNifty ? 24650 : 52000, // Approximate
+          spot_price: 0, // Backend resolves from live broker feed
           outlook: outlook as any,
           capital: 200000,
           risk_appetite: 'MODERATE',

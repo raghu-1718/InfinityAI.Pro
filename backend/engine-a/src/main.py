@@ -2044,8 +2044,18 @@ async def reset_circuit_breaker():
     return {"status": "success", "message": "Circuit breaker reset to NOMINAL_ACTIVE."}
 
 @app.post("/api/v1/confluence/evaluate")
-async def evaluate_confluence_filter(symbol: str = "NIFTY", signal_type: str = "BUY_CALL", current_price: float = 24250.0):
+async def evaluate_confluence_filter(symbol: str = "NIFTY", signal_type: str = "BUY_CALL", current_price: float = 0.0):
     """Evaluates 1m, 5m, 15m trend confluence for a prospective trade signal"""
+    if current_price <= 0:
+        from src.services.market_regime_heartbeat_service import MARKET_REGIME_HEARTBEAT_SERVICE
+        quotes = await MARKET_REGIME_HEARTBEAT_SERVICE._fetch_live_market_quotes()
+        sym_key = symbol.upper()
+        if quotes.get(sym_key):
+            current_price = float(quotes[sym_key])
+
+    if current_price <= 0:
+        raise HTTPException(status_code=422, detail=f"Positive current_price required for {symbol} confluence evaluation.")
+
     from src.services.mtf_confluence_filter import MTF_CONFLUENCE_FILTER
     res = MTF_CONFLUENCE_FILTER.evaluate_confluence(
         symbol=symbol,
@@ -2156,14 +2166,24 @@ async def trigger_preflight_check():
 @app.get("/api/v1/expiry/shield/evaluate")
 async def evaluate_expiry_shield(
     symbol: str = "NIFTY",
-    spot_price: float = 24219.05,
-    entry_premium: float = 99.43,
-    current_premium: float = 105.00,
-    highest_premium: float = 112.00,
+    spot_price: float = 0.0,
+    entry_premium: float = 0.0,
+    current_premium: float = 0.0,
+    highest_premium: float = 0.0,
     gamma: float = 0.0018,
     theta: float = -45.26
 ):
     """Evaluates 0DTE/1DTE Gamma Pinning & Afternoon Theta Shield for Expiry sessions"""
+    if spot_price <= 0:
+        from src.services.market_regime_heartbeat_service import MARKET_REGIME_HEARTBEAT_SERVICE
+        quotes = await MARKET_REGIME_HEARTBEAT_SERVICE._fetch_live_market_quotes()
+        sym_key = symbol.upper()
+        if quotes.get(sym_key):
+            spot_price = float(quotes[sym_key])
+
+    if spot_price <= 0:
+        raise HTTPException(status_code=422, detail=f"Positive spot_price required for {symbol} expiry shield evaluation.")
+
     from src.services.expiry_gamma_pinning_shield import EXPIRY_GAMMA_SHIELD
     res = EXPIRY_GAMMA_SHIELD.evaluate_expiry_shield(
         symbol=symbol,

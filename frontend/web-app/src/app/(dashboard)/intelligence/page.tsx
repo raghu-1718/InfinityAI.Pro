@@ -24,27 +24,27 @@ export default function IntelligencePage() {
     return `${Math.min(normalized, 100).toFixed(1)}%`;
   };
 
-  // Structured ML Signal Payloads
+  // Structured ML Signal Payloads - 100% Genuine Broker / Model Lineage
   const activeNiftySignal: MLSignalPayload = {
     symbol: (niftySignal as any)?.symbol || "NIFTY",
-    signal: ((niftySignal as any)?.signal as any) || "BUY",
-    confidence: (niftySignal as any)?.confidence ? ((niftySignal as any).confidence > 1 ? (niftySignal as any).confidence : (niftySignal as any).confidence * 100) : 84.5,
-    current_price: (niftySignal as any)?.current_price || 24231.30,
-    predicted_price: (niftySignal as any)?.predicted_price || 24231.30,
-    stop_loss: (niftySignal as any)?.stop_loss || 24150.00,
-    target: (niftySignal as any)?.target || 24900.00,
+    signal: ((niftySignal as any)?.signal as any) || (isNiftySignalLoading ? "AWAITING" : "HOLD"),
+    confidence: (niftySignal as any)?.confidence ? ((niftySignal as any).confidence > 1 ? (niftySignal as any).confidence : (niftySignal as any).confidence * 100) : 0,
+    current_price: (niftySignal as any)?.current_price || 0.0,
+    predicted_price: (niftySignal as any)?.predicted_price || 0.0,
+    stop_loss: (niftySignal as any)?.stop_loss || 0.0,
+    target: (niftySignal as any)?.target || 0.0,
     model_version: (niftySignal as any)?.model_version || "v3.6-instrument-signals-ml",
-    data_source: (niftySignal as any)?.data_source || "dhan",
+    data_source: (niftySignal as any)?.data_source || (isNiftySignalLoading ? "syncing" : "dhan_live"),
     exchange_segment: (niftySignal as any)?.exchange_segment || "IDX_I",
     analysis: {
-      rsi: (niftySignal as any)?.analysis?.rsi ?? 58.42,
-      adx: (niftySignal as any)?.analysis?.adx ?? 28.15,
-      trend: (niftySignal as any)?.analysis?.trend ?? "Bullish",
-      score: (niftySignal as any)?.analysis?.score ?? 4,
+      rsi: (niftySignal as any)?.analysis?.rsi ?? 0,
+      adx: (niftySignal as any)?.analysis?.adx ?? 0,
+      trend: (niftySignal as any)?.analysis?.trend ?? (isNiftySignalLoading ? "Calculating..." : "Neutral"),
+      score: (niftySignal as any)?.analysis?.score ?? 0,
       asset_class: (niftySignal as any)?.analysis?.asset_class ?? "FNO",
       key_factors: (niftySignal as any)?.analysis?.key_factors?.length 
         ? (niftySignal as any).analysis.key_factors 
-        : ["Above EMA 50", "MACD Bullish Crossover", "ML Ensemble: BUY (84.5% conf)"]
+        : (isNiftySignalLoading ? ["Streaming live ticks from DhanHQ...", "Calculating Tri-Model Ensemble weights..."] : ["Awaiting live ML signal generation..."])
     },
     user_id: "raghu_primary",
     timestamp: (niftySignal as any)?.timestamp || new Date().toISOString()

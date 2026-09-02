@@ -42,11 +42,11 @@ class ExpiryGammaPinningShield:
         Computes the theoretical Max Pain strike from strike-wise Call & Put Open Interest.
         """
         if not strikes_data:
-            return {"max_pain_strike": 24200, "pinning_probability": 0.50, "min_loss_crores": 0.0}
+            return {"max_pain_strike": None, "pinning_probability": 0.0, "min_loss_crores": 0.0, "status": "NO_STRIKES_DATA"}
 
         strikes = [s.get("strike", 0.0) for s in strikes_data if s.get("strike", 0.0) > 0]
         if not strikes:
-            return {"max_pain_strike": 24200, "pinning_probability": 0.50, "min_loss_crores": 0.0}
+            return {"max_pain_strike": None, "pinning_probability": 0.0, "min_loss_crores": 0.0, "status": "NO_VALID_STRIKES"}
 
         min_total_loss = float("inf")
         best_strike = strikes[0]

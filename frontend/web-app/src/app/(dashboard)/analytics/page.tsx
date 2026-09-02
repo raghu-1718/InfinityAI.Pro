@@ -37,17 +37,23 @@ export default function AnalyticsQuantDashboard() {
 
   useEffect(() => {
     // Initial fetch of live data
-    BackendClient.getMarketTicks().then(setTicks);
+    BackendClient.getMarketTicks().then((liveTicks) => {
+      setTicks(liveTicks);
+      const liveClose = liveTicks.length > 0 && liveTicks[0].price ? liveTicks[0].price : 0.0;
+      if (liveClose > 0) {
+        BackendClient.runInference({ close: liveClose, rsi_14: 58.2, macd: 14.2, oi_pcr: 1.15 }).then(setInference);
+      }
+    });
     BackendClient.getModelStatus().then(setModelStatus);
     BackendClient.getPortfolioState().then(setPortfolio);
-    BackendClient.runInference({ close: 24535.5, rsi_14: 58.2, macd: 14.2, oi_pcr: 1.15 }).then(setInference);
     BackendClient.triggerBacktest("tri_model_ensemble").then(setBacktest);
   }, []);
 
   const handleRunInference = async () => {
     setLoadingInference(true);
+    const liveClose = ticks.length > 0 && ticks[0].price ? ticks[0].price : 0.0;
     const result = await BackendClient.runInference({
-      close: 24540.0 + Math.random() * 20,
+      close: liveClose,
       rsi_14: 50.0 + (Math.random() - 0.5) * 30,
       macd: (Math.random() - 0.5) * 40,
       oi_pcr: 0.9 + Math.random() * 0.4
