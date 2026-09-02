@@ -1,0 +1,31 @@
+rules:
+  - id: hardcoded-gemini-api-key
+    languages: [python, javascript, typescript, json, yaml]
+    message: "Potential hardcoded Gemini API Key detected! Use GCP Secret Manager instead."
+    severity: ERROR
+    patterns:
+      - pattern-regex: 'AIza[0-9A-Za-z\\-_]{35}'
+
+  - id: hardcoded-private-key
+    languages: [python, javascript, typescript, json, yaml]
+    message: "Hardcoded private key block detected! Never commit private keys."
+    severity: ERROR
+    patterns:
+      - pattern-regex: '-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----'
+
+  - id: hardcoded-dhan-credential
+    languages: [python, javascript, typescript]
+    message: "Hardcoded DhanHQ credential detected. Retrieve dynamically via SecretManagerVault."
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: $X = "dhan_secret_..."
+          - pattern: $X = "eyJhbGciOi..."
+          - pattern-regex: 'DHAN_API_SECRET\s*=\s*["''][a-zA-Z0-9_\-]{20,}["'']'
+
+  - id: hardcoded-aes-encryption-key
+    languages: [python, javascript, typescript]
+    message: "Hardcoded AES-256 encryption key literal found. Inject via USER_CREDENTIALS_KEY env var."
+    severity: ERROR
+    patterns:
+      - pattern-regex: 'USER_CREDENTIALS_KEY\s*=\s*["''][0-9a-fA-F]{64}["'']'
