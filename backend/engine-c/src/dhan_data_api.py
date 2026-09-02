@@ -347,12 +347,18 @@ async def update_dhan_credentials(req: DhanCredentialUpdateRequest):
 # ==============================================================================
 @data_router.get("/api/dhan/market/quotes")
 async def get_market_quotes(
-    security_ids: str = Query("1333,11536", description="Comma-separated security IDs"),
-    exchange_segment: str = Query("NSE_EQ", description="Exchange segment"),
+    security_ids: Optional[str] = Query(None, description="Comma-separated security IDs"),
+    exchange_segment: Optional[str] = Query(None, description="Exchange segment (Defaults to IDX_I if not passed)"),
     user_id: Optional[str] = Query(None, description="User ID or Client ID (Defaults to primary vault)")
 ):
     """Live LTP, Open, High, Low, Close, Volume, VWAP, Change % directly from DhanHQ marketfeed"""
-    norm_seg = normalize_exchange_segment(exchange_segment)
+    norm_seg = normalize_exchange_segment(exchange_segment or "IDX_I")
+    if not security_ids:
+        # Provide institutional defaults based on exchange segment
+        if norm_seg == "IDX_I":
+            security_ids = "13,25,51,21"  # NIFTY, BANKNIFTY, SENSEX, INDIA VIX
+        else:
+            security_ids = "1333,11536,2885"  # HDFCBANK, TCS, RELIANCE
     sec_ids = parse_security_ids(security_ids, fallback_param=exchange_segment)
     
     try:
@@ -438,6 +444,11 @@ async def get_market_ltp(
             }
         
         ohlc_dict = ohlc_resp.get("data", {}) if isinstance(ohlc_resp, dict) and "data" in ohlc_resp else (ohlc_resp if isinstance(ohlc_resp, dict) else {})
+        
+        # DhanHQ v2 API wraps payloads inside {"status": "success", "data": {"data": {<segment>: ...}}}
+        # Safely unwrap redundant 'data' dictionary layers until the segment key is found
+        while isinstance(ohlc_dict, dict) and "data" in ohlc_dict and norm_seg not in ohlc_dict and norm_seg.lower() not in ohlc_dict:
+            ohlc_dict = ohlc_dict["data"]
         
         if isinstance(ohlc_resp, dict) and ohlc_resp.get("status") == "failed":
             return {
