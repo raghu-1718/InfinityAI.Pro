@@ -14,8 +14,16 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from google.cloud import bigquery, firestore
 
-from .user_credentials import UserCredentialsManager
-from .dhan_client_wrapper import create_dhan_client, DhanEnvironment
+try:
+    from .user_credentials import UserCredentialsManager
+    from .dhan_client_wrapper import create_dhan_client, DhanEnvironment
+except ImportError:
+    try:
+        from src.user_credentials import UserCredentialsManager
+        from src.dhan_client_wrapper import create_dhan_client, DhanEnvironment
+    except ImportError:
+        from user_credentials import UserCredentialsManager
+        from dhan_client_wrapper import create_dhan_client, DhanEnvironment
 
 logger = logging.getLogger("options_chain_ingestor")
 logger.setLevel(logging.INFO)
@@ -254,7 +262,7 @@ class OptionsChainIngestor:
                         symbol_rows += 1
 
                 # Calculate Volatility Surface Summary
-                surface_summary = self.calculate_volatility_surface_summary(symbol, spot_fallback, oc_dict)
+                surface_summary = self.calculate_volatility_surface_summary(symbol, spot_price, oc_dict)
                 surface_matrices[symbol] = surface_summary
 
                 indices_summary[symbol] = {

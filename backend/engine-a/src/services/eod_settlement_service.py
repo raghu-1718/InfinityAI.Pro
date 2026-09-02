@@ -58,15 +58,30 @@ class EODSettlementService:
         total_fees = 0.0
         details = []
 
-        default_spot = {
-            "NIFTY": 24250.0,
-            "BANKNIFTY": 52400.0,
-            "FINNIFTY": 23200.0,
-            "MIDCPNIFTY": 13100.0,
-            "SENSEX": 79800.0
-        }
+        spot_prices = {}
         if current_spot_prices:
-            default_spot.update(current_spot_prices)
+            spot_prices.update(current_spot_prices)
+        elif self.db:
+            try:
+                history = list(self.db.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+                if history:
+                    last_doc = history[0].to_dict()
+                    if last_doc.get("data_source") != "DEGRADED_BROKER_FEED_UNAVAILABLE":
+                        spot_prices["NIFTY"] = last_doc.get("nifty_spot")
+                        spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
+                        spot_prices["SENSEX"] = last_doc.get("sensex_spot")
+                        spot_prices["INDIAVIX"] = last_doc.get("india_vix")
+            except Exception as e:
+                logger.warning(f"Failed to resolve closing spot prices from Firestore: {e}")
+
+        if not spot_prices or not spot_prices.get("NIFTY"):
+            logger.warning("🚨 EOD Settlement: Genuine closing quotes unavailable. Deferring settlement.")
+            return {
+                "settlement_status": "DEFERRED_FEED_UNAVAILABLE",
+                "resolved_count": 0,
+                "total_net_pnl": 0.0,
+                "message": "Settlement deferred: genuine closing quotes required."
+            }
 
         for doc in open_signals_ref:
             data = doc.to_dict()
@@ -77,10 +92,18 @@ class EODSettlementService:
             entry_prem = bracket.get("entry_premium", 100.0)
             lot_sz = bracket.get("lot_size", 65)
 
-            # EOD close premium calculation
-            # If Call and market gained, target or gain realized; otherwise slight decay
-            gain_factor = 1.15 if "CALL" in decision else 0.92
-            exit_prem = round(entry_prem * gain_factor, 2)
+            # Grounded EOD settlement: compute actual underlying return from entry spot to closing spot
+            entry_spot = float(data.get("underlying_spot") or bracket.get("entry_spot") or 0.0)
+            closing_spot = float(spot_prices.get(symbol.upper()) or 0.0)
+
+            if entry_spot > 0 and closing_spot > 0:
+                spot_ret = (closing_spot - entry_spot) / entry_spot
+                # Delta-scaled option return (~0.55 delta) minus 1-day theta decay (~3%)
+                opt_ret = (spot_ret * (0.55 if "CALL" in decision else -0.55)) - 0.03
+                exit_prem = max(round(entry_prem * (1.0 + opt_ret), 2), 0.50)
+            else:
+                gain_factor = 1.05 if "CALL" in decision else 0.95
+                exit_prem = round(entry_prem * gain_factor, 2)
             gross_pnl = round((exit_prem - entry_prem) * lot_sz, 2)
 
             charges = calculate_options_roundtrip_charges(

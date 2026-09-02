@@ -75,12 +75,16 @@ class OptionsGreeksEngine:
     def generate_volatility_surface(
         self,
         symbol: str = "NIFTY",
-        spot: float = 24252.0,
+        spot: float = 0.0,
         dte_days: float = 3.0
     ) -> Dict[str, Any]:
         """
-        Generates full strike ladder with Greeks and IV Smile Skew
+        Generates full strike ladder with Greeks and IV Smile Skew.
+        Requires genuine live or verified spot price.
         """
+        if not spot or float(spot) <= 0:
+            raise ValueError(f"Valid positive spot price required for {symbol} options surface generation, got {spot}")
+
         step = 100 if "BANKNIFTY" in symbol.upper() else 50
         atm_strike = round(spot / step) * step
 

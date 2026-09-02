@@ -214,83 +214,29 @@ class ContinuousShadowScanner:
             return results
 
     async def _fetch_spot_prices(self) -> Dict[str, float]:
-        """Queries Engine C or dynamically resolves real-time live market spot prices & India VIX"""
-        spots = {}
-        if not self.http_client or self.http_client.is_closed:
-            self.http_client = httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=3.0))
-
-        # 1. Try Engine C DhanHQ quote cache
+        """Queries live market quotes dynamically via MARKET_REGIME_HEARTBEAT_SERVICE and Dhan gateway"""
         try:
-            resp = await self.http_client.get(f"{ENGINE_C_URL}/api/dhan/market/quotes", timeout=3.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                items = []
-                if isinstance(data, dict):
-                    items = data.get("data", [])
-                elif isinstance(data, list):
-                    items = data
+            from .market_regime_heartbeat_service import MARKET_REGIME_HEARTBEAT_SERVICE
+            quotes = await MARKET_REGIME_HEARTBEAT_SERVICE._fetch_live_market_quotes()
+            spots = {}
+            for k in ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "INDIAVIX"]:
+                v = quotes.get(k)
+                if v is not None and float(v) > 0:
+                    spots[k] = round(float(v), 2)
 
-                if isinstance(items, list):
-                    for it in items:
-                        if isinstance(it, dict):
-                            sym = str(it.get("trading_symbol") or it.get("symbol") or "").upper()
-                            ltp = float(it.get("ltp") or it.get("last_price") or 0.0)
-                            if ltp > 0:
-                                if "NIFTY 50" in sym or sym == "NIFTY":
-                                    spots["NIFTY"] = ltp
-                                elif "BANKNIFTY" in sym or sym == "BANK NIFTY":
-                                    spots["BANKNIFTY"] = ltp
-                                elif "FINNIFTY" in sym:
-                                    spots["FINNIFTY"] = ltp
-                                elif "MIDCP" in sym:
-                                    spots["MIDCPNIFTY"] = ltp
-                                elif "SENSEX" in sym:
-                                    spots["SENSEX"] = ltp
-                                elif "VIX" in sym:
-                                    spots["INDIAVIX"] = ltp
+            # Check if feed is degraded
+            if quotes.get("is_degraded") or not spots.get("NIFTY") or not spots.get("BANKNIFTY"):
+                logger.warning("🚨 Shadow Scanner: Live broker feed degraded. Suppressing fabricated spot approximations.")
+                spots["status"] = "DEGRADED"
+                spots["data_source"] = quotes.get("data_source", "DEGRADED_BROKER_FEED_UNAVAILABLE")
+                return spots
+
+            spots["status"] = "LIVE"
+            spots["data_source"] = quotes.get("data_source", "live_broker_feed")
+            return spots
         except Exception as e:
-            logger.debug(f"Engine C quote query notice: {e}")
-
-        # 2. Ultra-Fast Real-Time Live Market Feed Resolver (< 200ms)
-        missing_symbols = [s for s in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"] if s not in spots or spots[s] <= 0]
-        if missing_symbols:
-            import urllib.request, json
-            ticker_map = {
-                "NIFTY": "^NSEI",
-                "BANKNIFTY": "^NSEBANK",
-                "SENSEX": "^BSESN",
-                "INDIAVIX": "^INDIAVIX"
-            }
-            for k in missing_symbols:
-                sym_code = ticker_map.get(k)
-                if not sym_code:
-                    continue
-                try:
-                    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_code}?interval=1m&range=1d"
-                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-                    with urllib.request.urlopen(req, timeout=3.0) as resp:
-                        raw_data = json.loads(resp.read().decode("utf-8"))
-                        meta = raw_data["chart"]["result"][0]["meta"]
-                        price = meta.get("regularMarketPrice") or meta.get("chartPreviousClose")
-                        if price and float(price) > 0:
-                            spots[k] = round(float(price), 2)
-                except Exception as ex:
-                    logger.debug(f"Direct quote fetch notice for {k}: {ex}")
-
-        # 3. Derived index approximations if any missing
-        if "SENSEX" not in spots or spots["SENSEX"] <= 0:
-            if "NIFTY" in spots and spots["NIFTY"] > 0:
-                spots["SENSEX"] = round(spots["NIFTY"] * 3.20, 2)
-        if "FINNIFTY" not in spots or spots["FINNIFTY"] <= 0:
-            if "BANKNIFTY" in spots and spots["BANKNIFTY"] > 0:
-                spots["FINNIFTY"] = round(spots["BANKNIFTY"] * 0.445, 2)
-        if "MIDCPNIFTY" not in spots or spots["MIDCPNIFTY"] <= 0:
-            if "NIFTY" in spots and spots["NIFTY"] > 0:
-                spots["MIDCPNIFTY"] = round(spots["NIFTY"] * 0.54, 2)
-        if "INDIAVIX" not in spots or spots["INDIAVIX"] <= 0:
-            spots["INDIAVIX"] = 11.65
-
-        return spots
+            logger.error(f"Error fetching live spot prices in shadow scanner: {e}")
+            return {"status": "ERROR", "data_source": "UNAVAILABLE"}
 
     async def _fetch_engine_b_signals(self) -> List[Dict[str, Any]]:
         """Queries Engine B for batch signals"""

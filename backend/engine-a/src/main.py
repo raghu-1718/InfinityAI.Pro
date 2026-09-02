@@ -1905,6 +1905,7 @@ async def trigger_premarket_briefing():
 
 
 @app.post("/api/v1/market/regime-heartbeat")
+@app.get("/api/v1/market/regime-heartbeat")
 async def trigger_market_regime_heartbeat():
     """
     Triggers the scheduled Market Regime & Volatility Heartbeat digest (10:30, 12:00, 14:00 IST).

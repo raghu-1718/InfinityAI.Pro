@@ -346,6 +346,7 @@ async def update_dhan_credentials(req: DhanCredentialUpdateRequest):
 # 6. Live Market Quotes (/api/dhan/market/quotes)
 # ==============================================================================
 @data_router.get("/api/dhan/market/quotes")
+@data_router.get("/api/dhan/quotes/live")
 async def get_market_quotes(
     security_ids: Optional[str] = Query(None, description="Comma-separated security IDs"),
     exchange_segment: Optional[str] = Query(None, description="Exchange segment (Defaults to IDX_I if not passed)"),
@@ -590,6 +591,7 @@ async def get_volatility_surface_summary(symbol: str = "NIFTY"):
 # 8. Historical Chart Data (/api/dhan/market/historical)
 # ==============================================================================
 @data_router.get("/api/dhan/market/historical")
+@data_router.get("/api/dhan/historical")
 async def get_historical_data(
     security_id: str = Query("13", description="Security ID"),
     exchange_segment: str = Query("IDX_I", description="Exchange segment"),

@@ -64,7 +64,7 @@ class MarketRegimeHeartbeatService:
                 try:
                     resp = await client.get(
                         f"{base_url}/api/dhan/market/quotes",
-                        params={"security_ids": "13,25,51,21", "exchange_segment": "IDX_I"}
+                        params={"security_ids": "13,25,51,21,27,28", "exchange_segment": "IDX_I"}
                     )
                     if resp.status_code == 200:
                         raw_data = resp.json()
@@ -80,12 +80,14 @@ class MarketRegimeHeartbeatService:
                             idx_data = d.get("idx_i", {})
                         
                         # Security ID mapping dictionary:
-                        # 13: NIFTY 50, 25: BANKNIFTY, 51: SENSEX, 21: INDIA VIX
+                        # 13: NIFTY 50, 25: BANKNIFTY, 51: SENSEX, 21: INDIA VIX, 27: FINNIFTY, 28: MIDCPNIFTY
                         id_map = {
                             "13": "NIFTY",
                             "25": "BANKNIFTY",
                             "51": "SENSEX",
-                            "21": "INDIAVIX"
+                            "21": "INDIAVIX",
+                            "27": "FINNIFTY",
+                            "28": "MIDCPNIFTY"
                         }
                         
                         for sec_id, key in id_map.items():

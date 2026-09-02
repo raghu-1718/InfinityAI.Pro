@@ -1328,43 +1328,11 @@ class MarketDataEngine:
         return df, source
 
     def _generate_synthetic_data(self, symbol: str, days: int) -> pd.DataFrame:
-        """Generate realistic synthetic OHLCV data"""
-        np.random.seed(hash(symbol) % 2**32)
-
-        base_prices = {
-            "NIFTY": 24455.75, "BANKNIFTY": 57375.10, "FINNIFTY": 26393.45,
-            "RELIANCE": 2900, "TCS": 4200, "HDFCBANK": 1700,
-            "INFY": 1850, "ICICIBANK": 1280, "ITC": 470,
-            "SBIN": 820, "TATAMOTORS": 980
-        }
-        base_price = base_prices.get(symbol, 1000)
-
-        dates = pd.date_range(end=datetime.now(), periods=days, freq='B')
-        returns = np.random.normal(0.0005, 0.015, days)
-
-        prices = [base_price]
-        for r in returns[1:]:
-            prices.append(prices[-1] * (1 + r))
-
-        data = []
-        for date, close in zip(dates, prices):
-            daily_range = close * np.random.uniform(0.01, 0.025)
-            high = close + daily_range * np.random.uniform(0.3, 0.7)
-            low = close - daily_range * np.random.uniform(0.3, 0.7)
-            open_price = low + (high - low) * np.random.uniform(0.2, 0.8)
-            volume = int(np.random.uniform(500000, 5000000))
-
-            data.append({
-                'open': round(open_price, 2),
-                'high': round(high, 2),
-                'low': round(low, 2),
-                'close': round(close, 2),
-                'volume': volume
-            })
-
-        df = pd.DataFrame(data, index=dates)
-        df.index.name = 'Date'
-        return df
+        """DEPRECATED: Synthetic market data generation is strictly prohibited in production."""
+        raise RuntimeError(
+            f"Synthetic market data generation for {symbol} is prohibited in production. "
+            "Authoritative live quotes or BigQuery partitions are required."
+        )
 
     def add_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -2620,6 +2588,50 @@ async def generate_batch_signals(request: BatchSignalsRequest, auth: bool = Depe
     })
 
 
+@app.get("/api/v1/signals")
+async def get_latest_signals(limit: int = 10, symbol: Optional[str] = None):
+    """
+    Retrieve latest AI signals directly from Firestore signals collection.
+    Provides verified live signals to frontend dashboards without mock/demo fallbacks.
+    """
+    try:
+        fdb = get_firestore_db()
+        if not fdb:
+            return clean_floats({
+                "status": "degraded",
+                "signals": [],
+                "total": 0,
+                "message": "Firestore unavailable",
+                "timestamp": datetime.utcnow().isoformat()
+            })
+
+        from google.cloud import firestore
+        query = fdb.collection('signals')
+        if symbol:
+            query = query.where('symbol', '==', symbol.upper())
+
+        docs = list(query.order_by("stored_at", direction=firestore.Query.DESCENDING).limit(limit).stream())
+        signals = []
+        for d in docs:
+            item = d.to_dict()
+            item["id"] = d.id
+            signals.append(item)
+
+        return clean_floats({
+            "status": "success",
+            "signals": signals,
+            "total": len(signals),
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.warning(f"Failed to query signals collection: {e}")
+        return clean_floats({
+            "status": "degraded",
+            "signals": [],
+            "total": 0,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        })
 
 
 @app.post("/api/v1/signals/instruments")
