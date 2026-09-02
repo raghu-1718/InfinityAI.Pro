@@ -124,17 +124,12 @@ class MarketRegimeHeartbeatService:
             except Exception as fe:
                 logger.error(f"Firestore fallback lookup failed: {fe}")
         
-        # Absolute safety invariants: Never return None to callers
-        if spot_prices["NIFTY"] is None:
-            spot_prices["NIFTY"] = 23914.45  # Official September 2026 anchor
-            spot_prices["data_source"] = "anchor_baseline"
-        if spot_prices["BANKNIFTY"] is None:
-            spot_prices["BANKNIFTY"] = 57172.00  # Official September 2026 anchor
-            spot_prices["data_source"] = "anchor_baseline"
-        if spot_prices["SENSEX"] is None:
-            spot_prices["SENSEX"] = 76570.35  # Official September 2026 anchor
-        if spot_prices["INDIAVIX"] is None:
-            spot_prices["INDIAVIX"] = 11.59  # Official September 2026 anchor
+        # Explicit degraded-state handling: If both live feed and Firestore cache failed,
+        # never fabricate fictitious prices. Flag degraded mode explicitly.
+        if spot_prices["NIFTY"] is None or spot_prices["BANKNIFTY"] is None:
+            spot_prices["data_source"] = "DEGRADED_BROKER_FEED_UNAVAILABLE"
+            spot_prices["is_degraded"] = True
+            logger.critical("🚨 CRITICAL: Live market quotes unavailable from Engine C and Firestore cache. Entering degraded mode.")
 
         return spot_prices
 
@@ -203,10 +198,11 @@ class MarketRegimeHeartbeatService:
 
         # 1. Fetch live market quotes
         quotes = await self._fetch_live_market_quotes()
-        nifty = quotes.get("NIFTY") or 23914.45
-        banknifty = quotes.get("BANKNIFTY") or 57172.00
-        sensex = quotes.get("SENSEX") or 76570.35
-        vix = quotes.get("INDIAVIX") or 11.59
+        is_degraded = quotes.get("is_degraded", False)
+        nifty = quotes.get("NIFTY")
+        banknifty = quotes.get("BANKNIFTY")
+        sensex = quotes.get("SENSEX")
+        vix = quotes.get("INDIAVIX")
         data_src = quotes.get("data_source", "live_broker_feed")
 
         # 2. Fetch Engine B telemetry
@@ -215,7 +211,15 @@ class MarketRegimeHeartbeatService:
         vetoes = telemetry.get("active_vetoes", [])
 
         # 3. Classify Regime & Guidance
-        if vix > 22.0:
+        if is_degraded or nifty is None or banknifty is None:
+            regime = "DATA_FEED_DEGRADED"
+            badge = "BROKER FEED OFFLINE"
+            guidance = "Live broker quote feed unavailable. Automated trade executions halted to protect capital."
+            nifty = float(nifty or 0.0)
+            banknifty = float(banknifty or 0.0)
+            sensex = float(sensex or 0.0)
+            vix = float(vix or 0.0)
+        elif vix > 22.0:
             regime = "HIGH_VOLATILITY_TURBULENCE"
             badge = "BLACK SWAN ELEVATED"
             guidance = "Elevated India VIX. Dynamic risk dampers & wide trailing profit locks engaged."

@@ -16,26 +16,40 @@ class BrokerRateLimiter:
     """
     Async rate limiter ensuring no more than `max_rate` calls per `time_period` seconds.
     Standardized to 9 req/s for DhanHQ API compliance.
+    Loop-safe: dynamically maintains per-event-loop limiters to avoid cross-loop
+    re-use warnings and race conditions across async test and service lifecycles.
     """
 
     def __init__(self, max_rate: int = 9, time_period: float = 1.0):
         self.max_rate = max_rate
         self.time_period = time_period
-        if AsyncLimiter is not None:
-            self._limiter = AsyncLimiter(max_rate=max_rate, time_period=time_period)
-        else:
-            self._limiter = None
-            self._tokens = float(max_rate)
-            self._last_refill = time.monotonic()
-            self._lock = asyncio.Lock()
+        self._limiters = {}
+        self._tokens = float(max_rate)
+        self._last_refill = time.monotonic()
+        self._lock: Optional[asyncio.Lock] = None
+
+    def _get_limiter(self):
+        if AsyncLimiter is None:
+            return None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        loop_id = id(loop) if loop is not None else 0
+        if loop_id not in self._limiters:
+            self._limiters[loop_id] = AsyncLimiter(max_rate=self.max_rate, time_period=self.time_period)
+        return self._limiters[loop_id]
 
     async def acquire(self) -> None:
         """Acquire permission to make one request."""
-        if self._limiter is not None:
-            await self._limiter.acquire()
+        limiter = self._get_limiter()
+        if limiter is not None:
+            await limiter.acquire()
             return
 
         # Fallback async token bucket
+        if self._lock is None:
+            self._lock = asyncio.Lock()
         async with self._lock:
             now = time.monotonic()
             elapsed = now - self._last_refill

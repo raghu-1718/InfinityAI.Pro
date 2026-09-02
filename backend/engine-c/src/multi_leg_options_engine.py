@@ -48,14 +48,40 @@ def get_user_credentials_manager():
             logger.warning(f"UserCredentialsManager initialization deferred: {e}")
     return _user_credentials_manager
 
-try:
-    from aiolimiter import AsyncLimiter
-    RATE_LIMITER = AsyncLimiter(9, 1.0)
-except ImportError:
-    class DummyLimiter:
-        async def __aenter__(self): pass
-        async def __aexit__(self, *args): pass
-    RATE_LIMITER = DummyLimiter()
+class LoopSafeAsyncLimiter:
+    """Loop-safe wrapper around AsyncLimiter preventing cross-loop re-use warnings."""
+    def __init__(self, max_rate: int = 9, time_period: float = 1.0):
+        self.max_rate = max_rate
+        self.time_period = time_period
+        self._limiters = {}
+
+    def _get_limiter(self):
+        try:
+            from aiolimiter import AsyncLimiter
+        except ImportError:
+            return None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        lid = id(loop) if loop else 0
+        if lid not in self._limiters:
+            self._limiters[lid] = AsyncLimiter(max_rate=self.max_rate, time_period=self.time_period)
+        return self._limiters[lid]
+
+    async def acquire(self):
+        lim = self._get_limiter()
+        if lim:
+            await lim.acquire()
+
+    async def __aenter__(self):
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, *args):
+        pass
+
+RATE_LIMITER = LoopSafeAsyncLimiter(9, 1.0)
 
 logger = logging.getLogger("InfinityAI.MultiLegOptionsEngine")
 

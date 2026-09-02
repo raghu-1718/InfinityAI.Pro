@@ -1950,9 +1950,20 @@ async def get_options_volatility_surface(symbol: str = "NIFTY", dte: float = 3.0
         spot = quotes.get(symbol.upper())
         
         if not spot or float(spot) <= 0:
-            # Verified anchor fallback
-            anchors = {"NIFTY": 23914.45, "BANKNIFTY": 57172.00, "FINNIFTY": 23180.0, "SENSEX": 76570.35}
-            spot = anchors.get(symbol.upper(), 23914.45)
+            # Fallback to previously computed surface in Firestore
+            try:
+                from google.cloud import firestore
+                db = firestore.Client(project=os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920"))
+                doc = db.collection("options_volatility_surface").document(symbol.upper()).get()
+                if doc.exists:
+                    cached_data = doc.to_dict()
+                    spot = cached_data.get("spot_price")
+                    quotes["data_source"] = f"cached_surface_{doc.id}"
+            except Exception as fe:
+                logger.warning(f"Firestore surface fallback lookup notice: {fe}")
+
+            if not spot or float(spot) <= 0:
+                raise HTTPException(status_code=503, detail=f"Live broker quote unavailable for {symbol.upper()} and no cached surface exists.")
         
         surface = OPTIONS_GREEKS_ENGINE.generate_volatility_surface(
             symbol=symbol.upper(),

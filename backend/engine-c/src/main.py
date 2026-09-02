@@ -32,11 +32,45 @@ from src.dhan_client_wrapper import DhanClient, create_dhan_client, DhanEnvironm
 import uvicorn
 import uuid
 from src.activity_logger import ActivityLogger
-from aiolimiter import AsyncLimiter
+try:
+    from aiolimiter import AsyncLimiter
+except ImportError:
+    AsyncLimiter = None
 
-# Define a global rate limiter: Max 9 requests per 1 second
+class LoopSafeAsyncLimiter:
+    """Loop-safe wrapper around AsyncLimiter preventing cross-loop re-use warnings."""
+    def __init__(self, max_rate: int = 9, time_period: float = 1.0):
+        self.max_rate = max_rate
+        self.time_period = time_period
+        self._limiters = {}
+
+    def _get_limiter(self):
+        if AsyncLimiter is None:
+            return None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        lid = id(loop) if loop else 0
+        if lid not in self._limiters:
+            self._limiters[lid] = AsyncLimiter(max_rate=self.max_rate, time_period=self.time_period)
+        return self._limiters[lid]
+
+    async def acquire(self):
+        lim = self._get_limiter()
+        if lim:
+            await lim.acquire()
+
+    async def __aenter__(self):
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, *args):
+        pass
+
+# Define a loop-safe global rate limiter: Max 9 requests per 1 second
 # (Set to 9 to leave a 10% safety margin below Dhan's 10 req/s limit)
-dhan_rate_limiter = AsyncLimiter(max_rate=9, time_period=1)
+dhan_rate_limiter = LoopSafeAsyncLimiter(max_rate=9, time_period=1)
 
 # Import new unified APIs
 try:

@@ -319,16 +319,26 @@ class AlertDispatcher:
 
             veto_str = ", ".join(active_vetoes) if active_vetoes else "None"
 
+            if nifty_spot <= 0:
+                spot_lines = (
+                    "   ⚠️ *Broker Feed Offline:* Spot quotes temporarily unavailable\n"
+                    "   🛑 *Execution Guardrail:* New orders blocked to prevent mispriced fills"
+                )
+            else:
+                spot_lines = (
+                    f"   • *NIFTY 50:* `₹{nifty_spot:,.2f}`\n"
+                    f"   • *BANKNIFTY:* `₹{banknifty_spot:,.2f}`\n"
+                    f"   • *SENSEX:* `₹{sensex_spot:,.2f}`\n"
+                    f"   • *INDIA VIX:* `{vix:.2f}`"
+                )
+
             tg_text = (
                 f"⚡ *INFINITY AI — HOURLY MARKET REGIME RADAR*\n"
                 f"⏱️ *Time:* `{time_ist}`\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📊 *Market Regime:* *{regime}* (`{status_badge}`)\n"
                 f"📍 *Index Spot Prices:*\n"
-                f"   • *NIFTY 50:* `₹{nifty_spot:,.2f}`\n"
-                f"   • *BANKNIFTY:* `₹{banknifty_spot:,.2f}`\n"
-                f"   • *SENSEX:* `₹{sensex_spot:,.2f}`\n"
-                f"   • *INDIA VIX:* `{vix:.2f}`\n"
+                f"{spot_lines}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🛡️ *Volatility Filter:* Avg ADX `{adx_avg:.1f}` | Active Veto: `{veto_str}`\n"
                 f"💡 *Actionable Directive:* {guidance}\n"

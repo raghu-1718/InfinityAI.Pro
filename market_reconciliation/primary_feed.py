@@ -24,12 +24,12 @@ class PrimaryMarketFeed:
         async with broker_rate_limiter:
             # Baseline reference prices for Indian indices / options
             base_prices = {
-                "NIFTY": 24535.50,
-                "BANKNIFTY": 51480.20,
-                "FINNIFTY": 23150.00,
+                "NIFTY": 23914.45,
+                "BANKNIFTY": 57172.00,
+                "FINNIFTY": 23180.00,
             }
             symbol_upper = symbol.upper()
-            base = base_prices.get(symbol_upper, 24500.0)
+            base = base_prices.get(symbol_upper, 23914.45)
 
             # In production, invokes dhan_client.get_market_quote()
             # Here returns high-fidelity simulated/live tick

@@ -25,11 +25,11 @@ class SecondaryMarketFeed:
         symbol_upper = symbol.upper()
         # Reference prices aligning with primary feed with slight natural market spread
         base_prices = {
-            "NIFTY": 24538.00,       # +0.01% spread from 24535.50
-            "BANKNIFTY": 51485.00,   # +0.009% spread
-            "FINNIFTY": 23152.50
+            "NIFTY": 23916.50,       # +0.008% spread from 23914.45
+            "BANKNIFTY": 57177.00,   # +0.008% spread from 57172.00
+            "FINNIFTY": 23182.50
         }
-        base = base_prices.get(symbol_upper, 24500.0)
+        base = base_prices.get(symbol_upper, 23914.45)
 
         return {
             "source": "secondary_independent",
