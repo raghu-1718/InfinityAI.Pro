@@ -30,6 +30,7 @@ import { useAppStore } from "@/lib/store";
 
 const NAVIGATION = [
   { name: "Portfolio", href: "/portfolio", icon: PieChart },
+  { name: "Analytics & Quant", href: "/analytics", icon: BarChart3 },
   { name: "Trading", href: "/trading", icon: Zap },
   { name: "AI Signals", href: "/signals", icon: Activity },
   { name: "Intelligence", href: "/intelligence", icon: Brain },
