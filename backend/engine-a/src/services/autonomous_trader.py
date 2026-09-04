@@ -9,6 +9,8 @@ from typing import List, Dict, Any, Optional
 from src.services.risk_manager import RiskManager
 from src.services.circuit_breaker import CircuitBreaker, TradingHalted
 from src.services.audit_logger import AuditLogger
+from src.services.mtf_confluence_filter import MTF_CONFLUENCE_FILTER
+from src.services.options_oi_acceleration_tracker import OI_ACCELERATION_TRACKER
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,16 @@ ENGINE_C_URL = _get_env("ENGINE_C_URL", "http://engine-c:8080")
 
 # Data Freshness Enforcement (Phase-5 Security Fix)
 MAX_SIGNAL_AGE = timedelta(minutes=5)  # Reject signals older than 5 minutes
+
+def _get_oidc_token(target_audience: str) -> Optional[str]:
+    """Generates Google Cloud IAM OIDC JWT token for service-to-service auth"""
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2 import id_token
+        auth_req = Request()
+        return id_token.fetch_id_token(auth_req, target_audience)
+    except Exception:
+        return None
 
 class AutonomousTrader:
     """
@@ -294,21 +306,58 @@ class AutonomousTrader:
         if not self.validate_signal_freshness(signal):
             return
 
+        current_price = float(signal.get("current_price") or 1000.0)
+
+        # ---------------------------------------------------------
+        # ALPHA FILTER 1: MULTI-TIMEFRAME CONFLUENCE GATE (1m, 5m, 15m)
+        # ---------------------------------------------------------
+        confluence_res = MTF_CONFLUENCE_FILTER.evaluate_confluence(
+            symbol=symbol,
+            signal_type=signal_type,
+            current_price=current_price,
+            indicators_snapshot=signal
+        )
+        if not confluence_res.get("is_approved", True):
+            score = confluence_res.get("confluence_score", 0.0)
+            status = confluence_res.get("action_status", "BLOCKED_CHOP_FILTER")
+            logger.warning(f"🛑 ALPHA FILTER: MTF Confluence Gate rejected {signal_type} {symbol} - Score {score:.1%} < 65.0% ({status})")
+            self.audit_logger.log_trade_rejected(uid, symbol, "BLOCKED_MTF_CONFLUENCE", confluence_res)
+            return
+
+        # ---------------------------------------------------------
+        # ALPHA FILTER 2: RESTRICTED OI ACCELERATION & INSTITUTIONAL WALL GATE
+        # ---------------------------------------------------------
+        strikes_oi = signal.get("strikes_oi") or signal.get("options_chain") or []
+        oi_res = OI_ACCELERATION_TRACKER.evaluate_oi_velocity(
+            symbol=symbol,
+            spot_price=current_price,
+            current_strikes_oi=strikes_oi
+        )
+        conviction_mult = float(oi_res.get("conviction_multiplier", 1.0))
+        is_call_side = "CALL" in signal_type.upper() or "BUY" in signal_type.upper()
+
+        if is_call_side and oi_res.get("call_wall_detected"):
+            logger.info(f"⚡ ALPHA FILTER: Overhead Call Wall hardening inside [{oi_res.get('scan_window')}] for {symbol} -> conviction scaled to {conviction_mult}x")
+        elif not is_call_side and oi_res.get("put_wall_detected"):
+            logger.info(f"⚡ ALPHA FILTER: Underlying Put Wall hardening inside [{oi_res.get('scan_window')}] for {symbol} -> conviction scaled to {conviction_mult}x")
+        elif is_call_side and oi_res.get("put_wall_detected"):
+            logger.info(f"🚀 ALPHA FILTER: Underlying Put Support floor confirmed for {symbol} -> conviction boosted to {conviction_mult}x")
+
         # ---------------------------------------------------------
         # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE (Zero Hardcoded Stop Loss)
         # ---------------------------------------------------------
         user_capital = float(self.config.get("capital", 10000.0))
         max_risk_trade = float(self.config.get("max_risk_per_trade", 0.10))
+        effective_risk = max(0.01, min(0.15, max_risk_trade * conviction_mult))
         min_sl_pct = float(self.config.get("stop_loss_pct")) if self.config.get("stop_loss_pct") else None
         min_target_pct = float(self.config.get("target_profit_pct", 0.15))
 
-        current_price = float(signal.get("current_price") or 1000.0)
         # Option Buying Premium calculation (approx 1.1% of spot if index)
         est_premium = float(signal.get("predicted_price", current_price * 0.011)) if current_price > 500 else current_price
 
         margin_sizing = self.risk_manager.calculate_margin_aware_lot_size(
             capital=user_capital,
-            risk_per_trade=max_risk_trade,
+            risk_per_trade=effective_risk,
             stop_loss_pct=min_sl_pct,
             symbol=symbol,
             premium=est_premium,
@@ -374,16 +423,6 @@ class AutonomousTrader:
         # ---------------------------------------------------------
         logger.info(f"✅ Trade APPROVED: {signal_type} {safe_quantity} {symbol} (₹{order_value:,.2f} | Net ROI: {profitability.get('net_roi', 0):.2%}). Sending to Execution Engine.")
         await self._execute_trade(symbol, signal_type, safe_quantity, signal, trace_id, order_value, risk_res)
-
-def _get_oidc_token(target_audience: str) -> Optional[str]:
-    """Generates Google Cloud IAM OIDC JWT token for service-to-service auth"""
-    try:
-        from google.auth.transport.requests import Request
-        from google.oauth2 import id_token
-        auth_req = Request()
-        return id_token.fetch_id_token(auth_req, target_audience)
-    except Exception:
-        return None
 
     async def resolve_optimal_option_strike(self, underlying_symbol: str, underlying_spot: float, option_type: str) -> Optional[dict]:
         """

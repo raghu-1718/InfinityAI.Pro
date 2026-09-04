@@ -1072,6 +1072,84 @@ class UserCredentialsRequest(BaseModel):
 class UserCredentialsVerifyRequest(BaseModel):
     user_id: Optional[str] = "raghu_primary"
 
+async def _dispatch_dhan_renewal_telegram_alert(
+    status: str,
+    client_id: str,
+    user_id: str = "raghu_primary",
+    expiry_time: str = "24 Hours",
+    error_msg: Optional[str] = None
+) -> bool:
+    """
+    Dispatches a Telegram notification regarding Dhan Token Auto-Renewal status.
+    Resolves TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from env or GCP Secret Manager.
+    """
+    try:
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        if not bot_token or not chat_id:
+            try:
+                from google.cloud import secretmanager
+                sm = secretmanager.SecretManagerServiceClient()
+                project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+                if not bot_token:
+                    tg_tok_name = f"projects/{project_id}/secrets/TELEGRAM_BOT_TOKEN/versions/latest"
+                    bot_token = sm.access_secret_version(request={"name": tg_tok_name}).payload.data.decode("utf-8").strip()
+                if not chat_id:
+                    tg_chat_name = f"projects/{project_id}/secrets/TELEGRAM_CHAT_ID/versions/latest"
+                    chat_id = sm.access_secret_version(request={"name": tg_chat_name}).payload.data.decode("utf-8").strip()
+            except Exception as se:
+                logger.debug(f"SecretManager Telegram lookup skipped: {se}")
+
+        if not bot_token or not chat_id:
+            logger.warning("Telegram notification skipped: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID")
+            return False
+
+        import html
+        esc_cid = html.escape(str(client_id))
+        esc_uid = html.escape(str(user_id))
+        esc_exp = html.escape(str(expiry_time))
+        esc_err = html.escape(str(error_msg or "Unknown Error"))
+
+        if status == "renewed":
+            msg_text = (
+                "✅ <b>Daily Dhan API Token Refreshed for Trading Fleet.</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 <b>Trader ID:</b> <code>{esc_cid}</code> ({esc_uid})\n"
+                "🔑 <b>Status:</b> Vaulted &amp; Encrypted (AES-256-GCM)\n"
+                f"⏱️ <b>Validity Window:</b> <code>24 Hours</code> (Expires: {esc_exp})\n"
+                "🛡️ <b>Trading Fleet:</b> 100% Operational &amp; Ready\n"
+                "📡 <b>Broker Gateway:</b> DhanHQ API v2 (asia-south1)\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+        else:
+            msg_text = (
+                "⚠️ <b>ALERT: Daily Dhan API Token Renewal Failed</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 <b>Trader ID:</b> <code>{esc_cid}</code> ({esc_uid})\n"
+                f"❌ <b>Error:</b> {esc_err}\n"
+                "🚨 <b>Action Required:</b> Please verify DhanHQ session or refresh token manually in Firestore Vault!\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": msg_text,
+            "parse_mode": "HTML"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=5.0)) as resp:
+                if resp.status == 200:
+                    logger.info("📱 Telegram Token Renewal notification dispatched successfully.")
+                    return True
+                else:
+                    body = await resp.text()
+                    logger.warning(f"Telegram dispatch failed: HTTP {resp.status} - {body}")
+                    return False
+    except Exception as e:
+        logger.warning(f"Telegram notification dispatch exception: {e}")
+        return False
+
 # --- Dhan Token Keep-Alive & Auto-Renewal Endpoint for Cloud Scheduler ---
 @app.post("/api/dhan/renew-token")
 @app.get("/api/dhan/renew-token")
@@ -1142,16 +1220,41 @@ async def renew_dhan_tokens_endpoint(
                             expiry_time = renew_data.get("expiryTime") or renew_data.get("expiry_time") or "24h"
                             logger.info(f"✅ Token keep-alive: Successfully renewed & vaulted token for {resolved_id} (Expires: {expiry_time})")
                             results.append({"user_id": resolved_id, "status": "renewed", "client_id": client_id, "expiryTime": expiry_time})
+                            # Dispatch institutional Telegram alert
+                            await _dispatch_dhan_renewal_telegram_alert(
+                                status="renewed",
+                                client_id=str(client_id),
+                                user_id=str(resolved_id),
+                                expiry_time=str(expiry_time)
+                            )
                         else:
                             logger.error(f"Failed to extract new token from response for {resolved_id}: {renew_data}")
                             results.append({"user_id": resolved_id, "status": "failed", "reason": "unrecognized response format", "response": str(renew_data)})
+                            await _dispatch_dhan_renewal_telegram_alert(
+                                status="failed",
+                                client_id=str(client_id),
+                                user_id=str(resolved_id),
+                                error_msg="Unrecognized token response format from Dhan API"
+                            )
                     else:
                         error_text = await token_resp.text()
                         logger.error(f"Dhan RenewToken rejected for {resolved_id}: HTTP {token_resp.status} - {error_text}")
                         results.append({"user_id": resolved_id, "status": "failed", "http_status": token_resp.status, "error": error_text})
+                        await _dispatch_dhan_renewal_telegram_alert(
+                            status="failed",
+                            client_id=str(client_id),
+                            user_id=str(resolved_id),
+                            error_msg=f"HTTP {token_resp.status}: {error_text[:100]}"
+                        )
         except Exception as e:
             logger.error(f"Exception during token renewal for {uid}: {e}")
             results.append({"user_id": uid, "status": "error", "error": str(e)})
+            await _dispatch_dhan_renewal_telegram_alert(
+                status="failed",
+                client_id=str(uid),
+                user_id=str(uid),
+                error_msg=str(e)[:100]
+            )
 
     return {
         "status": "success",

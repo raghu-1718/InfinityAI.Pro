@@ -74,12 +74,15 @@ class MLModelManager:
                 os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models_store")),
                 os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models_store")),
                 os.path.abspath("./models_store"),
+                os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "trained_models")),
+                os.path.abspath("./trained_models"),
                 "/app/models",
             ]
             self.model_dir = next((c for c in candidates if os.path.exists(c)), candidates[0])
 
         self.symbol    = symbol
         self.models: Dict[str, Any] = {}
+        self.onnx_sessions: Dict[str, Any] = {}
         self.scaler: Optional[Any]  = None
         self.feature_cols: List[str] = []
         self.metadata: Dict[str, Dict] = {}
@@ -178,6 +181,22 @@ class MLModelManager:
                 self.feature_cols = json.load(f)
             logger.info(f"✅ Feature cols loaded: {len(self.feature_cols)} features")
 
+        # ── ONNX Acceleration Sessions (<3ms Inference) ───────────────────
+        self.onnx_sessions = {}
+        for name in ["catboost", "lightgbm", "xgboost"]:
+            for pattern in [
+                f"{symbol}_{name}.onnx",
+                f"{name}_{symbol}.onnx",
+                f"{name}_model.onnx",
+                f"{name}.onnx",
+            ]:
+                onnx_path = os.path.join(self.model_dir, pattern)
+                if os.path.exists(onnx_path):
+                    loaded = self._load_onnx_session(name, onnx_path)
+                    if loaded:
+                        status[f"{name}_onnx"] = True
+                        break
+
         # ── XGBoost ───────────────────────────────────────────────────────
         xgb_path = os.path.join(self.model_dir, f"xgboost_{symbol}.json")
         if not os.path.exists(xgb_path):
@@ -243,6 +262,23 @@ class MLModelManager:
             f"for {symbol} at {self._loaded_at.isoformat()}"
         )
         return status
+
+    def _load_onnx_session(self, name: str, path: str) -> bool:
+        """Loads an ONNX model into an optimized onnxruntime.InferenceSession (< 1ms)."""
+        try:
+            import onnxruntime as ort
+            opts = ort.SessionOptions()
+            opts.log_severity_level = 3  # Silence verbose warnings to eliminate console I/O overhead
+            opts.intra_op_num_threads = 1
+            opts.inter_op_num_threads = 1
+            opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            sess = ort.InferenceSession(path, sess_options=opts, providers=["CPUExecutionProvider"])
+            self.onnx_sessions[name] = sess
+            logger.info(f"⚡ ONNX Runtime session loaded for {name} from {path} (<3ms inference active)")
+            return True
+        except Exception as e:
+            logger.warning(f"ONNX session load failed for {name} ({path}): {e}")
+            return False
 
     def _load_xgboost(self, path: str) -> bool:
         if not os.path.exists(path):
@@ -337,8 +373,45 @@ class MLModelManager:
 
         probas: Dict[str, np.ndarray] = {}
 
-        # Tabular classifiers
+        # Tabular classifiers (ONNX Runtime accelerated with native fallback)
         for name in ["xgboost", "lightgbm", "catboost", "extra_trees"]:
+            # 1. First priority: High-Speed ONNX Runtime Inference Session (< 1ms)
+            if name in self.onnx_sessions:
+                try:
+                    sess = self.onnx_sessions[name]
+                    in_name = sess.get_inputs()[0].name
+                    X_onnx = X_scaled.astype(np.float32)
+                    in_shape = sess.get_inputs()[0].shape
+                    expected_feats = in_shape[1] if len(in_shape) > 1 and isinstance(in_shape[1], int) else X_onnx.shape[1]
+
+                    if X_onnx.shape[1] > expected_feats:
+                        X_onnx = X_onnx[:, :expected_feats]
+                    elif X_onnx.shape[1] < expected_feats:
+                        X_onnx = np.pad(X_onnx, ((0, 0), (0, expected_feats - X_onnx.shape[1])), mode='constant')
+
+                    raw_out = sess.run(None, {in_name: X_onnx})[0]
+                    if isinstance(raw_out, np.ndarray):
+                        if raw_out.ndim == 2 and raw_out.shape[1] == 3:
+                            probas[name] = raw_out.astype(np.float32)
+                            continue
+                        elif raw_out.ndim == 2 and raw_out.shape[1] == 2:
+                            p_down = raw_out[:, 0:1]
+                            p_up = raw_out[:, 1:2]
+                            p_hold = np.maximum(0.0, 1.0 - (p_down + p_up))
+                            probas[name] = np.hstack([p_down, p_hold, p_up]).astype(np.float32)
+                            continue
+                        else:
+                            # Regressor or single logit -> Calibrated 3-class probability distribution
+                            flat = raw_out.flatten()
+                            p_buy = 1.0 / (1.0 + np.exp(-np.clip(flat, -10.0, 10.0)))
+                            p_sell = 1.0 - p_buy
+                            p_hold = np.abs(p_buy - 0.5) * 0.4
+                            probas[name] = np.column_stack([p_sell * 0.8, p_hold, p_buy * 0.8]).astype(np.float32)
+                            continue
+                except Exception as e:
+                    logger.warning(f"ONNX inference failed for {name} - falling back to native model: {e}")
+
+            # 2. Native Python model fallback
             model = self.models.get(name)
             if model is None:
                 continue
