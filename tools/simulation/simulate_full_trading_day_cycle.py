@@ -25,9 +25,9 @@ sys.stderr.reconfigure(encoding='utf-8')
 from google.cloud import firestore, bigquery, storage
 
 PROJECT_ID = "project-841b7f97-5ee3-4fbe-920"
-ENGINE_A_URL = "https://engine-a-r2f5flt77q-el.a.run.app"
-ENGINE_B_URL = "https://engine-b-r2f5flt77q-el.a.run.app"
-ENGINE_C_URL = "https://engine-c-r2f5flt77q-el.a.run.app"
+ENGINE_A_URL = os.getenv("ENGINE_A_URL", "https://engine-a-313407263327.asia-south1.run.app")
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-313407263327.asia-south1.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
 USER_ID = "raghu_primary"
 
 def print_banner(text: str):
