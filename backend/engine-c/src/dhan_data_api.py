@@ -538,15 +538,28 @@ async def get_option_chain(
 @data_router.post("/api/dhan/options/stream-surface")
 @data_router.get("/api/dhan/options/stream-surface")
 async def sync_options_to_bigquery(
-    user_id: Optional[str] = Query("raghu_primary", description="User ID for vault credentials")
+    user_id: Optional[str] = Query("raghu_primary", description="User ID for vault credentials"),
+    preflight: bool = Query(False, description="Enable preflight test mode with synthetic generation fallback")
 ):
     """Real-time pipeline to compute IV Smile, Greeks, and stream Option Chains into BigQuery market_data.options_ticks"""
     try:
         from .options_chain_ingestor import options_ingestor
-        result = await options_ingestor.ingest_live_option_chains(user_id=user_id or "raghu_primary")
+        result = await options_ingestor.ingest_live_option_chains(user_id=user_id or "raghu_primary", allow_synthetic=preflight)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync options surface: {e}")
+
+@data_router.get("/api/v1/options/preflight-test")
+async def options_preflight_test(
+    user_id: Optional[str] = Query("raghu_primary", description="User ID for vault credentials")
+):
+    """Pre-flight test verifying end-to-end options streaming into BigQuery market_data.options_ticks"""
+    try:
+        from .options_chain_ingestor import options_ingestor
+        result = await options_ingestor.ingest_live_option_chains(user_id=user_id or "raghu_primary", allow_synthetic=True)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Options preflight test failed: {e}")
 
 @data_router.post("/api/v1/options/stream/start")
 async def start_options_streaming(

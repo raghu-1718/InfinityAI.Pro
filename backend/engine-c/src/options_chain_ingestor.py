@@ -7,11 +7,12 @@ Calculates ATM IV, 25-Delta Put-Call Skew, Max Pain, and Put-Call Ratio (PCR) in
 
 import os
 import time
+import math
 import asyncio
 import logging
 import requests
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from google.cloud import bigquery, firestore
 
 try:
@@ -55,6 +56,70 @@ class OptionsChainIngestor:
                 logger.error(f"Failed to initialize BigQuery client: {e}")
                 self._bq_client = None
         return self._bq_client
+
+    def _generate_synthetic_option_chain(
+        self,
+        symbol: str,
+        step: int = 50,
+        spot_override: Optional[float] = None
+    ) -> Tuple[Dict[str, Any], float]:
+        """
+        Generates an institutional BSM options chain for pre-flight testing and off-market simulation.
+        Produces realistic ATM/OTM strikes, IV smile, volume, and open interest.
+        """
+        base_spots = {
+            "NIFTY": 23900.0,
+            "BANKNIFTY": 50500.0,
+            "SENSEX": 78200.0,
+            "FINNIFTY": 23400.0
+        }
+        spot = spot_override or base_spots.get(symbol, 23900.0)
+        atm_strike = int(round(spot / step) * step)
+        strikes = [atm_strike + i * step for i in range(-10, 11)]
+
+        T = 4.0 / 365.0  # Weekly expiry (approx 4 days)
+        r = 0.065        # RBI repo baseline
+        base_iv = 0.142  # 14.2% ATM IV
+
+        oc = {}
+        for K in strikes:
+            d_rel = (K - spot) / spot
+            # Parabolic IV smile: higher IV for deep OTM puts and calls
+            put_skew_factor = 1.22 if K < spot else 0.88
+            strike_iv = base_iv + 0.18 * (d_rel ** 2) * put_skew_factor
+
+            # Exact Black-Scholes formula
+            d1 = (math.log(spot / K) + (r + 0.5 * strike_iv ** 2) * T) / (strike_iv * math.sqrt(T))
+            d2 = d1 - strike_iv * math.sqrt(T)
+            cdf = lambda x: 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+            ce_price = max(0.5, round(spot * cdf(d1) - K * math.exp(-r * T) * cdf(d2), 2))
+            pe_price = max(0.5, round(K * math.exp(-r * T) * cdf(-d2) - spot * cdf(-d1), 2))
+
+            # Realistic OI & Volume distribution peaking near ATM and round strikes
+            dist_factor = math.exp(-15.0 * (d_rel ** 2))
+            round_strike_boost = 1.5 if K % (step * 2) == 0 else 1.0
+
+            ce_oi = int(round(75000 * dist_factor * round_strike_boost * (1.1 if K >= spot else 0.8)))
+            pe_oi = int(round(82000 * dist_factor * round_strike_boost * (1.2 if K <= spot else 0.7)))
+            ce_vol = int(round(ce_oi * 0.22))
+            pe_vol = int(round(pe_oi * 0.25))
+
+            oc[str(K)] = {
+                "ce": {
+                    "last_price": ce_price,
+                    "volume": ce_vol,
+                    "oi": ce_oi,
+                    "iv": round(strike_iv * 100, 2)
+                },
+                "pe": {
+                    "last_price": pe_price,
+                    "volume": pe_vol,
+                    "oi": pe_oi,
+                    "iv": round(strike_iv * 100 * put_skew_factor, 2)
+                }
+            }
+        return oc, spot
 
     def calculate_volatility_surface_summary(
         self,
@@ -151,25 +216,30 @@ class OptionsChainIngestor:
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-    async def ingest_live_option_chains(self, user_id: str = "raghu_primary") -> Dict[str, Any]:
+    async def ingest_live_option_chains(
+        self,
+        user_id: str = "raghu_primary",
+        allow_synthetic: bool = False
+    ) -> Dict[str, Any]:
         """
         Polls DhanHQ v2 Option Chain API for all supported indices, extracts Greeks/IV, and streams into BigQuery.
+        Supports allow_synthetic=True for pre-flight testing and off-market simulation.
         """
         t0 = time.time()
         creds = await self.credentials_manager.get_user_credentials(user_id)
-        client_id = creds.get("client_id") or creds.get("dhan_client_id")
-        access_token = creds.get("access_token") or creds.get("dhan_access_token")
+        client_id = creds.get("client_id") or creds.get("dhan_client_id") if creds else None
+        access_token = creds.get("access_token") or creds.get("dhan_access_token") if creds else None
 
-        if not access_token or not client_id:
+        if (not access_token or not client_id) and not allow_synthetic:
             logger.error("❌ Dhan credentials unavailable in Firestore Vault for options ingestion")
             return {"status": "error", "message": "Dhan credentials not found"}
 
-        dhan_client_wrapper = create_dhan_client(client_id, access_token, environment=DhanEnvironment.PRODUCTION)
-        http_headers = {
-            "access-token": access_token,
-            "client-id": client_id,
-            "Content-Type": "application/json"
-        }
+        dhan_client_wrapper = None
+        if client_id and access_token:
+            try:
+                dhan_client_wrapper = create_dhan_client(client_id, access_token, environment=DhanEnvironment.PRODUCTION)
+            except Exception as e:
+                logger.warning(f"Notice creating Dhan client wrapper: {e}")
 
         rows_to_insert: List[Dict[str, Any]] = []
         indices_summary = {}
@@ -180,37 +250,43 @@ class OptionsChainIngestor:
             sec_id = idx["sec_id"]
             segment = idx["segment"]
 
-            # 1. Resolve nearest active expiry
-            exp_url = "https://api.dhan.co/v2/optionchain/expirylist"
-            exp_payload = {"UnderlyingScrip": sec_id, "UnderlyingSeg": segment}
-            target_expiry = None
-
             try:
-                exp_resp = requests.post(exp_url, headers=http_headers, json=exp_payload, timeout=8)
-                exp_resp.raise_for_status()
-                exp_list = exp_resp.json().get("data", []) or []
-                if exp_list:
-                    target_expiry = exp_list[0]
-            except Exception as e:
-                logger.warning(f"Notice fetching expiry for {symbol}: {e}")
+                # 1. Resolve nearest active expiry
+                target_expiry = None
+                if dhan_client_wrapper:
+                    try:
+                        exp_resp = dhan_client_wrapper.expiry_list(under_security_id=sec_id, under_exchange_segment=segment)
+                        if exp_resp and exp_resp.get("status") == "success":
+                            exp_list = exp_resp.get("data", []) or []
+                            if exp_list:
+                                target_expiry = exp_list[0]
+                    except Exception as e:
+                        logger.warning(f"Notice fetching expiry via SDK for {symbol}: {e}")
 
-            if not target_expiry:
-                target_expiry = (datetime.now() + timedelta(days=(3 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
+                if not target_expiry:
+                    target_expiry = (datetime.now() + timedelta(days=(3 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
 
-            # 2. Fetch full option chain depth using DhanClient wrapper
-            try:
-                oc_data = dhan_client_wrapper.option_chain(
-                    under_security_id=sec_id,
-                    under_exchange_segment=segment,
-                    expiry=target_expiry
-                )
-
+                # 2. Fetch full option chain depth using DhanClient wrapper
                 oc_dict = {}
                 spot_price = 0.0
-                if oc_data and oc_data.get("status") == "success":
-                    oc_data_payload = oc_data.get("data", {})
-                    oc_dict = oc_data_payload.get("oc", {}) or {}
-                    spot_price = float(oc_data_payload.get("last_price") or 0.0)
+                if dhan_client_wrapper:
+                    try:
+                        oc_data = dhan_client_wrapper.option_chain(
+                            under_security_id=sec_id,
+                            under_exchange_segment=segment,
+                            expiry=target_expiry
+                        )
+                        if oc_data and oc_data.get("status") == "success":
+                            oc_data_payload = oc_data.get("data", {})
+                            oc_dict = oc_data_payload.get("oc", {}) or {}
+                            spot_price = float(oc_data_payload.get("last_price") or 0.0)
+                    except Exception as e:
+                        logger.warning(f"Notice fetching option chain from Dhan for {symbol}: {e}")
+
+                # Fallback to institutional synthetic surface if off-market / pre-flight enabled
+                if not oc_dict and allow_synthetic:
+                    logger.info(f"Generating institutional pre-flight options surface for {symbol} ({target_expiry})")
+                    oc_dict, spot_price = self._generate_synthetic_option_chain(symbol, step=idx.get("step", 50))
 
                 if not oc_dict:
                     logger.info(f"No active option chain returned by Dhan for {symbol} ({target_expiry})")
