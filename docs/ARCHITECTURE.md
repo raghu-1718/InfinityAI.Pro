@@ -115,10 +115,10 @@ The infrastructure is managed via Terraform (`infra/gcp`). The GCP Project ID is
     - `structured_logging.py`: For consistent, machine-readable logs.
 - **`tools/verification/`**: A collection of Python scripts used for manual testing and verification of different parts of the system (e.g., `check_firestore.py`, `verify_dhan_connection.py`).
 
-### 4.2. System Health Audit (`audit_system_health.py`)
+### 4.2. System Health Audit (`tools/audit_system_health.py`)
 This is the primary diagnostic script for ensuring the end-to-end health of the entire platform.
-- **Location**: Project root.
-- **Execution**: `python audit_system_health.py`
+- **Location**: `tools/audit_system_health.py`
+- **Execution**: `python tools/audit_system_health.py`
 - **Functionality**:
     - Asynchronously tests all major service integrations.
     - **Firebase/Firestore**: Performs a test write, read, and delete in a dummy collection.

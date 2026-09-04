@@ -51,9 +51,8 @@ class MarketRegimeHeartbeatService:
         }
         
         target_urls = [
-            os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app"),
-            "https://engine-c-r2f5flt77q-el.a.run.app",
-            "https://engine-c-313407263327.asia-south1.run.app"
+            os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app"),
+            "https://engine-c-r2f5flt77q-el.a.run.app"
         ]
         # Deduplicate while preserving order
         urls_to_try = list(dict.fromkeys(u for u in target_urls if u))

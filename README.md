@@ -93,6 +93,47 @@ flowchart TB
 
 ---
 
+## 📁 2.1 Canonical Repository Structure
+
+```text
+InfinityAI.Pro/
+├── backend/                  # Python / FastAPI microservices (Engine A, Engine B, Engine C, shared)
+├── config/                   # System-level JSON & YAML runtime configs (auth, trading ops)
+├── data/                     # Historical reference datasets, instruments master, and validation logs
+├── db/                       # BigQuery schemas, DAL (Data Access Layer), and migrations
+├── docs/                     # Institutional architecture guides, operating guidelines & reports
+│   ├── AGENTS.md             # Authoritative autonomous agent operating standard
+│   ├── ARCHITECTURE.md       # Technical architecture specification
+│   ├── SYSTEM_ARCHITECTURE.md# Historical system refactoring logs
+│   ├── REFACTOR_PLAN.md      # Refactor roadmap
+│   ├── ML_AND_INGESTION_UPDATE.md
+│   └── INSTITUTIONAL_QUANT_AND_BACKTEST_GUIDE.md
+├── frontend/                 # Next.js 16 (App Router) frontend, TypeScript, Tailwind CSS
+├── infra/                    # GCP Cloud Build, Cloud Schedulers, and Cloud NAT configurations
+│   ├── cloudbuild/           # Active Cloud Build deployment YAMLs
+│   ├── schedulers/           # Cloud Scheduler & Cloud NAT JSON configs
+│   ├── legacy-cloudbuild/    # Archived build configurations
+│   └── firebase/             # Supporting Firebase definitions
+├── ml/                       # MLOps pipelines, backfill, backtesting, and local datasets
+│   ├── backfill/             # Historical tick data ingestion and feature generation
+│   ├── backtesting/          # Vectorized backtester, WFO, and DSR/PSR metrics
+│   ├── data_local/           # 3-year historical daily OHLCV datasets
+│   ├── market_reconciliation/# Real-time feed reconciliation
+│   ├── models/               # Feature engineering and tournament evaluation
+│   └── training/             # Production Tri-Model ensemble retraining pipeline
+├── monitoring/               # Continuous operations monitoring and telemetry
+├── output/                   # Model comparison CSVs, backtest logs, and promotion gates
+├── tests/                    # 57/57 Automated unit and integration tests
+├── tools/                    # Operational inspection, verification, and diagnostic suites
+├── trained_models/           # Production model binaries (.cbm, .pkl, .txt, .json) & metadata
+├── vault/                    # GCP Secret Manager & AES-256-GCM cryptographic vault
+├── firebase.json             # Authoritative Firebase Hosting rewrites to Cloud Run
+├── firestore.indexes.json    # Authoritative Firestore composite indexes
+└── .firebaserc               # Firebase project mapping
+```
+
+---
+
 ## 📦 3. Cloud Stack Inventory
 
 | Component Layer | GCP / Firebase Implementation | Configuration & Specs | Live URL / Identifier |
@@ -309,15 +350,15 @@ sequenceDiagram
     WIF-->>GitHub: Return GCP access token
     
     par Build Backend Engines
-        GitHub->>GCB: Submit cloudbuild_engine_b.yaml
+        GitHub->>GCB: Submit infra/cloudbuild/cloudbuild_engine_b.yaml
         GCB->>AR: Push engine-b:latest
         GCB->>CR: Deploy engine-b (2 vCPU, 8 GiB)
     and
-        GitHub->>GCB: Submit cloudbuild_engine_a.yaml
+        GitHub->>GCB: Submit infra/cloudbuild/cloudbuild_engine_a.yaml
         GCB->>AR: Push engine-a:latest
         GCB->>CR: Deploy engine-a (1 vCPU, 512 MiB)
     and
-        GitHub->>GCB: Submit cloudbuild_engine_c.yaml
+        GitHub->>GCB: Submit infra/cloudbuild/cloudbuild_engine_c.yaml
         GCB->>AR: Push engine-c:latest
         GCB->>CR: Deploy engine-c (Static NAT)
     end

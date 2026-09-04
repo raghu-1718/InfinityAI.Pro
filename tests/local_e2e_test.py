@@ -11,15 +11,18 @@ def check_health(url):
         return False
 
 import os
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 env = os.environ.copy()
-env["PYTHONPATH"] = "c:/Users/Raghu/Projects/InfinityAI.Pro/backend"
+env["PYTHONPATH"] = str(REPO_ROOT / "backend")
 
 print("Starting Engine A...")
-pA = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8001"], cwd="c:/Users/Raghu/Projects/InfinityAI.Pro/backend/engine-a", env=env)
+pA = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8001"], cwd=str(REPO_ROOT / "backend" / "engine-a"), env=env)
 print("Starting Engine B...")
-pB = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8002"], cwd="c:/Users/Raghu/Projects/InfinityAI.Pro/backend/engine-b", env=env)
+pB = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8002"], cwd=str(REPO_ROOT / "backend" / "engine-b"), env=env)
 print("Starting Engine C...")
-pC = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8003"], cwd="c:/Users/Raghu/Projects/InfinityAI.Pro/backend/engine-c", env=env)
+pC = subprocess.Popen([sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8003"], cwd=str(REPO_ROOT / "backend" / "engine-c"), env=env)
 
 print("Waiting for engines to start...")
 time.sleep(10)

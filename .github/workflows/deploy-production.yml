@@ -52,17 +52,17 @@ jobs:
       # Build & Deploy Engine A (Orchestrator & VPC Proxy)
       - name: Build & Deploy Engine A
         run: |
-          gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
+          gcloud builds submit --config=infra/cloudbuild/cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
 
       # Build & Deploy Engine B (ML Intelligence & Model Vault Bundle)
       - name: Build & Deploy Engine B
         run: |
-          gcloud builds submit --config=cloudbuild_engine_b.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
+          gcloud builds submit --config=infra/cloudbuild/cloudbuild_engine_b.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
 
       # Build & Deploy Engine C (Execution Gateway & Broker Link)
       - name: Build & Deploy Engine C
         run: |
-          gcloud builds submit --config=cloudbuild_engine_c.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
+          gcloud builds submit --config=infra/cloudbuild/cloudbuild_engine_c.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
 
   # ============================================
   # 2. Deploy Frontend to Firebase Hosting
