@@ -11,6 +11,7 @@ from src.services.circuit_breaker import CircuitBreaker, TradingHalted
 from src.services.audit_logger import AuditLogger
 from src.services.mtf_confluence_filter import MTF_CONFLUENCE_FILTER
 from src.services.options_oi_acceleration_tracker import OI_ACCELERATION_TRACKER
+from src.services.market_regime_thresholds import get_current_market_regime, MarketRegimeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -306,6 +307,52 @@ class AutonomousTrader:
         if not self.validate_signal_freshness(signal):
             return
 
+        # ---------------------------------------------------------
+        # TIME-OF-DAY ADAPTIVE REGIME GATE (DOMAIN 1)
+        # ---------------------------------------------------------
+        signal_time_raw = signal.get("timestamp")
+        signal_dt = None
+        if signal_time_raw:
+            try:
+                if isinstance(signal_time_raw, str):
+                    signal_dt = datetime.fromisoformat(signal_time_raw.replace('Z', '+00:00'))
+                elif isinstance(signal_time_raw, datetime):
+                    signal_dt = signal_time_raw
+            except Exception:
+                signal_dt = None
+
+        regime = get_current_market_regime(signal_dt)
+        logger.info(
+            f"🕒 Regime [{regime.name}] ({regime.regime_id}) @ {regime.ist_time} IST: "
+            f"Dynamic ADX Threshold = {regime.adx_threshold:.1f}, ML Threshold = {regime.ml_threshold:.2f} | "
+            f"Theta Damper = {regime.theta_decay_damper}"
+        )
+
+        # 1. Dynamic ML Confidence Gate
+        if confidence < regime.ml_threshold:
+            logger.warning(
+                f"🛑 REGIME GATE: {symbol} ML confidence {confidence:.1%} < regime threshold {regime.ml_threshold:.1%} "
+                f"({regime.name} @ {regime.ist_time} IST)"
+            )
+            self.audit_logger.log_trade_rejected(
+                uid, symbol, "LOW_ML_CONFIDENCE_REGIME",
+                {"confidence": confidence, "threshold": regime.ml_threshold, "regime": regime.regime_id, "ist_time": regime.ist_time}
+            )
+            return
+
+        # 2. Dynamic ADX Momentum Gate
+        adx_val = float(signal.get("adx") or signal.get("analysis", {}).get("adx") or signal.get("adx_14") or 25.0)
+        if adx_val < regime.adx_threshold:
+            logger.warning(
+                f"🛑 REGIME GATE: {symbol} ADX momentum {adx_val:.1f} < regime threshold {regime.adx_threshold:.1f} "
+                f"({regime.name} @ {regime.ist_time} IST) - Choppy Market / Vetoed"
+            )
+            self.audit_logger.log_trade_rejected(
+                uid, symbol, "LOW_ADX_MOMENTUM_REGIME",
+                {"adx": adx_val, "threshold": regime.adx_threshold, "regime": regime.regime_id, "ist_time": regime.ist_time, "theta_damper": regime.theta_decay_damper}
+            )
+            return
+
         current_price = float(signal.get("current_price") or 1000.0)
 
         # ---------------------------------------------------------
@@ -334,6 +381,10 @@ class AutonomousTrader:
             current_strikes_oi=strikes_oi
         )
         conviction_mult = float(oi_res.get("conviction_multiplier", 1.0))
+        if regime.theta_decay_damper:
+            conviction_mult *= 0.70
+            logger.info(f"⚠️ THETA DECAY DAMPER ACTIVE: Mid-Day Chop Trap detected ({regime.ist_time} IST) -> conviction scaled to {conviction_mult:.2f}x to restrict capital exposure")
+
         is_call_side = "CALL" in signal_type.upper() or "BUY" in signal_type.upper()
 
         if is_call_side and oi_res.get("call_wall_detected"):

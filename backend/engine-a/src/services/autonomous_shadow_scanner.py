@@ -15,6 +15,7 @@ from typing import Dict, Any, List, Optional
 from .shadow_signal_logger import ShadowSignalLogger
 from .black_swan_circuit_breaker import BLACK_SWAN_BREAKER
 from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
+from .market_regime_thresholds import get_current_market_regime
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
@@ -116,24 +117,25 @@ class ContinuousShadowScanner:
                 if spot <= 0:
                     spot = float(sig.get("current_price", 1000.0))
 
-                # Model breakdowns & technical analysis
+                # Dynamic Time-of-Day Adaptive Regime Evaluation
+                regime = get_current_market_regime(now_utc)
                 models = sig.get("analysis", {})
                 adx = float(models.get("adx", 25.0))
                 key_factors = models.get("key_factors", [])
                 veto_in_factors = any("VETO" in str(k).upper() for k in key_factors)
-                veto_active = models.get("veto_active", False) or veto_in_factors or (adx < 22.0)
+                veto_active = models.get("veto_active", False) or veto_in_factors or (adx < regime.adx_threshold)
 
-                # Strict fail-closed directional decision framework
+                # Strict fail-closed directional decision framework with regime gating
                 if veto_active or signal_dir in ["HOLD", "NEUTRAL", "NO_TRADE", ""]:
                     decision = "NO_TRADE"
-                    logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f}, Veto: {veto_active}). No trade executed.")
-                elif ("BUY" in signal_dir or "CALL" in signal_dir) and conf >= 0.60:
+                    logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f} < {regime.adx_threshold:.1f}, Veto: {veto_active} [{regime.name}]). No trade executed.")
+                elif ("BUY" in signal_dir or "CALL" in signal_dir) and conf >= regime.ml_threshold:
                     decision = "BUY_CALL"
-                elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= 0.60:
+                elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= regime.ml_threshold:
                     decision = "BUY_PUT"
                 else:
                     decision = "NO_TRADE"
-                    logger.info(f"⏸️ Signal for {sym} ({signal_dir}, conf: {conf:.2f}) did not meet conviction threshold (0.60).")
+                    logger.info(f"⏸️ Signal for {sym} ({signal_dir}, conf: {conf:.2f}) did not meet regime conviction threshold ({regime.ml_threshold:.2f} [{regime.name}]).")
 
                 # If NO_TRADE, record observation telemetry and skip trade ledger execution
                 if decision == "NO_TRADE":
