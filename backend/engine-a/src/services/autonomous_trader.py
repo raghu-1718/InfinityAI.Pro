@@ -47,7 +47,7 @@ class AutonomousTrader:
         self.http_client = httpx.AsyncClient(timeout=30.0)
         PRIMARY_USER = os.getenv("PRIMARY_USER_ID", "raghu_primary")
         self.config = {
-            "min_confidence": 0.75,
+            "min_confidence": float(os.getenv("MIN_SIGNAL_CONFIDENCE", "0.65")),
             "poll_interval": 10,  # seconds
             "max_risk_per_trade": 0.02, # 2%
             "capital": 100000.0, # Virtual capital for sizing
@@ -85,15 +85,15 @@ class AutonomousTrader:
         if mode == "aggressive":
             self.config["max_risk_per_trade"] = 0.05
             self.config["stop_loss_pct"] = 0.05
-            self.config["min_confidence"] = 0.60
+            self.config["min_confidence"] = float(os.getenv("MIN_SIGNAL_CONFIDENCE_AGGRESSIVE", "0.55"))
         elif mode == "moderate":
             self.config["max_risk_per_trade"] = 0.03
             self.config["stop_loss_pct"] = 0.03
-            self.config["min_confidence"] = 0.70
+            self.config["min_confidence"] = float(os.getenv("MIN_SIGNAL_CONFIDENCE_MODERATE", "0.65"))
         else: # conservative
             self.config["max_risk_per_trade"] = 0.015
             self.config["stop_loss_pct"] = 0.015
-            self.config["min_confidence"] = 0.80
+            self.config["min_confidence"] = float(os.getenv("MIN_SIGNAL_CONFIDENCE", "0.65"))
 
         logger.info(f"✅ Session Configured: {self.config}")
 

@@ -2110,10 +2110,9 @@ def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float) -
     adv_dec = macro["advance_decline_ratio"]
     
     # Veto conditions for Option Buyers (Theta Protection)
-    veto_reason = None
-    
-    if adx < 25:
-        veto_reason = f"ADX < 25 ({adx:.1f}): Market is ranging/consolidating (Theta decay risk)"
+    adx_threshold = float(os.getenv("ADX_MIN_THRESHOLD", "19.0"))
+    if adx < adx_threshold:
+        veto_reason = f"ADX < {adx_threshold:.1f} ({adx:.1f}): Market is ranging/consolidating (Theta decay risk)"
     elif adv_dec < 0.5 and ml_probability > 0.65:
         veto_reason = f"Weak Market Breadth (Adv/Dec: {adv_dec}): Fake bullish divergence"
     elif close_price <= ema_200 and ml_probability > 0.65:
@@ -2331,8 +2330,9 @@ def _analyze_fno(latest, price, df):
 
     # ADX - Filter Choppy Markets
     adx = latest.get('ADX_14')
-    if adx and adx < 20:
-        reasons.append("Choppy Market (Low ADX) - Avoiding Trades")
+    adx_threshold = float(os.getenv("ADX_MIN_THRESHOLD", "19.0"))
+    if adx and adx < adx_threshold:
+        reasons.append(f"Choppy Market (ADX < {adx_threshold:.1f}) - Avoiding Trades")
         return {"score": 0, "reasons": reasons, "signal": "HOLD"}
 
     # Fast MA for Scalping nature

@@ -1416,7 +1416,7 @@ class AutoTradeStartRequest(BaseModel):
     takeProfitPercent: Optional[float] = 4.0
     maxTradesPerDay: Optional[int] = 10
     useAISignals: Optional[bool] = True
-    min_confidence: Optional[float] = 0.70
+    min_confidence: Optional[float] = 0.65
 
 @app.post("/api/v1/auto-trade/start")
 async def start_auto_trading(request: AutoTradeStartRequest):
