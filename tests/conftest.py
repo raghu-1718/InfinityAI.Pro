@@ -10,6 +10,22 @@ if str(PROJECT_ROOT) not in sys.path:
 BACKEND_DIR = PROJECT_ROOT / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
+ML_DIR = PROJECT_ROOT / "ml"
+if str(ML_DIR) not in sys.path:
+    sys.path.insert(0, str(ML_DIR))
+
+# Backward-compatible alias for ml_models -> ml.models
+try:
+    import ml.models as _ml_models
+    sys.modules["ml_models"] = _ml_models
+    import ml.models.feature_engineering
+    sys.modules["ml_models.feature_engineering"] = ml.models.feature_engineering
+    import ml.models.training_pipeline
+    sys.modules["ml_models.training_pipeline"] = ml.models.training_pipeline
+    import ml.models.evaluate_oos_backtest
+    sys.modules["ml_models.evaluate_oos_backtest"] = ml.models.evaluate_oos_backtest
+except Exception:
+    pass
 
 # Set test environment variables
 os.environ["ENVIRONMENT"] = "test"
