@@ -45,10 +45,10 @@ class TradingRecommendation:
 class GenAIClient:
     """Wrapper around Vertex AI Gemini SDK with ADC support."""
 
-    def __init__(self, project_id: Optional[str] = None, location: str = "asia-south1", model_id: str = "gemini-2.5-flash"):
+    def __init__(self, project_id: Optional[str] = None, location: str = "asia-south1", model_id: Optional[str] = None):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
         self.location = location
-        self.model_id = model_id
+        self.model_id = model_id or os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
         self._client = None
         self._init_client()
 
@@ -92,9 +92,9 @@ class GenAIClient:
 class EnhancedGenAIClient(GenAIClient):
     """GenAI Client with Function Calling support."""
 
-    def __init__(self, project_id: Optional[str] = None, model_id: str = "gemini-2.5-flash",
+    def __init__(self, project_id: Optional[str] = None, model_id: Optional[str] = None,
                  advanced_model_id: str = "gemini-2.5-pro", **kwargs):
-        super().__init__(project_id=project_id, model_id=model_id)
+        super().__init__(project_id=project_id, model_id=model_id or os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"))
         self.advanced_model_id = advanced_model_id
         logger.info(f"✅ EnhancedGenAIClient: primary={model_id}, advanced={advanced_model_id}")
 

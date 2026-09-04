@@ -27,7 +27,7 @@ class InfinityAICopilot:
     def __init__(self):
         self.project_id = PROJECT_ID
         self.location = "asia-south1"
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
         self.bq_client = None
         self._init_services()
 
@@ -93,7 +93,7 @@ class InfinityAICopilot:
             api_key = os.getenv("GEMINI_API_KEY")
             if api_key:
                 genai.configure(api_key=api_key)
-                m = genai.GenerativeModel("gemini-2.5-flash")
+                m = genai.GenerativeModel(self.model_name)
                 res = await asyncio.to_thread(m.generate_content, prompt)
                 return res.text
         except Exception as e:

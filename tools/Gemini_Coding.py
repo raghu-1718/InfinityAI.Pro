@@ -10,7 +10,7 @@ def apply_ml_and_ingestion_updates():
     print("🚀 Initializing Gemini 2.5 Flash Executing Agent for ML & Data Ingestion...")
 
     client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION_ID)
-    model_id = "gemini-2.5-flash"
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
 
     prompt = """
     You are the Principal ML Engineer for InfinityAI.Pro.

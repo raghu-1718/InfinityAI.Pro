@@ -405,14 +405,14 @@ if HAS_ENHANCED_GENAI:
         PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
         if not PROJECT_ID: logger.info("ℹ️ GOOGLE_CLOUD_PROJECT is not set for Enhanced GenAI; using runtime default")
 
-        # Initialize Enhanced GenAI Client with Gemini 2.5 Flash (upgraded from 2.0)
+        # Initialize Enhanced GenAI Client with Gemini 3.6 Flash
         # Also configure Gemini 3 Pro for advanced analysis
         ENHANCED_GENAI_CLIENT = EnhancedGenAIClient(
             project_id=PROJECT_ID,
-            model_id="gemini-2.5-flash",           # Primary: 1K RPM, fast signals
+            model_id=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),           # Primary: 1K RPM, fast signals
             advanced_model_id="gemini-2.5-pro"     # Advanced: Complex reasoning (most capable stable)
         )
-        logger.info("✅ Enhanced GenAI Client initialized (Gemini 2.5 Flash + Gemini 3 Pro)")
+        logger.info("✅ Enhanced GenAI Client initialized (Gemini 3.6 Flash + Gemini 3 Pro)")
 
         NEWS_AGGREGATOR = NewsAggregator()
         logger.info("✅ News Aggregator initialized")

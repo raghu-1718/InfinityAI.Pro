@@ -181,15 +181,16 @@ t0 = time.time()
 try:
     client = genai.Client(vertexai=True, project=PROJECT_ID, location="asia-south1")
     prompt = "Summarize current Indian market sentiment for NIFTY 50 and FII/DII flow in 1 short sentence."
+    model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model=model_id,
         contents=prompt,
         config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())])
     )
     lat = (time.time() - t0) * 1000
     text_snippet = response.text.strip().replace("\n", " ")[:80] + "..."
     client.close()
-    record_audit("AI / ML", "Vertex AI Gemini 2.5 Flash Grounding", True, lat, f"{text_snippet}")
+    record_audit("AI / ML", f"Vertex AI Gemini ({model_id}) Grounding", True, lat, f"{text_snippet}")
 except Exception as e:
     record_audit("AI / ML", "Vertex AI Gemini 2.5 Flash Grounding", False, -1, str(e))
 

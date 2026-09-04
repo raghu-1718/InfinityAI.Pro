@@ -166,7 +166,7 @@ class MacroEventMiner:
             )
 
             response = self.genai_client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),
                 contents=user_prompt,
                 config=config,
             )

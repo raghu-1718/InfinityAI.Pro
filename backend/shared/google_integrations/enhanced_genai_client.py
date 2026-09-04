@@ -231,7 +231,7 @@ class EnhancedGenAIClient:
         self,
         project_id: str = None,
         location: str = "asia-south1",
-        model_id: str = "gemini-2.5-flash",  # Upgraded to 2.5-flash for better performance
+        model_id: str = "gemini-3.6-flash",  # Upgraded to 3.6-flash for latest features & reasoning
         advanced_model_id: str = "gemini-3-pro"  # Use Gemini 3 Pro for complex analysis
     ):
         """
@@ -240,7 +240,7 @@ class EnhancedGenAIClient:
         Args:
             project_id: Cloud project ID (default from env)
             location: GCP region (default asia-south1)
-            model_id: Primary Gemini model (default: gemini-2.5-flash for speed)
+            model_id: Primary Gemini model (default: gemini-3.6-flash for speed)
             advanced_model_id: Advanced model for complex reasoning (default: gemini-3-pro)
         """
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
@@ -248,7 +248,7 @@ class EnhancedGenAIClient:
              logger.warning("⚠️ GOOGLE_CLOUD_PROJECT not set. Using verified production default.")
              self.project_id = "project-841b7f97-5ee3-4fbe-920" # Production Default
         self.location = location
-        self.model_id = model_id
+        self.model_id = os.getenv("GEMINI_MODEL_ID", model_id)
         self.advanced_model_id = advanced_model_id
         self._client = None
         self._initialized = False
@@ -257,7 +257,7 @@ class EnhancedGenAIClient:
         # Model configuration for different tasks
         self.model_config = {
             "fast": "gemini-2.5-flash-lite",      # 4K RPM - for high-volume tasks
-            "standard": "gemini-2.5-flash",       # 1K RPM - default for signals
+            "standard": os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),       # 1K RPM - default for signals
             "quality": "gemini-2.5-pro",          # 15 RPM - complex reasoning
             "advanced": "gemini-3-pro",           # 25 RPM - most capable
             "image": "gemini-3-pro-image",        # For chart analysis
@@ -853,6 +853,7 @@ Provide specific price levels and actionable insights."""
             "current_advanced": self.advanced_model_id,
             "rate_limits": {
                 "gemini-2.5-flash-lite": {"rpm": 4000, "tpm": "4M", "rpd": "unlimited"},
+                "gemini-3.6-flash": {"rpm": 1000, "tpm": "1M", "rpd": "10K"},
                 "gemini-2.5-flash": {"rpm": 1000, "tpm": "1M", "rpd": "10K"},
                 "gemini-2.5-pro": {"rpm": 15, "tpm": "1M", "rpd": "300"},
                 "gemini-2.5-pro-exp": {"rpm": 150, "tpm": "2M", "rpd": "10K"},

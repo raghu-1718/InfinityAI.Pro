@@ -55,8 +55,9 @@ class FinanceAIModel:
             api_key = os.getenv("GEMINI_API_KEY")
             if api_key:
                 genai.configure(api_key=api_key)
-                self._client = genai.GenerativeModel("gemini-2.5-flash")
-                logger.info("✅ FinanceAIModel: Initialized Gemini 2.5 Flash model")
+                model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
+                self._client = genai.GenerativeModel(model_id)
+                logger.info(f"✅ FinanceAIModel: Initialized Gemini model ({model_id})")
             else:
                 logger.info("ℹ️ FinanceAIModel: Using Application Default Credentials / Vertex AI")
         except Exception as e:

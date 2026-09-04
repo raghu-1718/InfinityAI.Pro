@@ -201,7 +201,7 @@ def audit():
         from google.genai import types
         client = genai.Client(vertexai=True, project="project-841b7f97-5ee3-4fbe-920", location="asia-south1")
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=os.getenv('GEMINI_MODEL_ID', 'gemini-3.6-flash'),
             contents='Provide a 1-sentence institutional sentiment summary for NIFTY 50 options today.',
             config=types.GenerateContentConfig(
                 temperature=0.2,

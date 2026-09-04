@@ -183,7 +183,7 @@ Maintain an institutional, hedge-fund executive tone with high mathematical prec
         if self.genai_client:
             try:
                 response = self.genai_client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.2,

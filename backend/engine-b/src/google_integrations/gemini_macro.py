@@ -345,7 +345,7 @@ class GeminiMacroIntelligence:
     VERSION           = "2.0.0"
     TIMEOUT_SECONDS   = 3.0
     CACHE_TTL_MINUTES = 15
-    MODEL_ID          = "gemini-2.5-flash"
+    MODEL_ID          = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
     LOCATION          = "asia-south1"   # Vertex AI Gemini routing
 
     def __init__(self, project_id: Optional[str] = None):
