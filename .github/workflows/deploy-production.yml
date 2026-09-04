@@ -17,8 +17,10 @@ permissions:
 env:
   GCP_PROJECT_ID: "project-841b7f97-5ee3-4fbe-920"
   GCP_REGION: "asia-south1"
-  WIF_PROVIDER: "projects/313407263327/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
-  SERVICE_ACCOUNT: "github-actions-deployer@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com"
+  # Use repository secret for Workload Identity Provider to avoid stale project-number in source
+  WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+  # Service account identity provided via secrets for flexibility across environments
+  SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
 jobs:
   # ============================================
@@ -47,17 +49,17 @@ jobs:
       - name: Authorize Docker to push to Artifact Registry
         run: gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
 
+      # Build & Deploy Engine A (Orchestrator & VPC Proxy)
+      - name: Build & Deploy Engine A
+        run: |
+          gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
+
       # Build & Deploy Engine B (ML Intelligence & Model Vault Bundle)
       - name: Build & Deploy Engine B
         run: |
           gcloud builds submit --config=cloudbuild_engine_b.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
 
-      # Deploy Engine A (Orchestrator & VPC Proxy)
-      - name: Build & Deploy Engine A
-        run: |
-          gcloud builds submit --config=cloudbuild_engine_a.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
-
-      # Deploy Engine C (Execution Gateway & Broker Link)
+      # Build & Deploy Engine C (Execution Gateway & Broker Link)
       - name: Build & Deploy Engine C
         run: |
           gcloud builds submit --config=cloudbuild_engine_c.yaml --project=${{ env.GCP_PROJECT_ID }} --timeout=1800s .
