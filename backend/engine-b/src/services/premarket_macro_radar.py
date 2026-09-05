@@ -129,6 +129,16 @@ class PreMarketMacroRadar:
         now_utc = datetime.now(timezone.utc)
         report_date = now_utc.strftime("%Y-%m-%d")
 
+        # Check in-memory cache if standard invocation (no overrides) and report is fresh (< 15 mins)
+        if (gift_nifty_gap is None and crude_oil_pct is None and fii_net_crores is None
+                and self.cached_report is not None):
+            try:
+                cached_time = datetime.fromisoformat(self.cached_report.timestamp_utc)
+                if (now_utc - cached_time).total_seconds() < 900:
+                    return self.cached_report
+            except Exception:
+                pass
+
         # Auto-fetch real-time search telemetry if arguments are omitted
         live_data = {}
         if gift_nifty_gap is None or crude_oil_pct is None or fii_net_crores is None:
@@ -179,26 +189,34 @@ class PreMarketMacroRadar:
         # 2. Vertex AI Gemini 2.5 Synthesis
         gemini_text = ""
         if self.vertex_available and self.genai_client:
-            try:
-                prompt = (
-                    f"Analyze Indian pre-market conditions for {report_date}: "
-                    f"GIFT NIFTY gap: {gift_nifty_gap:+.1f} pts, Crude Oil (Brent): {crude_oil_pct:+.2f}%, "
-                    f"US 10Y Yield: {us_10y_yield:.2f}%, DXY: {dxy_index:.1f}, "
-                    f"FII Net: ₹{fii_net_crores:+.1f} Cr, DII Net: ₹{dii_net_crores:+.1f} Cr. "
-                    f"Provide a 3-sentence institutional macro summary for NIFTY/BANKNIFTY F&O opening bias."
-                )
-                response = self.genai_client.models.generate_content(
-                    model=self._get_model_id(),
-                    contents=prompt
-                )
-                gemini_text = response.text.strip()
-            except Exception as e:
-                logger.warning(f"Vertex AI Gemini generation fallback: {e}")
-                gemini_text = (
-                    f"GIFT Nifty indicates a {expected_gap.lower()} opening (+{gift_nifty_gap:.1f} pts). "
-                    f"Institutional liquidity is supportive with FIIs registering net flows of ₹{fii_net_crores:+,.0f} Cr. "
-                    f"Crude oil remains {crude_status.lower()} for Indian macro stability."
-                )
+            prompt = (
+                f"Analyze Indian pre-market conditions for {report_date}: "
+                f"GIFT NIFTY gap: {gift_nifty_gap:+.1f} pts, Crude Oil (Brent): {crude_oil_pct:+.2f}%, "
+                f"US 10Y Yield: {us_10y_yield:.2f}%, DXY: {dxy_index:.1f}, "
+                f"FII Net: ₹{fii_net_crores:+.1f} Cr, DII Net: ₹{dii_net_crores:+.1f} Cr. "
+                f"Provide a 3-sentence institutional macro summary for NIFTY/BANKNIFTY F&O opening bias."
+            )
+            for attempt in range(2):
+                try:
+                    response = self.genai_client.models.generate_content(
+                        model=self._get_model_id(),
+                        contents=prompt
+                    )
+                    gemini_text = response.text.strip()
+                    break
+                except Exception as e:
+                    err_msg = str(e)
+                    if ("429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg) and attempt == 0:
+                        import time
+                        time.sleep(2.0)
+                        continue
+                    logger.warning(f"Vertex AI Gemini generation fallback: {e}")
+                    gemini_text = (
+                        f"GIFT Nifty indicates a {expected_gap.lower()} opening (+{gift_nifty_gap:.1f} pts). "
+                        f"Institutional liquidity is supportive with FIIs registering net flows of ₹{fii_net_crores:+,.0f} Cr. "
+                        f"Crude oil remains {crude_status.lower()} for Indian macro stability."
+                    )
+                    break
         else:
             gemini_text = (
                 f"GIFT Nifty signals a {expected_gap.lower()} opening with a +{gift_nifty_gap:.1f} pt lead. "

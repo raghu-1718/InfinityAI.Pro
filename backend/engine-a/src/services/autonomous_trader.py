@@ -404,7 +404,14 @@ class AutonomousTrader:
         min_target_pct = float(self.config.get("target_profit_pct", 0.15))
 
         # Option Buying Premium calculation (approx 1.1% of spot if index)
-        est_premium = float(signal.get("predicted_price", current_price * 0.011)) if current_price > 500 else current_price
+        # Prioritize explicit option_premium if provided, else approximate at 1.1% of spot
+        raw_premium = signal.get("option_premium")
+        if raw_premium and float(raw_premium) > 0:
+            est_premium = float(raw_premium)
+        elif current_price > 500:
+            est_premium = current_price * 0.011
+        else:
+            est_premium = current_price
 
         margin_sizing = self.risk_manager.calculate_margin_aware_lot_size(
             capital=user_capital,
