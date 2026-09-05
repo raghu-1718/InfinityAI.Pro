@@ -45,10 +45,14 @@ class TradingRecommendation:
 class GenAIClient:
     """Wrapper around Vertex AI Gemini SDK with ADC support."""
 
-    def __init__(self, project_id: Optional[str] = None, location: str = "asia-south1", model_id: Optional[str] = None):
+    def __init__(self, project_id: Optional[str] = None, location: str = "us-central1", model_id: Optional[str] = None):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
         self.location = location
-        self.model_id = model_id or os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
+        raw_model = model_id or os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+        if "3.6" in raw_model or not raw_model:
+            self.model_id = "gemini-2.5-flash"
+        else:
+            self.model_id = raw_model
         self._client = None
         self._init_client()
 
@@ -94,9 +98,14 @@ class EnhancedGenAIClient(GenAIClient):
 
     def __init__(self, project_id: Optional[str] = None, model_id: Optional[str] = None,
                  advanced_model_id: str = "gemini-2.5-pro", **kwargs):
-        super().__init__(project_id=project_id, model_id=model_id or os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"))
+        raw_model = model_id or os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+        if "3.6" in raw_model or not raw_model:
+            resolved_model = "gemini-2.5-flash"
+        else:
+            resolved_model = raw_model
+        super().__init__(project_id=project_id, location=kwargs.get("location", "us-central1"), model_id=resolved_model)
         self.advanced_model_id = advanced_model_id
-        logger.info(f"✅ EnhancedGenAIClient: primary={model_id}, advanced={advanced_model_id}")
+        logger.info(f"✅ EnhancedGenAIClient: primary={resolved_model}, advanced={advanced_model_id}")
 
 # ─── Trading Logger ─────────────────────────────────────────────────────────
 

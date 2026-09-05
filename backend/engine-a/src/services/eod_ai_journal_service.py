@@ -163,8 +163,10 @@ class EODAIJournalService:
         try:
             import vertexai
             from vertexai.generative_models import GenerativeModel
-            vertexai.init(project=self.project_id, location="asia-south1")
-            model = GenerativeModel(os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"))
+            vertexai.init(project=self.project_id, location="us-central1")
+            raw_model = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+            model_id = "gemini-2.5-flash" if "3.6" in raw_model or not raw_model else raw_model
+            model = GenerativeModel(model_id)
             
             prompt = f"""You are a Lead Quantitative Portfolio Manager reviewing the trading day ({date_str}) for InfinityAI.Pro on Indian Capital Markets (NSE/BSE).
 Performance Summary:

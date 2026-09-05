@@ -345,8 +345,8 @@ class GeminiMacroIntelligence:
     VERSION           = "2.0.0"
     TIMEOUT_SECONDS   = 3.0
     CACHE_TTL_MINUTES = 15
-    MODEL_ID          = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
-    LOCATION          = "asia-south1"   # Vertex AI Gemini routing
+    MODEL_ID          = "gemini-2.5-flash" if "3.6" in os.getenv("GEMINI_MODEL_ID", "") else os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+    LOCATION          = "us-central1"   # Vertex AI Gemini routing (us-central1)
 
     def __init__(self, project_id: Optional[str] = None):
         self.project_id    = project_id or os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")

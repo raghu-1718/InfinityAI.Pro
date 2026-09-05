@@ -409,10 +409,10 @@ if HAS_ENHANCED_GENAI:
         # Also configure Gemini 3 Pro for advanced analysis
         ENHANCED_GENAI_CLIENT = EnhancedGenAIClient(
             project_id=PROJECT_ID,
-            model_id=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),           # Primary: 1K RPM, fast signals
+            model_id=os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash"),           # Primary: Verified Vertex AI model
             advanced_model_id="gemini-2.5-pro"     # Advanced: Complex reasoning (most capable stable)
         )
-        logger.info("✅ Enhanced GenAI Client initialized (Gemini 3.6 Flash + Gemini 3 Pro)")
+        logger.info("✅ Enhanced GenAI Client initialized (Gemini 2.5 Flash + Gemini 2.5 Pro)")
 
         NEWS_AGGREGATOR = NewsAggregator()
         logger.info("✅ News Aggregator initialized")
@@ -2111,6 +2111,7 @@ def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float) -
     
     # Veto conditions for Option Buyers (Theta Protection)
     adx_threshold = float(os.getenv("ADX_MIN_THRESHOLD", "19.0"))
+    veto_reason = None
     if adx < adx_threshold:
         veto_reason = f"ADX < {adx_threshold:.1f} ({adx:.1f}): Market is ranging/consolidating (Theta decay risk)"
     elif adv_dec < 0.5 and ml_probability > 0.65:

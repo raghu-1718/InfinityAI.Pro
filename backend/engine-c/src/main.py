@@ -2409,15 +2409,16 @@ async def get_funds(user_id: Optional[str] = None):
                 "timestamp": datetime.utcnow().isoformat()
             }
 
-        # Normalize keys in the data block
-        if isinstance(response, dict) and response.get("status") == "success":
-             d = response.get("data", {})
-             # Ensure both keys exist for frontend compatibility
-             if "availabelBalance" in d:
-                 d["availableBalance"] = d["availabelBalance"]
-             elif "availableBalance" in d:
-                 d["availabelBalance"] = d["availableBalance"]
-             response["data"] = d
+        if isinstance(response, dict) and response.get("status") == "failure":
+            remarks = response.get("remarks") or response.get("data") or {}
+            err_msg = remarks.get("error_message") or remarks.get("errorMessage") or "Dhan authentication failure or token expired"
+            logger.warning(f"Dhan get_fund_limits returned failure: {err_msg}")
+            return {
+                "status": "failure",
+                "error": err_msg,
+                "data": response.get("data", {}),
+                "timestamp": datetime.utcnow().isoformat()
+            }
 
         return {"status": "success", "data": response}
 

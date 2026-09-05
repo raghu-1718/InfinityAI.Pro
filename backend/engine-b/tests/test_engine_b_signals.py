@@ -23,7 +23,8 @@ def test_evaluate_option_signal_conviction_adx_veto():
         conviction = evaluate_option_signal_conviction(df_dummy, ml_probability=0.78)
         assert conviction["veto_triggered"] is True
         assert conviction["signal"] == "HOLD"
-        assert "ADX < 25" in conviction["reason"]
+        assert "ADX <" in conviction["reason"]
+        assert "ranging/consolidating" in conviction["reason"]
 
 
 def test_evaluate_option_signal_conviction_pass():

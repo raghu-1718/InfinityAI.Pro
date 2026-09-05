@@ -73,13 +73,42 @@ async def get_dhan_funds(user_id: Optional[str] = Query(None, description="User 
         if isinstance(funds_resp, str):
             logger.error(f"Dhan get_fund_limits returned string instead of dict: {funds_resp[:200]}")
             raise HTTPException(status_code=502, detail=f"Dhan API returned unexpected format: {funds_resp[:200]}")
+        if isinstance(funds_resp, dict) and funds_resp.get("status") == "failure":
+            remarks = funds_resp.get("remarks") or funds_resp.get("data") or {}
+            err_msg = remarks.get("error_message") or remarks.get("errorMessage") or "Dhan authentication failure or token expired"
+            logger.warning(f"Dhan get_fund_limits returned failure: {err_msg}")
+            return {
+                "status": "failure",
+                "user_id": resolved_id,
+                "dhan_client_id": client_id,
+                "error": err_msg,
+                "data": funds_resp.get("data", {}),
+                "funds": {
+                    "availableBalance": 0,
+                    "utilizedMargin": 0,
+                    "sodLimit": 0,
+                    "collateralAmount": 0,
+                    "withdrawableBalance": 0,
+                    "raw": funds_resp.get("data", {})
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
         funds_data = funds_resp.get("data", {}) if isinstance(funds_resp, dict) and "data" in funds_resp else (funds_resp if isinstance(funds_resp, dict) else {})
+        if "availabelBalance" in funds_data and "availableBalance" not in funds_data:
+            funds_data["availableBalance"] = funds_data["availabelBalance"]
+        elif "availableBalance" in funds_data and "availabelBalance" not in funds_data:
+            funds_data["availabelBalance"] = funds_data["availableBalance"]
+        if "dhanClientId" not in funds_data:
+            funds_data["dhanClientId"] = client_id
+
         return {
             "status": "success",
             "user_id": resolved_id,
             "dhan_client_id": client_id,
+            "data": funds_data,
             "funds": {
-                "availableBalance": funds_data.get("availabelBalance", 0) or funds_data.get("availableBalance", 0) or 0,
+                "availableBalance": funds_data.get("availableBalance", 0) or 0,
                 "utilizedMargin": funds_data.get("utilizedAmount", 0) or funds_data.get("utilizedMargin", 0) or 0,
                 "sodLimit": funds_data.get("sodLimit", 0) or 0,
                 "collateralAmount": funds_data.get("collateralAmount", 0) or 0,

@@ -73,6 +73,15 @@ class PreMarketMacroRadar:
             self.genai_client = None
             self.vertex_available = False
 
+    def _get_model_id(self) -> str:
+        """Resolve valid Vertex AI model ID with safe normalization."""
+        model = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+        # On Vertex AI (ADC), gemini-3.6-flash is not a registered publisher model.
+        # Normalize to verified production model gemini-2.5-flash
+        if "3.6" in model or not model:
+            return "gemini-2.5-flash"
+        return model
+
     def fetch_live_search_telemetry(self) -> Dict[str, Any]:
         """Fetches live real-time pre-market indicators via Vertex AI Search Grounding"""
         if not self.vertex_available or not self.genai_client:
@@ -91,7 +100,7 @@ class PreMarketMacroRadar:
                 "us_10y_yield (float), dxy_index (float), macro_bias (str), macro_synthesis (str)."
             )
             resp = self.genai_client.models.generate_content(
-                model=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),
+                model=self._get_model_id(),
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     tools=[types.Tool(google_search=types.GoogleSearch())]
@@ -179,7 +188,7 @@ class PreMarketMacroRadar:
                     f"Provide a 3-sentence institutional macro summary for NIFTY/BANKNIFTY F&O opening bias."
                 )
                 response = self.genai_client.models.generate_content(
-                    model=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),
+                    model=self._get_model_id(),
                     contents=prompt
                 )
                 gemini_text = response.text.strip()

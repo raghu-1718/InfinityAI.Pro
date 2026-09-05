@@ -37,7 +37,7 @@ class GeminiModel(Enum):
     # === GEMINI 2.5 MODELS (Production Ready) ===
     GEMINI_25_PRO = "gemini-2.5-pro"                 # Best for complex reasoning, 15 RPM
     GEMINI_25_PRO_EXP = "gemini-2.0-pro-exp"         # Experimental features (2.0 based)
-    GEMINI_25_FLASH = "gemini-3.6-flash"             # Upgraded to 3.6-flash
+    GEMINI_25_FLASH = "gemini-2.5-flash"             # Production Verified Vertex AI Model
     GEMINI_25_FLASH_LITE = "gemini-2.5-flash-lite"   # Ultra-fast, 4K RPM, unlimited RPD
     GEMINI_25_FLASH_IMAGE = "gemini-2.5-flash-image" # Image generation with 2.5
 

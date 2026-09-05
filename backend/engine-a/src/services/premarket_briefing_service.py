@@ -107,7 +107,7 @@ class PreMarketBriefingService:
         try:
             resp = await asyncio.to_thread(
                 lambda: self.genai_client.models.generate_content(
-                    model=os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash"),
+                    model="gemini-2.5-flash" if "3.6" in os.getenv("GEMINI_MODEL_ID", "") else os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash"),
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         tools=[types.Tool(google_search=types.GoogleSearch())]

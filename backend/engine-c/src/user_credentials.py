@@ -49,6 +49,7 @@ def get_encryption_key() -> bytes:
             logger.debug(f"SecretManager USER_CREDENTIALS_KEY lookup skipped: {e}")
 
     if env_key:
+        env_key = env_key.strip("'\"\r\n\t ")
         try:
             # 64-char hex → 32 raw bytes
             if len(env_key) == 64:

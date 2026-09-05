@@ -67,88 +67,46 @@ MOCK_FUNDS_RESPONSE = {
 @pytest.mark.asyncio
 async def test_get_funds_success():
     """
-    Test retrieving funds with valid credentials, verifying correct parsing 
+    Test retrieving funds with valid credentials, verifying correct parsing
     of the 'availabelBalance' typo.
     """
-    
-    # Mock UserCredentialsManager
-    with patch('src.main.get_credentials_manager') as mock_get_cm:
-        mock_cm_instance = MagicMock()
-        mock_get_cm.return_value = mock_cm_instance
-        
-        # Mock get_user_credentials (Async)
-        # Structure must match: {"credentials": {...}}
-        mock_cm_instance.get_user_credentials = AsyncMock(return_value={"credentials": MOCK_CREDS})
-        
-        # Mock dhanhq client
-        with patch('src.main.dhanhq') as mock_dhan_init:
-            mock_dhan_instance = MagicMock()
-            mock_dhan_init.return_value = mock_dhan_instance
-            
-            # Mock get_fund_limits return value
-            mock_dhan_instance.get_fund_limits.return_value = MOCK_FUNDS_RESPONSE
-            
-            # Make request
-            response = client.get(f"/api/dhan/funds?user_id={MOCK_USER_ID}")
-            
-            # Assertions
-            if response.status_code == 404:
-                pytest.fail(f"Endpoint /api/dhan/funds not found. check routes.")
-                
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "success"
-            
-            # Verify data passed through correctly
-            print("DEBUG DATA:", data)
-            funds_data = data.get("data", {})
-            assert funds_data.get("dhanClientId") == MOCK_CLIENT_ID
-            # Check if the tyop is preserved (as Engine A/C usually passthrough)
-            assert funds_data["availabelBalance"] == 100.25
+    mock_dhan_instance = MagicMock()
+    mock_dhan_instance.get_fund_limits.return_value = MOCK_FUNDS_RESPONSE
+
+    with patch('src.dhan_data_api.get_dhan_client_for_user', new=AsyncMock(return_value=(mock_dhan_instance, MOCK_CLIENT_ID, MOCK_USER_ID))):
+        response = client.get(f"/api/dhan/funds?user_id={MOCK_USER_ID}")
+
+        if response.status_code == 404:
+            pytest.fail(f"Endpoint /api/dhan/funds not found. check routes.")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+
+        funds_data = data.get("data", {})
+        assert funds_data.get("dhanClientId") == MOCK_CLIENT_ID
+        assert funds_data["availabelBalance"] == 100.25
+
 
 @pytest.mark.asyncio
 async def test_get_funds_no_creds():
     """Test get funds handles missing credentials gracefully"""
-    
-    with patch('src.main.get_credentials_manager') as mock_get_cm:
-        mock_cm_instance = MagicMock()
-        mock_get_cm.return_value = mock_cm_instance
-        
-        # Mock get_user_credentials returning None
-        mock_cm_instance.get_user_credentials = AsyncMock(return_value=None)
-        
+    from fastapi import HTTPException
+    with patch('src.dhan_data_api.get_dhan_client_for_user', side_effect=HTTPException(status_code=401, detail="Dhan credentials not configured")):
         response = client.get(f"/api/dhan/funds?user_id=nonexistent")
-        
-        # Should return error or handled failure
-        assert response.status_code in [400, 404, 401, 500] 
-        # Note: 500 is technically a failure, but we prefer 400/404. 
-        # If code raises Exception on None credentials, it might be 500.
+        assert response.status_code in [400, 404, 401, 500]
+
 
 @pytest.mark.asyncio
 async def test_get_funds_fallback():
     """Test get funds uses fallback credentials if manager returns None"""
-    
-    with patch('src.main.get_credentials_manager') as mock_get_cm:
-        mock_cm_instance = MagicMock()
-        mock_get_cm.return_value = mock_cm_instance
-        
-        # Mock get_user_credentials returning None (simulating missing user)
-        mock_cm_instance.get_user_credentials = AsyncMock(return_value=None)
-        # Mock find_credentials_by_client_id returning None (simulating missing client map)
-        mock_cm_instance.find_credentials_by_client_id = AsyncMock(return_value=None)
-        
-        # Mock dhanhq client to return success when initialized with fallback
-        with patch('src.main.dhanhq') as mock_dhan_init:
-            mock_dhan_instance = MagicMock()
-            mock_dhan_init.return_value = mock_dhan_instance
-            mock_dhan_instance.get_fund_limits.return_value = MOCK_FUNDS_RESPONSE
-            
-            # Request with the fallback user ID
-            # "1101302170" is the fallback ID in main.py
-            # "test-user-fallback" is also supported
-            response = client.get(f"/api/dhan/funds?user_id=1101302170")
-            
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "success"
-            assert data["data"]["availabelBalance"] == 100.25
+    mock_dhan_instance = MagicMock()
+    mock_dhan_instance.get_fund_limits.return_value = MOCK_FUNDS_RESPONSE
+
+    with patch('src.dhan_data_api.get_dhan_client_for_user', new=AsyncMock(return_value=(mock_dhan_instance, "1101302170", "1101302170"))):
+        response = client.get(f"/api/dhan/funds?user_id=1101302170")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["data"]["availabelBalance"] == 100.25

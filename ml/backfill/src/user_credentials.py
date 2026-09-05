@@ -22,6 +22,7 @@ def get_encryption_key() -> bytes:
     """Get or generate encryption key for user credentials"""
     env_key = os.getenv("USER_CREDENTIALS_KEY") or os.getenv("ENCRYPTION_KEY")
     if env_key:
+        env_key = env_key.strip("'\"\r\n\t ")
         try:
             if len(env_key) == 64:
                 try:

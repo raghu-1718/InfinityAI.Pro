@@ -55,7 +55,8 @@ class FinanceAIModel:
             api_key = os.getenv("GEMINI_API_KEY")
             if api_key:
                 genai.configure(api_key=api_key)
-                model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3.6-flash")
+                raw_model = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+                model_id = "gemini-2.5-flash" if "3.6" in raw_model or not raw_model else raw_model
                 self._client = genai.GenerativeModel(model_id)
                 logger.info(f"✅ FinanceAIModel: Initialized Gemini model ({model_id})")
             else:
