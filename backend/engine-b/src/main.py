@@ -1200,24 +1200,18 @@ class MarketDataEngine:
                 project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
                 bq_client = bigquery.Client(project=project_id)
 
-                # Try infinity_dataset.market_ticks_history first (full history)
+                # Authoritative BigQuery historical daily OHLCV backtest table
                 bq_query = f"""
                     SELECT
-                        DATE(timestamp) AS Date,
-                        FIRST_VALUE(ltp) OVER (PARTITION BY DATE(timestamp) ORDER BY timestamp) AS open,
-                        MAX(ltp) OVER (PARTITION BY DATE(timestamp)) AS high,
-                        MIN(ltp) OVER (PARTITION BY DATE(timestamp)) AS low,
-                        LAST_VALUE(ltp) OVER (
-                            PARTITION BY DATE(timestamp)
-                            ORDER BY timestamp
-                            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-                        ) AS close,
-                        SUM(volume) OVER (PARTITION BY DATE(timestamp)) AS volume
-                    FROM `{project_id}.infinity_dataset.market_ticks_history`
+                        bar_date AS Date,
+                        open,
+                        high,
+                        low,
+                        close,
+                        volume
+                    FROM `{project_id}.market_data.historical_ohlcv_backtest`
                     WHERE security_id = @sec_id
-                      AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-                    QUALIFY ROW_NUMBER() OVER (PARTITION BY DATE(timestamp) ORDER BY timestamp DESC) = 1
-                    ORDER BY Date DESC
+                    ORDER BY bar_date DESC
                     LIMIT {days}
                 """
                 job_config = bigquery.QueryJobConfig(

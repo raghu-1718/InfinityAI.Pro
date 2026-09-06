@@ -592,11 +592,17 @@ class AutonomousTrader:
             symbol_upper = symbol.upper()
 
             # ---------------------------------------------------------
-            # OPENING VOLATILITY COOLDOWN GATE (09:15 - 09:20 IST)
+            # MARKET HOURS ENFORCEMENT GATE (09:15 - 15:30 IST Mon-Fri)
             # ---------------------------------------------------------
             try:
                 import pytz
                 ist_now = datetime.now(pytz.timezone('Asia/Kolkata'))
+                is_weekend = ist_now.weekday() >= 5
+                market_open = ist_now.replace(hour=9, minute=15, second=0, microsecond=0)
+                market_close = ist_now.replace(hour=15, minute=30, second=0, microsecond=0)
+                if is_weekend or not (market_open <= ist_now <= market_close):
+                    logger.info(f"ℹ️ Market CLOSED (09:15–15:30 IST Mon-Fri). Trade execution suppressed for {symbol_upper} at {ist_now.strftime('%H:%M:%S')} IST.")
+                    return
                 if ist_now.hour == 9 and ist_now.minute < 20:
                     logger.info(f"⏳ Opening volatility cooldown active (09:15-09:20 IST) - Skipping trade entry for {symbol_upper}")
                     return
@@ -611,7 +617,7 @@ class AutonomousTrader:
                     option_type="CE" if side.upper() in ["BUY", "BUY_CALL"] else "PE"
                 )
                 if not opt_info or not opt_info.get("security_id"):
-                    logger.error(f"🛑 TRADE ABORTED: Live Option Strike could not be resolved for {symbol_upper} spot {current_price}")
+                    logger.warning(f"⚠️ Live Option Strike could not be resolved for {symbol_upper} spot {current_price} (Market likely closed or strike not listed)")
                     self.audit_logger.log_trade_rejected(uid, symbol_upper, "STRIKE_UNAVAILABLE", {"spot": current_price})
                     return
 
