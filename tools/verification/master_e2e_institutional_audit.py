@@ -252,7 +252,7 @@ def audit_layer_4_streaming_bigquery():
     t0 = time.perf_counter()
     try:
         cmd = ["gcloud", "pubsub", "topics", "list", f"--project={PROJECT_ID}", "--format=json"]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=15, shell=True)
         lat = (time.perf_counter() - t0) * 1000
         if res.returncode == 0:
             topics = json.loads(res.stdout)
@@ -399,7 +399,7 @@ def audit_layer_7_cloud_schedulers():
     t0 = time.perf_counter()
     try:
         cmd = ["gcloud", "scheduler", "jobs", "list", "--location=asia-south1", f"--project={PROJECT_ID}", "--format=json"]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20, shell=True)
         lat = (time.perf_counter() - t0) * 1000
         if res.returncode == 0:
             jobs = json.loads(res.stdout)
