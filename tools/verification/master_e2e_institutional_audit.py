@@ -105,7 +105,7 @@ def audit_layer_2_cloud_run():
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_a_url}/engine-a/health", headers={"User-Agent": "InfinityAI-Audit/3.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             lat = (time.perf_counter() - t0) * 1000
             data = json.loads(resp.read().decode('utf-8'))
             details = f"Status: {data.get('status', 'ok')} | Service: {data.get('service', 'engine-a')} | Version: {data.get('version')}"
@@ -118,7 +118,7 @@ def audit_layer_2_cloud_run():
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_a_url}/api/v1/auto-trade/autonomous-state?user_id=raghu_primary", headers={"User-Agent": "InfinityAI-Audit/3.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             lat = (time.perf_counter() - t0) * 1000
             data = json.loads(resp.read().decode('utf-8'))
             is_auto = data.get("autonomous_mode", data.get("config", {}).get("is_autonomous_active"))
@@ -134,7 +134,7 @@ def audit_layer_2_cloud_run():
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_b_url}/health", headers={"User-Agent": "InfinityAI-Audit/3.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             lat = (time.perf_counter() - t0) * 1000
             data = json.loads(resp.read().decode('utf-8'))
             details = f"Status: {data.get('status', 'ok')} | Service: {data.get('service', 'engine-b')} | Version: {data.get('version')}"
@@ -147,7 +147,7 @@ def audit_layer_2_cloud_run():
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_c_url}/health", headers={"User-Agent": "InfinityAI-Audit/3.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             lat = (time.perf_counter() - t0) * 1000
             data = json.loads(resp.read().decode('utf-8'))
             details = f"Status: {data.get('status', 'ok')} | Service: {data.get('service', 'engine-c')} | Version: {data.get('version')}"
@@ -160,7 +160,7 @@ def audit_layer_2_cloud_run():
     t0 = time.perf_counter()
     try:
         req = urllib.request.Request(f"{engine_c_url}/api/dhan/connection/status", headers={"User-Agent": "InfinityAI-Audit/3.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             lat = (time.perf_counter() - t0) * 1000
             data = json.loads(resp.read().decode('utf-8'))
             details = f"Auth Status: {data.get('status')} | Client ID: {data.get('dhan_client_id')} | Auth OK: {data.get('is_authenticated')}"
