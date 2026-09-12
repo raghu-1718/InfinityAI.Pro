@@ -28,6 +28,7 @@ class BatchSignalsRequest(BaseModel):
     symbols: List[str]
     user_id: Optional[str] = None
     fast: bool = True
+    timeframe: str = "5m"
 
 class InstrumentSignalsRequest(BaseModel):
     instruments: List[str]

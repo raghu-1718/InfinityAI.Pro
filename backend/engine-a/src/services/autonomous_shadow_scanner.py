@@ -246,6 +246,7 @@ class ContinuousShadowScanner:
             payload = {
                 "symbols": CORE_SYMBOLS,
                 "fast": True,
+                "timeframe": os.getenv("SHADOW_SIGNAL_TIMEFRAME", "5m"),
                 "user_id": "shadow_telemetry_scanner"
             }
             internal_token = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
@@ -394,4 +395,3 @@ class ContinuousShadowScanner:
 # Class and Singleton Instances
 AutonomousShadowScanner = ContinuousShadowScanner
 AUTONOMOUS_SHADOW_SCANNER = ContinuousShadowScanner()
-

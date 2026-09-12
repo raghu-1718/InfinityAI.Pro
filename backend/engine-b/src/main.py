@@ -1031,6 +1031,42 @@ class MarketDataEngine:
         self.default_user_id = os.getenv("DEFAULT_USER_ID", "raghu_primary")
         self._init_dhan_client()
 
+    @staticmethod
+    def _normalize_timeframe(timeframe: Optional[str]) -> str:
+        tf = (timeframe or "1d").strip().lower()
+        alias_map = {
+            "daily": "1d",
+            "day": "1d",
+            "d": "1d",
+            "1day": "1d",
+            "1h": "1h",
+            "60m": "1h",
+            "hourly": "1h",
+            "15m": "15m",
+            "15min": "15m",
+            "5m": "5m",
+            "5min": "5m",
+            "1m": "1m",
+            "1min": "1m",
+            "minute": "1m",
+        }
+        return alias_map.get(tf, "1d")
+
+    @staticmethod
+    def _resample_intraday(df: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+        if df.empty or timeframe not in {"5m", "15m", "1h"}:
+            return df
+        rule = {"5m": "5min", "15m": "15min", "1h": "1h"}[timeframe]
+        ohlc = {
+            "open": "first",
+            "high": "max",
+            "low": "min",
+            "close": "last",
+            "volume": "sum",
+        }
+        out = df.resample(rule).agg(ohlc).dropna(subset=["open", "high", "low", "close"], how="any")
+        return out
+
     def _init_dhan_client(self):
         """Initialize DhanHQ client with GCP secrets"""
         try:
@@ -1079,7 +1115,7 @@ class MarketDataEngine:
             logger.debug(f"Engine-C live data fetch: {e}")
         return None
 
-    async def fetch_data(self, symbol: str, days: int = 365) -> tuple:
+    async def fetch_data(self, symbol: str, days: int = 365, timeframe: str = "1d", fast: bool = False) -> tuple:
         """
         Smart Fetch with source tracking:
         0. Ping Engine-C for live connection status
@@ -1090,12 +1126,14 @@ class MarketDataEngine:
         """
         self._fetch_live_data_from_engine_c()
         symbol = symbol.upper()
-        cache_key = f"{symbol}_{days}"
+        timeframe = self._normalize_timeframe(timeframe)
+        cache_key = f"{symbol}_{days}_{timeframe}_{'fast' if fast else 'std'}"
 
         # Check cache (5 min TTL)
         if cache_key in self.cache:
             cached_data, cached_time, source = self.cache[cache_key]
-            if (datetime.now() - cached_time).seconds < 300:
+            cache_ttl_sec = 60 if timeframe != "1d" else 300
+            if (datetime.now() - cached_time).seconds < cache_ttl_sec:
                 return cached_data, source
 
         df = pd.DataFrame()
@@ -1125,19 +1163,33 @@ class MarketDataEngine:
             instrument_type = "EQUITY"
 
         to_date = datetime.now().strftime("%Y-%m-%d")
-        from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        intraday_lookback_days = 5 if fast else 15
+        effective_days = intraday_lookback_days if timeframe != "1d" else days
+        from_date = (datetime.now() - timedelta(days=effective_days)).strftime("%Y-%m-%d")
+
+        is_intraday = timeframe != "1d"
 
         # Method 1A: Direct DhanHQ API
         if self.dhan and sec_id:
             try:
-                logger.info(f"📡 Calling DhanHQ direct historical_daily_data for {symbol}: sec_id={sec_id}")
-                resp = self.dhan.historical_daily_data(
-                    security_id=sec_id,
-                    exchange_segment=exchange_segment,
-                    instrument_type=instrument_type,
-                    from_date=from_date,
-                    to_date=to_date
-                )
+                if is_intraday:
+                    logger.info(f"📡 Calling DhanHQ direct intraday_minute_data for {symbol}: sec_id={sec_id}, timeframe={timeframe}")
+                    resp = self.dhan.intraday_minute_data(
+                        security_id=sec_id,
+                        exchange_segment=exchange_segment,
+                        instrument_type=instrument_type,
+                        from_date=from_date,
+                        to_date=to_date
+                    )
+                else:
+                    logger.info(f"📡 Calling DhanHQ direct historical_daily_data for {symbol}: sec_id={sec_id}")
+                    resp = self.dhan.historical_daily_data(
+                        security_id=sec_id,
+                        exchange_segment=exchange_segment,
+                        instrument_type=instrument_type,
+                        from_date=from_date,
+                        to_date=to_date
+                    )
                 if resp and resp.get('status') == 'success' and resp.get('data'):
                     raw_d = resp['data']
                     candle_d = raw_d.get('data', raw_d) if isinstance(raw_d, dict) else raw_d
@@ -1158,7 +1210,7 @@ class MarketDataEngine:
                         "instrument_type": instrument_type,
                         "from_date": from_date,
                         "to_date": to_date,
-                        "interval": "daily",
+                        "interval": "minute" if is_intraday else "daily",
                         "user_id": self.default_user_id
                     },
                     timeout=15
@@ -1181,21 +1233,31 @@ class MarketDataEngine:
             }
             df.rename(columns=col_map, inplace=True)
             if 'Date' in df.columns:
-                df['Date'] = pd.to_datetime(df['Date'], unit='s' if df['Date'].dtype in ['float64', 'int64'] else None)
+                if pd.api.types.is_numeric_dtype(df['Date']):
+                    max_ts = pd.to_numeric(df['Date'], errors='coerce').max()
+                    ts_unit = "ms" if pd.notna(max_ts) and float(max_ts) > 10_000_000_000 else "s"
+                    df['Date'] = pd.to_datetime(df['Date'], unit=ts_unit)
+                else:
+                    df['Date'] = pd.to_datetime(df['Date'])
                 df.set_index('Date', inplace=True)
             
             # Ensure standard lowercase column names
             df.columns = [c.lower() for c in df.columns]
 
             if len(df) >= 30:
+                if is_intraday:
+                    df = self._resample_intraday(df, timeframe)
                 source = "dhan"
                 self.data_source_stats["dhan"] += 1
-                logger.info(f"📊 Fetched {len(df)} days from DhanHQ for {symbol}")
+                logger.info(
+                    f"📊 Fetched {len(df)} {'bars' if is_intraday else 'days'} "
+                    f"from DhanHQ for {symbol} (timeframe={timeframe})"
+                )
             else:
                 df = pd.DataFrame()
 
         # Method 2: BigQuery Live Ticks (primary authoritative real-time source)
-        if df.empty and sec_id:
+        if df.empty and sec_id and not is_intraday:
             try:
                 project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
                 bq_client = bigquery.Client(project=project_id)
@@ -1238,7 +1300,9 @@ class MarketDataEngine:
             try:
                 logger.info(f"Using YFinance fallback for {symbol}")
                 yahoo_symbol = self.YAHOO_SYMBOLS.get(symbol, f"{symbol}.NS")
-                df = yf.download(yahoo_symbol, period=f"{days}d", interval="1d", progress=False)
+                yf_interval = "1d" if timeframe == "1d" else ("1h" if timeframe == "1h" else "15m")
+                yf_period = f"{days}d" if timeframe == "1d" else ("60d" if timeframe == "15m" else "730d")
+                df = yf.download(yahoo_symbol, period=yf_period, interval=yf_interval, progress=False)
 
                 if not df.empty and len(df) >= 50:
                     # Handle MultiIndex columns from yfinance
@@ -1252,6 +1316,8 @@ class MarketDataEngine:
                     required_cols = ['open', 'high', 'low', 'close', 'volume']
                     if all(col in df.columns for col in required_cols):
                         df = df[required_cols]
+                        if timeframe in {"5m", "15m", "1h"}:
+                            df = self._resample_intraday(df, timeframe)
 
                     source = "yahoo"
                     self.data_source_stats["yahoo"] += 1
@@ -2085,7 +2151,7 @@ def fetch_market_breadth_and_gift() -> dict:
 
 
 
-def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float) -> dict:
+def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float, proposed_signal: str = "HOLD") -> dict:
     """
     Applies strict options-buying filters over raw ML ensemble probabilities.
     Vetoes trades occurring near heavy dynamic resistance or low-volume conditions (ADX < 25).
@@ -2103,15 +2169,23 @@ def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float) -
     macro = fetch_market_breadth_and_gift()
     adv_dec = macro["advance_decline_ratio"]
     
-    # Veto conditions for Option Buyers (Theta Protection)
+    # Direction-aware veto conditions for option buyers.
+    # This avoids one-sided filtering where only bullish setups are guarded.
     adx_threshold = float(os.getenv("ADX_MIN_THRESHOLD", "19.0"))
     veto_reason = None
+    proposed_signal = (proposed_signal or "HOLD").upper()
     if adx < adx_threshold:
         veto_reason = f"ADX < {adx_threshold:.1f} ({adx:.1f}): Market is ranging/consolidating (Theta decay risk)"
-    elif adv_dec < 0.5 and ml_probability > 0.65:
-        veto_reason = f"Weak Market Breadth (Adv/Dec: {adv_dec}): Fake bullish divergence"
-    elif close_price <= ema_200 and ml_probability > 0.65:
-        veto_reason = "Price testing 200-Day EMA dynamic resistance; breakout unconfirmed"
+    elif proposed_signal == "BUY":
+        if adv_dec < 0.5 and ml_probability > 0.65:
+            veto_reason = f"Weak Market Breadth (Adv/Dec: {adv_dec}): Fake bullish divergence"
+        elif close_price <= ema_200 and ml_probability > 0.65:
+            veto_reason = "Price testing 200-Day EMA dynamic resistance; breakout unconfirmed"
+    elif proposed_signal == "SELL":
+        if adv_dec > 2.0 and ml_probability > 0.65:
+            veto_reason = f"Strong Market Breadth (Adv/Dec: {adv_dec}): Fake bearish breakdown"
+        elif close_price >= ema_200 and ml_probability > 0.65:
+            veto_reason = "Price above 200-Day EMA dynamic support; bearish breakdown unconfirmed"
 
     # If a veto condition is triggered, force signal to HOLD/NEUTRAL
     if veto_reason:
@@ -2140,7 +2214,12 @@ async def generate_signal(req: SignalRequest):
     symbol = req.symbol.upper()
 
     # Fetch data
-    df, data_source = await MARKET_ENGINE.fetch_data(symbol, days=200)
+    df, data_source = await MARKET_ENGINE.fetch_data(
+        symbol,
+        days=200,
+        timeframe=getattr(req, "timeframe", "1d"),
+        fast=getattr(req, "fast", False),
+    )
     if df.empty or len(df) < 50:
         raise HTTPException(status_code=404, detail=f"Insufficient data for {symbol}")
 
@@ -2252,7 +2331,11 @@ async def generate_signal(req: SignalRequest):
         signal = "SELL"
 
     # 4. Theta Decay & Market Breadth Conviction Filter
-    conviction = evaluate_option_signal_conviction(df_features, ml_confidence if ml_used else 0.70)
+    conviction = evaluate_option_signal_conviction(
+        df_features,
+        ml_confidence if ml_used else 0.70,
+        proposed_signal=signal,
+    )
     if conviction["veto_triggered"] and signal != "HOLD":
         logger.info(f"🚫 VETO Applied for {symbol}: {conviction['reason']}")
         signal = "HOLD"
@@ -2561,7 +2644,13 @@ async def generate_batch_signals(request: BatchSignalsRequest, auth: bool = Depe
     async def _process_single_symbol(symbol: str):
         async with sem:
             try:
-                sig = await generate_signal(SignalRequest(symbol=symbol, fast=request.fast))
+                sig = await generate_signal(
+                    SignalRequest(
+                        symbol=symbol,
+                        fast=request.fast,
+                        timeframe=getattr(request, "timeframe", "5m"),
+                    )
+                )
                 stored = False
                 if request.user_id:
                     stored = await store_signal_to_firestore(request.user_id, sig)
@@ -5487,4 +5576,3 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
