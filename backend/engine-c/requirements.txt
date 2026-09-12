@@ -21,4 +21,6 @@ google-cloud-firestore>=2.11.0
 google-cloud-pubsub>=2.18.4
 google-cloud-bigquery>=3.11.0
 google-auth>=2.20.0
+google-cloud-discoveryengine>=0.13.0
+google-cloud-dialogflow-cx>=1.11.0
 aiolimiter

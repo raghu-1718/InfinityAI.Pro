@@ -90,14 +90,26 @@ class PreMarketMacroRadar:
             import re
             from google.genai import types
             prompt = (
-                "Search real-time live Indian pre-market data for today:\n"
-                "1. GIFT NIFTY live point movement / expected Nifty opening gap.\n"
-                "2. Brent Crude Oil percentage movement.\n"
-                "3. FII & DII cash market net activity from yesterday in INR Crores.\n"
-                "4. US 10Y Yield and DXY Dollar Index.\n\n"
-                "Output ONLY a raw valid JSON object (enclosed in ```json ... ```) with keys: "
-                "gift_nifty_points (float), brent_crude_pct (float), fii_net_crores (float), dii_net_crores (float), "
-                "us_10y_yield (float), dxy_index (float), macro_bias (str), macro_synthesis (str)."
+                "Search real-time live Indian and global financial market data for today across verified sources "
+                "(Moneycontrol, The Economic Times, Livemint, Reuters, Bloomberg, NSE India, BSE India, and RBI):\n"
+                "1. GIFT NIFTY live futures points and estimated market opening gap for NIFTY 50.\n"
+                "2. Brent Crude Oil percentage change and price.\n"
+                "3. FII and DII cash market net flow from the latest session in INR Crores.\n"
+                "4. US 10-Year Treasury Yield and US Dollar Index (DXY).\n"
+                "5. Top breaking domestic/global market catalysts, corporate earnings surprises, or central bank news.\n\n"
+                "Output ONLY a raw valid JSON object (enclosed in ```json ... ```) with exact keys:\n"
+                "{\n"
+                '  "gift_nifty_points": float,\n'
+                '  "brent_crude_pct": float,\n'
+                '  "fii_net_crores": float,\n'
+                '  "dii_net_crores": float,\n'
+                '  "us_10y_yield": float,\n'
+                '  "dxy_index": float,\n'
+                '  "macro_bias": "BULLISH" | "BEARISH" | "NEUTRAL",\n'
+                '  "macro_score": float between -1.0 and +1.0,\n'
+                '  "macro_synthesis": string summarizing key catalysts,\n'
+                '  "top_sources": list of string website domains used\n'
+                "}"
             )
             resp = self.genai_client.models.generate_content(
                 model=self._get_model_id(),
@@ -108,9 +120,11 @@ class PreMarketMacroRadar:
             )
             match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', resp.text, re.DOTALL)
             raw = match.group(1) if match else resp.text.strip()
-            return json.loads(raw)
+            data = json.loads(raw)
+            logger.info(f"🌐 [PreMarketMacroRadar] Live search telemetry grounded via Vertex AI: {data.get('macro_bias')} (Score: {data.get('macro_score')})")
+            return data
         except Exception as e:
-            logger.warning(f"Live search grounding failed in PreMarketMacroRadar: {e}")
+            logger.warning(f"Live search grounding fallback in PreMarketMacroRadar: {e}")
             return {}
 
     def generate_radar_report(

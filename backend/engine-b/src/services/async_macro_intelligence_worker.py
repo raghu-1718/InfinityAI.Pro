@@ -82,18 +82,11 @@ class AsyncMacroIntelligenceWorker:
 
         while self.running:
             try:
-                # 1. Execute grounding in worker thread (non-blocking)
+                # 1. Execute live Google Search grounding in worker thread (non-blocking)
                 loop = asyncio.get_event_loop()
                 report = await loop.run_in_executor(
                     None,
-                    lambda: premarket_macro_radar.generate_radar_report(
-                        gift_nifty_gap=65.0, # Live or calibrated lead
-                        crude_oil_pct=-0.95,
-                        us_10y_yield=4.25,
-                        dxy_index=103.4,
-                        fii_net_crores=1450.0,
-                        dii_net_crores=1100.0
-                    )
+                    lambda: premarket_macro_radar.generate_radar_report()
                 )
 
                 # 2. Check latest event-driven alternative data (RBI MPC / Fed)
@@ -132,6 +125,15 @@ class AsyncMacroIntelligenceWorker:
                     _LIVE_AI_STATE.policy_hawkish_score = policy_payload.hawkish_score
                     _LIVE_AI_STATE.policy_volatility_expectation = policy_payload.volatility_expectation
                     _LIVE_AI_STATE.policy_regime_multiplier = policy_payload.regime_multiplier
+
+                # 5. Persist real-time macro state to Firestore for cross-engine sync (Engine A & C)
+                try:
+                    from google.cloud import firestore
+                    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
+                    fdb = firestore.Client(project=project_id)
+                    fdb.collection("market_regime_heartbeats").document("LIVE_MACRO_PRIOR").set(asdict(_LIVE_AI_STATE), merge=True)
+                except Exception as fe:
+                    logger.debug(f"Firestore macro heartbeat sync notice: {fe}")
 
                 logger.info(
                     f"🧠 [Real-Time AI State Updated] Macro: {report.macro_bias} "

@@ -1427,6 +1427,16 @@ export const infinityCopilot = {
     });
     return res.json();
   },
+
+  async searchMacroVault(query: string, pageSize: number = 5) {
+    const res = await fetchWithTimeout(`${API_CONFIG.ENGINE_C}/api/v1/search/macro`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, page_size: pageSize }),
+      timeoutMs: 30000,
+    });
+    return res.json();
+  },
 };
 
 

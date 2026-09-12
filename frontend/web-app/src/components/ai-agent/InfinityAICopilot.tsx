@@ -36,6 +36,10 @@ import {
   ShieldAlert,
   BarChart2,
   Bot,
+  Mic,
+  MicOff,
+  BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import { infinityCopilot } from "@/lib/api";
 
@@ -51,6 +55,8 @@ interface Message {
     data: any[];
   } | null;
   bigqueryMetrics?: any;
+  citations?: Array<{ title: string; uri: string }>;
+  searchGrounding?: any;
 }
 
 const QUICK_PROMPTS = [
@@ -58,6 +64,7 @@ const QUICK_PROMPTS = [
   { label: "⚡ ML Tri-Model Signal", text: "What is the ML Tri-Model ensemble conviction and technical indicators for NIFTY?" },
   { label: "📈 Options PCR & Greeks", text: "Summarize the options chain open interest, Put-Call Ratio (PCR), and IV skew." },
   { label: "🛡️ VaR & Risk Sizing", text: "Evaluate portfolio Dynamic VaR, max drawdown risk, and position sizing guardrails." },
+  { label: "🏛️ SEBI & Macro Vault", text: "Search the Vertex AI Macro Vault for recent SEBI algorithmic trading guidelines and RBI policy stance." },
   { label: "🌐 Macro News Grounding", text: "What are the latest macroeconomic catalysts and central bank sentiment impacting Indian markets?" },
 ];
 
@@ -76,10 +83,12 @@ export function InfinityAICopilotPanel({ embedded = true }: { embedded?: boolean
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [copilotStatus, setCopilotStatus] = useState<any>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedSqlId, setExpandedSqlId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     fetchStatus();
@@ -88,6 +97,47 @@ export function InfinityAICopilotPanel({ embedded = true }: { embedded?: boolean
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  const toggleVoiceInput = () => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome/Edge.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-IN";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = (e: any) => {
+        console.warn("Speech recognition error:", e);
+        setIsListening(false);
+      };
+      recognition.onresult = (e: any) => {
+        const transcript = e.results[0][0].transcript;
+        if (transcript) {
+          setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn("Voice recognition init error:", err);
+      setIsListening(false);
+    }
+  };
 
   const fetchStatus = async () => {
     try {
@@ -124,6 +174,8 @@ export function InfinityAICopilotPanel({ embedded = true }: { embedded?: boolean
           model: res.model || "Vertex AI Gemini 2.5 Flash",
           sqlAudit: res.sql_audit,
           bigqueryMetrics: res.bigquery_metrics,
+          citations: res.citations || [],
+          searchGrounding: res.search_grounding,
         };
         setMessages((prev) => [...prev, copilotMsg]);
       } else {
@@ -237,6 +289,27 @@ export function InfinityAICopilotPanel({ embedded = true }: { embedded?: boolean
                   {msg.content}
                 </div>
 
+                {/* Grounded Citations & Sources (Vertex AI Search) */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-purple-300 flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> Grounded Citations:
+                    </span>
+                    {msg.citations.map((c, i) => (
+                      <a
+                        key={i}
+                        href={c.uri || "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/20 transition-all"
+                      >
+                        <span className="truncate max-w-[180px]">{c.title || "Reference"}</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+
                 {/* BigQuery SQL Audit Dropdown */}
                 {msg.sqlAudit && (
                   <div className="mt-3 pt-2 border-t border-white/5">
@@ -298,14 +371,29 @@ export function InfinityAICopilotPanel({ embedded = true }: { embedded?: boolean
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Ask InfinityAI about live BigQuery ticks, ML signals, or Options Greeks..."
+            placeholder={isListening ? "Listening... Speak now." : "Ask InfinityAI about live BigQuery ticks, ML signals, or Options Greeks..."}
             disabled={isLoading}
             className="bg-black/30 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-purple-500"
           />
           <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleVoiceInput}
+            disabled={isLoading}
+            title={isListening ? "Stop listening" : "Voice input (Dialogflow CX audio compatible)"}
+            className={`h-9 w-9 rounded-lg border transition-all shrink-0 ${
+              isListening
+                ? "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse"
+                : "bg-white/5 text-white/60 hover:text-white border-white/10"
+            }`}
+          >
+            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+          <Button
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 shadow-lg shadow-purple-500/20"
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 shadow-lg shadow-purple-500/20 shrink-0"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>

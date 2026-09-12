@@ -3563,7 +3563,9 @@ async def copilot_status_endpoint():
                 "Historical Multi-Factor Feature Store",
                 "Options Greeks & IV Skew Analysis",
                 "Tri-Model ML Ensemble Synthesis",
-                "Vertex AI News & Macro Grounding"
+                "Vertex AI News & Macro Grounding",
+                "Vertex AI Search (Discovery Engine)",
+                "Dialogflow CX Operational Fulfillment"
             ]
         }
     except Exception as e:
@@ -3573,6 +3575,48 @@ async def copilot_status_endpoint():
             "status": "degraded",
             "error": str(e)
         }
+
+
+# =====================================================================
+# Dialogflow CX Fulfillment Webhook & Vertex AI Search Endpoints
+# =====================================================================
+@app.post("/api/v1/dialogflow/webhook")
+async def dialogflow_cx_webhook(request: Request):
+    """
+    Dialogflow CX Fulfillment Webhook:
+    Enforces 09:15–15:30 IST market hours and handles emergency kill-switch / risk queries.
+    """
+    try:
+        data = await request.json()
+        from src.services.dialogflow_webhook_handler import get_dialogflow_webhook_handler
+        handler = get_dialogflow_webhook_handler()
+        return handler.handle_webhook(data)
+    except Exception as e:
+        logger.error(f"Dialogflow CX webhook error: {e}")
+        return {
+            "fulfillmentResponse": {
+                "messages": [{"text": {"text": [f"⚠️ Webhook processing error: {str(e)}"]}}]
+            }
+        }
+
+
+class MacroSearchRequest(BaseModel):
+    query: str
+    page_size: Optional[int] = 5
+
+
+@app.post("/api/v1/search/macro")
+async def macro_search_endpoint(payload: MacroSearchRequest):
+    """
+    Direct endpoint for Vertex AI Search over macro research, SEBI circulars, and trade journals.
+    """
+    try:
+        from src.services.discovery_search_service import get_discovery_search_service
+        service = get_discovery_search_service()
+        return service.search_macro_vault(query=payload.query, page_size=payload.page_size or 5)
+    except Exception as e:
+        logger.error(f"Macro search error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 

@@ -31,9 +31,9 @@ interface EODMetrics {
   total_brokerage_tax: number;
   net_pnl: number;
   net_roi_pct: number;
-  total_trades: int;
-  winning_trades: int;
-  losing_trades: int;
+  total_trades: number;
+  winning_trades: number;
+  losing_trades: number;
   win_rate_pct: number;
   profit_factor: number;
   max_drawdown_pct: number;

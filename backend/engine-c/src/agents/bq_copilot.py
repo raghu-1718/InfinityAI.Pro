@@ -230,7 +230,7 @@ Rules:
             return {"error": str(e)}
 
     async def chat(self, message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Main conversational chat pipeline combining BigQuery Agent + Vertex AI Gemini 2.5 Flash."""
+        """Main conversational chat pipeline combining BigQuery Agent + Vertex AI Search + Vertex AI Gemini 2.5 Flash."""
         # 1. Fetch BigQuery real-time & historical context in thread
         loop = asyncio.get_event_loop()
         bq_summary = await loop.run_in_executor(None, self.query_bigquery_live_metrics)
@@ -243,7 +243,22 @@ Rules:
             if "sql" in sql_res and "data" in sql_res:
                 sql_audit = sql_res
 
-        # 3. Live Option Market Data & Signals Synthesis Context
+        # 3. Vertex AI Search (Discovery Engine) Grounding for Macro & Regulatory Research
+        search_grounding = None
+        citations = []
+        macro_keywords = ["sebi", "rbi", "policy", "circular", "macro", "inflation", "fed", "fii", "dii", "regulation", "journal", "audit", "precedent", "news", "regime"]
+        if any(w in user_lower for w in macro_keywords):
+            try:
+                from src.services.discovery_search_service import get_discovery_search_service
+                search_service = get_discovery_search_service()
+                search_res = await loop.run_in_executor(None, search_service.search_macro_vault, message)
+                if search_res.get("status") == "success" and (search_res.get("results") or search_res.get("summary")):
+                    search_grounding = search_res
+                    citations = search_res.get("citations", [])
+            except Exception as e:
+                logger.info(f"Discovery search grounding notice: {e}")
+
+        # 4. Live Option Market Data & Signals Synthesis Context
         live_options_context = {}
         try:
             from google.cloud import firestore
@@ -273,9 +288,9 @@ Rules:
                 "message": "Live options surface unavailable; prompt user for manual market parameters."
             }
 
-        # 4. Formulate System Instruction & Context
+        # 5. Formulate System Instruction & Context
         system_instruction = f"""You are **InfinityAI**, the institutional algorithmic trading copilot for InfinityAI.Pro.
-You are powered by Google Cloud Platform, Vertex AI Gemini 2.5 Flash, and BigQuery Market Data Warehouse (`{self.project_id}`).
+You are powered by Google Cloud Platform, Vertex AI Gemini 2.5 Flash, Vertex AI Search (Agent Builder), and BigQuery Market Data Warehouse (`{self.project_id}`).
 
 You assist institutional traders, quantitative engineers, and retail traders with:
 1. Live & historical BigQuery market data analysis (`market_data.live_ticks`, `options_ticks`, `infinity_dataset.market_ticks_history`).
@@ -283,6 +298,7 @@ You assist institutional traders, quantitative engineers, and retail traders wit
 3. Tri-Model MLOps Ensemble insights (XGBoost 40%, LightGBM 30%, CatBoost 15%, Random Forest 15%).
 4. Multi-factor alphas: RSI (14), ADX, VWAP, Bollinger Bands, ATR.
 5. Dynamic VaR (Value-at-Risk) and risk management.
+6. Grounded macro intelligence from SEBI circulars, RBI announcements, and quantitative audit journals.
 
 FORMATTING GUIDELINES:
 - Use clean GitHub-flavored markdown with bold metrics, bullet points, and tables.
@@ -298,6 +314,7 @@ Context:
 - BigQuery Warehouse Status: {json.dumps(bq_summary, default=str)}
 - Live Options & Derivatives Context: {json.dumps(live_options_context, default=str)}
 - Additional User Context: {json.dumps(context or {}, default=str)}
+{f"- Vertex AI Search Grounding: {json.dumps(search_grounding, default=str)}" if search_grounding else ""}
 {f"- Live BigQuery SQL Execution Result: {json.dumps(sql_audit, default=str)}" if sql_audit else ""}
 
 User Query:
@@ -311,6 +328,8 @@ User Query:
                 "success": True,
                 "response": reply_text,
                 "sql_audit": sql_audit,
+                "search_grounding": search_grounding,
+                "citations": citations,
                 "bigquery_metrics": bq_summary,
                 "options_context": live_options_context,
                 "model": "Vertex AI Gemini 2.5 Flash",
