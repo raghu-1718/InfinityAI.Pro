@@ -19,42 +19,49 @@ class DynamicTrailingProfitLock:
     Uncapped Multi-Target Milestone Ratchet Engine.
     Protects downside while allowing multi-bagger runners (+50%, +100%, +200%) to compound.
     """
-    # Multi-Target Milestone Ladder Definition
+    # Institutional 3-Tier Dynamic Milestone Ladder Definition
     MILESTONE_LADDER = [
         {
             "level": 1,
-            "threshold_pct": 0.08,  # +8% Gain
-            "lock_profit_pct": 0.01, # Lock Breakeven + 1%
-            "tag": "TARGET_1_HIT",
-            "label": "Target 1 (+8% Breakeven Lock)"
+            "threshold_pct": 0.08,   # +8.0% Gain
+            "lock_profit_pct": 0.005, # Lock Breakeven + 0.5% (covers statutory STT & brokerage friction)
+            "tag": "BREAKEVEN_LOCKED",
+            "label": "Tier 1: Breakeven Lock (+8.0% Gain -> +0.5% Buffer)"
         },
         {
             "level": 2,
-            "threshold_pct": 0.15,  # +15% Gain
-            "lock_profit_pct": 0.10, # Lock +10% Profit
-            "tag": "TARGET_2_HIT",
-            "label": "Target 2 (+15% Gain / +10% Lock)"
+            "threshold_pct": 0.12,   # +12.0% Gain
+            "lock_profit_pct": 0.060, # Lock +6.0% Profit (50% of peak gains secured)
+            "tag": "PROFIT_LOCKED",
+            "label": "Tier 2: Profit Lock (+12.0% Gain -> +6.0% Locked)"
         },
         {
             "level": 3,
-            "threshold_pct": 0.30,  # +30% Gain
-            "lock_profit_pct": 0.20, # Lock +20% Profit
-            "tag": "TARGET_3_HIT",
-            "label": "Target 3 (+30% Gain / +20% Lock)"
+            "threshold_pct": 0.15,   # +15.0% Gain
+            "lock_profit_pct": 0.100, # Base lock +10%
+            "tag": "DYNAMIC_TRAILING",
+            "label": "Tier 3: Dynamic Trailing (+15.0% Gain -> Trail Peak - 4.0%)"
         },
         {
             "level": 4,
-            "threshold_pct": 0.50,  # +50% Gain
-            "lock_profit_pct": 0.38, # Lock +38% Profit
-            "tag": "TARGET_4_HIT",
-            "label": "Target 4 (+50% Gain / +38% Lock)"
+            "threshold_pct": 0.30,   # +30.0% Gain
+            "lock_profit_pct": 0.200, # Lock +20.0% Profit
+            "tag": "TARGET_3_HIT",
+            "label": "Target 3 (+30.0% Gain -> +20.0% Locked)"
         },
         {
             "level": 5,
-            "threshold_pct": 1.00,  # +100% Gain (Super Runner)
-            "lock_profit_pct": 0.80, # Lock +80% Profit
+            "threshold_pct": 0.50,   # +50.0% Gain
+            "lock_profit_pct": 0.380, # Lock +38.0% Profit
+            "tag": "TARGET_4_HIT",
+            "label": "Target 4 (+50.0% Gain -> +38.0% Locked)"
+        },
+        {
+            "level": 6,
+            "threshold_pct": 1.00,   # +100.0% Gain (Super Runner)
+            "lock_profit_pct": 0.800, # Lock +80.0% Profit
             "tag": "SUPER_RUNNER_HIT",
-            "label": "Super Runner (+100% Gain / Trailing Peak -10%)"
+            "label": "Super Runner (+100.0% Gain -> Trailing Peak - 10.0%)"
         }
     ]
 
@@ -132,14 +139,20 @@ class DynamicTrailingProfitLock:
                 if target_sl > new_sl:
                     new_sl = target_sl
 
-        # 3. Dynamic Peak Trailing for Super Runners (Peak Gain >= 50%)
+        # 3. Dynamic Peak Trailing for Tier 3 (+15% gain trails at Peak - 4%) & Super Runners
+        if peak_gain_pct >= 0.15:
+            tier3_trail = round(highest_p * 0.96, 2)
+            if tier3_trail > new_sl:
+                new_sl = tier3_trail
+
         if peak_gain_pct >= 0.50:
             # Trail 10% below highest observed peak
-            runner_sl = highest_p * 0.90
+            runner_sl = round(highest_p * 0.90, 2)
             if runner_sl > new_sl:
                 new_sl = runner_sl
 
-        new_sl = round(new_sl, 2)
+        # Ratchet Invariant: Stop-loss strictly moves in favor of the trade and CAN NEVER MOVE DOWN
+        new_sl = max(round(curr_sl, 2), round(new_sl, 2))
 
         # 4. Check if Current Price breached Trailing Stop Loss
         is_sl_hit = curr_p <= new_sl

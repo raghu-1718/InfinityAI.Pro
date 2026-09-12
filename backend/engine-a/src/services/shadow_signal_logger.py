@@ -78,6 +78,29 @@ class ShadowSignalLogger:
             logger.info(f"Signal for {symbol} is {decision} (conf: {confidence_score:.3f}). Skipping trade ledger commit.")
             return None
 
+        # SENSEX Derivative Restriction Gate (Eliminates -₹52k liquidity/spread drag)
+        if "SENSEX" in symbol.upper():
+            logger.warning(f"🚫 SENSEX derivatives disabled by Institutional Risk Audit. Skipping trade ledger commit for {symbol}.")
+            return None
+
+        # Tri-Model Unanimity Gate (Audited 84.06% Edge Enforcer)
+        is_call = "CALL" in decision.upper()
+        if is_call:
+            unanimous = (catboost_prob >= 0.60 and lightgbm_prob >= 0.60 and xgboost_prob >= 0.60)
+        else:
+            unanimous = (
+                (catboost_prob <= 0.40 and lightgbm_prob <= 0.40 and xgboost_prob <= 0.40) or
+                (catboost_prob >= 0.60 and lightgbm_prob >= 0.60 and xgboost_prob >= 0.60)
+            )
+
+        if not unanimous:
+            logger.info(
+                f"⏸️ Signal for {symbol} rejected by Tri-Model Unanimity Gate "
+                f"(CatBoost: {catboost_prob:.2f}, LightGBM: {lightgbm_prob:.2f}, XGBoost: {xgboost_prob:.2f}). "
+                f"Requires unanimous consensus >= 0.60."
+            )
+            return None
+
         now_utc = datetime.now(timezone.utc)
         # Indian Standard Time (UTC+5:30)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
@@ -268,7 +291,7 @@ class ShadowSignalLogger:
                 "stop_loss_premium": stop_loss_prem,
                 "stop_loss_percent": stop_loss_pct * 100,
                 "trailing_stop_loss_active": True,
-                "trailing_tiers": "Tier 1: +8% -> BE+1% | Tier 2: +12% -> +6% | Tier 3: +15% -> +12% | Tier 4: +20% -> +15% | Tier 5: +30% -> +22%",
+                "trailing_tiers": "Tier 1: +8% -> BE+0.5% | Tier 2: +12% -> +6.0% | Tier 3: +15% -> Dynamic Trail (Peak - 4.0%) | Super Runner: +50% -> Trail (Peak - 10%)",
                 "risk_reward": "1:1.25 (Trailing)",
                 "lot_size": actual_lot_size,
                 "pricing_source": pricing_source,

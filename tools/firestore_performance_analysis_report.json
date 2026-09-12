@@ -1,0 +1,299 @@
+{
+  "analysis_timestamp_utc": "2026-09-12T21:40:58.085987+00:00",
+  "gcp_project_id": "project-841b7f97-5ee3-4fbe-920",
+  "options_tri_model_audit": {
+    "total_records": 264,
+    "resolved_count": 241,
+    "open_count": 23,
+    "win_count": 85,
+    "loss_count": 153,
+    "breakeven_count": 3,
+    "win_rate_pct": 35.27,
+    "gross_pnl_inr": 20632.31,
+    "statutory_taxes_brokerage_inr": 13255.0,
+    "net_pnl_inr": 7377.31,
+    "profit_factor": 1.08,
+    "payoff_ratio": 1.95,
+    "avg_win_inr": 1110.62,
+    "avg_loss_inr": 568.76,
+    "expectancy_per_trade_inr": 30.63,
+    "largest_win_inr": 2785.7,
+    "largest_loss_inr": -2163.0,
+    "sharpe_ratio_est": 0.44,
+    "sortino_ratio_est": 0.9,
+    "avg_mfe_pct": 9.58,
+    "avg_mae_pct": 6.33,
+    "trailing_stop_active_signals": 241,
+    "tier_1_breakeven_locks": 158,
+    "tier_2_profit_locks": 158,
+    "tier_3_dynamic_trails": 62,
+    "target_hits": 58,
+    "full_stop_loss_hits": 50,
+    "capital_saved_by_trailing_sl_inr": 42657.0,
+    "brier_score_calibration": 0.5185,
+    "tri_model_consensus_win_rate": 84.06,
+    "tri_model_consensus_count": 69,
+    "gemini_aligned_win_rate": 35.15,
+    "gemini_aligned_count": 239,
+    "symbol_stats": {
+      "BANKNIFTY": {
+        "trades": 30,
+        "wins": 24,
+        "net_pnl": 37288.07000000001
+      },
+      "NIFTY": {
+        "trades": 23,
+        "wins": 21,
+        "net_pnl": 30688.31
+      },
+      "FINNIFTY": {
+        "trades": 50,
+        "wins": 22,
+        "net_pnl": -7881.339999999999
+      },
+      "SENSEX": {
+        "trades": 138,
+        "wins": 19,
+        "net_pnl": -52717.73
+      }
+    },
+    "direction_stats": {
+      "CE": {
+        "wins": 58,
+        "total": 69,
+        "net_pnl": 77055.27000000005
+      },
+      "PE": {
+        "wins": 28,
+        "total": 172,
+        "net_pnl": -69677.95999999999
+      }
+    }
+  },
+  "equity_momentum_audit": {
+    "total_scanned": 114,
+    "resolved_count": 93,
+    "open_positions": 21,
+    "target_hits": 5,
+    "stopped_out": 88,
+    "win_rate_pct": 5.38,
+    "profit_factor": 0.12,
+    "avg_return_pct": -1.46,
+    "avg_win_pct": 3.77,
+    "avg_loss_pct": -1.76,
+    "max_gain_pct": 4.03,
+    "max_drawdown_pct": -2.4,
+    "avg_time_to_target_sec": 3041,
+    "sector_breakdown": {
+      "Energy / Conglomerate": {
+        "trades": 9,
+        "wins": 2,
+        "returns": [
+          3.95,
+          3.95,
+          -2.08,
+          -2.08,
+          -2.08,
+          -1.48,
+          -1.52,
+          -1.61
+        ]
+      },
+      "Banking & Finance": {
+        "trades": 24,
+        "wins": 1,
+        "returns": [
+          -2.26,
+          -2.26,
+          -2.06,
+          -1.86,
+          -1.83,
+          -1.94,
+          -1.61,
+          -1.65,
+          -1.53,
+          -1.57,
+          -1.53,
+          -1.49,
+          -1.55,
+          -1.55,
+          -1.63,
+          -1.58,
+          -1.55,
+          -1.58,
+          2.87
+        ]
+      },
+      "Information Technology": {
+        "trades": 16,
+        "wins": 2,
+        "returns": [
+          4.03,
+          -2.14,
+          4.03,
+          -2.14,
+          -1.95,
+          -2.14,
+          -2.14,
+          -2.14,
+          -1.76,
+          -1.87,
+          -1.7,
+          -1.63,
+          -1.89,
+          -2.03
+        ]
+      },
+      "Telecom": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.82,
+          -1.54,
+          -1.56,
+          -1.72
+        ]
+      },
+      "Public Sector Banking": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -2.04,
+          -1.52,
+          -1.63,
+          -1.65
+        ]
+      },
+      "FMCG": {
+        "trades": 10,
+        "wins": 0,
+        "returns": [
+          -2.1,
+          -1.71,
+          -1.63,
+          -1.6,
+          -1.56,
+          -1.62,
+          -1.62,
+          -1.6
+        ]
+      },
+      "Insurance": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.83,
+          -1.57,
+          -1.81,
+          -1.62
+        ]
+      },
+      "Infrastructure": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.79,
+          -1.58,
+          -1.51,
+          -1.94
+        ]
+      },
+      "Automotive": {
+        "trades": 15,
+        "wins": 0,
+        "returns": [
+          -2.14,
+          -2.4,
+          -2.4,
+          -1.6,
+          -1.84,
+          -1.59,
+          -1.58,
+          -1.57,
+          -1.55,
+          -1.74,
+          -1.53,
+          -1.63
+        ]
+      },
+      "Power & Energy": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.66,
+          -1.65,
+          -1.62,
+          -1.64
+        ]
+      },
+      "Pharmaceuticals": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.99,
+          -1.72,
+          -1.48,
+          -1.52
+        ]
+      },
+      "Non-Banking Financial": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -1.92,
+          -1.66,
+          -1.56,
+          -1.65
+        ]
+      },
+      "Consumer Goods": {
+        "trades": 5,
+        "wins": 0,
+        "returns": [
+          -2.03,
+          -1.79,
+          -1.61,
+          -1.59
+        ]
+      }
+    }
+  },
+  "eod_journals_audit": {
+    "total_journals": 11,
+    "analyzed_sessions": 1,
+    "avg_daily_roi_pct": 13.18,
+    "avg_sharpe_ratio": 1.99,
+    "avg_sortino_ratio": 5.91,
+    "avg_profit_factor": 1.45,
+    "avg_win_rate_pct": 66.67,
+    "latest_session": {
+      "total_trades": 3,
+      "trailing_sl_breakeven_locks": 1,
+      "gift_nifty_lead": 82.0,
+      "total_brokerage_tax": 165.0,
+      "winning_trades": 2,
+      "losing_trades": 1,
+      "trailing_sl_profit_locks": 1,
+      "max_drawdown_pct": 2.15,
+      "net_pnl": 3955.5,
+      "net_roi_pct": 13.184999999999999,
+      "date_str": "2026-09-12",
+      "win_rate_pct": 66.66666666666666,
+      "starting_capital": 30000.0,
+      "trailing_sl_dynamic_exits": 1,
+      "sharpe_ratio": 1.99,
+      "sortino_ratio": 5.91,
+      "profit_factor": 1.45,
+      "regime_identified": "TRENDING_BULLISH",
+      "ending_capital": 33955.5,
+      "gross_pnl": 4120.5
+    }
+  },
+  "chop_veto_audit": {
+    "sample_size": 500,
+    "veto_count": 0,
+    "actionable_signals": 500,
+    "veto_rate_pct": 0.0,
+    "veto_reasons": {}
+  }
+}

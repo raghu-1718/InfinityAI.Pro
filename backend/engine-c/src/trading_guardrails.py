@@ -82,14 +82,20 @@ def validate_order_guardrails(
     Returns: {"valid": bool, "reason": str, "guardrails_violated": List[str]}
     """
     violations = []
+    sym_u = symbol.upper()
+
+    # Check 0: Institutional Risk Audit - Strict SENSEX derivative block (Eliminates -₹52k drag)
+    if "SENSEX" in sym_u:
+        violations.append("SENSEX derivatives disabled per Institutional Risk Audit (Focus restricted to NIFTY/BANKNIFTY)")
 
     # Check 1: Market hours (08:55 - 15:45 IST)
     if not is_market_open():
         violations.append(f"Market closed: Orders only allowed 08:55-15:45 IST weekdays")
 
-    # Check 2: Symbol whitelist
+    # Check 2: Symbol whitelist (Equities & approved NIFTY / BANKNIFTY index derivatives)
     whitelist = get_symbols_whitelist()
-    if symbol.upper() not in whitelist:
+    is_whitelisted_derivative = any(sym_u.startswith(idx) for idx in ["NIFTY", "BANKNIFTY"])
+    if sym_u not in whitelist and not is_whitelisted_derivative:
         violations.append(f"Symbol '{symbol}' not in approved whitelist: {whitelist}")
 
     # Check 3: Order quantity

@@ -2231,10 +2231,29 @@ async def place_order(order: OrderRequest, request: Request):
                     detail=f"Dhan Order Failed: {response.get('remarks', 'Unknown error')}"
                 )
             elif response.get("status") == "success":
+                order_id = response.get("data", {}).get("orderId")
+                # Automatically register position into TrailingStopManager for 3-Tier dynamic surveillance
+                try:
+                    from src.trailing_stop_manager import trailing_stop_manager
+                    pos_id = f"POS_{order_id or uuid.uuid4().hex[:8]}"
+                    px = float(order.price or 0.0)
+                    trailing_stop_manager.register_position(
+                        position_id=pos_id,
+                        symbol=order.security_id or getattr(order, 'symbol', 'DERIVATIVE'),
+                        security_id=order.security_id or "0",
+                        entry_price=px if px > 0 else 100.0,
+                        quantity=order.quantity,
+                        direction="LONG" if order.transaction_type.upper() == "BUY" else "SHORT",
+                        broker_order_id=str(order_id) if order_id else None
+                    )
+                    logger.info(f"📍 Registered live position {pos_id} in 3-Tier TrailingStopManager.")
+                except Exception as ex:
+                    logger.warning(f"Could not auto-register position in TrailingStopManager: {ex}")
+
                 return {
                     "status": "success",
                     "mode": "LIVE_TRADING",
-                    "order_id": response.get("data", {}).get("orderId"),
+                    "order_id": order_id,
                     "dhan_response": response
                 }
 
@@ -2245,6 +2264,29 @@ async def place_order(order: OrderRequest, request: Request):
     except Exception as e:
         logger.error(f"Order placement failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Order placement failed: {str(e)}")
+
+# --- Dynamic 3-Tier Trailing Stop-Loss Surveillance Endpoints ---
+class TrailingTickRequest(BaseModel):
+    position_id: str
+    current_ltp: float
+
+@app.get("/api/dhan/trailing-stop/positions")
+async def get_trailing_positions():
+    """Returns all active positions under 3-Tier Trailing Stop Surveillance."""
+    from src.trailing_stop_manager import trailing_stop_manager
+    active = {k: v.__dict__ for k, v in trailing_stop_manager.positions.items() if v.is_active}
+    return {
+        "status": "success",
+        "total_active": len(active),
+        "positions": active
+    }
+
+@app.post("/api/dhan/trailing-stop/update-tick")
+async def update_trailing_tick(req: TrailingTickRequest):
+    """Processes incoming live tick through 3-Tier Trailing Stop Invariant Engine."""
+    from src.trailing_stop_manager import trailing_stop_manager
+    res = trailing_stop_manager.update_tick(req.position_id, req.current_ltp)
+    return res
 
 # --- Order Cancellation Endpoint ---
 @app.post("/api/dhan/cancel-order")

@@ -282,14 +282,27 @@ class RiskManager:
             stop_loss_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
 
         sym_u = symbol.upper()
+        # Institutional Focus Allocation Gate: SENSEX derivatives strictly disabled
+        if "SENSEX" in sym_u:
+            return {
+                "symbol": symbol,
+                "lot_size": 20,
+                "optimal_lots": 0,
+                "total_units": 0,
+                "cost_per_lot": 0.0,
+                "total_margin_required": 0.0,
+                "max_risk_amount": 0.0,
+                "is_viable": False,
+                "rejection_reason": "SENSEX derivatives disabled per Institutional Risk Audit (Focus restricted to NIFTY & BANKNIFTY)",
+                "capital_utilization_pct": 0.0
+            }
+
         if "BANKNIFTY" in sym_u:
             lot_size = 30
         elif "FINNIFTY" in sym_u:
             lot_size = 60
         elif "MIDCP" in sym_u:
             lot_size = 120
-        elif "SENSEX" in sym_u:
-            lot_size = 20
         elif "NIFTY" in sym_u:
             lot_size = 65
         else:
