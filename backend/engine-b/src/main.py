@@ -1285,13 +1285,22 @@ class MarketDataEngine:
                     lambda: bq_client.query(bq_query, job_config=job_config).to_dataframe()
                 )
                 if not bq_rows.empty and len(bq_rows) >= 30:
-                    bq_rows = bq_rows.sort_values("Date")
-                    bq_rows = bq_rows.set_index("Date")
-                    bq_rows.index = pd.to_datetime(bq_rows.index)
-                    df = bq_rows[["open", "high", "low", "close", "volume"]].copy()
-                    source = "bigquery"
-                    self.data_source_stats["dhan"] += 1  # treated as real DhanHQ data
-                    logger.info(f"📊 Fetched {len(df)} days from BigQuery for {symbol}")
+                    max_date = pd.to_datetime(bq_rows["Date"].max())
+                    # Discard stale BigQuery backtest data older than 3 days to guarantee real-time prices
+                    if (datetime.now() - max_date).days > 3:
+                        logger.warning(
+                            f"⚠️ BigQuery data for {symbol} is stale (latest: {max_date.strftime('%Y-%m-%d')}). "
+                            f"Falling through to Yahoo Finance live feed."
+                        )
+                        df = pd.DataFrame()
+                    else:
+                        bq_rows = bq_rows.sort_values("Date")
+                        bq_rows = bq_rows.set_index("Date")
+                        bq_rows.index = pd.to_datetime(bq_rows.index)
+                        df = bq_rows[["open", "high", "low", "close", "volume"]].copy()
+                        source = "bigquery"
+                        self.data_source_stats["dhan"] += 1  # treated as real DhanHQ data
+                        logger.info(f"📊 Fetched {len(df)} days from BigQuery for {symbol}")
             except Exception as e:
                 logger.warning(f"BigQuery historical fetch failed for {symbol}: {e}")
 
@@ -1406,6 +1415,11 @@ class MarketDataEngine:
 
         # Normalize column names to lowercase
         df.columns = [c.lower() for c in df.columns]
+
+        # Handle zero or missing volume for index series (e.g. ^NSEI)
+        if 'volume' in df.columns:
+            if (df['volume'] == 0).all() or df['volume'].isna().all() or float(df['volume'].sum()) == 0.0:
+                df['volume'] = 100000.0
 
         if HAS_TA_LIB:
             try:
