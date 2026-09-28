@@ -133,11 +133,9 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
     sec_id_map = {
         "NIFTY": ("13", "IDX_I", "INDEX"),
         "BANKNIFTY": ("25", "IDX_I", "INDEX"),
+        "FINNIFTY": ("27", "IDX_I", "INDEX"),
+        "MIDCPNIFTY": ("44", "IDX_I", "INDEX"),
         "SENSEX": ("51", "IDX_I", "INDEX"),
-        "RELIANCE": ("2885", "NSE_EQ", "EQUITY"),
-        "TCS": ("11536", "NSE_EQ", "EQUITY"),
-        "INFY": ("1594", "NSE_EQ", "EQUITY"),
-        "HDFCBANK": ("1333", "NSE_EQ", "EQUITY")
     }
 
     sec_info = sec_id_map.get(symbol.upper(), ("13", "IDX_I", "INDEX"))
@@ -394,7 +392,7 @@ def train_tri_model_ensemble(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Tri-Model ML Ensemble on Real Market Data")
-    parser.add_argument("--symbol", type=str, default="NIFTY", help="Symbol to train on (e.g. NIFTY, BANKNIFTY, RELIANCE)")
+    parser.add_argument("--symbol", type=str, default="NIFTY", help="Options underlying index to train on (e.g. NIFTY, BANKNIFTY, FINNIFTY, SENSEX)")
     parser.add_argument("--days", type=int, default=730, help="Historical training lookback in days")
     parser.add_argument("--upload-gcs", action="store_true", default=True, help="Upload models to GCS vault")
     args = parser.parse_args()

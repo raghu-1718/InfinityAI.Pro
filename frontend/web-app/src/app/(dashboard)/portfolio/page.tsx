@@ -303,16 +303,12 @@ export default function PortfolioPage() {
         />
       </div>
 
-      {/* Tabs for Holdings vs Positions vs Orders vs AI Analysis */}
-      <Tabs defaultValue="holdings" className="space-y-4">
+      {/* Tabs for Positions vs Orders vs AI Analysis vs Collateral */}
+      <Tabs defaultValue="positions" className="space-y-4">
         <TabsList className="bg-card border border-border">
-          <TabsTrigger value="holdings" className="gap-2">
-            <Briefcase className="h-4 w-4" />
-            Equity Holdings ({holdings.length})
-          </TabsTrigger>
           <TabsTrigger value="positions" className="gap-2">
             <Layers className="h-4 w-4" />
-            Active Positions ({positions.length})
+            Active Options Positions ({positions.length})
           </TabsTrigger>
           <TabsTrigger value="orders" className="gap-2">
             <Clock className="h-4 w-4" />
@@ -322,9 +318,13 @@ export default function PortfolioPage() {
             <Brain className="h-4 w-4" />
             AI Portfolio Analysis
           </TabsTrigger>
+          <TabsTrigger value="holdings" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Demat Collateral ({holdings.length})
+          </TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Equity Holdings */}
+        {/* Tab 1: Demat Collateral */}
         <TabsContent value="holdings" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Holdings List */}
@@ -333,10 +333,10 @@ export default function PortfolioPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg">Portfolio Holdings</CardTitle>
-                      <CardDescription>Live equity positions synced from DhanHQ</CardDescription>
+                      <CardTitle className="text-lg">Demat Account Collateral</CardTitle>
+                      <CardDescription>Collateral assets and margin holdings synced from DhanHQ</CardDescription>
                     </div>
-                    <Badge variant="secondary">{holdings.length} stocks</Badge>
+                    <Badge variant="secondary">{holdings.length} assets</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>

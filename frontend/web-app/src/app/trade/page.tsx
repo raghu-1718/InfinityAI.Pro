@@ -297,7 +297,7 @@ export default function AutomatedTradingPage() {
               <p className="text-sm text-blue-800">
                 {assetClass === "options"
                   ? "Options strategies use multi-leg positions to limit risk and maximize probability of profit."
-                  : "Equity strategies use technical indicators to identify entry and exit points with defined risk management."}
+                  : "Commodity derivative strategies use technical indicators to identify entry and exit points with defined risk management."}
               </p>
             </div>
           </div>

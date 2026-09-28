@@ -269,7 +269,7 @@ try:
     HAS_GOOGLE_INTEGRATIONS = True
 except ImportError as e:
     HAS_GOOGLE_INTEGRATIONS = False
-    print(f"ℹ️ Google integrations not available: {e}")
+    logger.warning(f"Google integrations not available: {e}")
 
 # Enhanced GenAI with Function Calling (v3.7.7)
 try:

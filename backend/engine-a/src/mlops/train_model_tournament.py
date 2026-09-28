@@ -195,12 +195,12 @@ def evaluate_metrics(
         "trade_count": trade_count
     }
 
-def run_asset_tournament(asset_class: str = "EQUITY") -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
-    """Runs complete model tournament for an asset class."""
+def run_asset_tournament(asset_class: str = "OPTIONS") -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
+    """Runs complete model tournament for options / derivatives."""
     bq_client = bigquery.Client(project=PROJECT_ID)
     table_name = f"project-841b7f97-5ee3-4fbe-920.market_data.{asset_class.lower()}_training_features"
-    friction = 0.10 if asset_class == "EQUITY" else 0.05
-    min_trade_thresh = 20 if asset_class == "EQUITY" else 10
+    friction = 0.05
+    min_trade_thresh = 10
 
     logger.info(f"\n================================================================================")
     logger.info(f"   QUANT MODEL TOURNAMENT: {asset_class.upper()} (Friction: {friction}%)")
@@ -338,12 +338,11 @@ def run_asset_tournament(asset_class: str = "EQUITY") -> Tuple[pd.DataFrame, pd.
     return df_models, df_folds, best_candidate
 
 def run_tournament():
-    """Executes tournaments for Equities and Options, produces CSVs."""
-    eq_models, eq_folds, eq_best = run_asset_tournament("EQUITY")
+    """Executes tournaments strictly for Institutional Index Options, produces CSVs."""
     opt_models, opt_folds, opt_best = run_asset_tournament("OPTIONS")
 
-    df_all_models = pd.concat([eq_models, opt_models], ignore_index=True)
-    df_all_folds = pd.concat([eq_folds, opt_folds], ignore_index=True)
+    df_all_models = opt_models
+    df_all_folds = opt_folds
 
     os.makedirs("trained_models", exist_ok=True)
     df_all_models.to_csv("model_comparison.csv", index=False)
@@ -351,11 +350,11 @@ def run_tournament():
     logger.info("\n📁 Saved `model_comparison.csv` and `fold_metrics.csv`.")
 
     print("\n================================================================================")
-    print("                    MODEL TOURNAMENT AUDIT RESULTS TABLE                       ")
+    print("            INSTITUTIONAL OPTIONS TOURNAMENT AUDIT RESULTS TABLE                ")
     print("================================================================================")
     print(df_all_models.to_string(index=False))
 
-    return df_all_models, df_all_folds, eq_best, opt_best
+    return df_all_models, df_all_folds, opt_best
 
 if __name__ == "__main__":
     run_tournament()

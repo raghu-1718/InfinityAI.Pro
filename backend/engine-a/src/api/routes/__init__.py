@@ -1,3 +1,3 @@
-from . import equity, research
+from . import research
 
-__all__ = ["equity", "research"]
+__all__ = ["research"]

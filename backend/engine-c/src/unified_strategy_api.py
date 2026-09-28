@@ -17,12 +17,11 @@ router = APIRouter(prefix="/api/strategies", tags=["Unified Strategies"])
 
 class AssetClass(str, Enum):
     OPTIONS = "options"
-    EQUITIES = "equities"
     GIFT_NIFTY = "gift_nifty"
 
 
 class StrategyName(str, Enum):
-    # Options Strategies
+    # Institutional Options Strategies
     IRON_CONDOR = "iron_condor"
     BULL_CALL_SPREAD = "bull_call_spread"
     BEAR_PUT_SPREAD = "bear_put_spread"
@@ -30,12 +29,7 @@ class StrategyName(str, Enum):
     STRADDLE = "straddle"
     STRANGLE = "strangle"
     
-    # Equity Strategies
-    RSI = "rsi"
-    MA_CROSSOVER = "ma_crossover"
-    HYBRID = "hybrid"
-    
-    # GIFT Nifty
+    # GIFT Nifty Macro Momentum
     GIFT_NIFTY_GAP = "gift_nifty_gap"
 
 
@@ -168,49 +162,6 @@ def calculate_iron_condor_positions(
     }
 
 
-def calculate_equity_positions(
-    symbol: str,
-    spot_price: float,
-    capital: float,
-    risk_percent: float,
-    profit_target: float
-) -> Dict[str, Any]:
-    """Calculate equity positions"""
-    
-    # Calculate stop loss and take profit
-    stop_loss_pct = 2.0  # 2% stop loss
-    stop_loss_price = spot_price * (1 - stop_loss_pct / 100)
-    take_profit_price = spot_price * (1 + profit_target / 100)
-    
-    # Calculate position size
-    risk_amount = capital * (risk_percent / 100)
-    risk_per_share = spot_price - stop_loss_price
-    position_size = int(risk_amount / risk_per_share) if risk_per_share > 0 else 1
-    
-    # Build position
-    positions = [{
-        "symbol": symbol,
-        "action": "BUY",
-        "quantity": position_size,
-        "price": spot_price,
-        "order_type": "LIMIT"
-    }]
-    
-    capital_allocated = spot_price * position_size
-    max_loss = risk_per_share * position_size
-    max_profit = (take_profit_price - spot_price) * position_size
-    
-    return {
-        "positions": positions,
-        "capital_allocated": capital_allocated,
-        "position_size": position_size,
-        "max_profit": max_profit,
-        "max_loss": max_loss,
-        "risk_reward_ratio": max_loss / max_profit if max_profit > 0 else 0,
-        "entry_price": spot_price,
-        "stop_loss": stop_loss_price,
-        "take_profit": take_profit_price
-    }
 
 
 @router.post("/execute", response_model=StrategyExecutionResponse)
@@ -267,15 +218,6 @@ async def execute_strategy(
                     request.risk_percent,
                     lot_size
                 )
-        
-        elif request.asset_class == AssetClass.EQUITIES:
-            result = calculate_equity_positions(
-                request.symbol,
-                spot_price,
-                request.capital,
-                request.risk_percent,
-                request.profit_target
-            )
         
         else:
             raise HTTPException(status_code=400, detail="Asset class not supported yet")

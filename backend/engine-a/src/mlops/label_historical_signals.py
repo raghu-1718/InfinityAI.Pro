@@ -217,7 +217,7 @@ def ensure_feature_tables(bq_client: bigquery.Client):
         bigquery.SchemaField("created_at", "TIMESTAMP", mode="REQUIRED"),
     ]
 
-    for table_id in [EQUITY_FEATURES_TABLE, OPTIONS_FEATURES_TABLE]:
+    for table_id in [OPTIONS_FEATURES_TABLE]:
         table = bigquery.Table(table_id, schema=schema)
         table.time_partitioning = bigquery.TimePartitioning(
             type_=bigquery.TimePartitioningType.DAY,
@@ -228,33 +228,28 @@ def ensure_feature_tables(bq_client: bigquery.Client):
         logger.info(f"✅ BigQuery feature table verified: {table_id}")
 
 def run_labeling_pipeline():
-    """Extracts raw bars, engineers features, and populates both feature stores."""
+    """Extracts raw bars, engineers features, and populates options feature store."""
     bq_client = bigquery.Client(project=PROJECT_ID)
     ensure_feature_tables(bq_client)
 
     raw_query = f"""
     SELECT * 
     FROM `{PROJECT_ID}.market_data.historical_ohlcv_backtest`
+    WHERE instrument_type = 'INDEX'
     ORDER BY symbol, bar_date ASC
     """
-    logger.info("📥 Pulling raw historical bars from BigQuery...")
+    logger.info("📥 Pulling raw historical index bars for Options modeling from BigQuery...")
     df_raw = bq_client.query(raw_query).to_dataframe()
-    logger.info(f"   • Loaded {len(df_raw):,} raw bars across {df_raw['symbol'].nunique()} instruments.")
+    logger.info(f"   • Loaded {len(df_raw):,} raw index bars across {df_raw['symbol'].nunique()} instruments.")
 
-    # 1. Equities
-    df_eq_raw = df_raw[df_raw["instrument_type"] == "EQUITY"].copy()
-    logger.info(f"⚙️ Engineering features and labels for Equities ({len(df_eq_raw):,} bars)...")
-    df_eq_features = engineer_features_and_labels(df_eq_raw, asset_class="EQUITY")
-    logger.info(f"   • Generated {len(df_eq_features):,} labeled Equity samples. (Win rate: {df_eq_features['label_win'].mean()*100:.1f}%)")
-
-    # 2. Options (Indices)
-    df_opt_raw = df_raw[df_raw["instrument_type"] == "INDEX"].copy()
+    # Options (Indices)
+    df_opt_raw = df_raw.copy()
     logger.info(f"⚙️ Engineering features and labels for Options/Indices ({len(df_opt_raw):,} bars)...")
     df_opt_features = engineer_features_and_labels(df_opt_raw, asset_class="OPTIONS")
     logger.info(f"   • Generated {len(df_opt_features):,} labeled Options samples. (Win rate: {df_opt_features['label_win'].mean()*100:.1f}%)")
 
     # Load into BigQuery
-    for df, target_table in [(df_eq_features, EQUITY_FEATURES_TABLE), (df_opt_features, OPTIONS_FEATURES_TABLE)]:
+    for df, target_table in [(df_opt_features, OPTIONS_FEATURES_TABLE)]:
         df["bar_date"] = pd.to_datetime(df["bar_date"]).dt.date
         df["created_at"] = pd.to_datetime(df["created_at"])
         job_config = bigquery.LoadJobConfig(write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
@@ -262,8 +257,8 @@ def run_labeling_pipeline():
         load_job.result()
         logger.info(f"💾 Ingested {len(df):,} rows into {target_table}.")
 
-    logger.info("🎉 Signal Labeling Pipeline Completed Successfully!")
-    return len(df_eq_features), len(df_opt_features)
+    logger.info("🎉 Institutional Options Signal Labeling Pipeline Completed Successfully!")
+    return len(df_opt_features)
 
 if __name__ == "__main__":
     run_labeling_pipeline()

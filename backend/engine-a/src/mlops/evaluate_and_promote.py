@@ -32,15 +32,15 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 BUCKET_NAME = "infinity-ai-models-vault"
 
 def evaluate_and_promote_asset_class(
-    asset_class: str = "EQUITY",
+    asset_class: str = "OPTIONS",
     challenger_meta_path: str = None
 ) -> Dict[str, Any]:
-    """Evaluates candidate model using strict Walk-Forward Cross-Validation folds."""
+    """Evaluates candidate model using strict Walk-Forward Cross-Validation folds for Options."""
     db = firestore.Client(project=PROJECT_ID)
     storage_client = storage.Client(project=PROJECT_ID)
     bucket = storage_client.bucket(BUCKET_NAME)
 
-    gcs_prefix = "equities" if asset_class == "EQUITY" else "options"
+    gcs_prefix = "options"
 
     logger.info(f"\n================================================================================")
     logger.info(f"   AUDITED CONDITIONAL PROMOTION GATE: {asset_class.upper()} ENSEMBLE MODEL      ")
@@ -211,10 +211,9 @@ def evaluate_and_promote_asset_class(
     return evaluation_report
 
 def run_audited_evaluation_suite():
-    """Runs audited evaluation for both asset classes."""
-    eq_report = evaluate_and_promote_asset_class("EQUITY")
+    """Runs audited evaluation strictly for Options."""
     opt_report = evaluate_and_promote_asset_class("OPTIONS")
-    return eq_report, opt_report
+    return opt_report
 
 if __name__ == "__main__":
     run_audited_evaluation_suite()

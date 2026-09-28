@@ -88,11 +88,7 @@ class BaseEnsembleModel:
         probs = self.predict_proba(X)
         return (probs >= threshold).astype(int)
 
-class EquityEnsembleModel(BaseEnsembleModel):
-    """Equity Specific Tri-Model Ensemble"""
-    pass
-
 class OptionsEnsembleModel(BaseEnsembleModel):
-    """Options Specific Tri-Model Ensemble"""
+    """Institutional Options Specific Tri-Model Ensemble (XGBoost + LightGBM + CatBoost)"""
     def __init__(self):
         super().__init__(n_estimators=100, max_depth=3, learning_rate=0.05)

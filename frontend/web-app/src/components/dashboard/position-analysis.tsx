@@ -103,7 +103,7 @@ function PositionAnalysisCard({ analysis }: { analysis: PositionAnalysisResponse
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">{symbol}</span>
                   <Badge variant="outline" className="text-xs">
-                    {positionDetails?.position_type || 'EQUITY'}
+                    {positionDetails?.position_type || 'OPTION'}
                   </Badge>
                   {positionDetails?.direction === 'LONG' ? (
                     <TrendingUp className="h-4 w-4 text-green-500" />

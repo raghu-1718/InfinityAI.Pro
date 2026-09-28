@@ -45,7 +45,7 @@ from pydantic import BaseModel
 import httpx
 import uvicorn
 from src.trace_middleware import TraceIDMiddleware
-from src.api.routes import research, equity
+from src.api.routes import research
 
 # ML Libraries for Risk & Portfolio Management
 import numpy as np
@@ -199,7 +199,6 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
 
 # --- Register routers ---
 app.include_router(research.router)
-app.include_router(equity.router)
 # ------------------------
 
 

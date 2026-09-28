@@ -22,30 +22,7 @@ logger = logging.getLogger("DhanHistoricalIngestion")
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 
-# Universe Mapping
-EQUITY_UNIVERSE = [
-    {"symbol": "RELIANCE", "security_id": "2885", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "TCS", "security_id": "11536", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "HDFCBANK", "security_id": "1333", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "ICICIBANK", "security_id": "1594", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "INFY", "security_id": "4963", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "BHARTIARTL", "security_id": "10604", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "SBIN", "security_id": "3045", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "ITC", "security_id": "1660", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "LT", "security_id": "11723", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "HINDUNILVR", "security_id": "11483", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "TATAMOTORS", "security_id": "3456", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "AXISBANK", "security_id": "5900", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "KOTAKBANK", "security_id": "1922", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "M&M", "security_id": "2031", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "SUNPHARMA", "security_id": "3351", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "MARUTI", "security_id": "10999", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "NTPC", "security_id": "11630", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "BAJFINANCE", "security_id": "317", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "TITAN", "security_id": "3506", "segment": "NSE_EQ", "instrument": "EQUITY"},
-    {"symbol": "LICI", "security_id": "1394", "segment": "NSE_EQ", "instrument": "EQUITY"},
-]
-
+# Index Universe Mapping for Derivatives / Options Underlyings
 INDEX_UNIVERSE = [
     {"symbol": "NIFTY", "security_id": "13", "segment": "IDX_I", "instrument": "INDEX"},
     {"symbol": "BANKNIFTY", "security_id": "25", "segment": "IDX_I", "instrument": "INDEX"},
@@ -154,8 +131,8 @@ def run_bootstrap_ingestion(from_date: str = "2024-01-01", to_date: str = "2026-
     bq_client = bigquery.Client(project=PROJECT_ID)
     ensure_bigquery_table(bq_client)
 
-    all_instruments = EQUITY_UNIVERSE + INDEX_UNIVERSE
-    logger.info(f"🚀 Starting Dhan Historical Bootstrap for {len(all_instruments)} instruments ({from_date} -> {to_date})...")
+    all_instruments = INDEX_UNIVERSE
+    logger.info(f"🚀 Starting Dhan Historical Bootstrap for {len(all_instruments)} Options index underlyings ({from_date} -> {to_date})...")
 
     all_rows = []
     for idx, item in enumerate(all_instruments, start=1):
