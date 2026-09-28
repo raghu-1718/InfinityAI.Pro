@@ -92,20 +92,23 @@ class AlertDispatcher:
             gemini_sent = models.get("gemini_sentiment", "NEUTRAL")
             time_ist = signal_payload.get("timestamp_ist", "")
 
-            emoji = "🟢 🎯" if "CALL" in decision or "BUY" in decision else "🔴 🎯"
+            is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
+            action_label = "OPTION SELLING (THETA HARVEST)" if is_sell else "OPTION BUYING (MOMENTUM)"
+            emoji = "🔵 🛡️" if is_sell else ("🟢 🚀" if "CALL" in decision else "🔴 📉")
             tg_text = (
                 f"{emoji} *INFINITY AI INSTITUTIONAL SIGNAL*\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📊 *Contract:* `{contract}`\n"
-                f"🧭 *Decision:* *{decision}* (AI Consensus: `{conf:.1f}%`)\n"
+                f"🧭 *Decision:* *{decision}* ({action_label})\n"
+                f"🎯 *AI Consensus:* `{conf:.1f}%`\n"
                 f"📍 *Underlying Spot:* `₹{spot:,.2f}`\n"
                 f"⏱ *Timestamp:* `{time_ist}`\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"💎 *Trade Bracket (1 Lot = {lot_size}):*\n"
-                f"• *ATM Entry Premium:* `₹{entry_prem:.2f}`\n"
+                f"• *Entry Premium ({'Credit Sold' if is_sell else 'Debit Bought'}):* `₹{entry_prem:.2f}`\n"
                 f"• *Target ({tgt_pct_str}):* `₹{target_prem:.2f}` (*Exp Net:* `+₹{exp_net:,.2f}`)\n"
-                f"• *Dynamic Volatility Stop ({sl_pct_str}):* `₹{stop_prem:.2f}` (*Max Risk:* `₹{max_risk:,.2f}`)\n"
-                f"• *Trailing SL Invariants:* `+8% -> BE | +12% -> +6% Lock | Uncapped Runners`\n"
+                f"• *Stop Loss ({sl_pct_str}):* `₹{stop_prem:.2f}` (*Max Risk:* `₹{max_risk:,.2f}`)\n"
+                f"• *Protection:* `Dynamic Ratchet Profit Lock & Live DRE Risk Engine`\n"
                 f"• *Gemini Macro Bias:* `{gemini_sent}`\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🛡️ _Auto-logged to Firestore Ledger & Live MTM Tracker_"
@@ -120,6 +123,8 @@ class AlertDispatcher:
     def _format_outcome_text(self, outcome_data: Dict[str, Any]) -> str:
         sig_id = outcome_data.get("signal_id", "")
         sym = outcome_data.get("symbol", "NIFTY")
+        decision = outcome_data.get("decision", "BUY_CALL")
+        is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
         status = outcome_data.get("outcome_status", "RESOLVED")
         exit_prem = float(outcome_data.get("exit_premium", 0.0))
         gross_pnl = float(outcome_data.get("gross_pnl", 0.0))
@@ -128,9 +133,10 @@ class AlertDispatcher:
         bracket = outcome_data.get("trade_bracket", {})
         entry_prem = float(bracket.get("entry_premium", 100.0))
         lot_size = bracket.get("lot_size", 65)
-        contract = bracket.get("contract", f"{sym} ATM Options")
+        contract = bracket.get("contract", f"{sym} Options")
         tax_cost = float(outcome_data.get("estimated_tax_brokerage", 55.0))
-        roi_pct = (net_pnl / (entry_prem * lot_size) * 100) if (entry_prem * lot_size) > 0 else 0.0
+        capital = 125000.0 if is_sell else (entry_prem * lot_size)
+        roi_pct = (net_pnl / capital * 100) if capital > 0 else 0.0
 
         highest_prem = float(outcome_data.get("highest_observed_premium", exit_prem))
         peak_gain_pct = ((highest_prem - entry_prem) / entry_prem * 100) if entry_prem > 0 else 0.0

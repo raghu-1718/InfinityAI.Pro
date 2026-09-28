@@ -108,6 +108,10 @@ class StrategyType(str, Enum):
     BEAR_PUT_SPREAD = "BEAR_PUT_SPREAD"
     IRON_CONDOR = "IRON_CONDOR"
     IRON_BUTTERFLY = "IRON_BUTTERFLY"
+    NAKED_CALL_BUY = "NAKED_CALL_BUY"
+    NAKED_PUT_BUY = "NAKED_PUT_BUY"
+    NAKED_CALL_SELL = "NAKED_CALL_SELL"
+    NAKED_PUT_SELL = "NAKED_PUT_SELL"
 
 
 class LegAction(str, Enum):
@@ -385,6 +389,30 @@ class MultiLegStrategyBuilder:
             legs.append(OptionLeg(strike=call_short_k, option_type=OptionType.CE, action=LegAction.SELL, quantity=total_quantity, estimated_premium=cs_g["price"], **cs_g))
             legs.append(OptionLeg(strike=call_long_k, option_type=OptionType.CE, action=LegAction.BUY, quantity=total_quantity, estimated_premium=cl_g["price"], **cl_g))
 
+        # ── 9. NAKED CALL BUY (DIRECTIONAL BULLISH MOMENTUM) ─────────────────
+        elif strategy_type == StrategyType.NAKED_CALL_BUY:
+            ce_greeks = BlackScholesEngine.calculate_greeks(spot_price, atm_strike, tte_years, implied_volatility, option_type="CE")
+            legs.append(OptionLeg(strike=atm_strike, option_type=OptionType.CE, action=LegAction.BUY, quantity=total_quantity, estimated_premium=ce_greeks["price"], **ce_greeks))
+
+        # ── 10. NAKED PUT BUY (DIRECTIONAL BEARISH MOMENTUM) ──────────────────
+        elif strategy_type == StrategyType.NAKED_PUT_BUY:
+            pe_greeks = BlackScholesEngine.calculate_greeks(spot_price, atm_strike, tte_years, implied_volatility, option_type="PE")
+            legs.append(OptionLeg(strike=atm_strike, option_type=OptionType.PE, action=LegAction.BUY, quantity=total_quantity, estimated_premium=pe_greeks["price"], **pe_greeks))
+
+        # ── 11. NAKED CALL SELL (RESISTANCE WALL THETA HARVEST) ───────────────
+        elif strategy_type == StrategyType.NAKED_CALL_SELL:
+            otm_dist = strangle_otm_pts or (interval * 2)
+            call_strike = atm_strike + otm_dist
+            ce_greeks = BlackScholesEngine.calculate_greeks(spot_price, call_strike, tte_years, implied_volatility, option_type="CE")
+            legs.append(OptionLeg(strike=call_strike, option_type=OptionType.CE, action=LegAction.SELL, quantity=total_quantity, estimated_premium=ce_greeks["price"], **ce_greeks))
+
+        # ── 12. NAKED PUT SELL (SUPPORT FLOOR THETA HARVEST) ──────────────────
+        elif strategy_type == StrategyType.NAKED_PUT_SELL:
+            otm_dist = strangle_otm_pts or (interval * 2)
+            put_strike = atm_strike - otm_dist
+            pe_greeks = BlackScholesEngine.calculate_greeks(spot_price, put_strike, tte_years, implied_volatility, option_type="PE")
+            legs.append(OptionLeg(strike=put_strike, option_type=OptionType.PE, action=LegAction.SELL, quantity=total_quantity, estimated_premium=pe_greeks["price"], **pe_greeks))
+
         # Calculate Net Cashflow & Portfolio Greeks
         net_prem_unit = 0.0
         net_delta = 0.0
@@ -429,6 +457,12 @@ class MultiLegStrategyBuilder:
         elif strategy_type == StrategyType.IRON_CONDOR:
             net_cr = net_prem_unit
             breakevens = [round(legs[1].strike - net_cr, 2), round(legs[2].strike + net_cr, 2)]
+        elif strategy_type in [StrategyType.NAKED_CALL_BUY, StrategyType.NAKED_CALL_SELL]:
+            prem = legs[0].estimated_premium if legs else 0.0
+            breakevens = [round(legs[0].strike + prem, 2)]
+        elif strategy_type in [StrategyType.NAKED_PUT_BUY, StrategyType.NAKED_PUT_SELL]:
+            prem = legs[0].estimated_premium if legs else 0.0
+            breakevens = [round(legs[0].strike - prem, 2)]
         else:
             breakevens = [round(spot_price * 0.98, 2), round(spot_price * 1.02, 2)]
 

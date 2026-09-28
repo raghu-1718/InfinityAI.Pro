@@ -115,41 +115,61 @@ class ExpiryThetaDamper:
         self,
         symbol: str,
         entry_premium: float,
-        base_target_pct: float = 0.15,
+        base_target_pct: float = 0.25,
         base_stop_loss_pct: Optional[float] = None,
         current_dt_ist: Optional[datetime] = None,
         iv: float = 0.172,
-        gamma: float = 0.001
+        gamma: float = 0.001,
+        action: str = "BUY"
     ) -> Dict[str, Any]:
         """
         Dynamically adapts target and stop-loss on authentic expiry afternoons:
-          • Normal: Target +15%, Dynamic Stop Loss (derived from IV & Gamma surface)
-          • Authentic 0 DTE Afternoon (post 13:00 IST): Target tightened to +10%, Stop Loss tightened to 75% of baseline
-            to capture quick bursts before rapid extrinsic decay occurs.
+          • BUY Side: Target +25% (calibrated against turnover drag), Dynamic Stop Loss.
+                      On 0DTE Afternoon (post 13:00 IST): Target tightened to +15% to capture quick bursts before theta burn.
+          • SELL Side: Target -45% decay (collecting time value), Hard Stop Loss +30% premium spike.
+                      On 0DTE Afternoon (post 13:00 IST): Target expanded to -70% to exploit exponential terminal theta collapse.
         """
         if current_dt_ist is None:
             now_utc = datetime.now(timezone.utc)
             current_dt_ist = now_utc + timedelta(hours=5, minutes=30)
 
+        is_sell = action.upper() in ["SELL", "SELL_CALL", "SELL_PUT", "SHORT"]
+
         # Dynamic baseline stop-loss from volatility surface
         if base_stop_loss_pct is None:
-            base_stop_loss_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
+            if is_sell:
+                base_stop_loss_pct = 0.30  # 30% hard SL for option sellers
+            else:
+                base_stop_loss_pct = round(max(0.04, (iv * 0.25) + (gamma * 15.0)), 4)
 
         on_expiry = self.is_expiry_day(symbol, current_dt_ist)
         in_afternoon = self.is_afternoon_decay_window(current_dt_ist)
         is_damper_active = on_expiry and in_afternoon
 
-        if is_damper_active:
-            adapted_target_pct = 0.10      # Tighten to +10% target
-            adapted_stop_loss_pct = round(max(0.04, base_stop_loss_pct * 0.75), 4)   # Tighten stop loss for 0DTE theta damping
-            regime = "EXPIRY_AFTERNOON_THETA_DAMPER_ACTIVE"
-        else:
-            adapted_target_pct = base_target_pct
-            adapted_stop_loss_pct = base_stop_loss_pct
-            regime = "STANDARD_INSTITUTIONAL"
+        if is_sell:
+            if is_damper_active:
+                adapted_target_pct = 0.65       # Terminal decay target 65% on expiry afternoon
+                adapted_stop_loss_pct = 0.25    # Tighter stop on afternoon spikes
+                regime = "EXPIRY_AFTERNOON_THETA_COLLECTOR_ACTIVE"
+            else:
+                adapted_target_pct = base_target_pct if base_target_pct != 0.25 else 0.45
+                adapted_stop_loss_pct = base_stop_loss_pct
+                regime = "STANDARD_INSTITUTIONAL_SELL"
 
-        target_prem = round(entry_premium * (1.0 + adapted_target_pct), 2)
-        stop_loss_prem = round(entry_premium * (1.0 - adapted_stop_loss_pct), 2)
+            target_prem = max(0.50, round(entry_premium * (1.0 - adapted_target_pct), 2))
+            stop_loss_prem = round(entry_premium * (1.0 + adapted_stop_loss_pct), 2)
+        else:
+            if is_damper_active:
+                adapted_target_pct = 0.15       # Quick burst target on expiry afternoon
+                adapted_stop_loss_pct = round(max(0.04, base_stop_loss_pct * 0.75), 4)
+                regime = "EXPIRY_AFTERNOON_THETA_DAMPER_ACTIVE"
+            else:
+                adapted_target_pct = base_target_pct
+                adapted_stop_loss_pct = base_stop_loss_pct
+                regime = "STANDARD_INSTITUTIONAL_BUY"
+
+            target_prem = round(entry_premium * (1.0 + adapted_target_pct), 2)
+            stop_loss_prem = max(0.50, round(entry_premium * (1.0 - adapted_stop_loss_pct), 2))
 
         actual_expiry_date = self.get_authentic_expiry_date(symbol, current_dt_ist).strftime("%Y-%m-%d")
 
@@ -157,10 +177,11 @@ class ExpiryThetaDamper:
             "regime": regime,
             "is_damper_active": is_damper_active,
             "symbol": symbol.upper(),
+            "action": "SELL" if is_sell else "BUY",
             "target_pct": adapted_target_pct,
-            "target_percent_str": f"+{adapted_target_pct * 100:.1f}%",
+            "target_percent_str": f"{'-' if is_sell else '+'}{adapted_target_pct * 100:.1f}%",
             "stop_loss_pct": adapted_stop_loss_pct,
-            "stop_loss_percent_str": f"-{adapted_stop_loss_pct * 100:.1f}%",
+            "stop_loss_percent_str": f"{'+' if is_sell else '-'}{adapted_stop_loss_pct * 100:.1f}%",
             "entry_premium": entry_premium,
             "target_premium": target_prem,
             "stop_loss_premium": stop_loss_prem,

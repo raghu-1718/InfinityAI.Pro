@@ -80,14 +80,17 @@ class DynamicTrailingProfitLock:
         estimated_taxes: float = 55.0,
         base_stop_loss_pct: Optional[float] = None,
         live_greeks: Optional[Dict[str, float]] = None,
+        is_sell: bool = False,
+        lowest_observed_premium: Optional[float] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
         Evaluates current price against the Milestone Ladder and updates the Trailing Stop Loss.
+        Supports both Option Buying (Long CE/PE) and Option Selling (Short CE/PE).
         
         Returns:
-            - new_sl: The ratcheted Stop Loss (strictly >= current_sl)
-            - highest_observed: Updated peak price
+            - new_sl: The ratcheted Stop Loss (strictly ratchets in trader's favor)
+            - highest_observed: Updated peak price (for BUY) or lowest observed (for SELL)
             - peak_gain_pct: Maximum observed gain percentage
             - current_gain_pct: Current unrealized gain percentage
             - highest_milestone: Highest milestone tag reached
@@ -98,12 +101,11 @@ class DynamicTrailingProfitLock:
         entry_p = entry_price if entry_price > 0 else (entry_premium if entry_premium is not None else 0.0)
         curr_p = current_price if current_price > 0 else (current_premium if current_premium is not None else 0.0)
         high_p_input = highest_observed_price if highest_observed_price > 0 else (highest_observed_premium if highest_observed_premium is not None else 0.0)
-        curr_sl = current_sl if current_sl > 0 else (initial_sl if initial_sl is not None else (entry_p * 0.92 if entry_p > 0 else 0.0))
-
+        
         if entry_p <= 0:
             return {
-                "new_sl": curr_sl,
-                "effective_stop_loss": curr_sl,
+                "new_sl": 0.0,
+                "effective_stop_loss": 0.0,
                 "highest_observed": curr_p,
                 "highest_observed_premium": curr_p,
                 "peak_gain_pct": 0.0,
@@ -114,6 +116,67 @@ class DynamicTrailingProfitLock:
                 "is_sl_hit": False,
                 "outcome_status": "OPEN"
             }
+
+        # ── SELLING / SHORT OPTIONS EVALUATION ──
+        if is_sell:
+            default_sell_sl = entry_p * (1.0 + (base_stop_loss_pct or 0.30))
+            curr_sl = current_sl if current_sl > 0 else (initial_sl if initial_sl is not None else default_sell_sl)
+            lowest_input = lowest_observed_premium if (lowest_observed_premium is not None and lowest_observed_premium > 0) else entry_p
+            lowest_p = min(lowest_input, curr_p, entry_p)
+
+            peak_gain_pct = max(0.0, (entry_p - lowest_p) / entry_p)
+            current_gain_pct = (entry_p - curr_p) / entry_p
+            new_sl = curr_sl
+            milestones_achieved = []
+            highest_milestone = "ENTRY_LEVEL"
+
+            # Ratchet Stop Loss DOWNwards for Option Sellers
+            for milestone in cls.MILESTONE_LADDER:
+                if peak_gain_pct >= milestone["threshold_pct"]:
+                    milestones_achieved.append({
+                        "level": milestone["level"],
+                        "tag": milestone["tag"],
+                        "label": milestone["label"],
+                        "threshold_price": round(entry_p * (1.0 - milestone["threshold_pct"]), 2),
+                        "locked_sl_price": round(entry_p * (1.0 - milestone["lock_profit_pct"]), 2)
+                    })
+                    highest_milestone = milestone["tag"]
+                    target_sl = entry_p * (1.0 - milestone["lock_profit_pct"])
+                    if target_sl < new_sl:
+                        new_sl = target_sl
+
+            # Dynamic trailing above lowest observed price for runners
+            if peak_gain_pct >= 0.15:
+                tier3_trail = round(lowest_p * 1.04, 2)
+                if tier3_trail < new_sl:
+                    new_sl = tier3_trail
+
+            if peak_gain_pct >= 0.50:
+                runner_sl = round(lowest_p * 1.10, 2)
+                if runner_sl < new_sl:
+                    new_sl = runner_sl
+
+            # Ratchet Invariant: For SELL, Stop Loss strictly moves DOWN and CAN NEVER MOVE UP
+            new_sl = min(round(curr_sl, 2), round(new_sl, 2))
+            is_sl_hit = curr_p >= new_sl
+
+            return {
+                "new_sl": new_sl,
+                "effective_stop_loss": new_sl,
+                "highest_observed": round(lowest_p, 2),
+                "highest_observed_premium": round(lowest_p, 2),
+                "lowest_observed_premium": round(lowest_p, 2),
+                "peak_gain_pct": round(peak_gain_pct, 4),
+                "current_gain_pct": round(current_gain_pct, 4),
+                "highest_milestone": highest_milestone,
+                "active_tier": highest_milestone,
+                "milestones_achieved": milestones_achieved,
+                "is_sl_hit": is_sl_hit,
+                "outcome_status": "TRAILING_PROFIT_LOCKED_EXIT" if (is_sl_hit and highest_milestone != "ENTRY_LEVEL") else ("STOP_LOSS_HIT" if is_sl_hit else "OPEN")
+            }
+
+        # ── BUYING / LONG OPTIONS EVALUATION ──
+        curr_sl = current_sl if current_sl > 0 else (initial_sl if initial_sl is not None else (entry_p * 0.92 if entry_p > 0 else 0.0))
 
         # 1. Update peak observed price
         highest_p = max(high_p_input, curr_p, entry_p)

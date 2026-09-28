@@ -73,7 +73,7 @@ class ShadowSignalLogger:
             return None
 
         # Strict filter: only execute on explicit directional decisions with sufficient confidence (>= 0.60)
-        valid_trade_decisions = ["BUY_CALL", "BUY_PUT", "LONG_CALL", "LONG_PUT"]
+        valid_trade_decisions = ["BUY_CALL", "BUY_PUT", "SELL_CALL", "SELL_PUT", "LONG_CALL", "LONG_PUT", "SHORT_CALL", "SHORT_PUT"]
         if decision not in valid_trade_decisions or confidence_score < 0.60:
             logger.info(f"Signal for {symbol} is {decision} (conf: {confidence_score:.3f}). Skipping trade ledger commit.")
             return None
@@ -84,8 +84,8 @@ class ShadowSignalLogger:
             return None
 
         # Tri-Model Unanimity Gate (Audited 84.06% Edge Enforcer)
-        is_call = "CALL" in decision.upper()
-        if is_call:
+        is_bullish = ("CALL" in decision.upper() and "BUY" in decision.upper()) or ("PUT" in decision.upper() and ("SELL" in decision.upper() or "SHORT" in decision.upper()))
+        if is_bullish:
             unanimous = (catboost_prob >= 0.60 and lightgbm_prob >= 0.60 and xgboost_prob >= 0.60)
         else:
             unanimous = (
@@ -128,12 +128,22 @@ class ShadowSignalLogger:
             actual_lot_size = 65
             strike_step = 50
 
-        # Option Bracket Calculation (Option Buying Only)
-        strike = round(spot_price / strike_step) * strike_step
+        # Option Bracket Calculation (Supports Option Buying and Option Selling)
+        is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
         option_type = "CE" if "CALL" in decision.upper() else "PE"
-        contract_name = f"{symbol} {int(strike)} {option_type}"
 
-        # ── Realistic Pricing Model (Live Ask-Entry vs Black-Scholes Fallback) ──
+        # Strike Determination:
+        # - Buying: ATM or 1-step ITM for Delta ~0.50-0.55 (Maximum Gamma explosion)
+        # - Selling: OTM strike for Delta ~0.18-0.22 (Outside 1.5 standard deviations for positive Theta decay)
+        if is_sell:
+            otm_offset = (2 * strike_step) if option_type == "CE" else (-2 * strike_step)
+            strike = round((spot_price + otm_offset) / strike_step) * strike_step
+        else:
+            strike = round(spot_price / strike_step) * strike_step
+
+        contract_name = f"{symbol} {int(strike)} {option_type} ({'SELL' if is_sell else 'BUY'})"
+
+        # ── Realistic Pricing Model (Live Ask/Bid vs Black-Scholes Fallback) ──
         pricing_source = "THEORETICAL_BLACK_SCHOLES"
         spread_pct = 0.0
         
@@ -150,19 +160,19 @@ class ShadowSignalLogger:
                 return None
 
             # Spread Safeguard: Reject if Ask-Bid spread > 4% of LTP
-            ref_p = max(ltp_p, ask_p, 1.0)
+            ref_p = max(ltp_p, ask_p, bid_p, 1.0)
             if ask_p > 0 and bid_p > 0:
                 spread = ask_p - bid_p
                 spread_pct = round((spread / ref_p) * 100.0, 2)
                 if spread / ref_p > 0.04:
                     logger.warning(f"⚠️ Wide spread veto for {contract_name} ({spread_pct}% > 4%) — Skipping trade.")
                     return None
-                # Realistic Entry: Taker buys at Ask Price
-                est_premium = round(ask_p, 2)
-                pricing_source = "LIVE_MARKET_DEPTH_ASK"
+                # Realistic Entry: Taker buys at Ask, Taker sells at Bid
+                est_premium = round(bid_p if is_sell else ask_p, 2)
+                pricing_source = "LIVE_MARKET_DEPTH_BID" if is_sell else "LIVE_MARKET_DEPTH_ASK"
             elif ltp_p > 0:
-                # 1.0% synthetic spread penalty on LTP
-                est_premium = round(ltp_p * 1.01, 2)
+                # Spread friction penalty: -1.0% for sell, +1.0% for buy
+                est_premium = round(ltp_p * (0.99 if is_sell else 1.01), 2)
                 pricing_source = "LIVE_LTP_SPREAD_ADJUSTED"
             else:
                 est_premium = None
@@ -195,11 +205,12 @@ class ShadowSignalLogger:
                 else:
                     bs_price = strike * math.exp(-r * dte_years) * norm.cdf(-d2) - spot_price * norm.cdf(-d1)
 
-                # Add 1.0% synthetic spread friction to theoretical pricing
-                est_premium = max(round(float(bs_price) * 1.01, 2), 5.0)
+                # Add synthetic spread friction to theoretical pricing
+                friction_mult = 0.99 if is_sell else 1.01
+                est_premium = max(round(float(bs_price) * friction_mult, 2), 5.0)
                 pricing_source = "THEORETICAL_BS_SPREAD_ADJUSTED"
             except Exception:
-                est_premium = round(spot_price * 0.004, 2)
+                est_premium = round(spot_price * (0.0025 if is_sell else 0.004), 2)
                 pricing_source = "ESTIMATED_RULE_OF_THUMB"
         else:
             sigma = 0.172
@@ -212,19 +223,23 @@ class ShadowSignalLogger:
             bracket_calc = EXPIRY_THETA_DAMPER.get_adapted_bracket(
                 symbol,
                 est_premium,
-                base_target_pct=0.15,
-                base_stop_loss_pct=dynamic_sl_pct
+                base_target_pct=0.45 if is_sell else 0.25,
+                base_stop_loss_pct=0.30 if is_sell else dynamic_sl_pct,
+                action="SELL" if is_sell else "BUY"
             )
             target_pct = bracket_calc["target_pct"]
             stop_loss_pct = bracket_calc["stop_loss_pct"]
             target_prem = bracket_calc["target_premium"]
             stop_loss_prem = bracket_calc["stop_loss_premium"]
         except Exception:
-            target_pct = 0.15
-            stop_loss_pct = round(dynamic_sl_pct, 4)
-            target_prem = round(est_premium * (1.0 + target_pct), 2)
-            stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
-
+            target_pct = 0.45 if is_sell else 0.25
+            stop_loss_pct = 0.30 if is_sell else round(dynamic_sl_pct, 4)
+            if is_sell:
+                target_prem = round(est_premium * (1.0 - target_pct), 2)
+                stop_loss_prem = round(est_premium * (1.0 + stop_loss_pct), 2)
+            else:
+                target_prem = round(est_premium * (1.0 + target_pct), 2)
+                stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
 
         # Statutory taxes & Dhan brokerage estimate
         charges = calculate_options_roundtrip_charges(
@@ -236,11 +251,20 @@ class ShadowSignalLogger:
         tax_cost = charges.get("grand_total_charges", 55.0)
 
         # Expected P&L metrics based on system capability (1 Standard SEBI Lot)
-        capital_required = round(est_premium * actual_lot_size, 2)
-        expected_target_gross = round((target_prem - est_premium) * actual_lot_size, 2)
-        expected_target_net = round(expected_target_gross - tax_cost, 2)
-        max_loss_gross = round((stop_loss_prem - est_premium) * actual_lot_size, 2)
-        max_loss_net = round(max_loss_gross - tax_cost, 2)
+        if is_sell:
+            # Naked Option Selling requires standard exchange margin (~Rs. 1,25,000 per lot on Nifty/BankNifty)
+            capital_required = 125000.0
+            expected_target_gross = round((est_premium - target_prem) * actual_lot_size, 2)
+            expected_target_net = round(expected_target_gross - tax_cost, 2)
+            max_loss_gross = round((est_premium - stop_loss_prem) * actual_lot_size, 2)
+            max_loss_net = round(max_loss_gross - tax_cost, 2)
+        else:
+            capital_required = round(est_premium * actual_lot_size, 2)
+            expected_target_gross = round((target_prem - est_premium) * actual_lot_size, 2)
+            expected_target_net = round(expected_target_gross - tax_cost, 2)
+            max_loss_gross = round((stop_loss_prem - est_premium) * actual_lot_size, 2)
+            max_loss_net = round(max_loss_gross - tax_cost, 2)
+
         expected_roi_pct = round((expected_target_net / capital_required * 100), 2) if capital_required > 0 else 0.0
 
         expected_pnl_payload = {
@@ -252,8 +276,9 @@ class ShadowSignalLogger:
             "max_loss_stop_loss_pct": round(-stop_loss_pct * 100, 1),
             "system_capital_required": capital_required,
             "expected_roi_on_capital_pct": expected_roi_pct,
-            "risk_reward_ratio": "1:1.25 (Trailing)",
-            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE"
+            "risk_reward_ratio": "1:1.50 (Decay)" if is_sell else "1:1.25 (Trailing)",
+            "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
+            "trade_action": "SELL" if is_sell else "BUY"
         }
 
         # Real-time Institutional FII/DII Flow Radar Multiplier
@@ -393,6 +418,7 @@ class ShadowSignalLogger:
         tax_cost = data.get("estimated_tax_brokerage", 55.0)
 
         # Underlying price move percentage
+        is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
         spot_pct_move = (current_spot - initial_spot) / initial_spot if initial_spot > 0 else 0.0
         
         # Approximate option premium delta leverage (~20x delta multiplier on % move)
@@ -401,29 +427,76 @@ class ShadowSignalLogger:
         else:
             simulated_exit_prem = entry_prem * (1.0 - (spot_pct_move * 20))
 
-        simulated_exit_prem = max(1.0, simulated_exit_prem)
+        simulated_exit_prem = max(0.50, simulated_exit_prem)
 
-        # Dynamic Multi-Tier Ratchet Profit Lock & DRE Risk Evaluation
-        highest_prev = data.get("highest_observed_premium", entry_prem)
-        highest_now = max(highest_prev, simulated_exit_prem)
-        
-        # 1. Evaluate Dynamic Multi-Tier Profit Lock
-        try:
-            from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
-            lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
-                entry_premium=entry_prem,
-                highest_observed_premium=highest_now,
-                current_premium=simulated_exit_prem,
-                lot_size=lot_size,
-                estimated_taxes=tax_cost
-            )
-            outcome_status = lock_eval["outcome_status"]
-            active_tier = lock_eval["active_tier"]
-            effective_sl = lock_eval["effective_stop_loss"]
-        except Exception:
-            outcome_status = "OPEN"
-            active_tier = "BASE_DYNAMIC_EVAL"
-            effective_sl = stop_prem
+        if is_sell:
+            lowest_prev = data.get("lowest_observed_premium", entry_prem)
+            lowest_now = min(lowest_prev, simulated_exit_prem)
+            highest_now = max(data.get("highest_observed_premium", entry_prem), simulated_exit_prem)
+            
+            # Dynamic profit lock evaluation for short option decay
+            try:
+                from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+                lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+                    entry_premium=entry_prem,
+                    lowest_observed_premium=lowest_now,
+                    current_premium=simulated_exit_prem,
+                    lot_size=lot_size,
+                    estimated_taxes=tax_cost,
+                    is_sell=True,
+                    current_sl=stop_prem
+                )
+                outcome_status = lock_eval["outcome_status"]
+                active_tier = lock_eval["active_tier"]
+                effective_sl = lock_eval["effective_stop_loss"]
+            except Exception:
+                outcome_status = "OPEN"
+                active_tier = "BASE_DYNAMIC_EVAL"
+                effective_sl = stop_prem
+
+            if simulated_exit_prem <= target_prem and outcome_status == "OPEN":
+                outcome_status = "TARGET_HIT"
+                active_tier = "PREMIUM_DECAY_TARGET"
+            elif simulated_exit_prem >= stop_prem and outcome_status == "OPEN":
+                outcome_status = "STOP_LOSS_HIT"
+                active_tier = "SPIKE_STOP_BREACH"
+
+            gross_pnl = (entry_prem - simulated_exit_prem) * lot_size
+            peak_achieved_pct = round(((entry_prem - lowest_now) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
+        else:
+            highest_prev = data.get("highest_observed_premium", entry_prem)
+            highest_now = max(highest_prev, simulated_exit_prem)
+            lowest_now = min(data.get("lowest_observed_premium", entry_prem), simulated_exit_prem)
+
+            # Evaluate Dynamic Multi-Tier Profit Lock
+            try:
+                from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
+                lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
+                    entry_premium=entry_prem,
+                    highest_observed_premium=highest_now,
+                    current_premium=simulated_exit_prem,
+                    lot_size=lot_size,
+                    estimated_taxes=tax_cost,
+                    is_sell=False,
+                    current_sl=stop_prem
+                )
+                outcome_status = lock_eval["outcome_status"]
+                active_tier = lock_eval["active_tier"]
+                effective_sl = lock_eval["effective_stop_loss"]
+            except Exception:
+                outcome_status = "OPEN"
+                active_tier = "BASE_DYNAMIC_EVAL"
+                effective_sl = stop_prem
+
+            if simulated_exit_prem >= target_prem and outcome_status == "OPEN":
+                outcome_status = "TARGET_HIT"
+                active_tier = "TARGET_HIT"
+            elif simulated_exit_prem <= stop_prem and outcome_status == "OPEN":
+                outcome_status = "STOP_LOSS_HIT"
+                active_tier = "STOP_LOSS_HIT"
+
+            gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
+            peak_achieved_pct = round(((highest_now - entry_prem) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
 
         # 2. Evaluate Dynamic Risk Engine (DRE) - Non-hardcoded alpha decay & volatility bounds
         if outcome_status == "OPEN":
@@ -449,21 +522,19 @@ class ShadowSignalLogger:
         if is_eod_squareoff and outcome_status == "OPEN":
             outcome_status = "EOD_SQUAREOFF"
 
-        capital_required = entry_prem * lot_size
-        gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
+        capital_required = 125000.0 if is_sell else (entry_prem * lot_size)
         net_pnl = gross_pnl - tax_cost
         roi_pct = (net_pnl / capital_required * 100) if capital_required > 0 else 0.0
 
         now_utc = datetime.now(timezone.utc)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
 
-        peak_achieved_pct = round(((highest_now - entry_prem) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
-
         if outcome_status != "OPEN":
             updates = {
                 "outcome_status": outcome_status,
                 "exit_premium": round(simulated_exit_prem, 2),
                 "highest_observed_premium": round(highest_now, 2),
+                "lowest_observed_premium": round(lowest_now, 2),
                 "highest_target_achieved_pct": peak_achieved_pct,
                 "active_profit_tier": active_tier,
                 "gross_pnl": round(gross_pnl, 2),
@@ -486,6 +557,7 @@ class ShadowSignalLogger:
                 "current_mtm_spot": round(current_spot, 2),
                 "current_mtm_premium": round(simulated_exit_prem, 2),
                 "highest_observed_premium": round(highest_now, 2),
+                "lowest_observed_premium": round(lowest_now, 2),
                 "highest_target_achieved_pct": peak_achieved_pct,
                 "effective_trailing_stop_loss": round(effective_sl, 2),
                 "active_profit_tier": active_tier,

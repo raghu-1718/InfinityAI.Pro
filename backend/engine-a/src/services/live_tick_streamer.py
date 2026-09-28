@@ -58,59 +58,84 @@ class LiveTickStreamer:
             "NIFTY": "^NSEI",
             "BANKNIFTY": "^NSEBANK",
             "SENSEX": "^BSESN",
+            "FINNIFTY": "NIFTY_FIN_SERVICE.NS",
+            "MIDCPNIFTY": "NIFTY_MID_SELECT.NS",
             "INDIAVIX": "^INDIAVIX"
         }
-        sym_code = ticker_map.get(symbol.upper(), symbol)
+        import urllib.parse
+        raw_sym = ticker_map.get(symbol.upper(), symbol)
+        sym_code = urllib.parse.quote(raw_sym)
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_code}?interval=1m&range=1d"
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-            with urllib.request.urlopen(req, timeout=3.0) as resp:
-                raw_data = json.loads(resp.read().decode("utf-8"))
-                res_block = raw_data["chart"]["result"][0]
-                meta = res_block["meta"]
-                indicators = res_block.get("indicators", {}).get("quote", [{}])[0]
+            try:
+                with urllib.request.urlopen(req, timeout=3.0) as resp:
+                    raw_data = json.loads(resp.read().decode("utf-8"))
+            except Exception:
+                raw_data = None
 
-                closes = [c for c in indicators.get("close", []) if c is not None]
-                volumes = [v for v in indicators.get("volume", []) if v is not None]
+            res_block = (raw_data or {}).get("chart", {}).get("result", [None])[0]
+            if not res_block:
+                # Off-hours fallback to 1d chart
+                url_fb = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym_code}?interval=1d&range=5d"
+                req_fb = urllib.request.Request(url_fb, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                with urllib.request.urlopen(req_fb, timeout=4.0) as resp_fb:
+                    raw_data = json.loads(resp_fb.read().decode("utf-8"))
+                    res_block = raw_data["chart"]["result"][0]
 
-                price = float(meta.get("regularMarketPrice") or (closes[-1] if closes else 0.0))
-                volume = int(volumes[-1]) if volumes else int(meta.get("regularMarketVolume", 1000))
+            meta = res_block["meta"]
+            indicators = res_block.get("indicators", {}).get("quote", [{}])[0]
 
-                # Technical feature engineering from real live intraday series
-                rsi_val = 52.0
-                macd_cross = 0
-                vwap_dist = 0.0
-                atr_vol = 12.5
+            closes = [c for c in indicators.get("close", []) if c is not None]
+            volumes = [v for v in indicators.get("volume", []) if v is not None]
 
-                if len(closes) >= 15:
-                    import numpy as np
-                    diffs = np.diff(closes[-15:])
-                    gains = float(diffs[diffs > 0].sum() / 14.0) if len(diffs[diffs > 0]) > 0 else 0.0
-                    losses = float(-diffs[diffs < 0].sum() / 14.0) if len(diffs[diffs < 0]) > 0 else 1e-6
-                    rs = gains / max(losses, 1e-6)
-                    rsi_val = round(float(100.0 - (100.0 / (1.0 + rs))), 2)
+            price = float(meta.get("regularMarketPrice") or meta.get("chartPreviousClose") or (closes[-1] if closes else 0.0))
+            volume = int(volumes[-1]) if volumes else int(meta.get("regularMarketVolume", 1000))
 
-                    vwap = float(np.mean(closes))
-                    vwap_dist = round(float((price - vwap) / vwap * 100.0), 3)
-                    macd_cross = 1 if rsi_val > 54.0 else (-1 if rsi_val < 46.0 else 0)
-                    atr_vol = round(float(np.std(closes[-14:])), 2)
+            # Technical feature engineering from real live intraday series
+            rsi_val = 52.0
+            macd_cross = 0
+            vwap_dist = 0.0
+            atr_vol = 12.5
 
-                now_utc = datetime.now(timezone.utc)
-                payload = {
-                    "timestamp": now_utc.isoformat(),
-                    "symbol": symbol.upper(),
-                    "ltp": round(price, 2),
-                    "volume": volume,
-                    "rsi_14": rsi_val,
-                    "macd_crossover": macd_cross,
-                    "vwap_distance": vwap_dist,
-                    "atr_volatility": atr_vol,
-                    "source": "REAL_TIME_LIVE_EXCHANGE_FEED",
-                    "environment": "PRODUCTION"
-                }
-                return payload
+            if len(closes) >= 15:
+                import numpy as np
+                diffs = np.diff(closes[-15:])
+                gains = float(diffs[diffs > 0].sum() / 14.0) if len(diffs[diffs > 0]) > 0 else 0.0
+                losses = float(-diffs[diffs < 0].sum() / 14.0) if len(diffs[diffs < 0]) > 0 else 1e-6
+                rs = gains / max(losses, 1e-6)
+                rsi_val = round(float(100.0 - (100.0 / (1.0 + rs))), 2)
+
+                vwap = float(np.mean(closes))
+                vwap_dist = round(float((price - vwap) / vwap * 100.0), 3)
+                macd_cross = 1 if rsi_val > 54.0 else (-1 if rsi_val < 46.0 else 0)
+                atr_vol = round(float(np.std(closes[-14:])), 2)
+
+            now_utc = datetime.now(timezone.utc)
+            prev_close = float(meta.get("chartPreviousClose") or meta.get("previousClose") or price)
+            change_pct = round(((price - prev_close) / prev_close) * 100.0, 2) if prev_close > 0 else 0.0
+            high = round(float(meta.get("regularMarketDayHigh") or (max(closes) if closes else price)), 2)
+            low = round(float(meta.get("regularMarketDayLow") or (min(closes) if closes else price)), 2)
+
+            payload = {
+                "timestamp": now_utc.isoformat(),
+                "symbol": symbol.upper(),
+                "ltp": round(price, 2),
+                "change_pct": change_pct,
+                "high": high,
+                "low": low,
+                "prev_close": round(prev_close, 2),
+                "volume": volume,
+                "rsi_14": rsi_val,
+                "macd_crossover": macd_cross,
+                "vwap_distance": vwap_dist,
+                "atr_volatility": atr_vol,
+                "source": "REAL_TIME_LIVE_EXCHANGE_FEED",
+                "environment": "PRODUCTION"
+            }
+            return payload
         except Exception as e:
-            logger.debug(f"Error fetching live quote for {symbol}: {e}")
+            logger.warning(f"Error fetching live quote for {symbol}: {e}")
             return None
 
     def publish_tick_sync(self, tick_payload: Dict[str, Any]) -> bool:

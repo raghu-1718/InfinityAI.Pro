@@ -127,18 +127,38 @@ class ContinuousShadowScanner:
                 regime = get_current_market_regime(now_utc)
                 models = sig.get("analysis", {})
                 adx = float(models.get("adx", 25.0))
+                rsi = float(sig.get("rsi", 52.0))
                 key_factors = models.get("key_factors", [])
                 veto_in_factors = any("VETO" in str(k).upper() for k in key_factors)
-                veto_active = models.get("veto_active", False) or veto_in_factors or (adx < regime.adx_threshold)
+                veto_active = models.get("veto_active", False) or veto_in_factors
 
-                # Strict fail-closed directional decision framework with regime gating
+                # 4-Quadrant Institutional Options Decision Model (Buying vs Selling, No Hedging)
+                # Trend / Vol Expansion (ADX >= threshold) -> Naked Buying (CE / PE)
+                # Rangebound Consolidation / Low Vol (ADX < 20, India VIX < 16.5) -> Naked Selling (PE floor / CE ceiling)
+                is_trending = adx >= regime.adx_threshold
+                is_low_vol_chop = (adx < 20.0) and (float(spot_prices.get("INDIAVIX", 13.5)) < 16.5)
+
                 if veto_active or signal_dir in ["HOLD", "NEUTRAL", "NO_TRADE", ""]:
                     decision = "NO_TRADE"
-                    logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f} < {regime.adx_threshold:.1f}, Veto: {veto_active} [{regime.name}]). No trade executed.")
+                    logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f}, Veto: {veto_active} [{regime.name}]). No trade executed.")
                 elif ("BUY" in signal_dir or "CALL" in signal_dir) and conf >= regime.ml_threshold:
-                    decision = "BUY_CALL"
+                    if is_trending:
+                        decision = "BUY_CALL"
+                        logger.info(f"🚀 Trending Breakout detected on {sym} (ADX: {adx:.1f}) -> Directional BUY_CALL")
+                    elif is_low_vol_chop:
+                        decision = "SELL_PUT"
+                        logger.info(f"🛡️ Low-volatility support floor on {sym} (ADX: {adx:.1f}) -> Theta Harvesting SELL_PUT")
+                    else:
+                        decision = "BUY_CALL"
                 elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= regime.ml_threshold:
-                    decision = "BUY_PUT"
+                    if is_trending:
+                        decision = "BUY_PUT"
+                        logger.info(f"📉 Trending Breakdown detected on {sym} (ADX: {adx:.1f}) -> Directional BUY_PUT")
+                    elif is_low_vol_chop:
+                        decision = "SELL_CALL"
+                        logger.info(f"🛡️ Low-volatility resistance wall on {sym} (ADX: {adx:.1f}) -> Theta Harvesting SELL_CALL")
+                    else:
+                        decision = "BUY_PUT"
                 else:
                     decision = "NO_TRADE"
                     logger.info(f"⏸️ Signal for {sym} ({signal_dir}, conf: {conf:.2f}) did not meet regime conviction threshold ({regime.ml_threshold:.2f} [{regime.name}]).")
@@ -186,8 +206,8 @@ class ContinuousShadowScanner:
                 xgboost_p = float(models.get("xgboost_prob", conf))
 
                 # 4. Tri-Model Unanimity Gate (Audited 84.06% Edge Enforcer)
-                is_call = "CALL" in decision.upper()
-                if is_call:
+                is_bullish = ("CALL" in decision.upper() and "BUY" in decision.upper()) or ("PUT" in decision.upper() and "SELL" in decision.upper())
+                if is_bullish:
                     unanimous_consensus = (catboost_p >= 0.60 and lightgbm_p >= 0.60 and xgboost_p >= 0.60)
                 else:
                     unanimous_consensus = (
@@ -205,7 +225,7 @@ class ContinuousShadowScanner:
                     continue
 
                 gemini_sentiment = str(sig.get("sentiment_score") or (
-                    "BULLISH (+0.65)" if decision == "BUY_CALL" else ("BEARISH (-0.65)" if decision == "BUY_PUT" else "NEUTRAL")
+                    "BULLISH (+0.65)" if decision in ["BUY_CALL", "SELL_PUT"] else ("BEARISH (-0.65)" if decision in ["BUY_PUT", "SELL_CALL"] else "NEUTRAL")
                 ))
 
                 # Fetch live Dhan market depth for realistic Ask/Bid entry if Engine C is reachable

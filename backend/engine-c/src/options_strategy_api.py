@@ -229,7 +229,19 @@ async def analyze_strategy_legacy(req: Dict[str, Any] = Body(...)):
             "Bull Call Spread": StrategyType.BULL_CALL_SPREAD,
             "Bear Put Spread": StrategyType.BEAR_PUT_SPREAD,
             "Iron Condor": StrategyType.IRON_CONDOR,
-            "Butterfly": StrategyType.IRON_BUTTERFLY
+            "Butterfly": StrategyType.IRON_BUTTERFLY,
+            "Naked Call Buy": StrategyType.NAKED_CALL_BUY,
+            "Buy Call": StrategyType.NAKED_CALL_BUY,
+            "BUY_CALL": StrategyType.NAKED_CALL_BUY,
+            "Naked Put Buy": StrategyType.NAKED_PUT_BUY,
+            "Buy Put": StrategyType.NAKED_PUT_BUY,
+            "BUY_PUT": StrategyType.NAKED_PUT_BUY,
+            "Naked Call Sell": StrategyType.NAKED_CALL_SELL,
+            "Sell Call": StrategyType.NAKED_CALL_SELL,
+            "SELL_CALL": StrategyType.NAKED_CALL_SELL,
+            "Naked Put Sell": StrategyType.NAKED_PUT_SELL,
+            "Sell Put": StrategyType.NAKED_PUT_SELL,
+            "SELL_PUT": StrategyType.NAKED_PUT_SELL,
         }
         st = strat_map.get(strat_name, StrategyType.SHORT_STRADDLE)
         plan = MultiLegStrategyBuilder.construct_strategy(
