@@ -117,6 +117,12 @@ class LiveTickStreamer:
             high = round(float(meta.get("regularMarketDayHigh") or (max(closes) if closes else price)), 2)
             low = round(float(meta.get("regularMarketDayLow") or (min(closes) if closes else price)), 2)
 
+            # Microstructure features
+            bar_dir = 1.0 if change_pct > 0 else (-1.0 if change_pct < 0 else 0.0)
+            obi_proxy = round(float(np.clip(bar_dir * (min(volume, 50000) / 50000.0), -1.0, 1.0)), 4)
+            atm_gamma_est = 0.0018
+            gex_index = round(float((atm_gamma_est * (price ** 2) * 5000000 * 0.01) / 1e9), 4)
+
             payload = {
                 "timestamp": now_utc.isoformat(),
                 "symbol": symbol.upper(),
@@ -130,6 +136,8 @@ class LiveTickStreamer:
                 "macd_crossover": macd_cross,
                 "vwap_distance": vwap_dist,
                 "atr_volatility": atr_vol,
+                "order_book_imbalance_5d": obi_proxy,
+                "gamma_exposure_index": gex_index,
                 "source": "REAL_TIME_LIVE_EXCHANGE_FEED",
                 "environment": "PRODUCTION"
             }

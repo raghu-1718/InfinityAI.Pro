@@ -132,4 +132,107 @@ class MicrostructureFeatureStore:
             "feature_names": self.feature_names
         }
 
+    def compute_order_flow_imbalance(
+        self,
+        bid_price_curr: float,
+        bid_qty_curr: float,
+        bid_price_prev: float,
+        bid_qty_prev: float,
+        ask_price_curr: float,
+        ask_qty_curr: float,
+        ask_price_prev: float,
+        ask_qty_prev: float
+    ) -> float:
+        """
+        Cont, Kukanov & Stoikov (2014) Institutional Order Flow Imbalance (OFI):
+        Measures the net delta of order flow arriving at the best bid and ask.
+        """
+        # Bid side delta
+        if bid_price_curr > bid_price_prev:
+            delta_bid = bid_qty_curr
+        elif bid_price_curr == bid_price_prev:
+            delta_bid = bid_qty_curr - bid_qty_prev
+        else:
+            delta_bid = -bid_qty_prev
+
+        # Ask side delta
+        if ask_price_curr < ask_price_prev:
+            delta_ask = ask_qty_curr
+        elif ask_price_curr == ask_price_prev:
+            delta_ask = ask_qty_curr - ask_qty_prev
+        else:
+            delta_ask = -ask_qty_prev
+
+        ofi = delta_bid - delta_ask
+        # Normalize by total top-of-book volume
+        denom = max(bid_qty_curr + ask_qty_curr, 1.0)
+        return round(float(np.clip(ofi / denom, -1.0, 1.0)), 4)
+
+    def analyze_microstructure_regime(
+        self,
+        bids: Optional[List[Dict[str, float]]] = None,
+        asks: Optional[List[Dict[str, float]]] = None,
+        spot_price: float = 22550.0,
+        atm_gamma: float = 0.0018,
+        put_iv: float = 0.1850,
+        call_iv: float = 0.1620,
+        open_interest: int = 5000000
+    ) -> Dict[str, Any]:
+        """
+        Synthesizes complete institutional microstructure regime:
+        1. Order Book Pressure (OBI)
+        2. Net Dealer Gamma Exposure (GEX)
+        3. 25-Delta Skew Sentiment
+        4. Consolidated Microstructure Directional Alpha
+        """
+        obi = self.compute_order_book_imbalance(bids, asks)
+        skew = self.compute_iv_skew(put_iv, call_iv)
+        gex = self.compute_gamma_exposure_index(spot_price, atm_gamma, open_interest)
+
+        # 1. Order book regime
+        if obi > 0.18:
+            ob_regime = "INSTITUTIONAL_ACCUMULATION"
+            ob_signal = 1
+        elif obi < -0.18:
+            ob_regime = "INSTITUTIONAL_DISTRIBUTION"
+            ob_signal = -1
+        else:
+            ob_regime = "BALANCED_EQUILIBRIUM"
+            ob_signal = 0
+
+        # 2. Dealer Gamma regime
+        # Positive GEX indicates dealers buy dips & sell rips (mean-reversion / low vol)
+        # Negative GEX indicates dealers chase breakouts (volatility expansion / momentum)
+        if gex > 0.05:
+            gamma_regime = "LONG_GAMMA_MEAN_REVERTING"
+        elif gex < -0.05:
+            gamma_regime = "SHORT_GAMMA_VOLATILITY_EXPANSION"
+        else:
+            gamma_regime = "NEUTRAL_GAMMA"
+
+        # 3. Skew sentiment
+        if skew > 1.15:
+            skew_sentiment = "PANIC_PUT_SKEW_BEARISH"
+            skew_signal = -1
+        elif skew < 0.92:
+            skew_sentiment = "AGGRESSIVE_CALL_SKEW_BULLISH"
+            skew_signal = 1
+        else:
+            skew_sentiment = "BALANCED_SKEW_NEUTRAL"
+            skew_signal = 0
+
+        # Consolidated Alpha Score in [-1.0, 1.0]
+        alpha_score = round(float(np.clip(obi * 0.50 + skew_signal * 0.30 + ob_signal * 0.20, -1.0, 1.0)), 4)
+
+        return {
+            "order_book_imbalance": round(obi, 4),
+            "order_book_regime": ob_regime,
+            "gamma_exposure_index": round(gex, 4),
+            "dealer_gamma_regime": gamma_regime,
+            "iv_skew_ratio": round(skew, 4),
+            "skew_sentiment": skew_sentiment,
+            "microstructure_alpha_score": alpha_score,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
 MICROSTRUCTURE_STORE = MicrostructureFeatureStore()

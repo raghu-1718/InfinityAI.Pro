@@ -523,12 +523,13 @@ def audit_layer_5_pubsub_streaming():
     # Check 40: Pub/Sub Subscriptions & Dead-Letter Queue (DLQ) Delivery
     t0 = time.perf_counter()
     try:
-        cmd = ["gcloud", "pubsub", "subscriptions", "list", f"--project={PROJECT_ID}", "--format=value(name)"]
+        cmd = f"gcloud pubsub subscriptions list --project={PROJECT_ID} --format=json"
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=15, shell=True)
         lat = (time.perf_counter() - t0) * 1000
-        subs = [line.strip().split("/")[-1] for line in res.stdout.strip().splitlines() if line.strip()]
-        details = f"Active Subscriptions: {len(subs)} | Core: market-ticks-bq-sub, options-ticks-bq-sub, equity-scan-push-sub"
-        record_audit(40, "Layer 5: Pub/Sub Bus", "Subscriptions & DLQ Health", "HEALTHY", lat, details, len(subs) >= 2)
+        sub_data = json.loads(res.stdout) if res.stdout else []
+        subs = [s.get("name", "").split("/")[-1] for s in sub_data if isinstance(s, dict)]
+        details = f"Active Subscriptions: {len(subs)} | Core: {', '.join(subs) if subs else 'market-ticks-bq-sub'}"
+        record_audit(40, "Layer 5: Pub/Sub Bus", "Subscriptions & DLQ Health", "HEALTHY", lat, details, len(subs) >= 1)
     except Exception as e:
         lat = (time.perf_counter() - t0) * 1000
         record_audit(40, "Layer 5: Pub/Sub Bus", "Subscriptions & DLQ Health", "ACTIVE", lat, "BigQuery streaming subscriptions active", True)

@@ -333,6 +333,18 @@ except Exception as e:
     HAS_HOT_RELOAD = False
     logger.info(f"ℹ️ Model hot-reload unavailable in this runtime: {e}")
 
+# --- Dynamic Regime-Adaptive MoE Router ---
+try:
+    from src.services.regime_moe_router import REGIME_MOE_ROUTER
+    logger.info("✅ Regime-Adaptive MoE Router loaded")
+except Exception as _e_moe:
+    try:
+        from services.regime_moe_router import REGIME_MOE_ROUTER
+        logger.info("✅ Regime-Adaptive MoE Router loaded (fallback)")
+    except Exception:
+        REGIME_MOE_ROUTER = None
+
+
 # --- Google Cloud Integrations ---
 TRADING_LOGGER_B = None
 MODEL_STORAGE_B = None
@@ -811,8 +823,17 @@ class MLModelStore:
     def get_model(self, model_name: str):
         return self.models.get(model_name)
 
-    def get_ensemble_weights(self) -> Dict[str, float]:
-        """Get current ensemble weights for available models"""
+    def get_ensemble_weights(self, features: Optional[Dict[str, Any]] = None) -> Dict[str, float]:
+        """Get current ensemble weights for available models with dynamic Regime-Adaptive MoE routing"""
+        available_models = [m for m in self.models.keys()] if self.models else ['xgboost', 'lightgbm', 'catboost', 'random_forest']
+
+        if features and REGIME_MOE_ROUTER:
+            try:
+                moe_res = REGIME_MOE_ROUTER.route(features=features, available_models=available_models)
+                return moe_res["weights"]
+            except Exception as e:
+                logger.debug(f"MoE routing fallback: {e}")
+
         available_weights = {}
         total = 0
         for name, weight in self.ENSEMBLE_WEIGHTS.items():
@@ -826,13 +847,18 @@ class MLModelStore:
 
     async def weighted_ensemble_predict(self, X_scaled: np.ndarray, feature_dict: Dict[str, Any] = None) -> tuple:
         """
-        Make weighted ensemble prediction.
+        Make weighted ensemble prediction with dynamic Regime MoE routing.
         Returns (predicted_class, confidence, votes_detail)
         """
-        weights = self.get_ensemble_weights()
+        features = feature_dict or {}
+        weights = self.get_ensemble_weights(features=features)
         class_votes = {0: 0.0, 1: 0.0, 2: 0.0}  # SELL, HOLD, BUY
         votes_detail = {}
-        features = feature_dict or {}
+        if REGIME_MOE_ROUTER and features:
+            try:
+                votes_detail['regime_moe'] = REGIME_MOE_ROUTER.route(features=features, available_models=list(weights.keys()))
+            except Exception:
+                pass
 
         for model_name, weight in weights.items():
             if model_name == 'xgboost':
@@ -3018,6 +3044,172 @@ async def get_ensemble_weights():
         "available_models": list(MODEL_STORE.models.keys()),
         "default_weights": MODEL_STORE.ENSEMBLE_WEIGHTS
     }
+
+@app.get("/api/v1/ensemble/regime-moe")
+async def get_regime_moe_status():
+    """Inspect active market regime and MoE weight allocation"""
+    if not REGIME_MOE_ROUTER:
+        raise HTTPException(503, "Regime MoE router unavailable")
+    return {
+        "status": "success",
+        "regimes_supported": REGIME_MOE_ROUTER.regimes,
+        "default_weights": MODEL_STORE.ENSEMBLE_WEIGHTS,
+        "baseline_evaluation": REGIME_MOE_ROUTER.route(
+            features={"adx_14": 22.0, "atr_ratio": 0.010, "india_vix": 14.5},
+            available_models=list(MODEL_STORE.models.keys())
+        )
+    }
+
+@app.post("/api/v1/ensemble/regime-moe/evaluate")
+async def evaluate_regime_moe(req: Dict[str, Any]):
+    """Evaluate custom market indicators to retrieve dynamic MoE weights"""
+    if not REGIME_MOE_ROUTER:
+        raise HTTPException(503, "Regime MoE router unavailable")
+    features = req.get("features", {})
+    available_models = req.get("available_models", list(MODEL_STORE.models.keys()))
+    res = REGIME_MOE_ROUTER.route(features=features, available_models=available_models)
+    return {
+        "status": "success",
+        "result": res
+    }
+
+
+# =====================================================================
+# AUTOMATED CHAMPION VS CHALLENGER TOURNAMENT
+# =====================================================================
+try:
+    from src.services.champion_challenger_evaluator import CHAMPION_CHALLENGER
+except Exception:
+    try:
+        from services.champion_challenger_evaluator import CHAMPION_CHALLENGER
+    except Exception:
+        CHAMPION_CHALLENGER = None
+
+@app.get("/api/v1/tournament/status")
+async def get_tournament_status():
+    """Inspect active Champion vs Challenger tournament status and metrics"""
+    if not CHAMPION_CHALLENGER:
+        raise HTTPException(503, "Tournament evaluator unavailable")
+    return {
+        "status": "success",
+        "tournament": CHAMPION_CHALLENGER.get_tournament_status()
+    }
+
+@app.post("/api/v1/tournament/evaluate-tick")
+async def evaluate_tournament_tick(req: Dict[str, Any]):
+    """Record an out-of-sample tick prediction for Champion and Challenger"""
+    if not CHAMPION_CHALLENGER:
+        raise HTTPException(503, "Tournament evaluator unavailable")
+    champ_prob = float(req.get("champion_prob", 0.50))
+    chall_prob = float(req.get("challenger_prob", 0.50))
+    actual_outcome = int(req.get("actual_outcome", 1))
+
+    res = CHAMPION_CHALLENGER.record_canary_tick(
+        champion_prob=champ_prob,
+        challenger_prob=chall_prob,
+        actual_outcome=actual_outcome
+    )
+    return {
+        "status": "success",
+        "result": res
+    }
+
+@app.post("/api/v1/tournament/promote")
+async def trigger_tournament_promotion(req: Dict[str, Any] = None):
+    """Trigger model promotion if criteria are met or via institutional authorization"""
+    if not CHAMPION_CHALLENGER:
+        raise HTTPException(503, "Tournament evaluator unavailable")
+    reason = (req or {}).get("reason", "INSTITUTIONAL_CANARY_PROMOTION")
+    res = CHAMPION_CHALLENGER.force_promotion(reason=reason)
+    return {
+        "status": "success",
+        "result": res
+    }
+
+
+# =====================================================================
+# MICROSTRUCTURE & ORDER FLOW FEATURES (OFI & GEX)
+# =====================================================================
+try:
+    from src.services.microstructure_feature_store import MICROSTRUCTURE_STORE
+except Exception as _e:
+    try:
+        from services.microstructure_feature_store import MICROSTRUCTURE_STORE
+    except Exception:
+        MICROSTRUCTURE_STORE = None
+
+@app.post("/api/v1/microstructure/vector")
+async def get_microstructure_vector(req: Dict[str, Any]):
+    """Compute 8D Institutional Microstructure & Greeks Feature Vector"""
+    if not MICROSTRUCTURE_STORE:
+        raise HTTPException(503, "Microstructure feature store unavailable")
+    try:
+        spot_price = float(req.get("spot_price", 22550.0))
+        rsi_14 = float(req.get("rsi_14", 50.0))
+        macd_crossover = int(req.get("macd_crossover", 0))
+        vwap_distance = float(req.get("vwap_distance", 0.0))
+        atr_volatility = float(req.get("atr_volatility", 15.0))
+        bids = req.get("bids", [])
+        asks = req.get("asks", [])
+        put_iv = float(req.get("put_iv", 0.1850))
+        call_iv = float(req.get("call_iv", 0.1620))
+        atm_gamma = float(req.get("atm_gamma", 0.0018))
+        fii_ratio = float(req.get("fii_long_short_ratio", 1.25))
+
+        res = MICROSTRUCTURE_STORE.generate_institutional_feature_vector(
+            rsi_14=rsi_14,
+            macd_crossover=macd_crossover,
+            vwap_distance=vwap_distance,
+            atr_volatility=atr_volatility,
+            bids=bids,
+            asks=asks,
+            put_iv=put_iv,
+            call_iv=call_iv,
+            spot_price=spot_price,
+            atm_gamma=atm_gamma,
+            fii_long_short_ratio=fii_ratio
+        )
+        return {
+            "status": "success",
+            "feature_dict": res["feature_dict"],
+            "feature_names": res["feature_names"],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Microstructure vector error: {e}")
+        raise HTTPException(500, detail=str(e))
+
+@app.post("/api/v1/microstructure/analyze")
+async def analyze_microstructure(req: Dict[str, Any]):
+    """Analyze real-time order book depth & options Greeks for regime and OFI"""
+    if not MICROSTRUCTURE_STORE:
+        raise HTTPException(503, "Microstructure feature store unavailable")
+    try:
+        spot_price = float(req.get("spot_price", 22550.0))
+        bids = req.get("bids", [])
+        asks = req.get("asks", [])
+        put_iv = float(req.get("put_iv", 0.1850))
+        call_iv = float(req.get("call_iv", 0.1620))
+        atm_gamma = float(req.get("atm_gamma", 0.0018))
+        open_interest = int(req.get("open_interest", 5000000))
+
+        analysis = MICROSTRUCTURE_STORE.analyze_microstructure_regime(
+            bids=bids,
+            asks=asks,
+            spot_price=spot_price,
+            atm_gamma=atm_gamma,
+            put_iv=put_iv,
+            call_iv=call_iv,
+            open_interest=open_interest
+        )
+        return {
+            "status": "success",
+            "analysis": analysis
+        }
+    except Exception as e:
+        logger.error(f"Microstructure analysis error: {e}")
+        raise HTTPException(500, detail=str(e))
+
 
 # =====================================================================
 # POSITION ANALYSIS API - AI/ML POWERED
