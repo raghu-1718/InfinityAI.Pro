@@ -83,21 +83,29 @@ class ShadowSignalLogger:
             logger.warning(f"🚫 SENSEX derivatives disabled by Institutional Risk Audit. Skipping trade ledger commit for {symbol}.")
             return None
 
-        # Tri-Model Unanimity Gate (Audited 84.06% Edge Enforcer)
-        is_bullish = ("CALL" in decision.upper() and "BUY" in decision.upper()) or ("PUT" in decision.upper() and ("SELL" in decision.upper() or "SHORT" in decision.upper()))
-        if is_bullish:
-            unanimous = (catboost_prob >= 0.60 and lightgbm_prob >= 0.60 and xgboost_prob >= 0.60)
-        else:
-            unanimous = (
-                (catboost_prob <= 0.40 and lightgbm_prob <= 0.40 and xgboost_prob <= 0.40) or
-                (catboost_prob >= 0.60 and lightgbm_prob >= 0.60 and xgboost_prob >= 0.60)
+        # Regime-Adaptive Dynamic Mixture-of-Experts (MoE) Gate
+        analysis_data = {
+            "catboost_prob": catboost_prob,
+            "lightgbm_prob": lightgbm_prob,
+            "xgboost_prob": xgboost_prob,
+            "overall_confidence": confidence_score
+        }
+        try:
+            from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
+            moe_res = evaluate_regime_moe_consensus(
+                symbol=symbol,
+                decision_or_signal_type=decision,
+                analysis_data=analysis_data,
+                overall_confidence=confidence_score
             )
+        except Exception as e:
+            logger.warning(f"MoE gate fallback in shadow logger: {e}")
+            moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-        if not unanimous:
+        if not moe_res["approved"]:
             logger.info(
-                f"⏸️ Signal for {symbol} rejected by Tri-Model Unanimity Gate "
-                f"(CatBoost: {catboost_prob:.2f}, LightGBM: {lightgbm_prob:.2f}, XGBoost: {xgboost_prob:.2f}). "
-                f"Requires unanimous consensus >= 0.60."
+                f"⏸️ Signal for {symbol} rejected by Regime-Adaptive MoE Gate "
+                f"(Regime: {moe_res.get('regime')}, Reason: {moe_res.get('reason')})."
             )
             return None
 

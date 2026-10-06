@@ -308,31 +308,35 @@ class AutonomousTrader:
         logger.info(f"🔎 Analyzing Signal: {signal_type} {symbol} ({confidence:.1%})")
 
         # ---------------------------------------------------------
-        # TRI-MODEL UNANIMITY GATE (Institutional 84.06% Win-Rate Gate)
+        # REGIME-ADAPTIVE DYNAMIC MIXTURE-OF-EXPERTS (MoE) GATE
         # ---------------------------------------------------------
         analysis_data = signal.get("analysis", {})
-        cb_prob = float(analysis_data.get("catboost_prob", confidence))
-        lgb_prob = float(analysis_data.get("lightgbm_prob", confidence))
-        xgb_prob = float(analysis_data.get("xgboost_prob", confidence))
-
-        is_call_side = "CALL" in signal_type.upper() or (signal_type.upper() in ["BUY", "LONG"] and "PUT" not in signal_type.upper())
-        if is_call_side:
-            is_unanimous = (cb_prob >= 0.60 and lgb_prob >= 0.60 and xgb_prob >= 0.60)
-        else:
-            is_unanimous = (
-                (cb_prob <= 0.40 and lgb_prob <= 0.40 and xgb_prob <= 0.40) or
-                (cb_prob >= 0.60 and lgb_prob >= 0.60 and xgb_prob >= 0.60)
+        try:
+            from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
+            moe_res = evaluate_regime_moe_consensus(
+                symbol=symbol,
+                decision_or_signal_type=signal_type,
+                analysis_data=analysis_data,
+                overall_confidence=confidence
             )
+        except Exception as e:
+            logger.warning(f"MoE gate import/eval fallback: {e}")
+            moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-        if not is_unanimous:
+        if not moe_res["approved"]:
             logger.warning(
-                f"🛑 TRI-MODEL UNANIMITY GATE: {symbol} {signal_type} rejected. "
-                f"Ensemble non-unanimous (CatBoost: {cb_prob:.2f}, LightGBM: {lgb_prob:.2f}, XGBoost: {xgb_prob:.2f}). "
-                f"Requires unanimous conviction >= 0.60 to capture audited 84.06% win-rate edge."
+                f"🛑 REGIME-ADAPTIVE MoE GATE: {symbol} {signal_type} rejected. "
+                f"Regime: {moe_res.get('regime')} | MoE Score: {moe_res.get('moe_score', 0):.1%} | "
+                f"Reason: {moe_res.get('reason')}"
             )
             self.audit_logger.log_trade_rejected(
-                uid, symbol, "TRI_MODEL_NON_UNANIMOUS",
-                {"catboost": cb_prob, "lightgbm": lgb_prob, "xgboost": xgb_prob, "required": ">=0.60 across all models"}
+                uid, symbol, "REGIME_ADAPTIVE_MOE_REJECTED",
+                {
+                    "regime": moe_res.get("regime"),
+                    "moe_score": moe_res.get("moe_score"),
+                    "agreeing_models": moe_res.get("agreeing_models"),
+                    "reason": moe_res.get("reason")
+                }
             )
             return
 

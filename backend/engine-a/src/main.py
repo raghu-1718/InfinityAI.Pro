@@ -362,6 +362,32 @@ async def get_trader_status():
     """Get status of the Autonomous Trader"""
     return AUTONOMOUS_TRADER.get_status()
 
+@app.get("/api/v1/risk/moe-gate/status")
+async def get_moe_gate_status():
+    """Returns status and configuration of the Regime-Adaptive Dynamic MoE Gate"""
+    from src.services.regime_adaptive_moe_gate import DEFAULT_WEIGHTS, get_regime_weights
+    return {
+        "status": "active",
+        "gate_version": "v3.3.0-moe-dynamic",
+        "default_weights": DEFAULT_WEIGHTS,
+        "supported_regimes": [
+            "STRONG_TREND",
+            "MEAN_REVERTING_OSCILLATION",
+            "VOLATILITY_SHOCK",
+            "CHOPPY_SIDEWAYS",
+            "EQUILIBRIUM_BASELINE"
+        ],
+        "regime_weight_profiles": {
+            r: get_regime_weights(r) for r in [
+                "STRONG_TREND",
+                "MEAN_REVERTING_OSCILLATION",
+                "VOLATILITY_SHOCK",
+                "CHOPPY_SIDEWAYS",
+                "EQUILIBRIUM_BASELINE"
+            ]
+        }
+    }
+
 @app.post("/api/trader/start")
 async def start_trader():
     """Manually start the Autonomous Trader"""

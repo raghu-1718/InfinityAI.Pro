@@ -205,23 +205,35 @@ class ContinuousShadowScanner:
                 lightgbm_p = float(models.get("lightgbm_prob", conf))
                 xgboost_p = float(models.get("xgboost_prob", conf))
 
-                # 4. Tri-Model Unanimity Gate (Audited 84.06% Edge Enforcer)
-                is_bullish = ("CALL" in decision.upper() and "BUY" in decision.upper()) or ("PUT" in decision.upper() and "SELL" in decision.upper())
-                if is_bullish:
-                    unanimous_consensus = (catboost_p >= 0.60 and lightgbm_p >= 0.60 and xgboost_p >= 0.60)
-                else:
-                    unanimous_consensus = (
-                        (catboost_p <= 0.40 and lightgbm_p <= 0.40 and xgboost_p <= 0.40) or
-                        (catboost_p >= 0.60 and lightgbm_p >= 0.60 and xgboost_p >= 0.60)
+                # 4. Regime-Adaptive Dynamic Mixture-of-Experts (MoE) Gate
+                analysis_data = sig.get("analysis") or {
+                    "catboost_prob": catboost_p,
+                    "lightgbm_prob": lightgbm_p,
+                    "xgboost_prob": xgboost_p,
+                    "adx": adx,
+                    "vix": float(spot_prices.get("INDIAVIX", 14.5)),
+                    "atr_ratio": atr / spot if spot > 0 else 0.010,
+                    "model_breakdown": sig.get("model_breakdown", {})
+                }
+                try:
+                    from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
+                    moe_res = evaluate_regime_moe_consensus(
+                        symbol=sym,
+                        decision_or_signal_type=decision,
+                        analysis_data=analysis_data,
+                        overall_confidence=conf
                     )
+                except Exception as e:
+                    logger.warning(f"MoE gate fallback in autonomous shadow scanner: {e}")
+                    moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-                if not unanimous_consensus:
+                if not moe_res["approved"]:
                     logger.info(
-                        f"⏸️ Tri-Model Unanimity Gate: {sym} {decision} filtered out. "
-                        f"Ensemble non-unanimous (CatBoost: {catboost_p:.2f}, LightGBM: {lightgbm_p:.2f}, XGBoost: {xgboost_p:.2f}). "
-                        f"Requires unanimous conviction >= 0.60 to capture audited 84.06% win-rate edge."
+                        f"⏸️ Regime-Adaptive MoE Gate: {sym} {decision} filtered out. "
+                        f"Regime: {moe_res.get('regime')} | MoE Score: {moe_res.get('moe_score', 0):.1%} | "
+                        f"Reason: {moe_res.get('reason')}"
                     )
-                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "TRI_MODEL_NON_UNANIMOUS"}
+                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "REGIME_ADAPTIVE_MOE_FILTERED"}
                     continue
 
                 gemini_sentiment = str(sig.get("sentiment_score") or (

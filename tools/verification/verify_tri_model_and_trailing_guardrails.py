@@ -90,37 +90,52 @@ class TestInstitutionalTradingGuardrails(unittest.TestCase):
         self.assertTrue(any("SENSEX derivatives disabled" in v for v in eg_res["guardrails_violated"]))
         print(f"   ✅ Engine C Gateway: SENSEX options order strictly rejected ({eg_res['reason']})")
 
-    def test_02_tri_model_unanimity_gate(self):
-        """Verify Tri-Model Unanimity Gate requires unanimous consensus >= 0.60."""
-        print("🔍 [TEST 2] Auditing Tri-Model Unanimity Gate (84.06% Edge Filter)...")
+    def test_02_regime_adaptive_moe_gate(self):
+        """Verify Regime-Adaptive Dynamic MoE Gate."""
+        print("🔍 [TEST 2] Auditing Regime-Adaptive Dynamic MoE Gate...")
+        from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
 
-        # Define Unanimity Evaluation Function (Matches production implementation)
-        def evaluate_tri_model_unanimity(decision: str, cb: float, lgb: float, xgb: float) -> bool:
-            is_call = "CALL" in decision.upper() or (decision.upper() in ["BUY", "LONG"] and "PUT" not in decision.upper())
-            if is_call:
-                return cb >= 0.60 and lgb >= 0.60 and xgb >= 0.60
-            else:
-                return (cb <= 0.40 and lgb <= 0.40 and xgb <= 0.40) or (cb >= 0.60 and lgb >= 0.60 and xgb >= 0.60)
+        # Case A: Strong Trend Momentum Breakout (LightGBM=0.77, CatBoost=0.30, XGBoost=0.33 in STRONG_TREND) -> APPROVE
+        case_a = evaluate_regime_moe_consensus(
+            symbol="NIFTY",
+            decision_or_signal_type="BUY_CALL",
+            analysis_data={
+                "catboost_prob": 0.30,
+                "lightgbm_prob": 0.77,
+                "xgboost_prob": 0.33,
+                "model_breakdown": {
+                    "regime_moe": {"regime": "STRONG_TREND", "weights": {"lightgbm": 0.35, "catboost": 0.35, "xgboost": 0.15, "random_forest": 0.15}}
+                }
+            }
+        )
+        self.assertTrue(case_a["approved"], "Strong trend breakout with LightGBM >= 0.65 must be approved under MoE")
+        print(f"   ✅ Strong Trend Breakout (LGB=0.77, CB=0.30, XGB=0.33): Correctly APPROVED by MoE Gate ({case_a['reason']})")
 
-        # Case A: Mixed Consensus (CatBoost=0.74, LightGBM=0.55, XGBoost=0.52) -> REJECT
-        case_a = evaluate_tri_model_unanimity("BUY_CALL", 0.74, 0.55, 0.52)
-        self.assertFalse(case_a, "Non-unanimous consensus must be rejected")
-        print("   ✅ Mixed Consensus (CB=0.74, LGB=0.55, XGB=0.52): Correctly REJECTED by Unanimity Gate")
+        # Case B: Chop Veto Active (ADX < 19.0) -> REJECT
+        case_b = evaluate_regime_moe_consensus(
+            symbol="BANKNIFTY",
+            decision_or_signal_type="BUY_CALL",
+            analysis_data={
+                "catboost_prob": 0.70,
+                "lightgbm_prob": 0.70,
+                "xgboost_prob": 0.70,
+                "adx": 14.0,
+                "model_breakdown": {
+                    "regime_moe": {"regime": "CHOPPY_SIDEWAYS", "chop_veto_active": True}
+                }
+            }
+        )
+        self.assertFalse(case_b["approved"], "Choppy regime must be vetoed to protect against theta decay")
+        print(f"   ✅ Chop Filter Active (ADX=14.0): Correctly REJECTED by MoE Gate ({case_b['reason']})")
 
-        # Case B: Unanimous Bullish Consensus (CatBoost=0.68, LightGBM=0.71, XGBoost=0.65) -> APPROVE
-        case_b = evaluate_tri_model_unanimity("BUY_CALL", 0.68, 0.71, 0.65)
-        self.assertTrue(case_b, "Unanimous consensus >= 0.60 must be approved")
-        print("   ✅ Unanimous Consensus (CB=0.68, LGB=0.71, XGB=0.65): Correctly APPROVED (Captures 84.06% Win Rate)")
-
-        # Case C: Put Mixed Consensus (CatBoost=0.32, LightGBM=0.52, XGBoost=0.38) -> REJECT
-        case_c = evaluate_tri_model_unanimity("BUY_PUT", 0.32, 0.52, 0.38)
-        self.assertFalse(case_c, "Non-unanimous put consensus must be rejected")
-        print("   ✅ Mixed Put Consensus (CB=0.32, LGB=0.52, XGB=0.38): Correctly REJECTED")
-
-        # Case D: Put Unanimous Bearish Consensus (CatBoost=0.28, LightGBM=0.31, XGBoost=0.35) -> APPROVE
-        case_d = evaluate_tri_model_unanimity("BUY_PUT", 0.28, 0.31, 0.35)
-        self.assertTrue(case_d, "Unanimous put consensus <= 0.40 must be approved")
-        print("   ✅ Unanimous Bearish Consensus (CB=0.28, LGB=0.31, XGB=0.35): Correctly APPROVED")
+        # Case C: Equilibrium Majority Consensus (CatBoost=0.68, LightGBM=0.71, XGBoost=0.45) -> APPROVE
+        case_c = evaluate_regime_moe_consensus(
+            symbol="NIFTY",
+            decision_or_signal_type="BUY_CALL",
+            analysis_data={"catboost_prob": 0.68, "lightgbm_prob": 0.71, "xgboost_prob": 0.45, "adx": 21.0}
+        )
+        self.assertTrue(case_c["approved"], "Majority consensus in equilibrium must be approved")
+        print(f"   ✅ Majority Consensus (CB=0.68, LGB=0.71, XGB=0.45): Correctly APPROVED (MoE Score: {case_c['moe_score']:.1%})")
 
     def test_03_3_tier_dynamic_trailing_stop_invariant(self):
         """Verify 3-Tier Dynamic Trailing Stop & Ratchet Invariant (SL never moves down)."""
