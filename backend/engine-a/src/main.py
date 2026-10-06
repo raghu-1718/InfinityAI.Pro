@@ -106,10 +106,25 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️ Failed to start Autonomous Shadow Scanner: {e}")
 
+    # Start Autonomous Live Market Tick Streamer (Streams to Pub/Sub market-ticks -> BigQuery live_ticks)
+    try:
+        from src.services.live_tick_streamer import LIVE_TICK_STREAMER
+        asyncio.create_task(LIVE_TICK_STREAMER.start_streaming_daemon(interval_seconds=30))
+        logger.info("✅ Live Market Tick Streamer Daemon initialized (streaming to Pub/Sub & BigQuery)")
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to start Live Market Tick Streamer Daemon: {e}")
+
     yield  # App is running
 
     # Shutdown
     logger.info("🛑 Engine A shutting down...")
+
+    # Stop Live Market Tick Streamer
+    try:
+        from src.services.live_tick_streamer import LIVE_TICK_STREAMER
+        LIVE_TICK_STREAMER.stop()
+    except Exception:
+        pass
 
     # Stop Autonomous Shadow Scanner
     try:
