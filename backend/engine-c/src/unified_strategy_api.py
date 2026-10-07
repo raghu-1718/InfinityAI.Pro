@@ -195,8 +195,22 @@ async def execute_strategy(
                 detail=f"Valid positive spot_price is required for {request.symbol} execution and live feed is offline."
             )
         
-        # Determine lot size (August 2026 NSE specs: NIFTY=65, BANKNIFTY=30)
-        lot_size = 65 if "NIFTY" in request.symbol and "BANK" not in request.symbol else (30 if "BANK" in request.symbol else 40)
+        # Determine lot size (Verified with Dhan Scrip Master: NIFTY=65, BANKNIFTY=30, FINNIFTY=60, MIDCPNIFTY=120, SENSEX=20, BANKEX=30)
+        sym_u = request.symbol.upper()
+        if "BANKNIFTY" in sym_u:
+            lot_size = 30
+        elif "FINNIFTY" in sym_u:
+            lot_size = 60
+        elif "MIDCP" in sym_u:
+            lot_size = 120
+        elif "SENSEX" in sym_u:
+            lot_size = 20
+        elif "BANKEX" in sym_u:
+            lot_size = 30
+        elif "NIFTY" in sym_u:
+            lot_size = 65
+        else:
+            lot_size = 65
 
         
         # Route to appropriate calculator

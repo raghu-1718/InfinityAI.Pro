@@ -55,7 +55,7 @@ interface StrategyPreset {
     theta: number;
     vega: number;
   };
-  getLegs: (spot: number) => OptionLeg[];
+  getLegs: (spot: number, lotSize?: number, step?: number) => OptionLeg[];
 }
 
 const STRATEGIES: StrategyPreset[] = [
@@ -65,11 +65,11 @@ const STRATEGIES: StrategyPreset[] = [
     category: "NEUTRAL",
     description: "High-probability theta decay strategy profiting from low volatility consolidation.",
     greeks: { delta: -0.02, gamma: -0.0008, theta: 420.5, vega: -185.0 },
-    getLegs: (spot: number) => [
-      { type: "PE", action: "BUY", strike: Math.round((spot - 300) / 50) * 50, premium: 18.5, qty: 65 },
-      { type: "PE", action: "SELL", strike: Math.round((spot - 150) / 50) * 50, premium: 45.0, qty: 65 },
-      { type: "CE", action: "SELL", strike: Math.round((spot + 150) / 50) * 50, premium: 42.0, qty: 65 },
-      { type: "CE", action: "BUY", strike: Math.round((spot + 300) / 50) * 50, premium: 16.0, qty: 65 },
+    getLegs: (spot: number, lotSize = 65, step = 50) => [
+      { type: "PE", action: "BUY", strike: Math.round((spot - step * 6) / step) * step, premium: 18.5, qty: lotSize },
+      { type: "PE", action: "SELL", strike: Math.round((spot - step * 3) / step) * step, premium: 45.0, qty: lotSize },
+      { type: "CE", action: "SELL", strike: Math.round((spot + step * 3) / step) * step, premium: 42.0, qty: lotSize },
+      { type: "CE", action: "BUY", strike: Math.round((spot + step * 6) / step) * step, premium: 16.0, qty: lotSize },
     ],
   },
   {
@@ -78,9 +78,9 @@ const STRATEGIES: StrategyPreset[] = [
     category: "BULLISH",
     description: "Defined-risk directional spread with capped upside and limited max loss.",
     greeks: { delta: 0.38, gamma: 0.0012, theta: -85.0, vega: 120.0 },
-    getLegs: (spot: number) => [
-      { type: "CE", action: "BUY", strike: Math.round((spot - 50) / 50) * 50, premium: 110.0, qty: 65 },
-      { type: "CE", action: "SELL", strike: Math.round((spot + 150) / 50) * 50, premium: 35.0, qty: 65 },
+    getLegs: (spot: number, lotSize = 65, step = 50) => [
+      { type: "CE", action: "BUY", strike: Math.round((spot - step) / step) * step, premium: 110.0, qty: lotSize },
+      { type: "CE", action: "SELL", strike: Math.round((spot + step * 3) / step) * step, premium: 35.0, qty: lotSize },
     ],
   },
   {
@@ -89,9 +89,9 @@ const STRATEGIES: StrategyPreset[] = [
     category: "BEARISH",
     description: "Hedging or directional downside strategy with strict risk containment.",
     greeks: { delta: -0.36, gamma: 0.0011, theta: -75.0, vega: 115.0 },
-    getLegs: (spot: number) => [
-      { type: "PE", action: "BUY", strike: Math.round((spot + 50) / 50) * 50, premium: 115.0, qty: 65 },
-      { type: "PE", action: "SELL", strike: Math.round((spot - 150) / 50) * 50, premium: 38.0, qty: 65 },
+    getLegs: (spot: number, lotSize = 65, step = 50) => [
+      { type: "PE", action: "BUY", strike: Math.round((spot + step) / step) * step, premium: 115.0, qty: lotSize },
+      { type: "PE", action: "SELL", strike: Math.round((spot - step * 3) / step) * step, premium: 38.0, qty: lotSize },
     ],
   },
   {
@@ -100,9 +100,9 @@ const STRATEGIES: StrategyPreset[] = [
     category: "NEUTRAL",
     description: "Aggressive premium seller collecting high daily theta decay outside 1.5 SD bands.",
     greeks: { delta: 0.01, gamma: -0.0015, theta: 680.0, vega: -320.0 },
-    getLegs: (spot: number) => [
-      { type: "PE", action: "SELL", strike: Math.round((spot - 250) / 50) * 50, premium: 28.0, qty: 65 },
-      { type: "CE", action: "SELL", strike: Math.round((spot + 250) / 50) * 50, premium: 26.0, qty: 65 },
+    getLegs: (spot: number, lotSize = 65, step = 50) => [
+      { type: "PE", action: "SELL", strike: Math.round((spot - step * 5) / step) * step, premium: 28.0, qty: lotSize },
+      { type: "CE", action: "SELL", strike: Math.round((spot + step * 5) / step) * step, premium: 26.0, qty: lotSize },
     ],
   },
 ];
@@ -110,7 +110,9 @@ const STRATEGIES: StrategyPreset[] = [
 const INDEX_CONFIGS = [
   { symbol: "NIFTY", name: "NIFTY 50", lotSize: 65, step: 50 },
   { symbol: "BANKNIFTY", name: "BANK NIFTY", lotSize: 30, step: 100 },
-  { symbol: "FINNIFTY", name: "FIN NIFTY", lotSize: 65, step: 50 },
+  { symbol: "FINNIFTY", name: "FIN NIFTY", lotSize: 60, step: 50 },
+  { symbol: "MIDCPNIFTY", name: "MIDCP NIFTY", lotSize: 120, step: 25 },
+  { symbol: "SENSEX", name: "BSE SENSEX", lotSize: 20, step: 100 },
 ];
 
 export function InstitutionalOptionsPayoffVisualizer() {
@@ -123,7 +125,7 @@ export function InstitutionalOptionsPayoffVisualizer() {
     let isMounted = true;
     async function fetchSpots() {
       try {
-        const resp = await fetch("/api/dhan/market/quotes?security_ids=13,25,27&exchange_segment=IDX_I");
+        const resp = await fetch("/api/dhan/market/quotes?security_ids=13,25,27,28,51&exchange_segment=IDX_I");
         if (resp.ok) {
           const raw = await resp.json();
           let d = raw;
@@ -135,6 +137,8 @@ export function InstitutionalOptionsPayoffVisualizer() {
           if (idxMap["13"]?.last_price) spots["NIFTY"] = Number(idxMap["13"].last_price);
           if (idxMap["25"]?.last_price) spots["BANKNIFTY"] = Number(idxMap["25"].last_price);
           if (idxMap["27"]?.last_price) spots["FINNIFTY"] = Number(idxMap["27"].last_price);
+          if (idxMap["28"]?.last_price) spots["MIDCPNIFTY"] = Number(idxMap["28"].last_price);
+          if (idxMap["51"]?.last_price) spots["SENSEX"] = Number(idxMap["51"].last_price);
 
           if (isMounted && Object.keys(spots).length > 0) {
             setLiveSpots(spots);
@@ -165,8 +169,8 @@ export function InstitutionalOptionsPayoffVisualizer() {
 
   const legs = useMemo(() => {
     if (activeSpot <= 0) return [];
-    return activeStrategy.getLegs(activeSpot);
-  }, [activeStrategy, activeSpot]);
+    return activeStrategy.getLegs(activeSpot, activeCfg.lotSize, activeCfg.step);
+  }, [activeStrategy, activeSpot, activeCfg.lotSize, activeCfg.step]);
 
   // Compute 40-point Payoff Curve at Expiry
   const { payoffData, maxProfit, maxLoss, breakevens, netPremium } = useMemo(() => {

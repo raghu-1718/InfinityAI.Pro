@@ -22,12 +22,14 @@ class OptionContractCache:
 
     def _warm_cache(self):
         """Pre-warms the cache with standard SEBI 2026 strike chains"""
-        # Standard strike grids for major Indian indices
+        # Standard strike grids for major Indian indices (Verified with Dhan Scrip Master)
         configs = {
             "NIFTY": {"base": 24250, "step": 50, "range": 30, "lot": 65, "sec_prefix": "13"},
             "BANKNIFTY": {"base": 51200, "step": 100, "range": 30, "lot": 30, "sec_prefix": "25"},
-            "FINNIFTY": {"base": 23400, "step": 50, "range": 20, "lot": 65, "sec_prefix": "27"},
+            "FINNIFTY": {"base": 23400, "step": 50, "range": 20, "lot": 60, "sec_prefix": "27"},
+            "MIDCPNIFTY": {"base": 13000, "step": 25, "range": 30, "lot": 120, "sec_prefix": "28"},
             "SENSEX": {"base": 80100, "step": 100, "range": 30, "lot": 20, "sec_prefix": "51"},
+            "BANKEX": {"base": 65000, "step": 100, "range": 20, "lot": 30, "sec_prefix": "52"},
             "CRUDEOIL": {"base": 6350, "step": 50, "range": 20, "lot": 100, "sec_prefix": "60"}
         }
 
@@ -59,7 +61,12 @@ class OptionContractCache:
         Calls: ATM - 1 Strike Interval | Puts: ATM + 1 Strike Interval
         """
         sym_u = symbol.upper()
-        step = 100 if "BANKNIFTY" in sym_u or "SENSEX" in sym_u else 50
+        if "MIDCP" in sym_u:
+            step = 25
+        elif "BANKNIFTY" in sym_u or "SENSEX" in sym_u or "BANKEX" in sym_u:
+            step = 100
+        else:
+            step = 50
         atm_strike = int(round(spot_price / step) * step)
 
         opt_type = "CE" if "CALL" in decision or "BUY" in decision else "PE"
@@ -70,12 +77,27 @@ class OptionContractCache:
         contract = self._cache.get(cache_key)
 
         if not contract:
-            # Fallback dynamic generator
+            # Fallback dynamic generator with exact Dhan lot sizes
+            if "BANKNIFTY" in sym_u:
+                fallback_lot = 30
+            elif "FINNIFTY" in sym_u:
+                fallback_lot = 60
+            elif "MIDCP" in sym_u:
+                fallback_lot = 120
+            elif "SENSEX" in sym_u:
+                fallback_lot = 20
+            elif "BANKEX" in sym_u:
+                fallback_lot = 30
+            elif "CRUDE" in sym_u:
+                fallback_lot = 100
+            else:
+                fallback_lot = 65
+
             contract = {
                 "symbol": sym_u,
                 "strike": target_strike,
                 "option_type": opt_type,
-                "lot_size": 30 if "BANKNIFTY" in sym_u else (20 if "SENSEX" in sym_u else 65),
+                "lot_size": fallback_lot,
                 "security_id": f"DYN_{sym_u}_{target_strike}_{opt_type}",
                 "cached_at": time.time()
             }

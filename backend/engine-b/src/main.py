@@ -599,7 +599,7 @@ MARKET_CONFIG = {
         "MIDCPNIFTY": 120,     # Active 2026 NSE Mandate
         "NIFTYNXT50": 25,
         "SENSEX": 20,
-        "BANKEX": 15
+        "BANKEX": 30
     },
     "EXPIRY_DAYS": {
         "NIFTY": 1,            # Tuesday (NSE Benchmark Weekly & Monthly)

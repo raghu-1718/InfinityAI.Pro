@@ -133,20 +133,20 @@ class SEBIRegulations:
     LOT_SIZES_DEC_2025 = {
         "NIFTY": 65,
         "BANKNIFTY": 30,
-        "FINNIFTY": 40,
+        "FINNIFTY": 60,
         "MIDCPNIFTY": 120,
         "NIFTYNXT50": 25,
         "SENSEX": 20,
-        "BANKEX": 15,
+        "BANKEX": 30,
     }
 
     LOT_SIZES_POST_DEC30 = {
         "NIFTY": 65,
         "BANKNIFTY": 30,
-        "FINNIFTY": 40,
+        "FINNIFTY": 60,
         "MIDCPNIFTY": 120,
         "SENSEX": 20,
-        "BANKEX": 15,
+        "BANKEX": 30,
     }
 
 
