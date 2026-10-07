@@ -120,6 +120,9 @@ class ShadowSignalLogger:
         if "BANKNIFTY" in sym_u:
             actual_lot_size = 30
             strike_step = 100
+        elif "BANKEX" in sym_u:
+            actual_lot_size = 30
+            strike_step = 100
         elif "FINNIFTY" in sym_u:
             actual_lot_size = 60
             strike_step = 50

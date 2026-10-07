@@ -535,6 +535,9 @@ class AutonomousTrader:
         if "BANKNIFTY" in symbol_upper:
             interval = 100
             lot_size = 30
+        elif "BANKEX" in symbol_upper:
+            interval = 100
+            lot_size = 30
         elif "MIDCP" in symbol_upper:
             interval = 25
             lot_size = 120

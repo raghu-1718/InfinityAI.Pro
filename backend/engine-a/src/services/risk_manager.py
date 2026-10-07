@@ -299,10 +299,14 @@ class RiskManager:
 
         if "BANKNIFTY" in sym_u:
             lot_size = 30
+        elif "BANKEX" in sym_u:
+            lot_size = 30
         elif "FINNIFTY" in sym_u:
             lot_size = 60
         elif "MIDCP" in sym_u:
             lot_size = 120
+        elif "SENSEX" in sym_u:
+            lot_size = 20
         elif "NIFTY" in sym_u:
             lot_size = 65
         else:
