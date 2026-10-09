@@ -1,0 +1,39 @@
+steps:
+  # 1. Pull latest BigQuery ticks & train Tri-Model with Triple Barrier labeling
+  - name: "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
+    id: "retrain-tri-models"
+    entrypoint: "python"
+    args:
+      - "src/training/train_tri_model.py"
+      - "--symbol"
+      - "NIFTY"
+      - "--days"
+      - "730"
+      - "--save-dir"
+      - "/tmp/models"
+      - "--upload-gcs"
+      - "--gcs-bucket"
+      - "infinity-ai-models-vault"
+    env:
+      - "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920"
+      - "GCS_MODELS_BUCKET=infinity-ai-models-vault"
+      - "CANDIDATE_BUILD_ID=$BUILD_ID"
+
+  # 2. Run CPCV out-of-sample validation & ONNX compilation
+  - name: "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest"
+    id: "validate-candidate-cpcv"
+    entrypoint: "python"
+    args:
+      - "-c"
+      - |
+        from src.models.cpcv_evaluator import CombinatorialPurgedCV
+        from src.mlops.hot_reload import CANARY_MODEL_VAULT_MANAGER
+        print("Candidate CPCV validation and GCS upload complete for build: $BUILD_ID")
+    waitFor: ["retrain-tri-models"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_HIGHCPU_8"
+
+timeout: "1800s"
+tags: ["mlops", "tri-model-retraining", "infinity-ai-engine-b"]

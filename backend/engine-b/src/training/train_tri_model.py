@@ -221,17 +221,16 @@ def calculate_features(df_ohlcv: pd.DataFrame, df_options: Optional[pd.DataFrame
     data['obv_slope'] = data['obv'].pct_change(periods=5, fill_method=None)
 
     # =========================================================
-    # 3. TARGET LABEL GENERATION (Future 3-day return)
+    # 3. TARGET LABEL GENERATION (Institutional Triple Barrier Method)
     # =========================================================
-    # 0 = SELL (down > 0.5%), 1 = HOLD (-0.5% to +0.5%), 2 = BUY (up > 0.5%)
-    fwd_ret = close.shift(-3) / close - 1.0
-    threshold = 0.005
+    try:
+        from .labeling_utils import apply_triple_barrier_labeling
+        from .microstructure_features import enrich_dataset_with_microstructure
+    except (ImportError, ValueError):
+        from src.training.labeling_utils import apply_triple_barrier_labeling
+        from src.training.microstructure_features import enrich_dataset_with_microstructure
 
-    data['target'] = 1  # Default HOLD
-    data.loc[fwd_ret > threshold, 'target'] = 2   # BUY
-    data.loc[fwd_ret < -threshold, 'target'] = 0  # SELL
-
-    # Register standard features
+    # Register standard technical features
     feature_cols.extend([
         'ret_1d', 'ret_3d', 'ret_5d', 'ret_10d', 'ret_20d',
         'dist_ema_9', 'dist_ema_21', 'dist_ema_50', 'ema_cross',
@@ -239,7 +238,21 @@ def calculate_features(df_ohlcv: pd.DataFrame, df_options: Optional[pd.DataFrame
         'bb_pct', 'bb_width', 'atr_pct', 'vol_ratio', 'obv_slope'
     ])
 
-    clean_df = data.dropna(subset=feature_cols + ['target']).copy()
+    # Enrich with options microstructure features (GEX, PCR Momentum, IV Skew, OBI)
+    data, micro_cols = enrich_dataset_with_microstructure(data, df_options)
+    for mc in micro_cols:
+        if mc not in feature_cols:
+            feature_cols.append(mc)
+
+    # Apply Marcos López de Prado's Triple Barrier Method (PT: 1.5*ATR, SL: 1.0*ATR, Horizon: 30 bars)
+    data, sample_weights = apply_triple_barrier_labeling(
+        data,
+        pt_multiplier=1.5,
+        sl_multiplier=1.0,
+        max_holding_bars=30
+    )
+
+    clean_df = data.dropna(subset=feature_cols + ['target', 'sample_weight']).copy()
     return clean_df, feature_cols
 
 
@@ -337,11 +350,13 @@ def train_tri_model_ensemble(
 
     X = clean_df[feature_cols].values
     y = clean_df['target'].values.astype(int)
+    w = clean_df['sample_weight'].values.astype(float) if 'sample_weight' in clean_df.columns else np.ones(len(X))
 
     # 4. Train / Validation Split (80/20 Time-Series Split)
     split_idx = int(len(X) * 0.8)
     X_train, X_test = X[:split_idx], X[split_idx:]
     y_train, y_test = y[:split_idx], y[split_idx:]
+    w_train, w_test = w[:split_idx], w[split_idx:]
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -359,12 +374,12 @@ def train_tri_model_ensemble(
         objective='multi:softprob', eval_metric='mlogloss',
         random_state=42, n_jobs=-1
     )
-    xgb_model.fit(X_train_scaled, y_train)
+    xgb_model.fit(X_train_scaled, y_train, sample_weight=w_train)
     xgb_preds = xgb_model.predict(X_test_scaled)
     xgb_proba = xgb_model.predict_proba(X_test_scaled)
     models['xgboost'] = xgb_model
     results['xgboost'] = {
-        'accuracy': float(accuracy_score(y_test, xgb_preds)),
+        'accuracy': float(accuracy_score(y_test, xgb_preds, sample_weight=w_test)),
         'f1_score': float(f1_score(y_test, xgb_preds, average='weighted', zero_division=0)),
         'log_loss': float(log_loss(y_test, xgb_proba, labels=[0, 1, 2]))
     }
@@ -375,12 +390,12 @@ def train_tri_model_ensemble(
         n_estimators=150, max_depth=5, learning_rate=0.03,
         random_state=42, verbose=-1, n_jobs=-1
     )
-    lgb_model.fit(X_train_scaled, y_train)
+    lgb_model.fit(X_train_scaled, y_train, sample_weight=w_train)
     lgb_preds = lgb_model.predict(X_test_scaled)
     lgb_proba = lgb_model.predict_proba(X_test_scaled)
     models['lightgbm'] = lgb_model
     results['lightgbm'] = {
-        'accuracy': float(accuracy_score(y_test, lgb_preds)),
+        'accuracy': float(accuracy_score(y_test, lgb_preds, sample_weight=w_test)),
         'f1_score': float(f1_score(y_test, lgb_preds, average='weighted', zero_division=0)),
         'log_loss': float(log_loss(y_test, lgb_proba, labels=[0, 1, 2]))
     }
@@ -392,12 +407,12 @@ def train_tri_model_ensemble(
             iterations=150, depth=5, learning_rate=0.03,
             random_state=42, verbose=False
         )
-        cat_model.fit(X_train_scaled, y_train)
+        cat_model.fit(X_train_scaled, y_train, sample_weight=w_train)
         cat_preds = cat_model.predict(X_test_scaled)
         cat_proba = cat_model.predict_proba(X_test_scaled)
         models['catboost'] = cat_model
         results['catboost'] = {
-            'accuracy': float(accuracy_score(y_test, cat_preds)),
+            'accuracy': float(accuracy_score(y_test, cat_preds, sample_weight=w_test)),
             'f1_score': float(f1_score(y_test, cat_preds, average='weighted', zero_division=0)),
             'log_loss': float(log_loss(y_test, cat_proba, labels=[0, 1, 2]))
         }
@@ -405,7 +420,7 @@ def train_tri_model_ensemble(
     # --- D. Random Forest Classifier ---
     logger.info("🌳 Training Random Forest Classifier...")
     rf_model = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
-    rf_model.fit(X_train_scaled, y_train)
+    rf_model.fit(X_train_scaled, y_train, sample_weight=w_train)
     rf_preds = rf_model.predict(X_test_scaled)
     rf_proba = rf_model.predict_proba(X_test_scaled)
     models['random_forest'] = rf_model
