@@ -5,18 +5,44 @@ Automatically scans Indian capital markets (NSE/BSE/MCX), executes Tri-Model AI/
 and logs signals with real-time Expected P&L into Cloud Firestore 24/7 without capital risk.
 """
 
+import sys
 import os
+
+# Ensure engine-a and backend roots are on path for direct script executions
+_curr_dir = os.path.dirname(os.path.abspath(__file__))
+_engine_a_dir = os.path.abspath(os.path.join(_curr_dir, "../.."))
+_backend_dir = os.path.abspath(os.path.join(_curr_dir, "../../.."))
+if _engine_a_dir not in sys.path:
+    sys.path.insert(0, _engine_a_dir)
+if _backend_dir not in sys.path:
+    sys.path.append(_backend_dir)
+
 import asyncio
 import logging
 import httpx
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 
-from .shadow_signal_logger import ShadowSignalLogger
-from .black_swan_circuit_breaker import BLACK_SWAN_BREAKER
-from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
-from .market_regime_thresholds import get_current_market_regime
-from .pullback_execution_manager import PULLBACK_EXECUTION_MANAGER
+try:
+    from .shadow_signal_logger import ShadowSignalLogger
+    from .black_swan_circuit_breaker import BLACK_SWAN_BREAKER
+    from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
+    from .market_regime_thresholds import get_current_market_regime
+    from .pullback_execution_manager import PULLBACK_EXECUTION_MANAGER, PullbackExecutionManager
+    from .ml_consensus_gate import MultiModelConsensusGate
+    from .structural_risk_manager import StructuralRiskManager
+    from .asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
+    from .tax_calculator import calculate_options_roundtrip_charges
+except (ImportError, ValueError):
+    from src.services.shadow_signal_logger import ShadowSignalLogger
+    from src.services.black_swan_circuit_breaker import BLACK_SWAN_BREAKER
+    from src.services.mtf_confluence_filter import MTF_CONFLUENCE_FILTER
+    from src.services.market_regime_thresholds import get_current_market_regime
+    from src.services.pullback_execution_manager import PULLBACK_EXECUTION_MANAGER, PullbackExecutionManager
+    from src.services.ml_consensus_gate import MultiModelConsensusGate
+    from src.services.structural_risk_manager import StructuralRiskManager
+    from src.services.asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
+    from src.services.tax_calculator import calculate_options_roundtrip_charges
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
@@ -170,6 +196,7 @@ class ContinuousShadowScanner:
                 models = sig.get("analysis", {})
                 adx = float(models.get("adx", 25.0))
                 rsi = float(sig.get("rsi", 52.0))
+                atr = float(models.get("atr", spot * 0.01))
                 key_factors = models.get("key_factors", [])
                 veto_in_factors = any("VETO" in str(k).upper() for k in key_factors)
                 veto_active = models.get("veto_active", False) or veto_in_factors
@@ -527,6 +554,310 @@ class ContinuousShadowScanner:
                 logger.error(f"Continuous shadow scanner loop error: {e}")
                 await asyncio.sleep(15)
 
+    def run_synthetic_playback_session(
+        self,
+        date_str: str = "2026-10-09",
+        symbol: str = "NIFTY",
+        project_id: str = "project-841b7f97-5ee3-4fbe-920"
+    ) -> Dict[str, Any]:
+        """
+        Replays authentic recorded BigQuery ticks from `market_data.live_ticks`
+        through the refactored Engine-A quantitative architecture.
+        """
+        import numpy as np
+        import pandas as pd
+        from google.cloud import bigquery
+
+        print("=" * 80)
+        print("🛰️ INFINITYAI.PRO — AUTONOMOUS SHADOW SCANNER SYNTHETIC PLAYBACK SESSION")
+        print(f"Target Date: {date_str} | Underlying: {symbol} | Source: BigQuery market_data.live_ticks")
+        print("=" * 80)
+
+        bq_client = bigquery.Client(project=project_id)
+        query = f"""
+        SELECT 
+            publish_time,
+            JSON_VALUE(data, '$.symbol') as symbol,
+            CAST(JSON_VALUE(data, '$.ltp') AS FLOAT64) as ltp,
+            CAST(JSON_VALUE(data, '$.high') AS FLOAT64) as high,
+            CAST(JSON_VALUE(data, '$.low') AS FLOAT64) as low,
+            CAST(JSON_VALUE(data, '$.prev_close') AS FLOAT64) as prev_close,
+            CAST(JSON_VALUE(data, '$.vwap_distance') AS FLOAT64) as vwap_distance,
+            CAST(JSON_VALUE(data, '$.rsi_14') AS FLOAT64) as rsi_14,
+            CAST(JSON_VALUE(data, '$.change_pct') AS FLOAT64) as change_pct
+        FROM `{project_id}.market_data.live_ticks`
+        WHERE EXTRACT(DATE FROM publish_time) = '{date_str}'
+          AND TIME(publish_time) BETWEEN TIME(3, 45, 0) AND TIME(10, 0, 0)
+          AND JSON_VALUE(data, '$.symbol') = '{symbol}'
+        ORDER BY publish_time ASC
+        """
+        print(f"📥 Querying authentic recorded BigQuery ticks for {date_str}...")
+        df_ticks = bq_client.query(query).to_dataframe()
+        print(f"✅ Loaded {len(df_ticks)} recorded {symbol} ticks spanning 09:15 to 15:30 IST.")
+
+        if len(df_ticks) == 0:
+            return {"status": "NO_DATA", "ticks_count": 0, "completed_trades": []}
+
+        # Indicators
+        prices = df_ticks['ltp'].values
+        cumulative_vwap = np.cumsum(prices) / (np.arange(len(prices)) + 1)
+        df_ticks['vwap'] = cumulative_vwap
+
+        deltas = np.diff(prices, prepend=prices[0])
+        gains = np.where(deltas > 0, deltas, 0.0)
+        losses = np.where(deltas < 0, -deltas, 0.0)
+        avg_gain = pd.Series(gains).rolling(window=5, min_periods=1).mean().values
+        avg_loss = pd.Series(losses).rolling(window=5, min_periods=1).mean().values
+        rs = np.where(avg_loss == 0, 100.0, avg_gain / np.maximum(avg_loss, 1e-6))
+        df_ticks['fast_rsi_5'] = 100.0 - (100.0 / (1.0 + rs))
+        df_ticks['rolling_15m_low'] = pd.Series(prices).rolling(window=15, min_periods=1).min().values
+
+        pullback_manager = PullbackExecutionManager()
+        active_position = None
+        completed_trades = []
+
+        # Historical signal schedule for October 09 session
+        signal_schedule = [
+            {"time_str": "09:17", "strike": 22400, "cb": 0.65, "lgb": 0.74, "xgb": 0.33, "est_prem": 160.80},
+            {"time_str": "09:32", "strike": 22350, "cb": 0.68, "lgb": 0.72, "xgb": 0.48, "est_prem": 183.27},
+            {"time_str": "09:48", "strike": 22450, "cb": 0.69, "lgb": 0.75, "xgb": 0.55, "est_prem": 166.75},
+            {"time_str": "10:03", "strike": 22450, "cb": 0.70, "lgb": 0.76, "xgb": 0.58, "est_prem": 168.54},
+            {"time_str": "10:21", "strike": 22450, "cb": 0.70, "lgb": 0.78, "xgb": 0.65, "est_prem": 182.47},
+            {"time_str": "10:37", "strike": 22500, "cb": 0.71, "lgb": 0.77, "xgb": 0.60, "est_prem": 166.69},
+            {"time_str": "11:21", "strike": 22550, "cb": 0.72, "lgb": 0.75, "xgb": 0.62, "est_prem": 160.13},
+            {"time_str": "13:50", "strike": 22550, "cb": 0.70, "lgb": 0.74, "xgb": 0.59, "est_prem": 163.21},
+        ]
+
+        print("\n" + "=" * 80)
+        print("🔄 REPLAYING TICKS THROUGH REFACTORED QUANTITATIVE GATES")
+        print("=" * 80)
+
+        for idx, row in df_ticks.iterrows():
+            t_utc = row['publish_time']
+            t_ist = t_utc + timedelta(hours=5, minutes=30)
+            time_str = t_ist.strftime("%H:%M")
+            spot = row['ltp']
+            vwap = row['vwap']
+            rsi5 = row['fast_rsi_5']
+            p15_low = row['rolling_15m_low']
+
+            # 1. Trigger scheduled signal
+            for sig_req in signal_schedule:
+                if sig_req["time_str"] == time_str and not sig_req.get("processed"):
+                    sig_req["processed"] = True
+                    print(f"\n⚡ [{t_ist.strftime('%H:%M:%S IST')}] Raw Signal Generated: BUY_CALL {symbol} (Spot: {spot:.2f})")
+                    print(f"   Tri-Model Probs: CatBoost={sig_req['cb']:.2f}, LightGBM={sig_req['lgb']:.2f}, XGBoost={sig_req['xgb']:.2f}")
+
+                    consensus = MultiModelConsensusGate.evaluate_consensus(
+                        catboost_prob=sig_req['cb'],
+                        lightgbm_prob=sig_req['lgb'],
+                        xgboost_prob=sig_req['xgb'],
+                        decision="BUY_CALL"
+                    )
+
+                    if consensus["is_discordant"]:
+                        print(f"   🛡️ GATE TRIGGERED: {consensus['reason']}")
+                        print(f"   Market State: {consensus['market_state']} -> Routed strictly via PULLBACK_LIMIT_ONLY!")
+                    else:
+                        print(f"   ✅ STRONG CONSENSUS: All models agree (min {consensus['ml_consensus_min']:.2f} >= 0.45).")
+
+                    pullback_eval = pullback_manager.evaluate_pullback_conditions(
+                        symbol=symbol,
+                        current_spot=spot,
+                        live_vwap=vwap,
+                        rsi_1m_period_5=rsi5,
+                        decision="BUY_CALL"
+                    )
+
+                    if not pullback_eval["confirmed"] and active_position is None:
+                        candidate_payload = {
+                            "symbol": symbol,
+                            "spot_price": spot,
+                            "strike": sig_req["strike"],
+                            "est_prem": sig_req["est_prem"],
+                            "decision": "BUY_CALL",
+                            "ml_consensus_min": consensus["ml_consensus_min"]
+                        }
+                        pullback_manager.register_candidate_signal(symbol, candidate_payload)
+                        print(f"   ⏳ PULLBACK ENGINE: Holding signal in 180s observation queue.")
+                        print(f"      Current Spot: {spot:.2f} | VWAP: {vwap:.2f} (Diff: {abs(spot-vwap):.1f}pts > 5pts) | RSI: {rsi5:.1f}")
+
+            # 2. Check Pending Pullback Queue
+            if active_position is None and symbol in pullback_manager.pending_queue:
+                pending_res = pullback_manager.check_pending_signal(
+                    symbol=symbol,
+                    current_spot=spot,
+                    live_vwap=vwap,
+                    rsi_1m_period_5=rsi5
+                )
+                if pending_res and pending_res.get("status") == "PULLBACK_CONFIRMED":
+                    p_sig = pending_res["signal_payload"]
+                    wait_ms = pending_res["pullback_wait_duration_ms"]
+                    print(f"\n🎯 [{t_ist.strftime('%H:%M:%S IST')}] PULLBACK CONFIRMED! Triggers: {pending_res['confirmation_triggers']}")
+                    print(f"   Wait Duration: {wait_ms/1000:.1f}s | Filled at Spot: {spot:.2f} (VWAP: {vwap:.2f})")
+
+                    tot_qty, tot_lots = AsymmetricTradeLifecycle.enforce_even_lots(65, 2)
+                    struct_levels = StructuralRiskManager.calculate_structural_levels(
+                        decision="BUY_CALL",
+                        current_spot=spot,
+                        live_vwap=vwap,
+                        prior_15m_low=p15_low
+                    )
+                    spot_sl = struct_levels["structural_level"]
+
+                    active_position = {
+                        "entry_time": t_ist.strftime("%H:%M:%S IST"),
+                        "entry_spot": spot,
+                        "entry_premium": p_sig["est_prem"],
+                        "current_sl_premium": p_sig["est_prem"] * 0.75,
+                        "spot_structural_sl": spot_sl,
+                        "highest_premium": p_sig["est_prem"],
+                        "tier1_booked": False,
+                        "tier1_hit_timestamp": None,
+                        "total_lots": tot_lots,
+                        "remaining_lots": tot_lots,
+                        "base_lot_size": 65,
+                        "total_quantity": tot_qty,
+                        "ml_consensus_min": p_sig["ml_consensus_min"],
+                        "pullback_wait_duration_ms": wait_ms,
+                        "strike": p_sig["strike"]
+                    }
+                    print(f"   🚀 Position OPEN: {symbol} {p_sig['strike']} CE | Qty: {tot_qty} ({tot_lots} lots) @ ₹{p_sig['est_prem']:.2f}")
+                    print(f"      Spot Structural SL: {spot_sl:.2f} (Underlying Support Anchor)")
+
+                elif pending_res and pending_res.get("status") == "PULLBACK_TIMEOUT_DISCARD":
+                    print(f"\n🛑 [{t_ist.strftime('%H:%M:%S IST')}] PULLBACK_TIMEOUT_DISCARD: Discarded safely after 180s without FOMO chasing.")
+
+            # 3. Monitor Active Position across Ticks
+            if active_position is not None:
+                entry_p = active_position["entry_premium"]
+                entry_s = active_position["entry_spot"]
+                spot_pct_move = (spot - entry_s) / entry_s
+                current_prem = max(0.50, round(entry_p * (1.0 + (spot_pct_move * 20)), 2))
+                active_position["highest_premium"] = max(active_position["highest_premium"], current_prem)
+                high_p = active_position["highest_premium"]
+
+                struct_stop = StructuralRiskManager.evaluate_structural_stop(
+                    decision="BUY_CALL",
+                    current_spot=spot,
+                    live_vwap=vwap,
+                    entry_premium=entry_p,
+                    current_premium=current_prem,
+                    prior_15m_low=p15_low
+                )
+
+                lifecycle = AsymmetricTradeLifecycle.evaluate_lifecycle_state(
+                    entry_premium=entry_p,
+                    current_premium=current_prem,
+                    highest_observed_premium=high_p,
+                    current_sl_premium=active_position["current_sl_premium"],
+                    tier1_booked=active_position["tier1_booked"],
+                    tier1_hit_timestamp=active_position["tier1_hit_timestamp"],
+                    is_spot_trend_reversed=(spot < vwap - 10.0),
+                    lot_size=65,
+                    total_lots=active_position["total_lots"],
+                    remaining_lots=active_position["remaining_lots"]
+                )
+
+                if lifecycle["current_sl_premium"] > active_position["current_sl_premium"]:
+                    active_position["current_sl_premium"] = lifecycle["current_sl_premium"]
+                    print(f"   🛡️ [{t_ist.strftime('%H:%M:%S IST')}] BREAKEVEN RATCHET ACTIVATED: Gain >= +6%. Stop Loss ratcheted to ₹{active_position['current_sl_premium']:.2f} (Entry + ₹1.00)")
+
+                if lifecycle["tier1_booked"] and not active_position["tier1_booked"]:
+                    active_position["tier1_booked"] = True
+                    active_position["tier1_hit_timestamp"] = lifecycle["tier1_hit_timestamp"]
+                    active_position["remaining_lots"] = lifecycle["remaining_lots"]
+                    booked_lots = active_position["total_lots"] - active_position["remaining_lots"]
+                    tier1_gross = (current_prem - entry_p) * (booked_lots * 65)
+                    tier1_charges = calculate_options_roundtrip_charges(current_prem, 65, booked_lots, "NSE")["summary"]["total_roundtrip_cost"]
+                    active_position["tier1_net_pnl"] = tier1_gross - tier1_charges
+                    active_position["tier1_exit_prem"] = current_prem
+                    print(f"   🎉 [{t_ist.strftime('%H:%M:%S IST')}] TIER 1 HIT (+{lifecycle['gain_pct']}%): Booked 50% position ({booked_lots} lot / {booked_lots*65} qty) @ ₹{current_prem:.2f} (+₹{active_position['tier1_net_pnl']:.2f} Net Locked)")
+                    print(f"      Runner Position Active: {active_position['remaining_lots']} lot remaining, trailing spot trend structure uncapped!")
+
+                should_close = False
+                close_reason = ""
+                exit_p = current_prem
+
+                if struct_stop["is_stop_triggered"]:
+                    should_close = True
+                    close_reason = struct_stop["exit_reason"]
+                elif lifecycle["lifecycle_status"] in ["RUNNER_EXITED_ON_TREND_REVERSAL", "RUNNER_STOPPED_AT_BREAKEVEN", "STOP_LOSS_HIT"]:
+                    should_close = True
+                    close_reason = lifecycle["lifecycle_status"]
+                elif idx == len(df_ticks) - 1:
+                    should_close = True
+                    close_reason = "EOD_SQUAREOFF"
+
+                if should_close:
+                    rem_lots = active_position["remaining_lots"]
+                    rem_gross = (exit_p - entry_p) * (rem_lots * 65)
+                    rem_charges = calculate_options_roundtrip_charges(exit_p, 65, rem_lots, "NSE")["summary"]["total_roundtrip_cost"]
+                    rem_net = rem_gross - rem_charges
+                    tier1_net = active_position.get("tier1_net_pnl", 0.0)
+                    tot_net = tier1_net + rem_net
+
+                    trade_record = {
+                        "entry_time": active_position["entry_time"],
+                        "exit_time": t_ist.strftime("%H:%M:%S IST"),
+                        "contract": f"{symbol} {active_position['strike']} CE",
+                        "entry_prem": entry_p,
+                        "exit_prem": exit_p,
+                        "tier1_booked": active_position["tier1_booked"],
+                        "tier1_net": round(tier1_net, 2),
+                        "runner_net": round(rem_net, 2),
+                        "total_net_pnl": round(tot_net, 2),
+                        "exit_reason": close_reason,
+                        "peak_gain_pct": lifecycle["peak_gain_pct"]
+                    }
+                    completed_trades.append(trade_record)
+                    print(f"\n🏁 [{t_ist.strftime('%H:%M:%S IST')}] POSITION RESOLVED: {close_reason} @ ₹{exit_p:.2f}")
+                    print(f"   Peak Gain: +{lifecycle['peak_gain_pct']}% | Tier 1 Net: ₹{tier1_net:+.2f} | Runner Net: ₹{rem_net:+.2f} | Total Trade Net PnL: ₹{tot_net:+.2f}")
+                    active_position = None
+
+        total_synthetic_pnl = sum(t["total_net_pnl"] for t in completed_trades)
+        historical_pnl = -6216.81
+        alpha_delta = total_synthetic_pnl - historical_pnl
+
+        print("\n" + "=" * 80)
+        print(f"📊 SYNTHETIC PLAYBACK SESSION SUMMARY — {date_str}")
+        print("=" * 80)
+        if completed_trades:
+            df_res = pd.DataFrame(completed_trades)
+            print(df_res.to_string())
+        print(f"\n💰 Total Synthetic Session Net PnL: ₹{total_synthetic_pnl:+,.2f}")
+        print(f"📉 Historical Realized Net PnL (Revision 00196-2jg): ₹{historical_pnl:+,.2f}")
+        print(f"🚀 Net Alpha Recovery Delta: ₹{alpha_delta:+,.2f}")
+        print("=" * 80)
+
+        return {
+            "status": "COMPLETED",
+            "date": date_str,
+            "symbol": symbol,
+            "ticks_analyzed": len(df_ticks),
+            "completed_trades": completed_trades,
+            "total_synthetic_net_pnl": round(total_synthetic_pnl, 2),
+            "historical_production_net_pnl": historical_pnl,
+            "net_alpha_recovery_delta": round(alpha_delta, 2)
+        }
+
 # Class and Singleton Instances
 AutonomousShadowScanner = ContinuousShadowScanner
 AUTONOMOUS_SHADOW_SCANNER = ContinuousShadowScanner()
+
+def run_synthetic_playback(date_str: str = "2026-10-09", symbol: str = "NIFTY") -> Dict[str, Any]:
+    """Standalone CLI entry point for running synthetic playback session"""
+    scanner = ContinuousShadowScanner()
+    return scanner.run_synthetic_playback_session(date_str=date_str, symbol=symbol)
+
+if __name__ == "__main__":
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8')
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+    sys.path.insert(0, os.path.join(root_dir, "backend", "engine-a"))
+    sys.path.append(os.path.join(root_dir, "backend"))
+    
+    date_arg = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "2026-10-09"
+    sym_arg = sys.argv[2] if len(sys.argv) > 2 else "NIFTY"
+    run_synthetic_playback(date_str=date_arg, symbol=sym_arg)
+
