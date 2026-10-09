@@ -24,6 +24,7 @@ from typing import Dict, Any, List, Optional
 
 import google.auth
 from google.auth.transport.requests import AuthorizedSession
+import numpy as np
 
 logger = logging.getLogger("InfinityAI.LiveTickStreamer")
 
@@ -99,7 +100,6 @@ class LiveTickStreamer:
             atr_vol = 12.5
 
             if len(closes) >= 15:
-                import numpy as np
                 diffs = np.diff(closes[-15:])
                 gains = float(diffs[diffs > 0].sum() / 14.0) if len(diffs[diffs > 0]) > 0 else 0.0
                 losses = float(-diffs[diffs < 0].sum() / 14.0) if len(diffs[diffs < 0]) > 0 else 1e-6

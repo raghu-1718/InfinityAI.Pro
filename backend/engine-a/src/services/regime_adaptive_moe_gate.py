@@ -132,7 +132,39 @@ def evaluate_regime_moe_consensus(
             "agreement_count": 0,
             "chop_veto_active": True,
             "weights": weights,
+            "ml_consensus_min": round(float(min(p_cb, p_lgb, p_xgb)), 4),
+            "execution_route": "BLOCKED_CHOP_VETO",
             "reason": f"CHOP_VETO_ACTIVE: Market is ranging/consolidating (ADX {adx_val:.1f} < 19.0; Theta decay risk)"
+        }
+
+    # 4b. Multi-Model Consensus & Discordance Gate (Task 1 Specification)
+    from .ml_consensus_gate import MultiModelConsensusGate
+    consensus_eval = MultiModelConsensusGate.evaluate_consensus(
+        catboost_prob=p_cb,
+        lightgbm_prob=p_lgb,
+        xgboost_prob=p_xgb,
+        decision=decision_or_signal_type
+    )
+    min_model_prob = consensus_eval["ml_consensus_min"]
+
+    # If any single model output falls below < 0.40 (e.g. XGBoost at 33%), flag market state as REGIME_CHOP_CONSOLIDATION
+    if consensus_eval["is_discordant"]:
+        regime = "REGIME_CHOP_CONSOLIDATION"
+        logger.warning(
+            f"⚠️ Multi-Model Discordance: Model output min({min_model_prob:.3f}) < 0.40. "
+            f"Flagged REGIME_CHOP_CONSOLIDATION. Standard market order vetoed."
+        )
+        return {
+            "approved": False,
+            "regime": "REGIME_CHOP_CONSOLIDATION",
+            "moe_score": min_model_prob,
+            "agreeing_models": [m for m, p in [("catboost", p_cb), ("lightgbm", p_lgb), ("xgboost", p_xgb)] if p >= 0.50],
+            "agreement_count": sum(1 for p in [p_cb, p_lgb, p_xgb] if p >= 0.50),
+            "chop_veto_active": True,
+            "weights": weights,
+            "ml_consensus_min": min_model_prob,
+            "execution_route": "PULLBACK_LIMIT_ONLY",
+            "reason": consensus_eval["reason"]
         }
 
     # 5. Compute Weighted MoE Score
@@ -228,5 +260,7 @@ def evaluate_regime_moe_consensus(
         "agreement_count": agreement_count,
         "chop_veto_active": False,
         "weights": weights,
+        "ml_consensus_min": min_model_prob,
+        "execution_route": consensus_eval["execution_route"],
         "reason": reason
     }

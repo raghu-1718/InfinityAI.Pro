@@ -62,11 +62,17 @@ class ShadowSignalLogger:
         gemini_sentiment: str = "NEUTRAL",
         lot_size: int = 65,
         risk_reward_ratio: str = "1:2.0",
-        live_option_quote: Optional[Dict[str, Any]] = None
+        live_option_quote: Optional[Dict[str, Any]] = None,
+        live_vwap: Optional[float] = None,
+        prior_15m_low: Optional[float] = None,
+        prior_15m_high: Optional[float] = None,
+        pullback_wait_duration_ms: Optional[int] = 0,
+        requested_lots: int = 2
     ) -> Optional[Dict[str, Any]]:
         """
         Logs a generated trading signal into Firestore in SHADOW_OBSERVATION mode.
-        Supports live market depth pricing (Ask-entry / Bid-exit) with liquidity and spread safeguards.
+        Supports live market depth pricing (Ask-entry / Bid-exit) with liquidity and spread safeguards,
+        spot-anchored structural stops, and asymmetric multi-tier profit trailing.
         """
         if not self.db:
             logger.warning("Firestore client not initialized. Skipping signal log.")
@@ -83,6 +89,37 @@ class ShadowSignalLogger:
             logger.warning(f"🚫 SENSEX derivatives disabled by Institutional Risk Audit. Skipping trade ledger commit for {symbol}.")
             return None
 
+        # ── Task 1: Multi-Model Consensus & Discordance Gate ──────────────────
+        try:
+            from .ml_consensus_gate import MultiModelConsensusGate
+            consensus_eval = MultiModelConsensusGate.evaluate_consensus(
+                catboost_prob=catboost_prob,
+                lightgbm_prob=lightgbm_prob,
+                xgboost_prob=xgboost_prob,
+                decision=decision
+            )
+        except Exception as e:
+            logger.warning(f"Consensus gate evaluation fallback: {e}")
+            consensus_eval = {
+                "consensus_passed": True,
+                "is_discordant": False,
+                "market_state": "REGIME_TRENDING_CONSENSUS",
+                "execution_route": "STANDARD_MARKET_ALLOWED",
+                "ml_consensus_min": min(catboost_prob, lightgbm_prob, xgboost_prob),
+                "reason": "Consensus Fallback"
+            }
+
+        ml_consensus_min = float(consensus_eval.get("ml_consensus_min", min(catboost_prob, lightgbm_prob, xgboost_prob)))
+
+        # Veto immediate market orders if discordant and no pullback confirmation was provided
+        if consensus_eval.get("is_discordant") and (not pullback_wait_duration_ms or pullback_wait_duration_ms <= 0):
+            logger.warning(
+                f"⚠️ Multi-Model Discordance Veto: min({ml_consensus_min:.3f}) < 0.40. "
+                f"Flagged REGIME_CHOP_CONSOLIDATION. Immediate market order blocked; "
+                f"routing strictly via Pullback Limit Engine."
+            )
+            return None
+
         # Regime-Adaptive Dynamic Mixture-of-Experts (MoE) Gate
         analysis_data = {
             "catboost_prob": catboost_prob,
@@ -91,7 +128,7 @@ class ShadowSignalLogger:
             "overall_confidence": confidence_score
         }
         try:
-            from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
+            from .regime_adaptive_moe_gate import evaluate_regime_moe_consensus
             moe_res = evaluate_regime_moe_consensus(
                 symbol=symbol,
                 decision_or_signal_type=decision,
@@ -102,7 +139,7 @@ class ShadowSignalLogger:
             logger.warning(f"MoE gate fallback in shadow logger: {e}")
             moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-        if not moe_res["approved"]:
+        if not moe_res["approved"] and moe_res.get("execution_route") != "PULLBACK_LIMIT_ONLY":
             logger.info(
                 f"⏸️ Signal for {symbol} rejected by Regime-Adaptive MoE Gate "
                 f"(Regime: {moe_res.get('regime')}, Reason: {moe_res.get('reason')})."
@@ -110,42 +147,45 @@ class ShadowSignalLogger:
             return None
 
         now_utc = datetime.now(timezone.utc)
-        # Indian Standard Time (UTC+5:30)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
         timestamp_str = ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
         signal_id = f"SIG_{ist_time.strftime('%Y%m%d_%H%M%S')}_{symbol}"
 
-        # Lot Size determination (Official SEBI / NSE / BSE 2026 Mandate)
+        # ── Task 4 Specification: Lot Size Determination & Even Multiples ─────
         sym_u = symbol.upper()
         if "BANKNIFTY" in sym_u:
-            actual_lot_size = 30
+            base_lot_size = 30
             strike_step = 100
         elif "BANKEX" in sym_u:
-            actual_lot_size = 30
+            base_lot_size = 30
             strike_step = 100
         elif "FINNIFTY" in sym_u:
-            actual_lot_size = 60
+            base_lot_size = 60
             strike_step = 50
         elif "MIDCP" in sym_u:
-            actual_lot_size = 120
+            base_lot_size = 120
             strike_step = 25
         elif "SENSEX" in sym_u:
-            actual_lot_size = 20
+            base_lot_size = 20
             strike_step = 100
         elif "NIFTY" in sym_u:
-            actual_lot_size = 65
+            base_lot_size = 65
             strike_step = 50
         else:
-            actual_lot_size = 65
+            base_lot_size = 65
             strike_step = 50
 
-        # Option Bracket Calculation (Supports Option Buying and Option Selling)
+        from .asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
+        total_quantity, actual_lots = AsymmetricTradeLifecycle.enforce_even_lots(
+            standard_lot_size=base_lot_size,
+            requested_lots=requested_lots
+        )
+        actual_lot_size = total_quantity
+
+        # Option Bracket Calculation
         is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
         option_type = "CE" if "CALL" in decision.upper() else "PE"
 
-        # Strike Determination:
-        # - Buying: ATM or 1-step ITM for Delta ~0.50-0.55 (Maximum Gamma explosion)
-        # - Selling: OTM strike for Delta ~0.18-0.22 (Outside 1.5 standard deviations for positive Theta decay)
         if is_sell:
             otm_offset = (2 * strike_step) if option_type == "CE" else (-2 * strike_step)
             strike = round((spot_price + otm_offset) / strike_step) * strike_step
@@ -154,10 +194,10 @@ class ShadowSignalLogger:
 
         contract_name = f"{symbol} {int(strike)} {option_type} ({'SELL' if is_sell else 'BUY'})"
 
-        # ── Realistic Pricing Model (Live Ask/Bid vs Black-Scholes Fallback) ──
+        # ── Realistic Pricing Model & Liquidity / Spread Filters (Checked First) ──
         pricing_source = "THEORETICAL_BLACK_SCHOLES"
         spread_pct = 0.0
-        
+
         if live_option_quote and isinstance(live_option_quote, dict):
             ask_p = float(live_option_quote.get("ask_price", live_option_quote.get("ask", 0.0)))
             bid_p = float(live_option_quote.get("bid_price", live_option_quote.get("bid", 0.0)))
@@ -190,6 +230,24 @@ class ShadowSignalLogger:
         else:
             est_premium = None
 
+        # Deduplication Guard: Prevent duplicate positions for the same contract while one is OPEN
+        try:
+            open_signals = list(
+                self.db.collection(COLLECTION_NAME)
+                .where(filter=FieldFilter("symbol", "==", symbol))
+                .where(filter=FieldFilter("outcome_status", "==", "OPEN"))
+                .limit(10)
+                .stream()
+            )
+            for open_sig in open_signals:
+                open_data = open_sig.to_dict()
+                bracket = open_data.get("trade_bracket", {})
+                if bracket.get("strike") == strike and bracket.get("option_type") == option_type:
+                    logger.info(f"⏸️ Duplicate signal suppressed: Already have OPEN position for {contract_name} (Existing Doc: {open_sig.id}).")
+                    return None
+        except Exception as e:
+            logger.warning(f"Error checking open signals deduplication: {e}")
+
         # Fallback to Analytical Black-Scholes Option Pricing if Live Depth Unavailable
         if est_premium is None or est_premium <= 0:
             try:
@@ -216,55 +274,49 @@ class ShadowSignalLogger:
                 else:
                     bs_price = strike * math.exp(-r * dte_years) * norm.cdf(-d2) - spot_price * norm.cdf(-d1)
 
-                # Add synthetic spread friction to theoretical pricing
                 friction_mult = 0.99 if is_sell else 1.01
                 est_premium = max(round(float(bs_price) * friction_mult, 2), 5.0)
                 pricing_source = "THEORETICAL_BS_SPREAD_ADJUSTED"
             except Exception:
                 est_premium = round(spot_price * (0.0025 if is_sell else 0.004), 2)
                 pricing_source = "ESTIMATED_RULE_OF_THUMB"
+
+        # ── Task 3: Spot-Anchored Structural Stops Calculation ────────────────
+        from .structural_risk_manager import StructuralRiskManager
+        vwap_val = live_vwap if (live_vwap and live_vwap > 0) else spot_price
+        struct_levels = StructuralRiskManager.calculate_structural_levels(
+            decision=decision,
+            current_spot=spot_price,
+            live_vwap=vwap_val,
+            prior_15m_low=prior_15m_low,
+            prior_15m_high=prior_15m_high
+        )
+        spot_structural_sl = struct_levels["structural_level"]
+
+        # Absolute Emergency Circuit Breaker: -25% option stop loss
+        if is_sell:
+            stop_loss_prem = round(est_premium * 1.25, 2)
+            target_prem = round(est_premium * 0.55, 2)  # Decay target
+            stop_loss_pct = 0.25
+            target_pct = 0.45
         else:
-            sigma = 0.172
+            stop_loss_prem = round(est_premium * 0.75, 2)  # -25% emergency breaker
+            target_prem = round(est_premium * 1.15, 2)     # Tier 1 +15% target
+            stop_loss_pct = 0.25
+            target_pct = 0.15
 
-        # Dynamic Volatility-Adjusted Stop Loss & Profit Target (Zero Hardcoded Constants)
-        # Computes live mathematical buffer: max(4%, IV * 0.25 + Gamma * 15.0)
-        dynamic_sl_pct = max(0.04, (sigma * 0.25) + (0.001 * 15.0))
-        try:
-            from .expiry_theta_damper import EXPIRY_THETA_DAMPER
-            bracket_calc = EXPIRY_THETA_DAMPER.get_adapted_bracket(
-                symbol,
-                est_premium,
-                base_target_pct=0.45 if is_sell else 0.25,
-                base_stop_loss_pct=0.30 if is_sell else dynamic_sl_pct,
-                action="SELL" if is_sell else "BUY"
-            )
-            target_pct = bracket_calc["target_pct"]
-            stop_loss_pct = bracket_calc["stop_loss_pct"]
-            target_prem = bracket_calc["target_premium"]
-            stop_loss_prem = bracket_calc["stop_loss_premium"]
-        except Exception:
-            target_pct = 0.45 if is_sell else 0.25
-            stop_loss_pct = 0.30 if is_sell else round(dynamic_sl_pct, 4)
-            if is_sell:
-                target_prem = round(est_premium * (1.0 - target_pct), 2)
-                stop_loss_prem = round(est_premium * (1.0 + stop_loss_pct), 2)
-            else:
-                target_prem = round(est_premium * (1.0 + target_pct), 2)
-                stop_loss_prem = round(est_premium * (1.0 - stop_loss_pct), 2)
-
-        # Statutory taxes & Dhan brokerage estimate
+        # Statutory taxes & Dhan brokerage estimate (calculated on total lots)
         charges = calculate_options_roundtrip_charges(
             premium=est_premium,
-            lot_size=actual_lot_size,
-            lots=1,
+            lot_size=base_lot_size,
+            lots=actual_lots,
             exchange="NSE"
         )
-        tax_cost = charges.get("grand_total_charges", 55.0)
+        tax_cost = charges.get("grand_total_charges", 55.0 * actual_lots)
 
-        # Expected P&L metrics based on system capability (1 Standard SEBI Lot)
+        # Expected P&L metrics based on system capability
         if is_sell:
-            # Naked Option Selling requires standard exchange margin (~Rs. 1,25,000 per lot on Nifty/BankNifty)
-            capital_required = 125000.0
+            capital_required = 125000.0 * actual_lots
             expected_target_gross = round((est_premium - target_prem) * actual_lot_size, 2)
             expected_target_net = round(expected_target_gross - tax_cost, 2)
             max_loss_gross = round((est_premium - stop_loss_prem) * actual_lot_size, 2)
@@ -287,7 +339,7 @@ class ShadowSignalLogger:
             "max_loss_stop_loss_pct": round(-stop_loss_pct * 100, 1),
             "system_capital_required": capital_required,
             "expected_roi_on_capital_pct": expected_roi_pct,
-            "risk_reward_ratio": "1:1.50 (Decay)" if is_sell else "1:1.25 (Trailing)",
+            "risk_reward_ratio": "1:2.0 (Asymmetric Trailing)",
             "system_capability_rating": "INSTITUTIONAL_TRI_MODEL_ENSEMBLE",
             "trade_action": "SELL" if is_sell else "BUY"
         }
@@ -308,8 +360,18 @@ class ShadowSignalLogger:
             "month": ist_time.strftime("%Y-%m"),
             "symbol": symbol,
             "spot_price": spot_price,
+            "live_vwap": vwap_val,
             "decision": decision,
             "confidence_score": round(confidence_score, 4),
+            "ml_consensus_min": ml_consensus_min,
+            "spot_structural_sl": spot_structural_sl,
+            "pullback_wait_duration_ms": pullback_wait_duration_ms or 0,
+            "tier1_hit_timestamp": None,
+            "tier1_booked": False,
+            "total_lots": actual_lots,
+            "remaining_lots": actual_lots,
+            "base_lot_size": base_lot_size,
+            "current_sl_premium": stop_loss_prem,
             "model_breakdown": {
                 "catboost_prob": round(catboost_prob, 4),
                 "lightgbm_prob": round(lightgbm_prob, 4),
@@ -326,16 +388,19 @@ class ShadowSignalLogger:
                 "target_percent": target_pct * 100,
                 "stop_loss_premium": stop_loss_prem,
                 "stop_loss_percent": stop_loss_pct * 100,
+                "spot_structural_sl": spot_structural_sl,
                 "trailing_stop_loss_active": True,
-                "trailing_tiers": "Tier 1: +8% -> BE+0.5% | Tier 2: +12% -> +6.0% | Tier 3: +15% -> Dynamic Trail (Peak - 4.0%) | Super Runner: +50% -> Trail (Peak - 10%)",
-                "risk_reward": "1:1.25 (Trailing)",
+                "trailing_tiers": "Tier 1: +12-15% (50% Qty) | Breakeven Ratchet: +6% -> Entry+1.00 | Tier 2 Runner: Trail Spot Trend",
+                "risk_reward": "1:2.0 (Asymmetric Trailing)",
                 "lot_size": actual_lot_size,
+                "total_lots": actual_lots,
                 "pricing_source": pricing_source,
                 "spread_pct": spread_pct
             },
             "expected_pnl": expected_pnl_payload,
             "highest_observed_premium": est_premium,
-            "active_profit_tier": "BASE_INITIAL_STOP_LOSS",
+            "lowest_observed_premium": est_premium,
+            "active_profit_tier": "BASE_STRUCTURAL_RISK",
             "current_mtm_gross_pnl": 0.0,
             "current_mtm_net_pnl": 0.0,
             "current_mtm_roi_pct": 0.0,
@@ -350,7 +415,43 @@ class ShadowSignalLogger:
 
         try:
             self.db.collection(COLLECTION_NAME).document(signal_id).set(payload)
-            logger.info(f"✅ Shadow Signal committed to Firestore: [{signal_id}] -> {decision} on {symbol} (Exp Net PnL: ₹{expected_target_net:+})")
+            # Sync to active_positions collection for real-time risk supervision
+            try:
+                active_pos_payload = {
+                    "signal_id": signal_id,
+                    "symbol": symbol,
+                    "decision": decision,
+                    "contract": contract_name,
+                    "entry_premium": est_premium,
+                    "sl_premium": stop_loss_prem,
+                    "spot_structural_sl": spot_structural_sl,
+                    "ml_consensus_min": ml_consensus_min,
+                    "pullback_wait_duration_ms": pullback_wait_duration_ms or 0,
+                    "tier1_hit_timestamp": None,
+                    "tier1_booked": False,
+                    "total_lots": actual_lots,
+                    "remaining_lots": actual_lots,
+                    "status": "OPEN",
+                    "created_at": timestamp_str,
+                    "updated_at": timestamp_str
+                }
+                self.db.collection("active_positions").document(signal_id).set(active_pos_payload)
+            except Exception as pos_err:
+                logger.warning(f"Failed to record active_positions doc: {pos_err}")
+
+            # Structured Cloud Logging with Institutional Telemetry
+            logger.info(
+                f"✅ Shadow Signal committed: [{signal_id}] -> {decision} on {symbol} (Lots: {actual_lots}, Spot SL: {spot_structural_sl})",
+                extra={
+                    "ml_consensus_min": ml_consensus_min,
+                    "spot_structural_sl": spot_structural_sl,
+                    "pullback_wait_duration_ms": pullback_wait_duration_ms or 0,
+                    "tier1_hit_timestamp": None,
+                    "signal_id": signal_id,
+                    "symbol": symbol,
+                    "decision": decision
+                }
+            )
             if ALERT_DISPATCHER:
                 try:
                     loop = asyncio.get_event_loop()
@@ -401,11 +502,20 @@ class ShadowSignalLogger:
         self,
         signal_id: str,
         current_spot: float,
-        is_eod_squareoff: bool = False
+        is_eod_squareoff: bool = False,
+        current_option_premium: Optional[float] = None,
+        live_vwap: Optional[float] = None,
+        prior_15m_low: Optional[float] = None,
+        prior_15m_high: Optional[float] = None,
+        is_spot_trend_reversed: bool = False
     ) -> Optional[Dict[str, Any]]:
         """
-        Checks open signal and updates outcome (TARGET_HIT, STOP_LOSS_HIT, or EOD_SQUAREOFF),
-        or computes live Mark-to-Market (MTM) PnL if still OPEN.
+        Evaluates open signals using spot-anchored structural stops and the asymmetric multi-tier lifecycle:
+          - Spot-Anchored Stops: Underlying index structure controls exits (not option premium noise).
+          - Emergency Circuit Breaker: -25% option premium stop protects against extreme collapses.
+          - Breakeven Shift (Dynamic Ratchet): Shifts sl_premium to entry + 1.00 at >= +6% gain.
+          - Tier 1 Partial Booking: Books 50% position at +12% to +15% gain.
+          - Tier 2 Runner: Trails spot trend structure with no static ceiling.
         """
         if not self.db:
             return None
@@ -421,124 +531,139 @@ class ShadowSignalLogger:
 
         bracket = data.get("trade_bracket", {})
         entry_prem = bracket.get("entry_premium", 100.0)
-        target_prem = bracket.get("target_premium", 150.0)
         stop_prem = bracket.get("stop_loss_premium", 75.0)
         lot_size = bracket.get("lot_size", 65)
         decision = data.get("decision", "BUY_CALL")
         initial_spot = data.get("spot_price", current_spot)
         tax_cost = data.get("estimated_tax_brokerage", 55.0)
-
-        # Underlying price move percentage
         is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
-        spot_pct_move = (current_spot - initial_spot) / initial_spot if initial_spot > 0 else 0.0
-        
-        # Approximate option premium delta leverage (~20x delta multiplier on % move)
-        if "CALL" in decision:
-            simulated_exit_prem = entry_prem * (1.0 + (spot_pct_move * 20))
+
+        total_lots = data.get("total_lots", bracket.get("total_lots", 2))
+        remaining_lots = data.get("remaining_lots", total_lots)
+        base_lot_size = data.get("base_lot_size", 65)
+
+        # ── Realistic Premium Calculation ──────────────────────────────────────
+        if current_option_premium is not None and current_option_premium > 0:
+            simulated_exit_prem = round(float(current_option_premium), 2)
         else:
-            simulated_exit_prem = entry_prem * (1.0 - (spot_pct_move * 20))
+            spot_pct_move = (current_spot - initial_spot) / initial_spot if initial_spot > 0 else 0.0
+            if "CALL" in decision:
+                simulated_exit_prem = entry_prem * (1.0 + (spot_pct_move * 20))
+            else:
+                simulated_exit_prem = entry_prem * (1.0 - (spot_pct_move * 20))
+            simulated_exit_prem = max(0.50, simulated_exit_prem)
 
-        simulated_exit_prem = max(0.50, simulated_exit_prem)
+        highest_prev = data.get("highest_observed_premium", entry_prem)
+        highest_now = max(highest_prev, simulated_exit_prem)
+        lowest_prev = data.get("lowest_observed_premium", entry_prem)
+        lowest_now = min(lowest_prev, simulated_exit_prem)
+        peak_achieved_pct = round(((highest_now - entry_prem) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
 
-        if is_sell:
-            lowest_prev = data.get("lowest_observed_premium", entry_prem)
-            lowest_now = min(lowest_prev, simulated_exit_prem)
-            highest_now = max(data.get("highest_observed_premium", entry_prem), simulated_exit_prem)
-            
-            # Dynamic profit lock evaluation for short option decay
-            try:
-                from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
-                lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
-                    entry_premium=entry_prem,
-                    lowest_observed_premium=lowest_now,
-                    current_premium=simulated_exit_prem,
-                    lot_size=lot_size,
-                    estimated_taxes=tax_cost,
-                    is_sell=True,
-                    current_sl=stop_prem
-                )
-                outcome_status = lock_eval["outcome_status"]
-                active_tier = lock_eval["active_tier"]
-                effective_sl = lock_eval["effective_stop_loss"]
-            except Exception:
-                outcome_status = "OPEN"
-                active_tier = "BASE_DYNAMIC_EVAL"
-                effective_sl = stop_prem
-
-            if simulated_exit_prem <= target_prem and outcome_status == "OPEN":
-                outcome_status = "TARGET_HIT"
-                active_tier = "PREMIUM_DECAY_TARGET"
-            elif simulated_exit_prem >= stop_prem and outcome_status == "OPEN":
-                outcome_status = "STOP_LOSS_HIT"
-                active_tier = "SPIKE_STOP_BREACH"
-
-            gross_pnl = (entry_prem - simulated_exit_prem) * lot_size
-            peak_achieved_pct = round(((entry_prem - lowest_now) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
-        else:
-            highest_prev = data.get("highest_observed_premium", entry_prem)
-            highest_now = max(highest_prev, simulated_exit_prem)
-            lowest_now = min(data.get("lowest_observed_premium", entry_prem), simulated_exit_prem)
-
-            # Evaluate Dynamic Multi-Tier Profit Lock
-            try:
-                from .dynamic_trailing_profit_lock import DYNAMIC_PROFIT_LOCK
-                lock_eval = DYNAMIC_PROFIT_LOCK.evaluate_trailing_lock(
-                    entry_premium=entry_prem,
-                    highest_observed_premium=highest_now,
-                    current_premium=simulated_exit_prem,
-                    lot_size=lot_size,
-                    estimated_taxes=tax_cost,
-                    is_sell=False,
-                    current_sl=stop_prem
-                )
-                outcome_status = lock_eval["outcome_status"]
-                active_tier = lock_eval["active_tier"]
-                effective_sl = lock_eval["effective_stop_loss"]
-            except Exception:
-                outcome_status = "OPEN"
-                active_tier = "BASE_DYNAMIC_EVAL"
-                effective_sl = stop_prem
-
-            if simulated_exit_prem >= target_prem and outcome_status == "OPEN":
-                outcome_status = "TARGET_HIT"
-                active_tier = "TARGET_HIT"
-            elif simulated_exit_prem <= stop_prem and outcome_status == "OPEN":
-                outcome_status = "STOP_LOSS_HIT"
-                active_tier = "STOP_LOSS_HIT"
-
-            gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
-            peak_achieved_pct = round(((highest_now - entry_prem) / entry_prem) * 100, 2) if entry_prem > 0 else 0.0
-
-        # 2. Evaluate Dynamic Risk Engine (DRE) - Non-hardcoded alpha decay & volatility bounds
-        if outcome_status == "OPEN":
-            try:
-                from .dynamic_risk_service import DYNAMIC_RISK_SERVICE
-                from .risk_config import LiveMarketState
-                
-                dre_state = LiveMarketState(
-                    timestamp=datetime.now(timezone.utc),
-                    current_premium=simulated_exit_prem,
-                    entry_premium=entry_prem,
-                    ml_confidence=data.get("confidence_score", 0.55),
-                    order_book_imbalance=0.0,
-                    live_greeks={"IV": 0.1717, "Gamma": 0.00084, "Delta": 0.54}
-                )
-                dre_eval = DYNAMIC_RISK_SERVICE.evaluate_live_signals(dre_state)
-                if dre_eval.get("action") == "EXECUTE_MARKET_EXIT_PAYLOAD":
-                    outcome_status = "DYNAMIC_AI_RISK_EXIT"
-                    active_tier = dre_eval.get("reasons", ["DYNAMIC_RISK_BREACH"])[0]
-            except Exception as dre_err:
-                logger.debug(f"DRE evaluation notice: {dre_err}")
-
-        if is_eod_squareoff and outcome_status == "OPEN":
-            outcome_status = "EOD_SQUAREOFF"
-
-        capital_required = 125000.0 if is_sell else (entry_prem * lot_size)
-        net_pnl = gross_pnl - tax_cost
-        roi_pct = (net_pnl / capital_required * 100) if capital_required > 0 else 0.0
+        outcome_status = "OPEN"
+        active_tier = data.get("active_profit_tier", "BASE_STRUCTURAL_RISK")
+        effective_sl = data.get("current_sl_premium", stop_prem)
 
         now_utc = datetime.now(timezone.utc)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
+        timestamp_str = ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
+
+        # ── Task 3: Spot-Anchored Structural Stops Evaluation ──────────────────
+        from .structural_risk_manager import StructuralRiskManager
+        vwap_val = live_vwap or data.get("live_vwap") or initial_spot
+        struct_stop_eval = StructuralRiskManager.evaluate_structural_stop(
+            decision=decision,
+            current_spot=current_spot,
+            live_vwap=vwap_val,
+            entry_premium=entry_prem,
+            current_premium=simulated_exit_prem,
+            prior_15m_low=prior_15m_low or data.get("prior_15m_low"),
+            prior_15m_high=prior_15m_high or data.get("prior_15m_high")
+        )
+        spot_structural_sl = struct_stop_eval["spot_structural_sl"]
+
+        if struct_stop_eval["is_stop_triggered"]:
+            if struct_stop_eval["is_emergency_stop"]:
+                outcome_status = "EMERGENCY_STOP_LOSS_HIT"
+                active_tier = "EMERGENCY_PREMIUM_CIRCUIT_BREAKER_25PCT"
+            else:
+                outcome_status = "STOP_LOSS_HIT"
+                active_tier = struct_stop_eval["exit_reason"]
+
+        # ── Task 4: Asymmetric Multi-Tier Profit Trailing State Machine ─────────
+        from .asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
+        tier1_booked = data.get("tier1_booked", False)
+        tier1_hit_timestamp = data.get("tier1_hit_timestamp")
+
+        lifecycle_eval = AsymmetricTradeLifecycle.evaluate_lifecycle_state(
+            entry_premium=entry_prem,
+            current_premium=simulated_exit_prem,
+            highest_observed_premium=highest_now,
+            current_sl_premium=effective_sl,
+            tier1_booked=tier1_booked,
+            tier1_hit_timestamp=tier1_hit_timestamp,
+            is_spot_trend_reversed=is_spot_trend_reversed,
+            lot_size=base_lot_size,
+            total_lots=total_lots,
+            remaining_lots=remaining_lots,
+            is_sell=is_sell
+        )
+
+        effective_sl = lifecycle_eval["current_sl_premium"]
+        new_tier1_booked = lifecycle_eval["tier1_booked"]
+        new_tier1_timestamp = lifecycle_eval["tier1_hit_timestamp"]
+        remaining_lots = lifecycle_eval["remaining_lots"]
+
+        # Dynamic Breakeven Ratchet (+6% Gain): Update active_positions document field sl_premium
+        if effective_sl > stop_prem:
+            try:
+                self.db.collection("active_positions").document(signal_id).update({
+                    "sl_premium": effective_sl,
+                    "active_tier": lifecycle_eval["active_tier_label"],
+                    "updated_at": timestamp_str
+                })
+            except Exception as e:
+                logger.debug(f"Failed to update active_positions sl_premium: {e}")
+
+        # Update Tier 1 status if triggered
+        if new_tier1_booked and not tier1_booked:
+            tier1_booked = True
+            tier1_hit_timestamp = new_tier1_timestamp
+            active_tier = lifecycle_eval["active_tier_label"]
+            try:
+                self.db.collection("active_positions").document(signal_id).update({
+                    "tier1_booked": True,
+                    "tier1_hit_timestamp": tier1_hit_timestamp,
+                    "remaining_lots": remaining_lots,
+                    "updated_at": timestamp_str
+                })
+            except Exception as e:
+                logger.debug(f"Failed to update active_positions tier1: {e}")
+
+        # Check Lifecycle Status Exits
+        if outcome_status == "OPEN":
+            if lifecycle_eval["lifecycle_status"] == "RUNNER_EXITED_ON_TREND_REVERSAL":
+                outcome_status = "RUNNER_TREND_REVERSAL_EXIT"
+                active_tier = "TIER2_RUNNER_REVERSAL"
+            elif lifecycle_eval["lifecycle_status"] == "RUNNER_STOPPED_AT_BREAKEVEN":
+                outcome_status = "RUNNER_STOPPED_AT_BREAKEVEN"
+                active_tier = "BREAKEVEN_RATCHET_EXIT"
+            elif lifecycle_eval["lifecycle_status"] == "STOP_LOSS_HIT":
+                outcome_status = "STOP_LOSS_HIT"
+                active_tier = "BREAKEVEN_STOP_LOSS_HIT"
+
+        # EOD Square-off
+        if is_eod_squareoff and outcome_status == "OPEN":
+            outcome_status = "EOD_SQUAREOFF"
+
+        # Gross & Net PnL Calculation
+        if is_sell:
+            gross_pnl = (entry_prem - simulated_exit_prem) * lot_size
+        else:
+            gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
+
+        capital_required = 125000.0 * total_lots if is_sell else (entry_prem * lot_size)
+        net_pnl = gross_pnl - tax_cost
+        roi_pct = (net_pnl / capital_required * 100) if capital_required > 0 else 0.0
 
         if outcome_status != "OPEN":
             updates = {
@@ -548,13 +673,38 @@ class ShadowSignalLogger:
                 "lowest_observed_premium": round(lowest_now, 2),
                 "highest_target_achieved_pct": peak_achieved_pct,
                 "active_profit_tier": active_tier,
+                "current_sl_premium": round(effective_sl, 2),
+                "spot_structural_sl": spot_structural_sl,
+                "tier1_booked": tier1_booked,
+                "tier1_hit_timestamp": tier1_hit_timestamp,
+                "remaining_lots": remaining_lots,
                 "gross_pnl": round(gross_pnl, 2),
                 "net_pnl": round(net_pnl, 2),
                 "roi_pct": round(roi_pct, 2),
-                "resolved_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
+                "resolved_at": timestamp_str
             }
             doc_ref.update(updates)
-            logger.info(f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} ({active_tier}) | Peak: +{peak_achieved_pct}% | Net PnL: ₹{net_pnl:+.2f}")
+            try:
+                self.db.collection("active_positions").document(signal_id).update({
+                    "status": "CLOSED",
+                    "outcome_status": outcome_status,
+                    "resolved_at": timestamp_str
+                })
+            except Exception as e:
+                logger.debug(f"Failed to close active_positions doc: {e}")
+
+            # Structured Telemetry Logging for Resolution
+            logger.info(
+                f"🎯 Signal [{signal_id}] Resolved -> {outcome_status} ({active_tier}) | Peak: +{peak_achieved_pct}% | Net PnL: ₹{net_pnl:+.2f}",
+                extra={
+                    "ml_consensus_min": data.get("ml_consensus_min", 0.50),
+                    "spot_structural_sl": spot_structural_sl,
+                    "pullback_wait_duration_ms": data.get("pullback_wait_duration_ms", 0),
+                    "tier1_hit_timestamp": tier1_hit_timestamp,
+                    "signal_id": signal_id,
+                    "outcome_status": outcome_status
+                }
+            )
             data.update(updates)
             if ALERT_DISPATCHER:
                 try:
@@ -570,12 +720,17 @@ class ShadowSignalLogger:
                 "highest_observed_premium": round(highest_now, 2),
                 "lowest_observed_premium": round(lowest_now, 2),
                 "highest_target_achieved_pct": peak_achieved_pct,
+                "current_sl_premium": round(effective_sl, 2),
                 "effective_trailing_stop_loss": round(effective_sl, 2),
+                "spot_structural_sl": spot_structural_sl,
+                "tier1_booked": tier1_booked,
+                "tier1_hit_timestamp": tier1_hit_timestamp,
+                "remaining_lots": remaining_lots,
                 "active_profit_tier": active_tier,
                 "current_mtm_gross_pnl": round(gross_pnl, 2),
                 "current_mtm_net_pnl": round(net_pnl, 2),
                 "current_mtm_roi_pct": round(roi_pct, 2),
-                "last_mtm_updated_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
+                "last_mtm_updated_at": timestamp_str
             }
             doc_ref.update(updates)
             data.update(updates)

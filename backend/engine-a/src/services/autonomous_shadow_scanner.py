@@ -16,6 +16,7 @@ from .shadow_signal_logger import ShadowSignalLogger
 from .black_swan_circuit_breaker import BLACK_SWAN_BREAKER
 from .mtf_confluence_filter import MTF_CONFLUENCE_FILTER
 from .market_regime_thresholds import get_current_market_regime
+from .pullback_execution_manager import PULLBACK_EXECUTION_MANAGER
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
@@ -90,7 +91,16 @@ class ContinuousShadowScanner:
             # 1. Fetch live quotes for spot prices
             spot_prices = await self._fetch_spot_prices()
 
-            # 2. Check market hours enforcement (09:15 to 15:30 IST)
+            # 2. Check feed health: suppress new trade generation if broker quote feed is degraded or stale
+            if spot_prices.get("status") in ["DEGRADED", "ERROR"]:
+                logger.warning(f"🚨 Shadow Scanner: Suppressing signal generation because broker quotes are {spot_prices.get('status')}. Updating MTM only.")
+                if spot_prices:
+                    mtm_res = self.shadow_logger.update_open_signals_mtm(spot_prices)
+                    results["mtm_updates"] = mtm_res
+                results["status"] = "FEED_DEGRADED_SIGNALS_SUPPRESSED"
+                return results
+
+            # 3. Check market hours enforcement (09:15 to 15:30 IST)
             if not self.is_market_hours() and not force:
                 logger.info("ℹ️ Market CLOSED (09:15–15:30 IST). Updating MTM without logging off-market signals.")
                 if spot_prices:
@@ -99,7 +109,39 @@ class ContinuousShadowScanner:
                 results["status"] = "MARKET_CLOSED_MTM_TRACKED"
                 return results
 
-            # 3. Call Engine B ML ensemble batch inference
+            # Task 2: Check pending pullback signals awaiting confirmation
+            for p_sym in CORE_SYMBOLS:
+                p_spot = spot_prices.get(p_sym, 0.0)
+                if p_spot <= 0:
+                    continue
+                pending_res = PULLBACK_EXECUTION_MANAGER.check_pending_signal(
+                    symbol=p_sym,
+                    current_spot=p_spot,
+                    live_vwap=p_spot,
+                    rsi_1m_period_5=50.0
+                )
+                if pending_res and pending_res.get("status") == "PULLBACK_CONFIRMED":
+                    p_sig = pending_res["signal_payload"]
+                    live_quote = await self._fetch_option_quote(p_sym, p_spot, p_sig["decision"])
+                    logged_payload = self.shadow_logger.log_shadow_signal(
+                        symbol=p_sym,
+                        spot_price=p_spot,
+                        decision=p_sig["decision"],
+                        confidence_score=p_sig["confidence_score"],
+                        catboost_prob=p_sig["catboost_prob"],
+                        lightgbm_prob=p_sig["lightgbm_prob"],
+                        xgboost_prob=p_sig["xgboost_prob"],
+                        gemini_sentiment=p_sig.get("gemini_sentiment", "NEUTRAL"),
+                        live_option_quote=live_quote,
+                        live_vwap=p_spot,
+                        pullback_wait_duration_ms=pending_res.get("pullback_wait_duration_ms", 1000)
+                    )
+                    if logged_payload:
+                        self.last_signals_cache[p_sym] = {"time": datetime.now(timezone.utc), "spot": p_spot, "decision": p_sig["decision"]}
+                        results["signals_generated"].append(logged_payload)
+                        results["signals_committed"] += 1
+
+            # 4. Call Engine B ML ensemble batch inference
             raw_signals = await self._fetch_engine_b_signals()
 
             # 4. Process each signal, evaluate expected PnL, and log to Firestore
@@ -227,7 +269,7 @@ class ContinuousShadowScanner:
                     logger.warning(f"MoE gate fallback in autonomous shadow scanner: {e}")
                     moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-                if not moe_res["approved"]:
+                if not moe_res["approved"] and moe_res.get("execution_route") != "PULLBACK_LIMIT_ONLY":
                     logger.info(
                         f"⏸️ Regime-Adaptive MoE Gate: {sym} {decision} filtered out. "
                         f"Regime: {moe_res.get('regime')} | MoE Score: {moe_res.get('moe_score', 0):.1%} | "
@@ -239,6 +281,39 @@ class ContinuousShadowScanner:
                 gemini_sentiment = str(sig.get("sentiment_score") or (
                     "BULLISH (+0.65)" if decision in ["BUY_CALL", "SELL_PUT"] else ("BEARISH (-0.65)" if decision in ["BUY_PUT", "SELL_CALL"] else "NEUTRAL")
                 ))
+
+                # Task 2: Pullback Entry Confirmation Engine
+                live_vwap_val = float(models.get("vwap", spot))
+                is_pullback_route = moe_res.get("execution_route") == "PULLBACK_LIMIT_ONLY" or decision == "BUY_CALL"
+                if is_pullback_route and not force:
+                    pullback_eval = PULLBACK_EXECUTION_MANAGER.evaluate_pullback_conditions(
+                        symbol=sym,
+                        current_spot=spot,
+                        live_vwap=live_vwap_val,
+                        rsi_1m_period_5=rsi,
+                        decision=decision
+                    )
+                    if not pullback_eval["confirmed"]:
+                        # Register in 180s observation window
+                        PULLBACK_EXECUTION_MANAGER.register_candidate_signal(
+                            symbol=sym,
+                            signal_payload={
+                                "symbol": sym,
+                                "spot_price": spot,
+                                "decision": decision,
+                                "confidence_score": conf,
+                                "catboost_prob": catboost_p,
+                                "lightgbm_prob": lightgbm_p,
+                                "xgboost_prob": xgboost_p,
+                                "gemini_sentiment": gemini_sentiment
+                            }
+                        )
+                        logger.info(
+                            f"⏳ Pullback Entry Filter: Held {sym} {decision} in observation queue. "
+                            f"Awaiting dip near VWAP (Current diff: {pullback_eval['vwap_distance']:.1f}pts, RSI: {rsi:.1f})."
+                        )
+                        self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "AWAITING_PULLBACK"}
+                        continue
 
                 # Fetch live Dhan market depth for realistic Ask/Bid entry if Engine C is reachable
                 live_quote = await self._fetch_option_quote(sym, spot, decision)
@@ -252,7 +327,9 @@ class ContinuousShadowScanner:
                     lightgbm_prob=lightgbm_p,
                     xgboost_prob=xgboost_p,
                     gemini_sentiment=gemini_sentiment,
-                    live_option_quote=live_quote
+                    live_option_quote=live_quote,
+                    live_vwap=live_vwap_val,
+                    pullback_wait_duration_ms=0
                 )
 
                 if logged_payload:
