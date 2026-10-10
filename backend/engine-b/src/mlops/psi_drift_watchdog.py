@@ -47,10 +47,11 @@ class DualMetricDriftWatchdog:
         bin_edges = np.unique(bin_edges)
 
         if len(bin_edges) < 2:
-            return 0.0
-
-        bin_edges[0] = -np.inf
-        bin_edges[-1] = np.inf
+            val = float(bin_edges[0]) if len(bin_edges) == 1 else 0.0
+            bin_edges = np.array([-np.inf, val, np.inf])
+        else:
+            bin_edges[0] = -np.inf
+            bin_edges[-1] = np.inf
 
         expected_counts, _ = np.histogram(b, bins=bin_edges)
         actual_counts, _ = np.histogram(l, bins=bin_edges)
