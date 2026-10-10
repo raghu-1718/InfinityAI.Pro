@@ -434,9 +434,11 @@ class AutonomousTrader:
             logger.info(f"🚀 ALPHA FILTER: Underlying Put Support floor confirmed for {symbol} -> conviction boosted to {conviction_mult}x")
 
         # ---------------------------------------------------------
-        # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE (Zero Hardcoded Stop Loss)
+        # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE (Live Capital Dependent)
         # ---------------------------------------------------------
-        user_capital = float(self.config.get("capital", 10000.0))
+        from .live_capital_manager import LIVE_CAPITAL_MANAGER
+        live_fund_data = await LIVE_CAPITAL_MANAGER.get_live_available_capital(user_id=uid)
+        user_capital = float(live_fund_data.get("available_capital") or self.config.get("capital", 10000.0))
         max_risk_trade = float(self.config.get("max_risk_per_trade", 0.10))
         effective_risk = max(0.01, min(0.15, max_risk_trade * conviction_mult))
         min_sl_pct = float(self.config.get("stop_loss_pct")) if self.config.get("stop_loss_pct") else None
@@ -753,11 +755,13 @@ class AutonomousTrader:
                     "transaction_type": side.upper(),
                     "exchange_segment": segment,
                     "product_type": "INTRADAY",
-                    "order_type": "MARKET",
+                    "order_type": "LIMIT",
+                    "use_smart_limit": True,
                     "validity": "DAY",
                     "security_id": sec_id,
                     "quantity": qty,
-                    "price": 0
+                    "price": round(float(est_premium), 2) if est_premium > 0 else 0.0,
+                    "ioc_fallback": False
                 }
 
                 url = f"{ENGINE_C_URL}/api/dhan/place-order"

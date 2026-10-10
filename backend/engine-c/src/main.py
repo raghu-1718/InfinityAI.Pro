@@ -798,6 +798,24 @@ class OrderRequest(BaseModel):
     drv_expiry_date: Optional[str] = None
     drv_options_type: Optional[str] = None
     drv_strike_price: Optional[float] = 0.0
+    use_smart_limit: Optional[bool] = False
+    best_bid: Optional[float] = None
+    best_ask: Optional[float] = None
+    ioc_fallback: Optional[bool] = False
+
+class SmartLimitOrderRequest(BaseModel):
+    security_id: str
+    transaction_type: str
+    quantity: int
+    exchange_segment: Optional[str] = "NSE_FNO"
+    product_type: Optional[str] = "INTRADAY"
+    validity: Optional[str] = "DAY"
+    best_bid: Optional[float] = None
+    best_ask: Optional[float] = None
+    ltp: Optional[float] = None
+    ioc_fallback: Optional[bool] = False
+    fallback_to_market: Optional[bool] = True
+    tag: Optional[str] = None
 
 class OrderCancelRequest(BaseModel):
     order_id: str
@@ -2176,6 +2194,57 @@ async def place_order(order: OrderRequest, request: Request):
         }
         dhan_order_type = order_type_map.get(order.order_type.upper(), order.order_type.upper())
 
+        # --- Aggressive Limit-at-Touch (Zero Slippage) Interceptor ---
+        if getattr(order, "use_smart_limit", False) or dhan_order_type == "SMART_LIMIT":
+            from src.services.smart_order_router import SMART_ORDER_ROUTER
+            sor_res = await SMART_ORDER_ROUTER.execute_smart_order(
+                security_id=order.security_id,
+                transaction_type=order.transaction_type.upper(),
+                quantity=order.quantity,
+                exchange_segment=order.exchange_segment,
+                product_type=order.product_type,
+                validity=order.validity or "DAY",
+                best_bid=order.best_bid,
+                best_ask=order.best_ask,
+                ltp=order.price,
+                dhan_client=dhan_client,
+                rate_limiter=dhan_rate_limiter,
+                tag=uuid.uuid4().hex[:30],
+                ioc_fallback=bool(getattr(order, "ioc_fallback", False))
+            )
+            order_id = sor_res.get("order_id")
+            if sor_res.get("status") in ["FILLED", "STAGE_1_TOUCH_FILLED", "STAGE_2_REPRICE_FILLED"]:
+                try:
+                    from src.trailing_stop_manager import trailing_stop_manager
+                    pos_id = f"POS_{order_id or uuid.uuid4().hex[:8]}"
+                    px = float(sor_res.get("executed_price") or order.price or 100.0)
+                    trailing_stop_manager.register_position(
+                        position_id=pos_id,
+                        symbol=order.security_id or getattr(order, 'symbol', 'DERIVATIVE'),
+                        security_id=order.security_id or "0",
+                        entry_price=px,
+                        quantity=order.quantity,
+                        direction="LONG" if order.transaction_type.upper() == "BUY" else "SHORT",
+                        broker_order_id=str(order_id) if order_id else None
+                    )
+                except Exception as ex:
+                    logger.warning(f"Could not auto-register position in TrailingStopManager: {ex}")
+
+                return {
+                    "status": "success",
+                    "mode": "LIVE_TRADING_SMART_LIMIT",
+                    "order_id": order_id,
+                    "sor_data": sor_res
+                }
+            elif sor_res.get("status") == "REJECTED":
+                raise HTTPException(status_code=400, detail=f"Dhan SOR Order Rejected: {sor_res.get('routing_resolution')}")
+            else:
+                return {
+                    "status": "partial" if "CANCELLED" in sor_res.get("status", "") else "success",
+                    "mode": "LIVE_TRADING_SMART_LIMIT",
+                    "sor_data": sor_res
+                }
+
         # Build kwargs dynamically, only include non-None and relevant fields
         order_kwargs = {
             "transaction_type": order.transaction_type.upper(),
@@ -2264,6 +2333,78 @@ async def place_order(order: OrderRequest, request: Request):
     except Exception as e:
         logger.error(f"Order placement failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Order placement failed: {str(e)}")
+
+# --- Aggressive Limit-at-Touch (Zero Slippage) Dedicated Endpoint ---
+@app.post("/api/dhan/order/smart-limit")
+async def place_smart_limit_order(order: SmartLimitOrderRequest, request: Request):
+    """
+    Executes an Aggressive Limit-at-Touch order with zero slippage, 500ms watchdog, and adaptive repricing.
+    """
+    engine_source = request.headers.get("X-Engine-Source", "").lower()
+    if engine_source != ALLOWED_EXECUTION_SOURCE:
+        raise HTTPException(status_code=403, detail="Forbidden: Only Engine-A may execute real trades.")
+
+    if ENGINE_C_MODE == "live":
+        from src.trading_guardrails import validate_order_guardrails, log_order_attempt
+        user_id = request.headers.get("user_id", "unknown")
+        guardrail_result = validate_order_guardrails(
+            symbol=order.security_id,
+            quantity=order.quantity,
+            price=order.ltp or 0,
+            order_type="LIMIT"
+        )
+        log_order_attempt(order.security_id, order.quantity, order.ltp or 0, user_id, guardrail_result)
+        if not guardrail_result["valid"]:
+            logger.warning(f"🚫 SOR Order rejected by guardrails: {guardrail_result}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"Order rejected by trading guardrails: {guardrail_result['reason']}"
+            )
+
+    try:
+        dhan_client = get_dhan_client()
+        from src.services.smart_order_router import SMART_ORDER_ROUTER
+        sor_res = await SMART_ORDER_ROUTER.execute_smart_order(
+            security_id=order.security_id,
+            transaction_type=order.transaction_type.upper(),
+            quantity=order.quantity,
+            exchange_segment=order.exchange_segment or "NSE_FNO",
+            product_type=order.product_type or "INTRADAY",
+            validity=order.validity or "DAY",
+            best_bid=order.best_bid,
+            best_ask=order.best_ask,
+            ltp=order.ltp,
+            dhan_client=dhan_client,
+            rate_limiter=dhan_rate_limiter,
+            tag=order.tag or uuid.uuid4().hex[:30],
+            ioc_fallback=bool(order.ioc_fallback),
+            fallback_to_market=bool(order.fallback_to_market)
+        )
+
+        order_id = sor_res.get("order_id")
+        if sor_res.get("status") in ["FILLED", "STAGE_1_TOUCH_FILLED", "STAGE_2_REPRICE_FILLED"]:
+            try:
+                from src.trailing_stop_manager import trailing_stop_manager
+                pos_id = f"POS_{order_id or uuid.uuid4().hex[:8]}"
+                px = float(sor_res.get("executed_price") or order.ltp or 100.0)
+                trailing_stop_manager.register_position(
+                    position_id=pos_id,
+                    symbol=order.security_id,
+                    security_id=order.security_id,
+                    entry_price=px,
+                    quantity=order.quantity,
+                    direction="LONG" if order.transaction_type.upper() == "BUY" else "SHORT",
+                    broker_order_id=str(order_id) if order_id else None
+                )
+            except Exception as ex:
+                logger.warning(f"Could not auto-register position in TrailingStopManager: {ex}")
+
+        return {"status": "success", "data": sor_res}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"SOR execution failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"SOR execution failed: {str(e)}")
 
 # --- Dynamic 3-Tier Trailing Stop-Loss Surveillance Endpoints ---
 class TrailingTickRequest(BaseModel):

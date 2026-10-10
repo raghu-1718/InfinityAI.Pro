@@ -2341,6 +2341,95 @@ async def proxy_engine_b_v1(path: str, request: Request) -> Response:
         headers=response_headers,
     )
 
+# ==============================================================================
+# Institutional 0-DTE Gamma Scalper & Capital-Aware Sizing Endpoints
+# ==============================================================================
+class GammaScalpRequest(BaseModel):
+    symbol: str = "NIFTY"
+    direction: str = "BULLISH"  # BULLISH (CE) or BEARISH (PE)
+    spot_price: Optional[float] = 0.0
+    user_id: Optional[str] = None
+    max_scalp_capital_pct: Optional[float] = 0.10
+    force_bypass_window: Optional[bool] = False
+    option_chain: Optional[List[Dict[str, Any]]] = None
+
+@app.get("/api/v1/gamma-scalper/status")
+async def get_gamma_scalper_status(symbol: str = "NIFTY"):
+    """
+    Returns authentic 0-DTE status, expiry schedule, afternoon gamma window gate, and active scalps.
+    """
+    from src.services.zero_dte_gamma_scalper import ZERO_DTE_GAMMA_SCALPER
+    from src.services.live_capital_manager import LIVE_CAPITAL_MANAGER
+
+    gate_info = ZERO_DTE_GAMMA_SCALPER.is_gamma_window_open(symbol)
+    capital_info = await LIVE_CAPITAL_MANAGER.get_live_available_capital()
+    
+    return {
+        "status": "success",
+        "symbol": symbol,
+        "gamma_window": gate_info,
+        "live_capital": capital_info,
+        "active_scalps_count": len(ZERO_DTE_GAMMA_SCALPER.active_scalps),
+        "active_scalps": ZERO_DTE_GAMMA_SCALPER.active_scalps
+    }
+
+@app.post("/api/v1/gamma-scalper/scan-and-execute")
+async def execute_0dte_gamma_scalp(req: GammaScalpRequest):
+    """
+    Scans real-time option chain, validates capital availability, sizes lots dynamically,
+    and dispatches high-conviction 0-DTE scalp via Aggressive Limit-at-Touch.
+    """
+    from src.services.zero_dte_gamma_scalper import ZERO_DTE_GAMMA_SCALPER
+    
+    # Resolve spot price if missing
+    spot = req.spot_price or 0.0
+    if spot <= 0:
+        from src.services.market_regime_heartbeat_service import MARKET_REGIME_HEARTBEAT_SERVICE
+        quotes = await MARKET_REGIME_HEARTBEAT_SERVICE._fetch_live_market_quotes()
+        spot = float(quotes.get(req.symbol.upper(), 25000.0 if "NIFTY" in req.symbol.upper() else 52000.0))
+
+    # Fetch option chain if not provided
+    chain = req.option_chain
+    if not chain:
+        from src.services.options_greeks_engine import OptionsGreeksEngine
+        eng = OptionsGreeksEngine()
+        surface = eng.generate_volatility_surface(symbol=req.symbol, spot=spot, dte_days=0.5)
+        chain = surface.get("surface", [])
+
+    res = await ZERO_DTE_GAMMA_SCALPER.execute_gamma_scalp(
+        symbol=req.symbol,
+        direction=req.direction,
+        spot_price=spot,
+        option_chain=chain,
+        user_id=req.user_id,
+        max_scalp_capital_pct=req.max_scalp_capital_pct or 0.10,
+        force_bypass_window=bool(req.force_bypass_window)
+    )
+    return {"status": "success", "data": res}
+
+@app.post("/api/v1/gamma-scalper/evaluate-exits")
+async def evaluate_0dte_gamma_scalp_exits(ticks: Optional[Dict[str, float]] = None):
+    """
+    Surveillance heartbeat: Evaluates active 0-DTE scalps against +40%/+80% TP, -22% SL, and 15:25 IST hard cutoff.
+    """
+    from src.services.zero_dte_gamma_scalper import ZERO_DTE_GAMMA_SCALPER
+    exit_events = ZERO_DTE_GAMMA_SCALPER.evaluate_live_scalp_exits(current_ticks=ticks or {})
+    return {
+        "status": "success",
+        "exits_triggered": len(exit_events),
+        "events": exit_events,
+        "remaining_active": len([s for s in ZERO_DTE_GAMMA_SCALPER.active_scalps.values() if s.get("is_active")])
+    }
+
+@app.get("/api/v1/capital/live-summary")
+async def get_live_capital_summary(user_id: Optional[str] = None):
+    """
+    Direct endpoint for live broker unencumbered capital and margin status.
+    """
+    from src.services.live_capital_manager import LIVE_CAPITAL_MANAGER
+    data = await LIVE_CAPITAL_MANAGER.get_live_available_capital(user_id=user_id, force_refresh=True)
+    return {"status": "success", "data": data}
+
 
 if __name__ == "__main__":
     import os
