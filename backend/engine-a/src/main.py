@@ -2296,51 +2296,6 @@ async def calculate_slippage(
     }
 
 
-# =====================================================================
-# FALLBACK WILDCARD PROXY TO PRIVATE ENGINE-B VM
-# =====================================================================
-
-@app.api_route("/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-async def proxy_engine_b_v1(path: str, request: Request) -> Response:
-    """
-    Public API gateway fallback for Engine-B /api/v1/* endpoints.
-    Frontend calls Engine-A, Engine-A forwards unhandled /api/v1/* routes to private Engine-B VM.
-    """
-    if http_client is None:
-        raise HTTPException(status_code=503, detail="Engine-A HTTP client not initialized")
-
-    upstream_url = f"{ENGINE_B_URL}/api/v1/{path}"
-    body = await request.body()
-    headers: Dict[str, str] = {}
-    for key in ("content-type", "accept", "authorization", "x-trace-id", "x-request-id"):
-        value = request.headers.get(key)
-        if value:
-            headers[key] = value
-
-    try:
-        upstream_response = await http_client.request(
-            method=request.method,
-            url=upstream_url,
-            params=request.query_params,
-            content=body if body else None,
-            headers=headers or None,
-            timeout=60.0,
-        )
-    except httpx.HTTPError as exc:
-        logger.error(f"Engine-B proxy failure for {upstream_url}: {exc}")
-        raise HTTPException(status_code=502, detail=f"Engine-B upstream request failed: {exc}") from exc
-
-    response_headers: Dict[str, str] = {}
-    content_type = upstream_response.headers.get("content-type")
-    if content_type:
-        response_headers["content-type"] = content_type
-
-    return Response(
-        content=upstream_response.content,
-        status_code=upstream_response.status_code,
-        headers=response_headers,
-    )
-
 # ==============================================================================
 # Institutional 0-DTE Gamma Scalper & Capital-Aware Sizing Endpoints
 # ==============================================================================
@@ -2429,6 +2384,52 @@ async def get_live_capital_summary(user_id: Optional[str] = None):
     from src.services.live_capital_manager import LIVE_CAPITAL_MANAGER
     data = await LIVE_CAPITAL_MANAGER.get_live_available_capital(user_id=user_id, force_refresh=True)
     return {"status": "success", "data": data}
+
+
+# =====================================================================
+# FALLBACK WILDCARD PROXY TO PRIVATE ENGINE-B VM
+# =====================================================================
+
+@app.api_route("/api/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def proxy_engine_b_v1(path: str, request: Request) -> Response:
+    """
+    Public API gateway fallback for Engine-B /api/v1/* endpoints.
+    Frontend calls Engine-A, Engine-A forwards unhandled /api/v1/* routes to private Engine-B VM.
+    """
+    if http_client is None:
+        raise HTTPException(status_code=503, detail="Engine-A HTTP client not initialized")
+
+    upstream_url = f"{ENGINE_B_URL}/api/v1/{path}"
+    body = await request.body()
+    headers: Dict[str, str] = {}
+    for key in ("content-type", "accept", "authorization", "x-trace-id", "x-request-id"):
+        value = request.headers.get(key)
+        if value:
+            headers[key] = value
+
+    try:
+        upstream_response = await http_client.request(
+            method=request.method,
+            url=upstream_url,
+            params=request.query_params,
+            content=body if body else None,
+            headers=headers or None,
+            timeout=60.0,
+        )
+    except httpx.HTTPError as exc:
+        logger.error(f"Engine-B proxy failure for {upstream_url}: {exc}")
+        raise HTTPException(status_code=502, detail=f"Engine-B upstream request failed: {exc}") from exc
+
+    response_headers: Dict[str, str] = {}
+    content_type = upstream_response.headers.get("content-type")
+    if content_type:
+        response_headers["content-type"] = content_type
+
+    return Response(
+        content=upstream_response.content,
+        status_code=upstream_response.status_code,
+        headers=response_headers,
+    )
 
 
 if __name__ == "__main__":
