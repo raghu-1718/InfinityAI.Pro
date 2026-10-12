@@ -220,7 +220,17 @@ class GenAIClient:
                 )
             )
 
-            return self._parse_trading_response(prompt.symbol, response.text)
+            raw_text = None
+            if hasattr(response, "text") and response.text:
+                raw_text = response.text
+            elif hasattr(response, "candidates") and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, "content") and hasattr(candidate.content, "parts"):
+                    parts = [p.text for p in candidate.content.parts if hasattr(p, "text") and p.text]
+                    if parts:
+                        raw_text = "\n".join(parts)
+
+            return self._parse_trading_response(prompt.symbol, raw_text or "")
 
         except Exception as e:
             logger.error(f"❌ GenAI trading signal generation failed: {e}")
@@ -446,6 +456,16 @@ Response Format:
         entry_price = None
         stop_loss = None
         target_price = None
+
+        if not response_text:
+            return TradingAnalysis(
+                symbol=symbol,
+                signal="HOLD",
+                confidence=50.0,
+                reasoning="Model returned structured response without raw text body.",
+                risk_level="MEDIUM",
+                raw_response=None
+            )
 
         text_upper = response_text.upper()
 
