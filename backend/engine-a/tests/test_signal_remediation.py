@@ -282,6 +282,8 @@ class TestSignalRemediation:
             catboost_prob=0.75,
             lightgbm_prob=0.78,
             xgboost_prob=0.80,
+            live_vwap=57800.0,
+            gemini_sentiment="BEARISH",
             live_option_quote=live_depth_quote
         )
         assert res is not None
@@ -343,4 +345,59 @@ class TestSignalRemediation:
         )
         assert res is None, "Low OI contract must be rejected"
         assert logger_service.db.collection.call_count == 0
+
+    def test_sensex_rejected_by_institutional_risk_audit(self):
+        """Verify that BSE SENSEX derivatives are strictly rejected to prevent slippage penalty."""
+        logger_service = ShadowSignalLogger()
+        logger_service.db = MagicMock()
+
+        res = logger_service.log_shadow_signal(
+            symbol="SENSEX",
+            spot_price=82000.0,
+            decision="BUY_CALL",
+            confidence_score=0.85,
+            catboost_prob=0.82,
+            lightgbm_prob=0.85,
+            xgboost_prob=0.88
+        )
+        assert res is None, "SENSEX derivatives must be rejected by Institutional Risk Audit"
+        assert logger_service.db.collection.call_count == 0
+
+    def test_short_momentum_gate_suppression_and_approval(self):
+        """Verify that Short-Momentum Gate strictly enforces Spot < VWAP and BEARISH macro bias."""
+        from src.services.short_momentum_filter_gate import SHORT_MOMENTUM_FILTER
+
+        # Scenario A: Spot (25200) > VWAP (25150) -> Must be suppressed (False breakdown)
+        eval_a = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+            symbol="NIFTY",
+            decision_or_signal="BUY_PUT",
+            spot_price=25200.0,
+            live_vwap=25150.0,
+            macro_bias="BEARISH"
+        )
+        assert eval_a["allowed"] is False
+        assert eval_a["rejection_code"] == "SPOT_ABOVE_DAILY_VWAP"
+
+        # Scenario B: Spot (25100) < VWAP (25150) BUT Macro is BULLISH -> Must be suppressed
+        eval_b = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+            symbol="NIFTY",
+            decision_or_signal="BUY_PUT",
+            spot_price=25100.0,
+            live_vwap=25150.0,
+            macro_bias="BULLISH"
+        )
+        assert eval_b["allowed"] is False
+        assert eval_b["rejection_code"] == "MACRO_BIAS_NOT_BEARISH"
+
+        # Scenario C: Spot (25100) < VWAP (25150) AND Macro is BEARISH -> Approved!
+        eval_c = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+            symbol="NIFTY",
+            decision_or_signal="BUY_PUT",
+            spot_price=25100.0,
+            live_vwap=25150.0,
+            macro_bias="BEARISH"
+        )
+        assert eval_c["allowed"] is True
+        assert eval_c["rejection_code"] is None
+
 
