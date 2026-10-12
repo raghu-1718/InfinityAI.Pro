@@ -50,8 +50,9 @@ ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.a
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
 SCAN_INTERVAL_SECONDS = int(os.getenv("SHADOW_SCAN_INTERVAL_SECONDS", "60"))
 
-# Institutional Focus Allocation: Derivatives restricted to NIFTY & BANKNIFTY (eliminates -₹52k SENSEX drag)
-CORE_SYMBOLS = ["NIFTY", "BANKNIFTY"]
+# Institutional Focus Allocation: Derivatives strictly restricted to high-alpha NSE basket
+# SENSEX permanently removed due to severe structural illiquidity and wide bid-ask slippage penalty (-₹45k drag)
+CORE_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
 
 class ContinuousShadowScanner:
     """Autonomous market radar and paper P&L tracker daemon"""
@@ -220,9 +221,34 @@ class ContinuousShadowScanner:
                     else:
                         decision = "BUY_CALL"
                 elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= regime.ml_threshold:
+                    # ---------------------------------------------------------
+                    # SHORT-MOMENTUM TRAP GATE: STRICT VWAP & MACRO BIAS FILTER
+                    # ---------------------------------------------------------
+                    live_vwap_approx = float(models.get("vwap") or sig.get("vwap") or spot)
+                    vwap_dist = float(models.get("vwap_distance") or sig.get("vwap_distance") or 0.0)
+                    macro_bias_val = str(sig.get("macro_bias") or models.get("macro_bias") or "")
+                    
+                    try:
+                        from .short_momentum_filter_gate import SHORT_MOMENTUM_FILTER
+                        short_eval = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+                            symbol=sym,
+                            decision_or_signal="BUY_PUT",
+                            spot_price=spot,
+                            live_vwap=live_vwap_approx,
+                            vwap_distance=vwap_dist,
+                            macro_bias=macro_bias_val
+                        )
+                        if not short_eval["allowed"]:
+                            decision = "NO_TRADE"
+                            logger.warning(f"🛡️ SHORT-MOMENTUM TRAP GATE: {short_eval['reason']}")
+                            self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "SHORT_TRAP_SUPPRESSED"}
+                            continue
+                    except Exception as e:
+                        logger.warning(f"Short momentum gate evaluation fallback: {e}")
+
                     if is_trending:
                         decision = "BUY_PUT"
-                        logger.info(f"📉 Trending Breakdown detected on {sym} (ADX: {adx:.1f}) -> Directional BUY_PUT")
+                        logger.info(f"📉 Trending Breakdown confirmed on {sym} (ADX: {adx:.1f}) -> Directional BUY_PUT")
                     elif is_low_vol_chop:
                         decision = "SELL_CALL"
                         logger.info(f"🛡️ Low-volatility resistance wall on {sym} (ADX: {adx:.1f}) -> Theta Harvesting SELL_CALL")
@@ -305,9 +331,13 @@ class ContinuousShadowScanner:
                     self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "REGIME_ADAPTIVE_MOE_FILTERED"}
                     continue
 
-                gemini_sentiment = str(sig.get("sentiment_score") or (
-                    "BULLISH (+0.65)" if decision in ["BUY_CALL", "SELL_PUT"] else ("BEARISH (-0.65)" if decision in ["BUY_PUT", "SELL_CALL"] else "NEUTRAL")
-                ))
+                # Dynamically resolve real Macro Sentiment from Vertex AI / Ingestor
+                try:
+                    from .news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
+                    macro_info = NEWS_SENTIMENT_INGESTOR.get_current_macro_bias()
+                    gemini_sentiment = f"{macro_info.get('sentiment_direction', 'NEUTRAL')} ({macro_info.get('sentiment_scalar', 0.0):+.2f})"
+                except Exception:
+                    gemini_sentiment = str(sig.get("sentiment_score") or "NEUTRAL")
 
                 # Task 2: Pullback Entry Confirmation Engine
                 live_vwap_val = float(models.get("vwap", spot))

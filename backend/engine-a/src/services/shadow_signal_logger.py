@@ -89,6 +89,23 @@ class ShadowSignalLogger:
             logger.warning(f"🚫 SENSEX derivatives disabled by Institutional Risk Audit. Skipping trade ledger commit for {symbol}.")
             return None
 
+        # ── Short-Momentum Trap Gate (0% Put Win Rate Fix) ───────────────────
+        try:
+            from .short_momentum_filter_gate import SHORT_MOMENTUM_FILTER
+            vwap_check_val = live_vwap if (live_vwap and live_vwap > 0) else spot_price
+            short_check = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+                symbol=symbol,
+                decision_or_signal=decision,
+                spot_price=spot_price,
+                live_vwap=vwap_check_val,
+                macro_bias=gemini_sentiment
+            )
+            if not short_check["allowed"]:
+                logger.warning(f"🚫 {short_check['reason']}. Skipping trade ledger commit.")
+                return None
+        except Exception as e:
+            logger.debug(f"Short-momentum gate eval notice in shadow logger: {e}")
+
         # ── Task 1: Multi-Model Consensus & Discordance Gate ──────────────────
         try:
             from .ml_consensus_gate import MultiModelConsensusGate

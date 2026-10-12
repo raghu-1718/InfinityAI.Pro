@@ -92,9 +92,9 @@ def validate_order_guardrails(
     if not is_market_open():
         violations.append(f"Market closed: Orders only allowed 08:55-15:45 IST weekdays")
 
-    # Check 2: Symbol whitelist (Equities & approved NIFTY / BANKNIFTY index derivatives)
+    # Check 2: Symbol whitelist (Equities & approved NSE index derivatives: NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY)
     whitelist = get_symbols_whitelist()
-    is_whitelisted_derivative = any(sym_u.startswith(idx) for idx in ["NIFTY", "BANKNIFTY"])
+    is_whitelisted_derivative = any(sym_u.startswith(idx) for idx in ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]) and not ("SENSEX" in sym_u)
     if sym_u not in whitelist and not is_whitelisted_derivative:
         violations.append(f"Symbol '{symbol}' not in approved whitelist: {whitelist}")
 

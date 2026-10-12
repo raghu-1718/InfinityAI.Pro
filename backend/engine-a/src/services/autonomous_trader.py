@@ -237,12 +237,12 @@ class AutonomousTrader:
         """Call Engine B to get AI Signals"""
         try:
             # Select symbols based on Asset Class configuration
-            asset_class = self.config.get("asset_class", "fno")
-
+            # Institutional Focus Allocation: Derivatives strictly restricted to high-alpha NSE basket
+            # SENSEX permanently removed due to severe structural illiquidity and wide bid-ask slippage penalty (-₹45k drag)
             if asset_class == "fno":
-                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
+                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
             else: # general index basket
-                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX"]
+                symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
 
             # Using the batch signal endpoint verified in Engine B
             url = f"{ENGINE_B_URL}/api/v1/signals/batch"
@@ -393,6 +393,31 @@ class AutonomousTrader:
             return
 
         current_price = float(signal.get("current_price") or 1000.0)
+
+        # ---------------------------------------------------------
+        # ALPHA FILTER 0: SHORT-MOMENTUM TRAP (BUY_PUT) VWAP & MACRO BIAS GATE
+        # ---------------------------------------------------------
+        try:
+            from .short_momentum_filter_gate import SHORT_MOMENTUM_FILTER
+            vwap_val = float(signal.get("vwap") or analysis_data.get("vwap") or current_price)
+            vwap_dist = float(signal.get("vwap_distance") or analysis_data.get("vwap_distance") or 0.0)
+            macro_b = str(signal.get("macro_bias") or analysis_data.get("macro_bias") or "")
+            short_eval = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+                symbol=symbol,
+                decision_or_signal=signal_type,
+                spot_price=current_price,
+                live_vwap=vwap_val,
+                vwap_distance=vwap_dist,
+                macro_bias=macro_b
+            )
+            if not short_eval["allowed"]:
+                logger.warning(f"🛑 SHORT-MOMENTUM GATE: {short_eval['reason']}")
+                self.audit_logger.log_trade_rejected(
+                    uid, symbol, "SHORT_MOMENTUM_TRAP_SUPPRESSED", short_eval
+                )
+                return
+        except Exception as e:
+            logger.warning(f"Short-momentum gate evaluation fallback: {e}")
 
         # ---------------------------------------------------------
         # ALPHA FILTER 1: MULTI-TIMEFRAME CONFLUENCE GATE (1m, 5m, 15m)
