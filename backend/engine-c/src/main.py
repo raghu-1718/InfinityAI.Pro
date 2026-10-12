@@ -2362,7 +2362,11 @@ async def place_smart_limit_order(order: SmartLimitOrderRequest, request: Reques
             )
 
     try:
-        dhan_client = get_dhan_client()
+        try:
+            from src.dhan_data_api import get_dhan_client_for_user
+            dhan_client, _, _ = await get_dhan_client_for_user(order.user_id)
+        except Exception:
+            dhan_client = get_dhan_client()
         from src.services.smart_order_router import SMART_ORDER_ROUTER
         sor_res = await SMART_ORDER_ROUTER.execute_smart_order(
             security_id=order.security_id,

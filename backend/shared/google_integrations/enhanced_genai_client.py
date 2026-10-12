@@ -230,9 +230,9 @@ class EnhancedGenAIClient:
     def __init__(
         self,
         project_id: str = None,
-        location: str = "asia-south1",
-        model_id: str = "gemini-3.6-flash",  # Upgraded to 3.6-flash for latest features & reasoning
-        advanced_model_id: str = "gemini-3-pro"  # Use Gemini 3 Pro for complex analysis
+        location: str = "us-central1",
+        model_id: str = "gemini-2.5-flash",
+        advanced_model_id: str = "gemini-2.5-pro"
     ):
         """
         Initialize the enhanced GenAI client.
@@ -444,6 +444,20 @@ Then provide your recommendation in this JSON format:
                 fii_dii_view="",
                 auto_execute=False
             )
+
+    async def chat(self, prompt: str) -> Dict[str, Any]:
+        """Free-form text chat and analysis using Gemini 2.5 Flash."""
+        try:
+            resp = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=self.model_id,
+                contents=prompt
+            )
+            text = resp.text if hasattr(resp, "text") else str(resp)
+            return {"response": text, "status": "success"}
+        except Exception as e:
+            logger.error(f"Error in chat method: {e}")
+            return {"response": f"AI analysis error: {e}", "status": "error"}
 
     async def analyze_with_function_calling(
         self,

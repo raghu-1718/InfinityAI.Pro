@@ -3786,7 +3786,7 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
                 symbol=req.symbol,
                 signal=signal_dict.get("signal", "HOLD"),
                 confidence=signal_dict.get("confidence", 0.0),
-                model_name="gemini-2.0-flash",
+                model_name="gemini-2.5-flash",
                 metadata={"market_data": market_data}
             )
 
@@ -3794,7 +3794,7 @@ async def generate_gemini_signal(req: GeminiSignalRequest):
             "status": "success",
             "symbol": req.symbol,
             "signal": signal_dict,
-            "model": "gemini-2.0-flash",
+            "model": "gemini-2.5-flash",
             "sdk": "google-genai",
             "timestamp": datetime.utcnow().isoformat()
         }

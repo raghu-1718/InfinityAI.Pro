@@ -1281,14 +1281,14 @@ async def generate_ai_signal(req: AISignalRequest):
                 symbol=req.symbol,
                 signal=analysis.get("signal", "HOLD"),
                 confidence=analysis.get("confidence", 0.0),
-                model_name="gemini-2.0-flash",
+                model_name="gemini-2.5-flash",
                 metadata={"market_data": market_data}
             )
 
         return {
             "status": "success",
             "signal": analysis,
-            "model": "gemini-2.0-flash",
+            "model": "gemini-2.5-flash",
             "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:

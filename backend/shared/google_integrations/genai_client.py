@@ -132,9 +132,9 @@ class GenAIClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: GeminiModel = GeminiModel.FLASH,
+        model: GeminiModel = GeminiModel.GEMINI_25_FLASH,
         project_id: Optional[str] = None,
-        location: str = "asia-south1"
+        location: str = "us-central1"
     ):
         """
         Initialize the GenAI client.
