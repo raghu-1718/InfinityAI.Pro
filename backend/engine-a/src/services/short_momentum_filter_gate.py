@@ -35,7 +35,8 @@ class ShortMomentumFilterGate:
         spot_price: float,
         live_vwap: Optional[float] = None,
         vwap_distance: Optional[float] = None,
-        macro_bias: Optional[str] = None
+        macro_bias: Optional[str] = None,
+        adx: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Evaluates whether a short-momentum trade passes the strict VWAP & Macro bias filter.
@@ -47,6 +48,7 @@ class ShortMomentumFilterGate:
             live_vwap: Current session Volume Weighted Average Price
             vwap_distance: Percentage distance from VWAP (negative = below VWAP)
             macro_bias: Macro sentiment bias from Vertex AI ('BULLISH', 'BEARISH', 'NEUTRAL')
+            adx: Average Directional Index (trend strength)
 
         Returns:
             Dict containing:
@@ -72,8 +74,9 @@ class ShortMomentumFilterGate:
             }
 
         # 1. Resolve Macro Sentiment Vector
-        resolved_macro = (macro_bias or "").upper()
-        if not resolved_macro or resolved_macro in ["NEUTRAL", "NONE", ""]:
+        if macro_bias is not None and str(macro_bias).strip() != "":
+            resolved_macro = str(macro_bias).upper()
+        else:
             try:
                 from .news_sentiment_ingestor import NEWS_SENTIMENT_INGESTOR
                 macro_data = NEWS_SENTIMENT_INGESTOR.get_current_macro_bias()
@@ -113,7 +116,19 @@ class ShortMomentumFilterGate:
             }
 
         # 4. Gate Condition 2: Macro Bias must be explicitly BEARISH
-        if resolved_macro != "BEARISH":
+        # Intraday Structural Breakdown Override:
+        # If market microstructure confirms severe intraday breakdown below VWAP
+        # (vwap_distance <= -0.35% or spot breakdown > 0.35%), with strong trend momentum (ADX >= 28.0),
+        # AND macro is not explicitly BULLISH:
+        # We permit the short trade because pure technical momentum overrides stale morning news.
+        pct_below_vwap = vwap_distance if (vwap_distance is not None and vwap_distance != 0.0) else ((spot_price - vwap_val) / vwap_val * 100.0)
+        structural_breakdown_override = (
+            pct_below_vwap <= -0.35 and
+            (adx is not None and adx >= 28.0) and
+            resolved_macro != "BULLISH"
+        )
+
+        if resolved_macro != "BEARISH" and not structural_breakdown_override:
             reason = (
                 f"🛡️ SHORT-MOMENTUM TRAP GATE: {symbol} {action} suppressed. "
                 f"Vertex AI Macro Bias is '{resolved_macro}' (Requires explicit 'BEARISH'). "
@@ -130,11 +145,18 @@ class ShortMomentumFilterGate:
                 "macro_bias": resolved_macro
             }
 
-        # Both criteria satisfied: Legitimate breakdown confirmed
-        approval_msg = (
-            f"✅ SHORT-MOMENTUM CONFIRMED: {symbol} {action} authorized. "
-            f"Spot ({spot_price:.2f}) < VWAP ({vwap_val:.2f}) and Vertex AI Macro Bias is BEARISH."
-        )
+        # Satisfied: Legitimate breakdown confirmed
+        if structural_breakdown_override and resolved_macro != "BEARISH":
+            approval_msg = (
+                f"✅ SHORT-MOMENTUM CONFIRMED (INTRADAY BREAKDOWN OVERRIDE): {symbol} {action} authorized. "
+                f"Spot ({spot_price:.2f}) is {abs(pct_below_vwap):.2f}% below VWAP ({vwap_val:.2f}) "
+                f"with high trend momentum (ADX {adx:.1f} >= 28.0). Overriding NEUTRAL macro bias."
+            )
+        else:
+            approval_msg = (
+                f"✅ SHORT-MOMENTUM CONFIRMED: {symbol} {action} authorized. "
+                f"Spot ({spot_price:.2f}) < VWAP ({vwap_val:.2f}) and Vertex AI Macro Bias is BEARISH."
+            )
         logger.info(approval_msg)
         return {
             "allowed": True,

@@ -400,4 +400,18 @@ class TestSignalRemediation:
         assert eval_c["allowed"] is True
         assert eval_c["rejection_code"] is None
 
+        # Scenario D: Structural Breakdown (Spot 25000 < VWAP 25150, -0.60%), ADX = 32.0, Macro is NEUTRAL -> Approved via Override!
+        eval_d = SHORT_MOMENTUM_FILTER.evaluate_short_momentum_gate(
+            symbol="NIFTY",
+            decision_or_signal="BUY_PUT",
+            spot_price=25000.0,
+            live_vwap=25150.0,
+            vwap_distance=-0.60,
+            macro_bias="NEUTRAL",
+            adx=32.0
+        )
+        assert eval_d["allowed"] is True
+        assert eval_d["rejection_code"] is None
+        assert "INTRADAY BREAKDOWN OVERRIDE" in eval_d["reason"]
+
 

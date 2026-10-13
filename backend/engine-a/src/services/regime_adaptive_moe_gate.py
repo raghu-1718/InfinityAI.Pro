@@ -143,7 +143,8 @@ def evaluate_regime_moe_consensus(
         catboost_prob=p_cb,
         lightgbm_prob=p_lgb,
         xgboost_prob=p_xgb,
-        decision=decision_or_signal_type
+        decision=decision_or_signal_type,
+        adx=adx_val
     )
     min_model_prob = consensus_eval["ml_consensus_min"]
 

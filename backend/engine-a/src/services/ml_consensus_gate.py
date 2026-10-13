@@ -9,7 +9,7 @@ Specifications:
 """
 
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 logger = logging.getLogger("InfinityAI.MultiModelConsensusGate")
 
@@ -28,7 +28,8 @@ class MultiModelConsensusGate:
         catboost_prob: float,
         lightgbm_prob: float,
         xgboost_prob: float,
-        decision: str = "BUY_CALL"
+        decision: str = "BUY_CALL",
+        adx: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Evaluates intra-model agreement across CatBoost, LightGBM, and XGBoost.
@@ -62,8 +63,29 @@ class MultiModelConsensusGate:
         max_prob = round(float(max(p_cb, p_lgb, p_xgb)), 4)
         spread = round(max_prob - min_prob, 4)
 
+        # Check Heavyweight Primary Momentum Override:
+        # CatBoost (35%) and LightGBM (35%) represent 70% of total ensemble weight.
+        # If both heavyweights agree with high conviction (>= 0.55), and market displays confirmed
+        # directional trend momentum (ADX >= 25.0), and XGBoost is not a hard reversal (> 0.20):
+        # We approve standard market execution and override the uniform prior flatline of XGBoost.
+        heavyweight_consensus = (p_cb >= 0.55 and p_lgb >= 0.55)
+        trend_momentum_active = (adx is not None and adx >= 25.0)
+        no_hard_reversal = (p_xgb >= 0.20)
+
+        if heavyweight_consensus and trend_momentum_active and no_hard_reversal:
+            market_state = "REGIME_TRENDING_CONSENSUS"
+            is_discordant = False
+            consensus_passed = True
+            execution_route = "STANDARD_MARKET_ALLOWED"
+            reason = (
+                f"HEAVYWEIGHT_MOMENTUM_CONSENSUS: CatBoost ({p_cb:.2f}) and LightGBM ({p_lgb:.2f}) "
+                f"command 70% ensemble conviction with strong ADX ({adx:.1f} >= 25.0). "
+                f"XGBoost ({p_xgb:.2f}) uniform prior discordance overridden."
+            )
+            logger.info(f"✅ {reason}")
+
         # Condition 1: Divergence Filter (< 0.40)
-        if min_prob < cls.DIVERGENCE_THRESHOLD:
+        elif min_prob < cls.DIVERGENCE_THRESHOLD:
             market_state = "REGIME_CHOP_CONSOLIDATION"
             is_discordant = True
             consensus_passed = False

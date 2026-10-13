@@ -84,6 +84,30 @@ class TestQuantitativeStrategyRefactor:
         assert eval_res["execution_route"] == "STANDARD_MARKET_ALLOWED"
         assert eval_res["ml_consensus_min"] == 0.58
 
+    def test_heavyweight_momentum_overrides_xgboost_flat_prior(self):
+        """
+        Verify that when primary heavyweights (CatBoost >= 0.55, LightGBM >= 0.55) command 70% conviction
+        and market displays high trend momentum (ADX >= 25.0), the uniform prior flatline of XGBoost (~0.33)
+        is safely overridden, permitting standard market execution.
+        """
+        cb_prob = 0.80
+        lgb_prob = 0.60
+        xgb_prob = 0.33  # XGBoost flat prior at 1/3
+
+        eval_res = MultiModelConsensusGate.evaluate_consensus(
+            catboost_prob=cb_prob,
+            lightgbm_prob=lgb_prob,
+            xgboost_prob=xgb_prob,
+            decision="BUY_CALL",
+            adx=38.5  # High trend momentum (October 13 reality)
+        )
+
+        assert eval_res["is_discordant"] is False, "Heavyweights with high ADX must not be flagged discordant"
+        assert eval_res["consensus_passed"] is True
+        assert eval_res["market_state"] == "REGIME_TRENDING_CONSENSUS"
+        assert eval_res["execution_route"] == "STANDARD_MARKET_ALLOWED"
+        assert "HEAVYWEIGHT_MOMENTUM_CONSENSUS" in eval_res["reason"]
+
     # =========================================================================
     # Test 2: Pullback Entry Confirmation Engine
     # =========================================================================

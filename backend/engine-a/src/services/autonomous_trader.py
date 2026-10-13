@@ -409,7 +409,8 @@ class AutonomousTrader:
                 spot_price=current_price,
                 live_vwap=vwap_val,
                 vwap_distance=vwap_dist,
-                macro_bias=macro_b
+                macro_bias=macro_b,
+                adx=adx_val
             )
             if not short_eval["allowed"]:
                 logger.warning(f"🛑 SHORT-MOMENTUM GATE: {short_eval['reason']}")

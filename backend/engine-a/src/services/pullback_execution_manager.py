@@ -82,7 +82,9 @@ class PullbackExecutionManager:
 
         # 1. Condition A: Underlying Spot distance to dynamic VWAP <= 5.0 pts
         vwap_diff = abs(current_spot - live_vwap) if live_vwap > 0 else 999.0
-        cond_a_vwap_touch = vwap_diff <= self.VWAP_PROXIMITY_THRESHOLD
+        # Dynamic VWAP proximity: 5.0 pts standard; for high spot indices (> 35,000 like BANKNIFTY), scale up to 0.03% (e.g. 15 pts)
+        vwap_thresh = max(self.VWAP_PROXIMITY_THRESHOLD, current_spot * 0.0003) if current_spot > 35000 else self.VWAP_PROXIMITY_THRESHOLD
+        cond_a_vwap_touch = vwap_diff <= vwap_thresh
 
         # 2. Condition B: 1-minute fast RSI (period 5)
         if is_bullish:
@@ -93,14 +95,15 @@ class PullbackExecutionManager:
         # 3. Condition C: Trending Retest Fallback
         # If spot is trending above VWAP without touching, 5-period EMA proximity or candle retest
         cond_c_retest = False
+        ema_proximity_thresh = max(4.0, current_spot * 0.0002)
         if is_bullish:
             # Trending above VWAP: check if spot touched 5-EMA or candle was red
-            if ema_5_spot and abs(current_spot - ema_5_spot) <= 4.0:
+            if ema_5_spot and abs(current_spot - ema_5_spot) <= ema_proximity_thresh:
                 cond_c_retest = True
             elif is_red_candle:
                 cond_c_retest = True
         else:
-            if ema_5_spot and abs(current_spot - ema_5_spot) <= 4.0:
+            if ema_5_spot and abs(current_spot - ema_5_spot) <= ema_proximity_thresh:
                 cond_c_retest = True
             elif is_green_candle:
                 cond_c_retest = True
@@ -108,7 +111,7 @@ class PullbackExecutionManager:
         confirmed = cond_a_vwap_touch or cond_b_rsi or cond_c_retest
         confirmation_reason = []
         if cond_a_vwap_touch:
-            confirmation_reason.append(f"VWAP_PROXIMITY ({vwap_diff:.1f}pts <= {self.VWAP_PROXIMITY_THRESHOLD}pts)")
+            confirmation_reason.append(f"VWAP_PROXIMITY ({vwap_diff:.1f}pts <= {vwap_thresh:.1f}pts)")
         if cond_b_rsi:
             confirmation_reason.append(f"FAST_RSI_PULLBACK ({rsi_1m_period_5:.1f})")
         if cond_c_retest:

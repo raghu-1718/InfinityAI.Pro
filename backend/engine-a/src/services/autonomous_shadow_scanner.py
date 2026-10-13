@@ -236,7 +236,8 @@ class ContinuousShadowScanner:
                             spot_price=spot,
                             live_vwap=live_vwap_approx,
                             vwap_distance=vwap_dist,
-                            macro_bias=macro_bias_val
+                            macro_bias=macro_bias_val,
+                            adx=adx
                         )
                         if not short_eval["allowed"]:
                             decision = "NO_TRADE"
@@ -341,7 +342,7 @@ class ContinuousShadowScanner:
 
                 # Task 2: Pullback Entry Confirmation Engine
                 live_vwap_val = float(models.get("vwap", spot))
-                is_pullback_route = moe_res.get("execution_route") == "PULLBACK_LIMIT_ONLY" or decision == "BUY_CALL"
+                is_pullback_route = moe_res.get("execution_route") == "PULLBACK_LIMIT_ONLY"
                 if is_pullback_route and not force:
                     pullback_eval = PULLBACK_EXECUTION_MANAGER.evaluate_pullback_conditions(
                         symbol=sym,
