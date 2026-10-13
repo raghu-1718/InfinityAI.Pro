@@ -239,6 +239,7 @@ class AutonomousTrader:
             # Select symbols based on Asset Class configuration
             # Institutional Focus Allocation: Derivatives strictly restricted to high-alpha NSE basket
             # SENSEX permanently removed due to severe structural illiquidity and wide bid-ask slippage penalty (-₹45k drag)
+            asset_class = self.config.get("asset_class", "fno")
             if asset_class == "fno":
                 symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
             else: # general index basket
