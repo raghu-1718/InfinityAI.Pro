@@ -108,6 +108,55 @@ class TestQuantitativeStrategyRefactor:
         assert eval_res["execution_route"] == "STANDARD_MARKET_ALLOWED"
         assert "HEAVYWEIGHT_MOMENTUM_CONSENSUS" in eval_res["reason"]
 
+    def test_october_14_bearish_sell_heavyweight_momentum_override(self):
+        """
+        Verify that October 14 conditions (CatBoost=0.74, LightGBM=0.85, XGBoost=0.34)
+        with decision='SELL' and ADX=20.75 correctly normalize without double-inversion
+        and trigger HEAVYWEIGHT_MOMENTUM_CONSENSUS rather than DISCORDANCE_DETECTED.
+        """
+        eval_res = MultiModelConsensusGate.evaluate_consensus(
+            catboost_prob=0.7432,
+            lightgbm_prob=0.8451,
+            xgboost_prob=0.3385,
+            decision="SELL",
+            adx=20.75
+        )
+
+        assert eval_res["is_discordant"] is False, "October 14 SELL signal must not be flagged discordant"
+        assert eval_res["consensus_passed"] is True
+        assert eval_res["market_state"] == "REGIME_TRENDING_CONSENSUS"
+        assert eval_res["execution_route"] == "STANDARD_MARKET_ALLOWED"
+        assert eval_res["model_probs"]["catboost"] == 0.7432
+        assert eval_res["model_probs"]["lightgbm"] == 0.8451
+        assert eval_res["model_probs"]["xgboost"] == 0.3385
+        assert "HEAVYWEIGHT_MOMENTUM_CONSENSUS" in eval_res["reason"]
+
+    def test_october_14_regime_moe_consensus_approval(self):
+        """
+        Verify that evaluate_regime_moe_consensus approves October 14 SELL signal
+        for STANDARD_MARKET_ALLOWED with MoE score > 60% and 2 agreeing models.
+        """
+        from src.services.regime_adaptive_moe_gate import evaluate_regime_moe_consensus
+        moe_res = evaluate_regime_moe_consensus(
+            symbol="NIFTY",
+            decision_or_signal_type="SELL",
+            analysis_data={
+                "catboost_prob": 0.7432,
+                "lightgbm_prob": 0.8451,
+                "xgboost_prob": 0.3385,
+                "adx": 20.75,
+                "india_vix": 14.2
+            },
+            overall_confidence=0.78
+        )
+
+        assert moe_res["approved"] is True, "October 14 SELL setup must be approved"
+        assert moe_res["execution_route"] == "STANDARD_MARKET_ALLOWED"
+        assert moe_res["moe_score"] >= 0.60
+        assert "catboost" in moe_res["agreeing_models"]
+        assert "lightgbm" in moe_res["agreeing_models"]
+        assert moe_res["agreement_count"] >= 2
+
     # =========================================================================
     # Test 2: Pullback Entry Confirmation Engine
     # =========================================================================

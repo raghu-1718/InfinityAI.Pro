@@ -79,9 +79,8 @@ def evaluate_regime_moe_consensus(
     }
     """
     # 1. Determine direction
-    is_bullish = ("CALL" in decision_or_signal_type.upper() or 
-                  ("BUY" in decision_or_signal_type.upper() and "PUT" not in decision_or_signal_type.upper()) or
-                  ("LONG" in decision_or_signal_type.upper() and "PUT" not in decision_or_signal_type.upper()))
+    is_bearish = any(k in decision_or_signal_type.upper() for k in ["PUT", "SELL", "SHORT", "BEAR"])
+    is_bullish = not is_bearish and any(k in decision_or_signal_type.upper() for k in ["CALL", "BUY", "LONG", "BULL"])
 
     # 2. Extract model probabilities
     cb_p = float(analysis_data.get("catboost_prob", overall_confidence if is_bullish else (1.0 - overall_confidence)))
@@ -96,12 +95,16 @@ def evaluate_regime_moe_consensus(
     if is_bullish:
         p_cb, p_lgb, p_xgb = cb_p, lgb_p, xgb_p
         p_rf = rf_p if has_rf else None
+    elif is_bearish:
+        # For put/bearish setups: if models provided explicit put conviction (>= 0.50, or XGBoost 3-class winning prob >= 0.25),
+        # keep; otherwise invert:
+        p_cb = cb_p if cb_p >= 0.50 else (1.0 - cb_p)
+        p_lgb = lgb_p if lgb_p >= 0.50 else (1.0 - lgb_p)
+        p_xgb = xgb_p if (xgb_p >= 0.50 or (0.25 <= xgb_p < 0.50)) else (1.0 - xgb_p)
+        p_rf = (rf_p if rf_p >= 0.50 else (1.0 - rf_p)) if has_rf else None
     else:
-        # For put setups: if models provided explicit put conviction (>= 0.50), keep; otherwise invert:
-        p_cb = cb_p if ("PUT" in decision_or_signal_type.upper() and cb_p >= 0.50) else (1.0 - cb_p)
-        p_lgb = lgb_p if ("PUT" in decision_or_signal_type.upper() and lgb_p >= 0.50) else (1.0 - lgb_p)
-        p_xgb = xgb_p if ("PUT" in decision_or_signal_type.upper() and xgb_p >= 0.50) else (1.0 - xgb_p)
-        p_rf = (rf_p if ("PUT" in decision_or_signal_type.upper() and rf_p >= 0.50) else (1.0 - rf_p)) if has_rf else None
+        p_cb, p_lgb, p_xgb = cb_p, lgb_p, xgb_p
+        p_rf = rf_p if has_rf else None
 
     # 3. Extract or Classify Regime
     model_breakdown = analysis_data.get("model_breakdown", {})
@@ -167,6 +170,11 @@ def evaluate_regime_moe_consensus(
             "execution_route": "PULLBACK_LIMIT_ONLY",
             "reason": consensus_eval["reason"]
         }
+
+    # If consensus gate confirms trending consensus (e.g. Heavyweight Momentum override active), align regime
+    if consensus_eval.get("market_state") == "REGIME_TRENDING_CONSENSUS" and regime in ["CHOPPY_SIDEWAYS", "EQUILIBRIUM_BASELINE"]:
+        regime = "STRONG_TREND"
+        weights = get_regime_weights(regime)
 
     # 5. Compute Weighted MoE Score
     w_cb = weights.get("catboost", 0.35)

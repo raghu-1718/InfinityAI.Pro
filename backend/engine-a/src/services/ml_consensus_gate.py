@@ -45,19 +45,25 @@ class MultiModelConsensusGate:
           - reason: str
         """
         # Directional mapping
-        is_bullish = ("CALL" in decision.upper() or 
-                      ("BUY" in decision.upper() and "PUT" not in decision.upper()) or
-                      ("LONG" in decision.upper() and "PUT" not in decision.upper()))
+        is_bearish = any(k in decision.upper() for k in ["PUT", "SELL", "SHORT", "BEAR"])
+        is_bullish = not is_bearish and any(k in decision.upper() for k in ["CALL", "BUY", "LONG", "BULL"])
 
         # Normalize directional conviction
         if is_bullish:
             p_cb = float(catboost_prob)
             p_lgb = float(lightgbm_prob)
             p_xgb = float(xgboost_prob)
+        elif is_bearish:
+            # For bearish setups (PUT/SELL/SHORT):
+            # If model probabilities already express directional put conviction (>= 0.50, or XGBoost 3-class winning prob >= 0.25),
+            # keep them directly; otherwise invert if passed as binary P(BUY):
+            p_cb = float(catboost_prob) if catboost_prob >= 0.50 else (1.0 - catboost_prob)
+            p_lgb = float(lightgbm_prob) if lightgbm_prob >= 0.50 else (1.0 - lightgbm_prob)
+            p_xgb = float(xgboost_prob) if (xgboost_prob >= 0.50 or (0.25 <= xgboost_prob < 0.50)) else (1.0 - xgboost_prob)
         else:
-            p_cb = float(catboost_prob) if ("PUT" in decision.upper() and catboost_prob >= 0.50) else (1.0 - catboost_prob)
-            p_lgb = float(lightgbm_prob) if ("PUT" in decision.upper() and lightgbm_prob >= 0.50) else (1.0 - lightgbm_prob)
-            p_xgb = float(xgboost_prob) if ("PUT" in decision.upper() and xgboost_prob >= 0.50) else (1.0 - xgboost_prob)
+            p_cb = float(catboost_prob)
+            p_lgb = float(lightgbm_prob)
+            p_xgb = float(xgboost_prob)
 
         min_prob = round(float(min(p_cb, p_lgb, p_xgb)), 4)
         max_prob = round(float(max(p_cb, p_lgb, p_xgb)), 4)
@@ -66,10 +72,11 @@ class MultiModelConsensusGate:
         # Check Heavyweight Primary Momentum Override:
         # CatBoost (35%) and LightGBM (35%) represent 70% of total ensemble weight.
         # If both heavyweights agree with high conviction (>= 0.55), and market displays confirmed
-        # directional trend momentum (ADX >= 25.0), and XGBoost is not a hard reversal (> 0.20):
+        # directional trend momentum (ADX >= 19.0, matching the institutional non-chop boundary),
+        # and XGBoost is not a hard reversal (> 0.20):
         # We approve standard market execution and override the uniform prior flatline of XGBoost.
         heavyweight_consensus = (p_cb >= 0.55 and p_lgb >= 0.55)
-        trend_momentum_active = (adx is not None and adx >= 25.0)
+        trend_momentum_active = (adx is not None and adx >= 19.0)
         no_hard_reversal = (p_xgb >= 0.20)
 
         if heavyweight_consensus and trend_momentum_active and no_hard_reversal:
@@ -79,7 +86,7 @@ class MultiModelConsensusGate:
             execution_route = "STANDARD_MARKET_ALLOWED"
             reason = (
                 f"HEAVYWEIGHT_MOMENTUM_CONSENSUS: CatBoost ({p_cb:.2f}) and LightGBM ({p_lgb:.2f}) "
-                f"command 70% ensemble conviction with strong ADX ({adx:.1f} >= 25.0). "
+                f"command 70% ensemble conviction with confirmed trend ADX ({adx:.1f} >= 19.0). "
                 f"XGBoost ({p_xgb:.2f}) uniform prior discordance overridden."
             )
             logger.info(f"✅ {reason}")

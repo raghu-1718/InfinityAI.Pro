@@ -294,10 +294,17 @@ class AutonomousTrader:
         """Authorize and Execute a potential trade"""
         symbol = signal.get("symbol")
         confidence = signal.get("confidence", 0)
-        signal_type = signal.get("signal", "HOLD") # BUY/SELL
+        try:
+            confidence = float(confidence)
+            if confidence > 1.0:
+                confidence = confidence / 100.0
+        except Exception:
+            confidence = 0.50
+
+        signal_type = (signal.get("signal") or signal.get("signal_type") or signal.get("action") or "HOLD").upper()
         uid = self.config.get("user_id", "system")
 
-        if signal_type == "HOLD":
+        if signal_type in ["HOLD", "NO_TRADE", "NEUTRAL", ""]:
             return
 
         # SENSEX Derivative Restriction Gate (Eliminates -₹52k liquidity/spread drag)
@@ -324,7 +331,9 @@ class AutonomousTrader:
             logger.warning(f"MoE gate import/eval fallback: {e}")
             moe_res = {"approved": True, "reason": "MoE Fallback", "regime": "EQUILIBRIUM_BASELINE"}
 
-        if not moe_res["approved"]:
+        is_pullback_route = moe_res.get("execution_route") == "PULLBACK_LIMIT_ONLY"
+
+        if not moe_res["approved"] and not is_pullback_route:
             logger.warning(
                 f"🛑 REGIME-ADAPTIVE MoE GATE: {symbol} {signal_type} rejected. "
                 f"Regime: {moe_res.get('regime')} | MoE Score: {moe_res.get('moe_score', 0):.1%} | "
@@ -340,6 +349,36 @@ class AutonomousTrader:
                 }
             )
             return
+
+        # If routed via Pullback Limit Engine, evaluate pullback entry criteria
+        if is_pullback_route and not moe_res["approved"]:
+            try:
+                from .pullback_execution_manager import PULLBACK_EXECUTION_MANAGER
+                current_price = float(signal.get("current_price") or 1000.0)
+                live_vwap = float(signal.get("vwap") or analysis_data.get("vwap") or current_price)
+                rsi_val = float(signal.get("rsi") or analysis_data.get("rsi") or 50.0)
+                pullback_eval = PULLBACK_EXECUTION_MANAGER.evaluate_pullback_conditions(
+                    symbol=symbol,
+                    current_spot=current_price,
+                    live_vwap=live_vwap,
+                    rsi_1m_period_5=rsi_val,
+                    decision=signal_type
+                )
+                if not pullback_eval["confirmed"]:
+                    PULLBACK_EXECUTION_MANAGER.register_candidate_signal(
+                        symbol=symbol,
+                        signal_payload=signal
+                    )
+                    logger.info(
+                        f"⏳ Pullback Entry Filter: Held {symbol} {signal_type} in observation queue. "
+                        f"Awaiting dip near VWAP (Current diff: {pullback_eval['vwap_distance']:.1f}pts, RSI: {rsi_val:.1f})."
+                    )
+                    return
+                else:
+                    logger.info(f"🎯 Pullback Confirmed for {symbol} {signal_type}! Proceeding to execution.")
+            except Exception as pe:
+                logger.warning(f"Pullback manager evaluation error: {pe}")
+                return
 
         # ---------------------------------------------------------
         # FRESHNESS GATE (PHASE-5 SECURITY FIX)
@@ -451,7 +490,7 @@ class AutonomousTrader:
             conviction_mult *= 0.70
             logger.info(f"⚠️ THETA DECAY DAMPER ACTIVE: Mid-Day Chop Trap detected ({regime.ist_time} IST) -> conviction scaled to {conviction_mult:.2f}x to restrict capital exposure")
 
-        is_call_side = "CALL" in signal_type.upper() or "BUY" in signal_type.upper()
+        is_call_side = ("CALL" in signal_type.upper() or "BUY" in signal_type.upper()) and "PUT" not in signal_type.upper() and "SELL" not in signal_type.upper()
 
         if is_call_side and oi_res.get("call_wall_detected"):
             logger.info(f"⚡ ALPHA FILTER: Overhead Call Wall hardening inside [{oi_res.get('scan_window')}] for {symbol} -> conviction scaled to {conviction_mult}x")
