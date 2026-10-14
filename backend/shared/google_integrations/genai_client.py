@@ -185,6 +185,43 @@ class GenAIClient:
             logger.error(f"❌ Failed to initialize GenAI client: {e}")
             raise
 
+    @staticmethod
+    def _safe_extract_text(response: Any) -> str:
+        """
+        Safely extracts textual content from a GenAI response without throwing
+        ValueError when the response contains only function/tool calls or non-text parts.
+        """
+        if not response:
+            return ""
+
+        # 1. Inspect candidates and content parts directly
+        try:
+            if hasattr(response, "candidates") and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, "content") and hasattr(candidate.content, "parts") and candidate.content.parts:
+                    text_parts = [
+                        p.text for p in candidate.content.parts
+                        if hasattr(p, "text") and p.text and not getattr(p, "thought", False)
+                    ]
+                    if text_parts:
+                        return "\n".join(text_parts).strip()
+                    any_parts = [p.text for p in candidate.content.parts if hasattr(p, "text") and p.text]
+                    if any_parts:
+                        return "\n".join(any_parts).strip()
+        except Exception as e:
+            logger.debug(f"Candidate inspection notice in _safe_extract_text: {e}")
+
+        # 2. Try response.text with safe exception catch
+        try:
+            if hasattr(response, "text"):
+                val = response.text
+                if val:
+                    return str(val).strip()
+        except Exception:
+            pass
+
+        return ""
+
     async def generate_trading_signal(
         self,
         prompt: TradingPrompt,
@@ -220,16 +257,7 @@ class GenAIClient:
                 )
             )
 
-            raw_text = None
-            if hasattr(response, "text") and response.text:
-                raw_text = response.text
-            elif hasattr(response, "candidates") and response.candidates:
-                candidate = response.candidates[0]
-                if hasattr(candidate, "content") and hasattr(candidate.content, "parts"):
-                    parts = [p.text for p in candidate.content.parts if hasattr(p, "text") and p.text]
-                    if parts:
-                        raw_text = "\n".join(parts)
-
+            raw_text = self._safe_extract_text(response)
             return self._parse_trading_response(prompt.symbol, raw_text or "")
 
         except Exception as e:
@@ -292,10 +320,9 @@ Respond in JSON format:
             )
 
             import json
+            text = self._safe_extract_text(response)
             try:
                 # Try to parse JSON from response
-                text = response.text
-                # Find JSON in response
                 start = text.find('{')
                 end = text.rfind('}') + 1
                 if start >= 0 and end > start:
@@ -307,7 +334,7 @@ Respond in JSON format:
                 "sentiment": "NEUTRAL",
                 "score": 0.0,
                 "key_factors": [],
-                "outlook": response.text,
+                "outlook": text,
                 "risks": []
             }
 
@@ -379,8 +406,8 @@ Provide risk assessment in JSON:
             )
 
             import json
+            text = self._safe_extract_text(response)
             try:
-                text = response.text
                 start = text.find('{')
                 end = text.rfind('}') + 1
                 if start >= 0 and end > start:
@@ -391,7 +418,7 @@ Provide risk assessment in JSON:
             return {
                 "risk_score": 50,
                 "risk_level": "MEDIUM",
-                "raw_response": response.text
+                "raw_response": text
             }
 
         except Exception as e:
@@ -469,15 +496,30 @@ Response Format:
 
         text_upper = response_text.upper()
 
-        # Extract signal
-        if "BUY" in text_upper and "SELL" not in text_upper:
-            signal = "BUY"
-        elif "SELL" in text_upper and "BUY" not in text_upper:
-            signal = "SELL"
+        # Extract signal: prioritize explicit signal line match first (e.g. "Signal: BUY" or "Action: SELL")
+        signal_line_match = re.search(
+            r'(?:SIGNAL|ACTION|RECOMMENDATION)[:\s]+(STRONG\s+BUY|STRONG\s+SELL|BUY|SELL|HOLD)',
+            response_text,
+            re.IGNORECASE
+        )
+        if signal_line_match:
+            matched_action = signal_line_match.group(1).upper()
+            if "BUY" in matched_action:
+                signal = "BUY"
+            elif "SELL" in matched_action:
+                signal = "SELL"
+            else:
+                signal = "HOLD"
         elif "STRONG BUY" in text_upper:
             signal = "BUY"
         elif "STRONG SELL" in text_upper:
             signal = "SELL"
+        elif "BUY" in text_upper and "SELL" not in text_upper:
+            signal = "BUY"
+        elif "SELL" in text_upper and "BUY" not in text_upper:
+            signal = "SELL"
+        else:
+            signal = "HOLD"
 
         # Extract confidence
         conf_match = re.search(r'confidence[:\s]+(\d+(?:\.\d+)?)\s*%?', response_text, re.IGNORECASE)

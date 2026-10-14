@@ -69,7 +69,9 @@ class OptionContractCache:
             step = 50
         atm_strike = int(round(spot_price / step) * step)
 
-        opt_type = "CE" if "CALL" in decision or "BUY" in decision else "PE"
+        decision_u = decision.upper()
+        is_bearish = any(k in decision_u for k in ["PUT", "SELL", "SHORT", "BEAR"])
+        opt_type = "PE" if is_bearish else "CE"
         # ITM-1 selection for high delta (~0.55-0.65)
         target_strike = atm_strike - step if opt_type == "CE" else atm_strike + step
 

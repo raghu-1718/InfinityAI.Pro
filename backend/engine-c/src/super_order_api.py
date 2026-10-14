@@ -2,7 +2,7 @@
 Super Order API for Multi-Leg Options Strategies
 Integrates with DhanHQ Super Order endpoint for complex options trades
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -222,11 +222,15 @@ class BracketSuperOrderRequest(BaseModel):
     stop_loss_price: float       # Stop Loss Price (e.g., 97.50)
     trailing_jump: Optional[float] = 0.0
     user_id: Optional[str] = "raghu_primary"
+    correlation_id: Optional[str] = None
 
 
 @super_order_router.post("/bracket")
 @super_order_router.post("")
-async def place_bracket_super_order(order: BracketSuperOrderRequest):
+async def place_bracket_super_order(
+    order: BracketSuperOrderRequest,
+    x_correlation_id: Optional[str] = Header(None, alias="X-Correlation-ID")
+):
     """
     Dispatches a DhanHQ v2 Super Order (Bracket Order).
     Native exchange-side management for Entry, Target, and Stop Loss.
@@ -240,15 +244,29 @@ async def place_bracket_super_order(order: BracketSuperOrderRequest):
     resolved_uid = await manager.resolve_user_id(order.user_id)
     creds = await manager.get_user_credentials(resolved_uid)
 
-    if not creds or not creds.get("access_token"):
-        raise HTTPException(status_code=401, detail="DhanHQ Vault locked or invalid.")
+    client_id = creds.get("client_id") or creds.get("dhan_client_id") if creds else None
+    access_token = creds.get("access_token") or creds.get("dhan_access_token") if creds else None
 
-    # 2. Generate Idempotency Key (Max 30 chars for Dhan API)
-    correlation_id = f"SO-{uuid.uuid4().hex[:20]}"
+    if not client_id or not access_token:
+        logger.error(f"❌ DhanHQ Vault credentials missing or decryption failed for user '{resolved_uid}'")
+        raise HTTPException(
+            status_code=401,
+            detail=f"DhanHQ Vault credentials for user '{resolved_uid}' not found, locked, or invalid."
+        )
+
+    client_id = str(client_id).strip()
+    access_token = str(access_token).strip()
+
+    # 2. Resolve Idempotency Key (Max 30 chars for Dhan API)
+    raw_corr = order.correlation_id or x_correlation_id
+    if raw_corr:
+        correlation_id = str(raw_corr).strip()[:30]
+    else:
+        correlation_id = f"SO-{uuid.uuid4().hex[:20]}"
 
     # 3. Construct DhanHQ API v2 Payload
     payload = {
-        "dhanClientId": creds.get("client_id", "1101302170"),
+        "dhanClientId": client_id,
         "correlationId": correlation_id,
         "transactionType": order.transaction_type.upper(),
         "exchangeSegment": order.exchange_segment,
@@ -263,8 +281,8 @@ async def place_bracket_super_order(order: BracketSuperOrderRequest):
     }
 
     headers = {
-        "access-token": creds.get("access_token", ""),
-        "client-id": creds.get("client_id", "1101302170"),
+        "access-token": access_token,
+        "client-id": client_id,
         "Content-Type": "application/json"
     }
 
@@ -367,13 +385,20 @@ async def cancel_super_order_leg(order_id: str, order_leg: str, user_id: str = "
     resolved_uid = await manager.resolve_user_id(user_id)
     creds = await manager.get_user_credentials(resolved_uid)
 
-    if not creds or not creds.get("access_token"):
-        raise HTTPException(status_code=401, detail="DhanHQ Vault credentials not found")
+    client_id = creds.get("client_id") or creds.get("dhan_client_id") if creds else None
+    access_token = creds.get("access_token") or creds.get("dhan_access_token") if creds else None
+
+    if not client_id or not access_token:
+        logger.error(f"❌ DhanHQ Vault credentials missing or decryption failed for user '{resolved_uid}'")
+        raise HTTPException(status_code=401, detail=f"DhanHQ Vault credentials for user '{resolved_uid}' not found, locked, or invalid.")
+
+    client_id = str(client_id).strip()
+    access_token = str(access_token).strip()
 
     url = f"https://api.dhan.co/v2/super/orders/{order_id}/{order_leg}"
     headers = {
-        "access-token": creds.get("access_token", ""),
-        "client-id": creds.get("client_id", "1101302170"),
+        "access-token": access_token,
+        "client-id": client_id,
         "Content-Type": "application/json"
     }
 

@@ -26,6 +26,14 @@ try:
 except ImportError:
     GREEKS_AVAILABLE = False
 
+try:
+    from .services.option_contract_cache import OPTION_CONTRACT_CACHE
+except ImportError:
+    try:
+        from services.option_contract_cache import OPTION_CONTRACT_CACHE
+    except ImportError:
+        OPTION_CONTRACT_CACHE = None
+
 # Helper for resolving user credentials
 async def get_dhan_client_for_user(user_id: Optional[str] = None):
     """Retrieve and decrypt DhanHQ credentials from Firestore vault with Single-Tenant auto-resolution"""
@@ -556,6 +564,142 @@ async def get_option_chain(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@data_router.get("/api/dhan/option-chain/{symbol}")
+async def get_option_chain_for_symbol(
+    symbol: str,
+    strike: float = Query(..., description="Target option strike price"),
+    option_type: str = Query("CE", description="Option type: CE or PE"),
+    user_id: Optional[str] = Query(None, description="User ID or Client ID")
+):
+    """
+    Direct Strike Resolver Gateway called by Engine A Autonomous Trader.
+    Fetches live DhanHQ option chain, locates exact strike, and returns live quote with security_id.
+    Falls back to OPTION_CONTRACT_CACHE if market is closed or API is unavailable.
+    """
+    sym_upper = symbol.strip().upper()
+    opt_type = option_type.strip().upper()
+    if opt_type not in ["CE", "PE"]:
+        opt_type = "PE" if any(k in opt_type for k in ["PUT", "SELL", "SHORT", "BEAR"]) else "CE"
+    target_strike = float(strike)
+
+    INDEX_MAPPING = {
+        "NIFTY": {"sec_id": 13, "segment": "IDX_I"},
+        "BANKNIFTY": {"sec_id": 25, "segment": "IDX_I"},
+        "FINNIFTY": {"sec_id": 27, "segment": "IDX_I"},
+        "MIDCPNIFTY": {"sec_id": 28, "segment": "IDX_I"},
+        "SENSEX": {"sec_id": 51, "segment": "IDX_I"},
+        "BANKEX": {"sec_id": 52, "segment": "IDX_I"},
+    }
+
+    if sym_upper in INDEX_MAPPING:
+        sec_id = INDEX_MAPPING[sym_upper]["sec_id"]
+        segment = INDEX_MAPPING[sym_upper]["segment"]
+    elif "BANKNIFTY" in sym_upper:
+        sec_id, segment = 25, "IDX_I"
+    elif "FINNIFTY" in sym_upper:
+        sec_id, segment = 27, "IDX_I"
+    elif "MIDCP" in sym_upper:
+        sec_id, segment = 28, "IDX_I"
+    elif "SENSEX" in sym_upper:
+        sec_id, segment = 51, "IDX_I"
+    elif "BANKEX" in sym_upper:
+        sec_id, segment = 52, "IDX_I"
+    else:
+        sec_id, segment = 13, "IDX_I"
+
+    try:
+        client, client_id, resolved_id = await get_dhan_client_for_user(user_id)
+
+        # 1. Fetch nearest active expiry list
+        target_expiry = None
+        try:
+            exp_resp = client.expiry_list(under_security_id=sec_id, under_exchange_segment=segment)
+            if isinstance(exp_resp, dict) and exp_resp.get("status") == "success":
+                exp_list = exp_resp.get("data", []) or []
+                if exp_list:
+                    target_expiry = exp_list[0]
+        except Exception as exp_err:
+            logger.warning(f"Notice fetching expiry list for {sym_upper}: {exp_err}")
+
+        if not target_expiry:
+            target_expiry = (datetime.now() + timedelta(days=(3 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
+
+        # 2. Fetch Option Chain from DhanHQ
+        oc_resp = client.option_chain(
+            under_security_id=sec_id,
+            under_exchange_segment=segment,
+            expiry=target_expiry
+        )
+
+        oc_dict = {}
+        if isinstance(oc_resp, dict) and oc_resp.get("status") == "success":
+            oc_data = oc_resp.get("data", {})
+            oc_dict = oc_data.get("oc", {}) or {}
+
+        # 3. Locate exact strike match
+        matched_leg = None
+        for strike_str, strike_data in oc_dict.items():
+            try:
+                s_val = float(strike_str)
+                if abs(s_val - target_strike) < 0.5:
+                    matched_leg = strike_data.get(opt_type.lower(), {})
+                    break
+            except Exception:
+                continue
+
+        if matched_leg:
+            sec_identifier = str(matched_leg.get("security_id") or matched_leg.get("securityId") or matched_leg.get("sec_id") or "")
+            trading_sym = matched_leg.get("trading_symbol") or matched_leg.get("tradingSymbol") or f"{sym_upper} {int(target_strike)} {opt_type}"
+            bid_p = float(matched_leg.get("bid_price") or matched_leg.get("best_bid") or matched_leg.get("top_bid") or 0.0)
+            ask_p = float(matched_leg.get("ask_price") or matched_leg.get("best_ask") or matched_leg.get("top_ask") or 0.0)
+            last_p = float(matched_leg.get("last_price") or matched_leg.get("ltp") or 0.0)
+            oi_val = int(matched_leg.get("open_interest") or matched_leg.get("oi") or 0)
+
+            if sec_identifier:
+                return {
+                    "status": "success",
+                    "security_id": sec_identifier,
+                    "securityId": sec_identifier,
+                    "trading_symbol": trading_sym,
+                    "tradingSymbol": trading_sym,
+                    "strike": target_strike,
+                    "option_type": opt_type,
+                    "bid_price": bid_p,
+                    "ask_price": ask_p,
+                    "last_price": last_p,
+                    "open_interest": oi_val,
+                    "source": "DHAN_OPTION_CHAIN"
+                }
+    except Exception as e:
+        logger.warning(f"Dhan option chain fetch failed for {sym_upper} {target_strike} {opt_type}: {e}. Triggering cache fallback.")
+
+    # Fallback to in-memory option contract cache
+    if OPTION_CONTRACT_CACHE:
+        cached = OPTION_CONTRACT_CACHE.resolve_itm_contract(
+            symbol=sym_upper,
+            spot_price=target_strike,
+            decision="BUY_PUT" if opt_type == "PE" else "BUY_CALL"
+        )
+        cached_sec_id = str(cached.get("security_id") or "")
+        cached_symbol = cached.get("contract_name") or f"{sym_upper} {int(target_strike)} {opt_type}"
+        return {
+            "status": "success",
+            "security_id": cached_sec_id,
+            "securityId": cached_sec_id,
+            "trading_symbol": cached_symbol,
+            "tradingSymbol": cached_symbol,
+            "strike": target_strike,
+            "option_type": opt_type,
+            "bid_price": 0.0,
+            "ask_price": 0.0,
+            "last_price": 0.0,
+            "open_interest": 0,
+            "source": "OPTION_CONTRACT_CACHE"
+        }
+
+    raise HTTPException(status_code=502, detail=f"Option chain lookup failed for {sym_upper} strike {target_strike}")
 
 
 @data_router.post("/api/dhan/options/sync-bigquery")

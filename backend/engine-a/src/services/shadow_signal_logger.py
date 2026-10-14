@@ -166,7 +166,7 @@ class ShadowSignalLogger:
         now_utc = datetime.now(timezone.utc)
         ist_time = now_utc + timedelta(hours=5, minutes=30)
         timestamp_str = ist_time.strftime("%Y-%m-%d %H:%M:%S IST")
-        signal_id = f"SIG_{ist_time.strftime('%Y%m%d_%H%M%S')}_{symbol}"
+        signal_id = f"SIG_{ist_time.strftime('%Y%m%d_%H%M%S')}_{ist_time.microsecond:06d}_{symbol}"
 
         # ── Task 4 Specification: Lot Size Determination & Even Multiples ─────
         sym_u = symbol.upper()

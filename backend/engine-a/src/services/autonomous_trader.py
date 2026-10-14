@@ -772,6 +772,19 @@ class AutonomousTrader:
                     })
                     return
 
+                # Calculate Option Limit, Target, and Stop Loss Prices
+                opt_premium = float(
+                    opt_info.get("ask_price")
+                    or opt_info.get("last_price")
+                    or signal_data.get("option_premium")
+                    or (current_price * 0.011 if current_price > 500 else current_price)
+                )
+                target_profit_pct = float(self.config.get("target_profit_pct", 0.15))
+                stop_loss_pct = float(self.config.get("stop_loss_pct", 0.25))
+
+                opt_target_price = round(opt_premium * (1.0 + target_profit_pct), 2)
+                opt_stop_loss_price = round(max(0.05, opt_premium * (1.0 - stop_loss_pct)), 2)
+
                 # Dispatch via DhanHQ Bracket Super Order
                 super_order_payload = {
                     "security_id": sec_id,
@@ -779,16 +792,18 @@ class AutonomousTrader:
                     "transaction_type": "BUY",  # Option buying
                     "quantity": total_units,
                     "order_type": "LIMIT",
-                    "price": round(current_price, 2),
-                    "target_price": round(target_price, 2),
-                    "stop_loss_price": round(stop_loss_price, 2),
+                    "price": round(opt_premium, 2),
+                    "target_price": opt_target_price,
+                    "stop_loss_price": opt_stop_loss_price,
                     "trailing_jump": 5.0,
-                    "user_id": uid
+                    "user_id": uid,
+                    "correlation_id": trace_id[:30] if trace_id else None
                 }
 
                 url = f"{ENGINE_C_URL}/api/dhan/super-order/bracket"
                 headers = {
                     "X-Trace-ID": trace_id if trace_id else str(uuid.uuid4()),
+                    "X-Correlation-ID": trace_id[:30] if trace_id else f"SO-{uuid.uuid4().hex[:20]}",
                     "X-Engine-Source": "engine-a",
                     "X-User-ID": str(uid)
                 }
@@ -802,6 +817,9 @@ class AutonomousTrader:
                 sec_id = signal_data.get("security_id", "0")
                 if symbol_upper in ["CRUDEOIL", "GOLD", "SILVER", "NATURALGAS", "COPPER"]:
                     segment = "MCX_COMM"
+
+                # Safely extract order price for equity/commodity
+                order_price = float(signal_data.get("price") or signal_data.get("current_price") or current_price)
 
                 # Live vs Paper Mode Gatekeeper
                 live_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() in ["true", "1", "yes"]
@@ -826,7 +844,7 @@ class AutonomousTrader:
                     "validity": "DAY",
                     "security_id": sec_id,
                     "quantity": qty,
-                    "price": round(float(est_premium), 2) if est_premium > 0 else 0.0,
+                    "price": round(order_price, 2) if order_price > 0 else 0.0,
                     "ioc_fallback": False
                 }
 
