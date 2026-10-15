@@ -68,8 +68,12 @@ class AsymmetricTradeLifecycle:
         Returns actionable instructions for trade monitoring and execution.
         """
         now_iso = datetime.now(timezone.utc).isoformat()
-        gain_pct = (current_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
-        peak_gain_pct = (highest_observed_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
+        if is_sell:
+            gain_pct = (entry_premium - current_premium) / entry_premium if entry_premium > 0 else 0.0
+            peak_gain_pct = (entry_premium - highest_observed_premium) / entry_premium if entry_premium > 0 else 0.0
+        else:
+            gain_pct = (current_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
+            peak_gain_pct = (highest_observed_premium - entry_premium) / entry_premium if entry_premium > 0 else 0.0
 
         updated_sl = current_sl_premium
         actions_to_execute = []
@@ -80,16 +84,28 @@ class AsymmetricTradeLifecycle:
         active_tier_label = "BASE_STRUCTURAL_RISK"
 
         # ── 1. Dynamic Breakeven Ratchet (+6.0% Gain) ──────────────────────────
-        be_target_sl = round(entry_premium + cls.BREAKEVEN_OFFSET_RS, 2)
-        if gain_pct >= cls.BREAKEVEN_TRIGGER_PCT or peak_gain_pct >= cls.BREAKEVEN_TRIGGER_PCT:
-            # Ratchet Invariant: SL moves UP, never backward
-            if updated_sl < be_target_sl:
-                updated_sl = be_target_sl
-                active_tier_label = "BREAKEVEN_RATCHET_ACTIVE"
-                logger.info(
-                    f"🛡️ Breakeven Ratchet: Premium gain +{gain_pct*100:.1f}% >= +6.0%. "
-                    f"Ratcheting SL to ₹{updated_sl:.2f} (Entry + ₹1.00)."
-                )
+        if is_sell:
+            be_target_sl = round(entry_premium - cls.BREAKEVEN_OFFSET_RS, 2)
+            if gain_pct >= cls.BREAKEVEN_TRIGGER_PCT or peak_gain_pct >= cls.BREAKEVEN_TRIGGER_PCT:
+                # Ratchet Invariant for Sell: SL moves DOWN, never backward
+                if updated_sl > be_target_sl:
+                    updated_sl = be_target_sl
+                    active_tier_label = "BREAKEVEN_RATCHET_ACTIVE"
+                    logger.info(
+                        f"🛡️ Breakeven Ratchet (Sell): Premium gain +{gain_pct*100:.1f}% >= +6.0%. "
+                        f"Ratcheting SL DOWN to ₹{updated_sl:.2f} (Entry - ₹1.00)."
+                    )
+        else:
+            be_target_sl = round(entry_premium + cls.BREAKEVEN_OFFSET_RS, 2)
+            if gain_pct >= cls.BREAKEVEN_TRIGGER_PCT or peak_gain_pct >= cls.BREAKEVEN_TRIGGER_PCT:
+                # Ratchet Invariant for Buy: SL moves UP, never backward
+                if updated_sl < be_target_sl:
+                    updated_sl = be_target_sl
+                    active_tier_label = "BREAKEVEN_RATCHET_ACTIVE"
+                    logger.info(
+                        f"🛡️ Breakeven Ratchet (Buy): Premium gain +{gain_pct*100:.1f}% >= +6.0%. "
+                        f"Ratcheting SL UP to ₹{updated_sl:.2f} (Entry + ₹1.00)."
+                    )
 
         # ── 2. Tier 1 Partial Booking (+12.0% to +15.0% Gain on 50% Qty) ───────
         if not tier1_booked and (gain_pct >= cls.TIER1_TRIGGER_PCT or peak_gain_pct >= cls.TIER1_TRIGGER_PCT):
@@ -105,8 +121,11 @@ class AsymmetricTradeLifecycle:
                 "reason": f"TIER1_PARTIAL_PROFIT_BOOKED (+{gain_pct*100:.1f}% >= +12.0%)"
             })
             active_tier_label = "TIER1_PARTIAL_PROFIT_BOOKED"
-            # Ensure SL is at least Breakeven + 1.00 after Tier 1 booking
-            updated_sl = max(updated_sl, be_target_sl)
+            # Ensure SL is at least Breakeven after Tier 1 booking
+            if is_sell:
+                updated_sl = min(updated_sl, be_target_sl)
+            else:
+                updated_sl = max(updated_sl, be_target_sl)
             logger.info(
                 f"🎉 Tier 1 Target Reached: Booking 50% position ({booked_lots} lots / {booked_lots * lot_size} qty) "
                 f"at ₹{current_premium:.2f}. Runner position remaining: {new_remaining_lots} lots."
@@ -136,8 +155,11 @@ class AsymmetricTradeLifecycle:
                 )
 
         # ── 4. Stop Loss Breach Check (Against Ratcheted Option SL) ─────────────
-        # If premium drops below ratcheted SL (e.g. Breakeven + 1.00), exit remaining
-        is_sl_breached = (current_premium <= updated_sl) and (updated_sl >= be_target_sl)
+        if is_sell:
+            is_sl_breached = (current_premium >= updated_sl) and (updated_sl <= be_target_sl)
+        else:
+            is_sl_breached = (current_premium <= updated_sl) and (updated_sl >= be_target_sl)
+
         if is_sl_breached and lifecycle_status == "POSITION_ACTIVE":
             actions_to_execute.append({
                 "action": "FULL_MARKET_EXIT",

@@ -63,7 +63,8 @@ class AutonomousTrader:
             "min_confidence": float(os.getenv("MIN_SIGNAL_CONFIDENCE", "0.65")),
             "poll_interval": 10,  # seconds
             "max_risk_per_trade": 0.02, # 2%
-            "capital": 100000.0, # Virtual capital for sizing
+            "capital": float(os.getenv("SIMULATION_CAPITAL", "30000.0")), # Simulation capital for sizing
+            "simulation_capital": float(os.getenv("SIMULATION_CAPITAL", "30000.0")),
             "stop_loss_pct": 0.02,
             "risk_mode": "conservative",
             "asset_class": "fno",
@@ -500,11 +501,25 @@ class AutonomousTrader:
             logger.info(f"🚀 ALPHA FILTER: Underlying Put Support floor confirmed for {symbol} -> conviction boosted to {conviction_mult}x")
 
         # ---------------------------------------------------------
-        # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE (Live Capital Dependent)
+        # MARGIN-AWARE DYNAMIC LOT SIZING & RISK GATE (Live vs Simulation Decoupled)
         # ---------------------------------------------------------
+        live_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() in ["true", "1", "yes"]
         from .live_capital_manager import LIVE_CAPITAL_MANAGER
         live_fund_data = await LIVE_CAPITAL_MANAGER.get_live_available_capital(user_id=uid)
-        user_capital = float(live_fund_data.get("available_capital") or self.config.get("capital", 10000.0))
+        live_cap = float(live_fund_data.get("available_capital") or 0.0)
+        sim_capital = float(self.config.get("simulation_capital", self.config.get("capital", 30000.0)))
+
+        # Decouple: Use real capital only if live trading is explicitly enabled AND sufficient funds exist
+        if live_enabled and live_cap >= 1000.0:
+            user_capital = live_cap
+        else:
+            user_capital = sim_capital
+            if live_enabled and live_cap < 1000.0:
+                logger.warning(
+                    f"⚠️ Live trading requested, but available Dhan capital (₹{live_cap:.2f}) is below minimum margin. "
+                    f"Safely executing high-fidelity Paper Simulation with ₹{user_capital:,.2f} virtual capital."
+                )
+
         max_risk_trade = float(self.config.get("max_risk_per_trade", 0.10))
         effective_risk = max(0.01, min(0.15, max_risk_trade * conviction_mult))
         min_sl_pct = float(self.config.get("stop_loss_pct")) if self.config.get("stop_loss_pct") else None
@@ -753,7 +768,8 @@ class AutonomousTrader:
 
                 sec_id = opt_info["security_id"]
                 lot_size = opt_info["lot_size"]
-                total_units = max(1, qty) * lot_size
+                # AUD-01 Fix: qty is already passed in total units from margin sizing
+                total_units = qty if qty >= lot_size else max(1, qty) * lot_size
                 segment = "NSE_FNO"
 
                 logger.info(f"🎯 ITM-1 Strike Locked: {opt_info['trading_symbol']} (Units: {total_units}, Delta: {opt_info['implied_delta']})")
@@ -770,6 +786,23 @@ class AutonomousTrader:
                         "order_value": order_value,
                         "mode": "PAPER_SIMULATION"
                     })
+                    try:
+                        from .alert_dispatcher import ALERT_DISPATCHER
+                        if ALERT_DISPATCHER and ALERT_DISPATCHER.telegram_enabled:
+                            tg_msg = (
+                                f"🟡 *INFINITY AI — PAPER SIMULATION EXECUTED*\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"📊 *Symbol:* `{symbol_upper}` ({side})\n"
+                                f"🎯 *Strike:* `{opt_info.get('trading_symbol')}`\n"
+                                f"📦 *Position:* `{total_units} units` ({total_units // lot_size} lots)\n"
+                                f"💰 *Order Value:* `₹{order_value:,.2f}`\n"
+                                f"💼 *Sim Capital:* `₹{user_capital:,.2f}`\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"⏱ `{datetime.now(timezone.utc).strftime('%H:%M:%S UTC')} IST Sync`"
+                            )
+                            asyncio.create_task(ALERT_DISPATCHER._send_telegram(tg_msg))
+                    except Exception as te:
+                        logger.debug(f"Telegram paper alert notice: {te}")
                     return
 
                 # Calculate Option Limit, Target, and Stop Loss Prices

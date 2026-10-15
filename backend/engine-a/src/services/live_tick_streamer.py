@@ -182,7 +182,7 @@ class LiveTickStreamer:
 
     async def publish_live_stream_cycle(self) -> Dict[str, Any]:
         """Fetches real live quotes for all core symbols and publishes to Pub/Sub"""
-        symbols = ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]
+        symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "INDIAVIX"]
         results = {"timestamp": datetime.now(timezone.utc).isoformat(), "published": [], "failed": []}
 
         for sym in symbols:

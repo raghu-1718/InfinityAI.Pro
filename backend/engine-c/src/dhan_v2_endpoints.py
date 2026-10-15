@@ -72,7 +72,7 @@ class MarginCalculatorRequest(BaseModel):
 
 # --- Forever Orders (GTT) ---
 @dhan_v2_router.get("/forever/orders")
-async def get_forever_orders(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def get_forever_orders(user_id: Optional[str] = Query(None)):
     """Get list of all active Forever (GTT) orders"""
     try:
         client, resolved_id = await get_user_dhan_client(user_id)
@@ -121,7 +121,7 @@ async def create_forever_order(req: ForeverOrderRequest):
 
 
 @dhan_v2_router.delete("/forever/orders/{order_id}")
-async def cancel_forever_order(order_id: str, user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def cancel_forever_order(order_id: str, user_id: Optional[str] = Query(None)):
     """Cancel a Forever (GTT) order by ID"""
     try:
         client, resolved_id = await get_user_dhan_client(user_id)
@@ -188,7 +188,7 @@ async def calculate_margin(req: MarginCalculatorRequest):
 
 # --- Trades & Ledger ---
 @dhan_v2_router.get("/trades/{order_id}")
-async def get_trades_by_order(order_id: str, user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def get_trades_by_order(order_id: str, user_id: Optional[str] = Query(None)):
     """Get trade executions for a specific order ID"""
     try:
         client, resolved_id = await get_user_dhan_client(user_id)
@@ -209,7 +209,7 @@ async def get_trades_by_order(order_id: str, user_id: Optional[str] = Query("zny
 async def get_account_ledger(
     from_date: Optional[str] = Query(None),
     to_date: Optional[str] = Query(None),
-    user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+    user_id: Optional[str] = Query(None)
 ):
     """Get historical account ledger entries"""
     try:
@@ -232,7 +232,7 @@ async def get_account_ledger(
 
 # --- E-DIS Authorization ---
 @dhan_v2_router.get("/edis/form")
-async def generate_edis_form(isin: str = Query(...), quantity: int = Query(...), user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def generate_edis_form(isin: str = Query(...), quantity: int = Query(...), user_id: Optional[str] = Query(None)):
     """Generate EDIS form HTML / TPIN redirection for delivery sell authorization"""
     try:
         client, resolved_id = await get_user_dhan_client(user_id)

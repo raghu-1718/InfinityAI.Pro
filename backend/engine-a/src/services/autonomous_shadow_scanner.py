@@ -52,7 +52,7 @@ SCAN_INTERVAL_SECONDS = int(os.getenv("SHADOW_SCAN_INTERVAL_SECONDS", "60"))
 
 # Institutional Focus Allocation: Derivatives strictly restricted to high-alpha NSE basket
 # SENSEX permanently removed due to severe structural illiquidity and wide bid-ask slippage penalty (-₹45k drag)
-CORE_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
+CORE_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
 
 class ContinuousShadowScanner:
     """Autonomous market radar and paper P&L tracker daemon"""

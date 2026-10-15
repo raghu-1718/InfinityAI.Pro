@@ -66,17 +66,20 @@ async def place_super_order(req: SuperOrderRequest):
         
         # Get user credentials
         credentials_manager = get_credentials_manager()
-        creds_response = await credentials_manager.get_user_credentials(req.user_id)
+        resolved_uid = await credentials_manager.resolve_user_id(req.user_id)
+        creds_response = await credentials_manager.get_user_credentials(resolved_uid)
         
-        if not creds_response or not creds_response.get("credentials"):
-            raise HTTPException(status_code=401, detail="User credentials not found")
+        creds = creds_response.get("credentials") if (creds_response and "credentials" in creds_response) else creds_response
+        if not creds or not (creds.get("access_token") or creds.get("dhan_access_token")):
+            raise HTTPException(status_code=401, detail=f"DhanHQ Vault credentials for user '{resolved_uid}' not found, locked, or invalid.")
         
-        creds = creds_response["credentials"]
+        client_id = str(creds.get("client_id") or creds.get("dhan_client_id")).strip()
+        access_token = str(creds.get("access_token") or creds.get("dhan_access_token")).strip()
         
         # Initialize Dhan client
         dhan = create_dhan_client(
-            client_id=creds["client_id"],
-            access_token=creds["access_token"]
+            client_id=client_id,
+            access_token=access_token
         )
         
         # Prepare legs for DhanHQ

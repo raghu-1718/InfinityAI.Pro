@@ -672,11 +672,18 @@ class ShadowSignalLogger:
         if is_eod_squareoff and outcome_status == "OPEN":
             outcome_status = "EOD_SQUAREOFF"
 
-        # Gross & Net PnL Calculation
-        if is_sell:
-            gross_pnl = (entry_prem - simulated_exit_prem) * lot_size
+        # Gross & Net PnL Calculation (AUD-08: Weighted for Tier-1 partial profit lock)
+        if tier1_booked:
+            half_qty = lot_size / 2.0
+            tier1_prem = float(bracket.get("target_premium", entry_prem * (0.88 if is_sell else 1.12)))
+            tier1_pnl = ((entry_prem - tier1_prem) if is_sell else (tier1_prem - entry_prem)) * half_qty
+            runner_pnl = ((entry_prem - simulated_exit_prem) if is_sell else (simulated_exit_prem - entry_prem)) * half_qty
+            gross_pnl = tier1_pnl + runner_pnl
         else:
-            gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
+            if is_sell:
+                gross_pnl = (entry_prem - simulated_exit_prem) * lot_size
+            else:
+                gross_pnl = (simulated_exit_prem - entry_prem) * lot_size
 
         capital_required = 125000.0 * total_lots if is_sell else (entry_prem * lot_size)
         net_pnl = gross_pnl - tax_cost

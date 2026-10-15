@@ -1337,7 +1337,7 @@ async def save_user_credentials(request: UserCredentialsRequest):
     """Save user's Dhan credentials securely and verify live API connection"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(request.user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(request.user_id or None)
 
         # Save credentials
         save_res = await manager.save_user_credentials(
@@ -1384,11 +1384,11 @@ async def save_user_credentials(request: UserCredentialsRequest):
 
 @app.get("/api/user/credentials/verify")
 @app.get("/api/v1/user/credentials/verify")
-async def verify_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def verify_user_credentials_endpoint(user_id: Optional[str] = Query(None)):
     """Verify stored user credentials with Dhan API"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id or None)
         creds = await manager.get_user_credentials(resolved_id)
 
         if not creds or not creds.get("client_id") or not creds.get("access_token"):
@@ -1434,11 +1434,11 @@ async def delete_user_credentials_by_path(user_id: str):
     return await delete_user_credentials(user_id=user_id)
 
 @app.delete("/api/user/credentials")
-async def delete_user_credentials(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def delete_user_credentials(user_id: Optional[str] = Query(None)):
     """Delete user's Dhan credentials"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id or None)
         success = await manager.delete_user_credentials(resolved_id)
 
         return {
@@ -1756,7 +1756,7 @@ async def disconnect_dhan(user_id: str):
 # ==================== FRONTEND COMPATIBLE USER CREDENTIALS ENDPOINTS ====================
 
 class UserCredentialsSaveRequest(BaseModel):
-    user_id: Optional[str] = "znyNtT2lW3MKHqFrVA6E0A2Iv3N2"
+    user_id: Optional[str] = None
     client_id: str
     api_key: Optional[str] = ""
     api_secret: Optional[str] = ""
@@ -1764,11 +1764,11 @@ class UserCredentialsSaveRequest(BaseModel):
 
 
 @app.get("/api/user/credentials")
-async def get_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def get_user_credentials_endpoint(user_id: Optional[str] = Query(None)):
     """Get user credentials and connection status for settings page"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id or None)
         creds = await manager.get_user_credentials(resolved_id)
 
         if not creds:
@@ -1810,7 +1810,7 @@ async def save_user_credentials_endpoint(request: UserCredentialsSaveRequest):
     """Save user credentials and perform live Dhan verification"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(request.user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(request.user_id or None)
 
         # Save credentials
         await manager.save_user_credentials(
@@ -1850,11 +1850,11 @@ async def save_user_credentials_endpoint(request: UserCredentialsSaveRequest):
 
 
 @app.get("/api/user/credentials/verify")
-async def verify_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def verify_user_credentials_endpoint(user_id: Optional[str] = Query(None)):
     """Verify stored user credentials with Dhan API"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id or None)
         creds = await manager.get_user_credentials(resolved_id)
 
         if not creds or not creds.get("client_id") or not creds.get("access_token"):
@@ -1896,11 +1896,11 @@ async def verify_user_credentials_endpoint(user_id: Optional[str] = Query("znyNt
 
 
 @app.delete("/api/user/credentials")
-async def delete_user_credentials_endpoint(user_id: Optional[str] = Query("znyNtT2lW3MKHqFrVA6E0A2Iv3N2")):
+async def delete_user_credentials_endpoint(user_id: Optional[str] = Query(None)):
     """Delete stored user credentials"""
     try:
         manager = get_credentials_manager()
-        resolved_id = await manager.resolve_user_id(user_id or "znyNtT2lW3MKHqFrVA6E0A2Iv3N2")
+        resolved_id = await manager.resolve_user_id(user_id or None)
         await manager.delete_user_credentials(resolved_id)
         return {
             "status": "success",

@@ -677,11 +677,18 @@ async def get_option_chain_for_symbol(
 
     # Fallback to in-memory option contract cache
     if OPTION_CONTRACT_CACHE:
-        cached = OPTION_CONTRACT_CACHE.resolve_itm_contract(
+        # Check direct strike match first to avoid double step shifting
+        cached = OPTION_CONTRACT_CACHE.get_contract(
             symbol=sym_upper,
-            spot_price=target_strike,
-            decision="BUY_PUT" if opt_type == "PE" else "BUY_CALL"
+            strike=target_strike,
+            option_type=opt_type
         )
+        if not cached:
+            cached = OPTION_CONTRACT_CACHE.resolve_itm_contract(
+                symbol=sym_upper,
+                spot_price=target_strike,
+                decision="BUY_PUT" if opt_type == "PE" else "BUY_CALL"
+            )
         cached_sec_id = str(cached.get("security_id") or "")
         cached_symbol = cached.get("contract_name") or f"{sym_upper} {int(target_strike)} {opt_type}"
         return {

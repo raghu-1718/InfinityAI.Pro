@@ -914,15 +914,24 @@ class MLModelStore:
                             p0 = prob_map.get(0, 0.0)
                             p1 = prob_map.get(1, 0.0)
                             p2 = prob_map.get(2, 0.0)
-                            class_votes[0] += p0 * weight
-                            class_votes[1] += p1 * weight
-                            class_votes[2] += p2 * weight
-                            votes_detail['xgboost'] = {
-                                'prediction': pred_label,
-                                'weight': weight,
-                                'probabilities': [p0, p1, p2],
-                                'source': 'bqml'
-                            }
+
+                            # Cause 2 Fix: Guard against uninformative BQML flat prior ~33%
+                            probs_list = [p0, p1, p2]
+                            is_flat_prior = (max(probs_list) - min(probs_list)) < 0.04
+                            if is_flat_prior:
+                                logger.info(f"ℹ️ BQML XGBoost produced uninformative flat prior {probs_list}. Falling through to local calibrated model.")
+                            else:
+                                class_votes[0] += p0 * weight
+                                class_votes[1] += p1 * weight
+                                class_votes[2] += p2 * weight
+                                votes_detail['xgboost'] = {
+                                    'prediction': pred_label,
+                                    'weight': weight,
+                                    'probabilities': [p0, p1, p2],
+                                    'source': 'bqml'
+                                }
+                                logger.info(f"✅ BQML Primary Inference Executed (xgboost): prediction={pred_label}, source=bqml, probabilities={votes_detail['xgboost'].get('probabilities')}")
+                                continue
                         else:
                             class_votes[pred_label] += weight
                             votes_detail['xgboost'] = {
@@ -931,8 +940,8 @@ class MLModelStore:
                                 'probabilities': [0.0, 1.0, 0.0] if pred_label == 1 else ([1.0, 0.0, 0.0] if pred_label == 0 else [0.0, 0.0, 1.0]),
                                 'source': 'bqml'
                             }
-                        logger.info(f"✅ BQML Primary Inference Executed (xgboost): prediction={pred_label}, source=bqml, probabilities={votes_detail['xgboost'].get('probabilities')}")
-                        continue
+                            logger.info(f"✅ BQML Primary Inference Executed (xgboost): prediction={pred_label}, source=bqml, probabilities={votes_detail['xgboost'].get('probabilities')}")
+                            continue
                 except Exception as e:
                     logger.warning(f"BQML Inference Error (falling back to local XGBoost): {e}")
 
