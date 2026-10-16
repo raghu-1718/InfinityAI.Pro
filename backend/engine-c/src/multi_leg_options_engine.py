@@ -90,7 +90,7 @@ INDEX_METSPECS = {
     "NIFTY": {"lot_size": 65, "strike_interval": 50, "exchange": "NSE_FNO", "security_id": "13"},
     "BANKNIFTY": {"lot_size": 30, "strike_interval": 100, "exchange": "NSE_FNO", "security_id": "25"},
     "FINNIFTY": {"lot_size": 60, "strike_interval": 50, "exchange": "NSE_FNO", "security_id": "27"},
-    "MIDCPNIFTY": {"lot_size": 120, "strike_interval": 25, "exchange": "NSE_FNO", "security_id": "28"},
+    "MIDCPNIFTY": {"lot_size": 120, "strike_interval": 25, "exchange": "NSE_FNO", "security_id": "442"},
     "SENSEX": {"lot_size": 20, "strike_interval": 100, "exchange": "BSE_FNO", "security_id": "51"},
     "BANKEX": {"lot_size": 30, "strike_interval": 100, "exchange": "BSE_FNO", "security_id": "52"}
 }

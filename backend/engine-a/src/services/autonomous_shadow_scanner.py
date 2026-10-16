@@ -46,8 +46,8 @@ except (ImportError, ValueError):
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
-ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
-ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-313407263327.asia-south1.run.app")
+ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
 SCAN_INTERVAL_SECONDS = int(os.getenv("SHADOW_SCAN_INTERVAL_SECONDS", "60"))
 
 # Institutional Focus Allocation: Derivatives strictly restricted to high-alpha NSE basket
@@ -192,15 +192,17 @@ class ContinuousShadowScanner:
                 if spot <= 0:
                     spot = float(sig.get("current_price", 1000.0))
 
-                # Dynamic Time-of-Day Adaptive Regime Evaluation
-                regime = get_current_market_regime(now_utc)
                 models = sig.get("analysis", {})
                 adx = float(models.get("adx", 25.0))
-                rsi = float(sig.get("rsi", 52.0))
+                rsi = float(sig.get("rsi", models.get("rsi", 52.0)))
                 atr = float(models.get("atr", spot * 0.01))
                 key_factors = models.get("key_factors", [])
                 veto_in_factors = any("VETO" in str(k).upper() for k in key_factors)
                 veto_active = models.get("veto_active", False) or veto_in_factors
+                change_pct = float(sig.get("intraday_change_pct") or sig.get("change_pct") or (float(models.get("return_15m_past", 0.0)) * 100) or 0.0)
+
+                # Dynamic Time-of-Day Adaptive Regime Evaluation (with Mid-Day Trend Continuation Override)
+                regime = get_current_market_regime(now_utc, intraday_change_pct=change_pct, trend_adx=adx)
 
                 # 4-Quadrant Institutional Options Decision Model (Buying vs Selling, No Hedging)
                 # Trend / Vol Expansion (ADX >= threshold) -> Naked Buying (CE / PE)
@@ -340,38 +342,54 @@ class ContinuousShadowScanner:
                 except Exception:
                     gemini_sentiment = str(sig.get("sentiment_score") or "NEUTRAL")
 
+                # Enhancement 4: Runaway Breakout Fast-Path
+                # In confirmed strong momentum expansions (ADX >= 28.0 and conf >= 0.70 with aligned RSI),
+                # waiting for a pullback near VWAP causes breakout trends to be completely missed.
+                # Fast-path directly to execution with Asymmetric Trailing Stop protection.
+                is_runaway_expansion = (adx >= 28.0) and (conf >= 0.70) and (
+                    (decision == "BUY_CALL" and rsi >= 60.0) or
+                    (decision == "BUY_PUT" and rsi <= 40.0)
+                )
+
                 # Task 2: Pullback Entry Confirmation Engine
                 live_vwap_val = float(models.get("vwap", spot))
                 is_pullback_route = moe_res.get("execution_route") == "PULLBACK_LIMIT_ONLY"
                 if is_pullback_route and not force:
-                    pullback_eval = PULLBACK_EXECUTION_MANAGER.evaluate_pullback_conditions(
-                        symbol=sym,
-                        current_spot=spot,
-                        live_vwap=live_vwap_val,
-                        rsi_1m_period_5=rsi,
-                        decision=decision
-                    )
-                    if not pullback_eval["confirmed"]:
-                        # Register in 180s observation window
-                        PULLBACK_EXECUTION_MANAGER.register_candidate_signal(
-                            symbol=sym,
-                            signal_payload={
-                                "symbol": sym,
-                                "spot_price": spot,
-                                "decision": decision,
-                                "confidence_score": conf,
-                                "catboost_prob": catboost_p,
-                                "lightgbm_prob": lightgbm_p,
-                                "xgboost_prob": xgboost_p,
-                                "gemini_sentiment": gemini_sentiment
-                            }
-                        )
+                    if is_runaway_expansion:
                         logger.info(
-                            f"⏳ Pullback Entry Filter: Held {sym} {decision} in observation queue. "
-                            f"Awaiting dip near VWAP (Current diff: {pullback_eval['vwap_distance']:.1f}pts, RSI: {rsi:.1f})."
+                            f"⚡ RUNAWAY BREAKOUT FAST-PATH triggered for {sym} ({decision}): "
+                            f"ADX={adx:.1f}, RSI={rsi:.1f}, Conf={conf:.1%}. "
+                            f"Bypassing 180s pullback queue for immediate market execution."
                         )
-                        self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "AWAITING_PULLBACK"}
-                        continue
+                    else:
+                        pullback_eval = PULLBACK_EXECUTION_MANAGER.evaluate_pullback_conditions(
+                            symbol=sym,
+                            current_spot=spot,
+                            live_vwap=live_vwap_val,
+                            rsi_1m_period_5=rsi,
+                            decision=decision
+                        )
+                        if not pullback_eval["confirmed"]:
+                            # Register in 180s observation window
+                            PULLBACK_EXECUTION_MANAGER.register_candidate_signal(
+                                symbol=sym,
+                                signal_payload={
+                                    "symbol": sym,
+                                    "spot_price": spot,
+                                    "decision": decision,
+                                    "confidence_score": conf,
+                                    "catboost_prob": catboost_p,
+                                    "lightgbm_prob": lightgbm_p,
+                                    "xgboost_prob": xgboost_p,
+                                    "gemini_sentiment": gemini_sentiment
+                                }
+                            )
+                            logger.info(
+                                f"⏳ Pullback Entry Filter: Held {sym} {decision} in observation queue. "
+                                f"Awaiting dip near VWAP (Current diff: {pullback_eval['vwap_distance']:.1f}pts, RSI: {rsi:.1f})."
+                            )
+                            self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "AWAITING_PULLBACK"}
+                            continue
 
                 # Fetch live Dhan market depth for realistic Ask/Bid entry if Engine C is reachable
                 live_quote = await self._fetch_option_quote(sym, spot, decision)
@@ -476,14 +494,32 @@ class ContinuousShadowScanner:
             strike = round(spot / strike_step) * strike_step
             opt_type = "CE" if "CALL" in decision.upper() else "PE"
 
+            internal_token = os.getenv("INTERNAL_TOKEN") or os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+            headers = {"X-Internal-Token": internal_token}
+
             resp = await self.http_client.get(
                 f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol}?strike={strike}&option_type={opt_type}",
-                timeout=2.5
+                headers=headers,
+                timeout=5.0
             )
             if resp.status_code == 200:
                 data = resp.json()
-                if isinstance(data, dict) and (data.get("ltp") or data.get("ask_price")):
-                    return data
+                if isinstance(data, dict):
+                    # Strict ₹0.05 tick rounding for NSE derivatives
+                    def round_tick(p: float) -> float:
+                        return round(round(p / 0.05) * 0.05, 2)
+
+                    ltp = round_tick(float(data.get("ltp") or data.get("last_price") or 0.0))
+                    ask = round_tick(float(data.get("ask_price") or data.get("ask") or 0.0))
+                    bid = round_tick(float(data.get("bid_price") or data.get("bid") or 0.0))
+
+                    data["ltp"] = ltp
+                    data["last_price"] = ltp
+                    data["ask_price"] = ask
+                    data["bid_price"] = bid
+
+                    if ltp > 0 or ask > 0:
+                        return data
         except Exception as e:
             logger.debug(f"Option quote query notice for {symbol}: {e}")
         return None

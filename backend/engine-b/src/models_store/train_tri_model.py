@@ -40,8 +40,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("InfinityAI.TriModelTrainer")
 
 
-def calculate_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
-    """Engineer institutional technical features on OHLCV dataset"""
+def calculate_features(df: pd.DataFrame, timeframe: str = "5m") -> Tuple[pd.DataFrame, list]:
+    """Engineer institutional technical features on OHLCV dataset for either 5m intraday or daily swing"""
     data = df.copy()
     close = data['close']
     high = data['high']
@@ -49,11 +49,25 @@ def calculate_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     vol = data['volume']
 
     # 1. Price Momentum & Returns
-    data['ret_1d'] = close.pct_change(1)
-    data['ret_3d'] = close.pct_change(3)
-    data['ret_5d'] = close.pct_change(5)
-    data['ret_10d'] = close.pct_change(10)
-    data['ret_20d'] = close.pct_change(20)
+    if timeframe == "5m":
+        data['ret_1'] = close.pct_change(1)
+        data['ret_3'] = close.pct_change(3)
+        data['ret_6'] = close.pct_change(6)
+        data['ret_12'] = close.pct_change(12)
+        data['ret_24'] = close.pct_change(24)
+        
+        # Backward compatibility aliases
+        data['ret_1d'] = data['ret_1']
+        data['ret_3d'] = data['ret_3']
+        data['ret_5d'] = data['ret_6']
+        data['ret_10d'] = data['ret_12']
+        data['ret_20d'] = data['ret_24']
+    else:
+        data['ret_1d'] = close.pct_change(1)
+        data['ret_3d'] = close.pct_change(3)
+        data['ret_5d'] = close.pct_change(5)
+        data['ret_10d'] = close.pct_change(10)
+        data['ret_20d'] = close.pct_change(20)
 
     # 2. Moving Averages
     data['ema_9'] = close.ewm(span=9, adjust=False).mean()
@@ -104,10 +118,10 @@ def calculate_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     data['obv'] = (np.sign(close.diff()) * vol).fillna(0).cumsum()
     data['obv_slope'] = data['obv'].pct_change(5)
 
-    # 8. Target Label Generation (Future 3-day return)
-    # 0 = SELL (down > 0.6%), 1 = HOLD (-0.6% to +0.6%), 2 = BUY (up > 0.6%)
+    # 8. Target Label Generation (Future 15m return for 5m, or 3-day return for 1d)
+    # 0 = SELL, 1 = HOLD, 2 = BUY
     fwd_ret = close.shift(-3) / close - 1.0
-    threshold = 0.006
+    threshold = 0.0020 if timeframe == "5m" else 0.0060
 
     data['target'] = 1  # Default HOLD
     data.loc[fwd_ret > threshold, 'target'] = 2   # BUY
@@ -125,7 +139,7 @@ def calculate_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     return clean_df, feature_cols
 
 
-def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
+def fetch_training_data(symbol: str = "NIFTY", days: int = 60, timeframe: str = "5m") -> pd.DataFrame:
     """Fetch training data from DhanHQ via Engine-C proxy with fallback to Yahoo"""
     import requests
     engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
@@ -134,7 +148,7 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
         "NIFTY": ("13", "IDX_I", "INDEX"),
         "BANKNIFTY": ("25", "IDX_I", "INDEX"),
         "FINNIFTY": ("27", "IDX_I", "INDEX"),
-        "MIDCPNIFTY": ("44", "IDX_I", "INDEX"),
+        "MIDCPNIFTY": ("442", "IDX_I", "INDEX"),
         "SENSEX": ("51", "IDX_I", "INDEX"),
     }
 
@@ -144,7 +158,7 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
     from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     to_date = datetime.now().strftime("%Y-%m-%d")
 
-    logger.info(f"📡 Fetching {days} days of training data for {symbol} (SecID: {sec_id}, Segment: {exchange_seg})...")
+    logger.info(f"📡 Fetching {days} days of training data for {symbol} (SecID: {sec_id}, Segment: {exchange_seg}, Timeframe: {timeframe})...")
     
     # Try DhanHQ via Engine-C Proxy
     try:
@@ -156,7 +170,7 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
                 "instrument_type": inst_type,
                 "from_date": from_date,
                 "to_date": to_date,
-                "interval": "daily",
+                "interval": "minute" if timeframe == "5m" else "daily",
                 "user_id": "raghu_primary"
             },
             timeout=20
@@ -181,7 +195,11 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
         import yfinance as yf
         ticker_map = {"NIFTY": "^NSEI", "BANKNIFTY": "^NSEBANK", "SENSEX": "^BSESN", "RELIANCE": "RELIANCE.NS", "TCS": "TCS.NS", "INFY": "INFY.NS", "HDFCBANK": "HDFCBANK.NS"}
         ticker = ticker_map.get(symbol.upper(), f"{symbol}.NS")
-        data = yf.download(ticker, period=f"{days}d", interval="1d", progress=False)
+        if timeframe == "5m":
+            yf_period = f"{min(days, 59)}d"
+            data = yf.download(ticker, period=yf_period, interval="5m", progress=False)
+        else:
+            data = yf.download(ticker, period=f"{days}d", interval="1d", progress=False)
         if not data.empty:
             if isinstance(data.columns, pd.MultiIndex):
                 data.columns = data.columns.get_level_values(0)
@@ -192,7 +210,7 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
                 'close': data['Close'].values,
                 'volume': data['Volume'].values
             })
-            logger.info(f"✅ Fetched {len(df)} candles from Yahoo Finance for {symbol}")
+            logger.info(f"✅ Fetched {len(df)} {timeframe} candles from Yahoo Finance for {symbol}")
             return df
     except Exception as e:
         logger.error(f"Yahoo fallback failed: {e}")
@@ -202,7 +220,8 @@ def fetch_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
 
 def train_tri_model_ensemble(
     symbol: str = "NIFTY",
-    days: int = 730,
+    days: int = 60,
+    timeframe: str = "5m",
     save_dir: str = "/tmp/models",
     upload_gcs: bool = True,
     gcs_bucket: str = "infinity-ai-models-vault"
@@ -211,10 +230,10 @@ def train_tri_model_ensemble(
     os.makedirs(save_dir, exist_ok=True)
     
     # 1. Fetch Data
-    raw_df = fetch_training_data(symbol=symbol, days=days)
+    raw_df = fetch_training_data(symbol=symbol, days=days, timeframe=timeframe)
     
     # 2. Engineer Features
-    clean_df, feature_cols = calculate_features(raw_df)
+    clean_df, feature_cols = calculate_features(raw_df, timeframe=timeframe)
     X = clean_df[feature_cols].values
     y = clean_df['target'].values.astype(int)
 
@@ -393,11 +412,12 @@ def train_tri_model_ensemble(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Tri-Model ML Ensemble on Real Market Data")
     parser.add_argument("--symbol", type=str, default="NIFTY", help="Options underlying index to train on (e.g. NIFTY, BANKNIFTY, FINNIFTY, SENSEX)")
-    parser.add_argument("--days", type=int, default=730, help="Historical training lookback in days")
+    parser.add_argument("--days", type=int, default=60, help="Historical training lookback in days")
+    parser.add_argument("--timeframe", type=str, default="5m", choices=["5m", "1d"], help="Candle timeframe: 5m (intraday 15m return target) or 1d (swing 3d return target)")
     parser.add_argument("--upload-gcs", action="store_true", default=True, help="Upload models to GCS vault")
     args = parser.parse_args()
 
-    res = train_tri_model_ensemble(symbol=args.symbol, days=args.days, upload_gcs=args.upload_gcs)
+    res = train_tri_model_ensemble(symbol=args.symbol, days=args.days, timeframe=args.timeframe, upload_gcs=args.upload_gcs)
     print("\n=== Training Results ===")
     import json
     print(json.dumps(res, indent=2))

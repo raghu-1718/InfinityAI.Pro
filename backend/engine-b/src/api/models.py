@@ -6,7 +6,7 @@ class SignalRequest(BaseModel):
     symbol: str
     fast: bool = False
     news_headlines: Optional[List[str]] = None
-    timeframe: str = "1d"
+    timeframe: str = "5m"
 
 class SignalResponse(BaseModel):
     symbol: str

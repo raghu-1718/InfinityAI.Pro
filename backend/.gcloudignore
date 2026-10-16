@@ -1,0 +1,14 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+build_log.txt
+data/
+*.log
+.coverage
+htmlcov/
+node_modules/

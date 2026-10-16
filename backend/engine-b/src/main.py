@@ -2200,10 +2200,17 @@ def fetch_market_breadth_and_gift() -> dict:
 
 
 
-def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float, proposed_signal: str = "HOLD") -> dict:
+def evaluate_option_signal_conviction(
+    df: pd.DataFrame,
+    ml_probability: float,
+    proposed_signal: str = "HOLD",
+    is_bull_breakout: bool = False,
+    is_bear_breakdown: bool = False
+) -> dict:
     """
     Applies strict options-buying filters over raw ML ensemble probabilities.
-    Vetoes trades occurring near heavy dynamic resistance or low-volume conditions (ADX < 25).
+    Vetoes trades occurring near heavy dynamic resistance or low-volume conditions (ADX < 19).
+    Respects verified trend breakouts/breakdowns to avoid suppressing valid momentum moves.
     """
     latest = df.iloc[-1]
     
@@ -2226,12 +2233,18 @@ def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float, p
     if adx < adx_threshold:
         veto_reason = f"ADX < {adx_threshold:.1f} ({adx:.1f}): Market is ranging/consolidating (Theta decay risk)"
     elif proposed_signal == "BUY":
-        if adv_dec < 0.5 and ml_probability > 0.65:
+        if is_bull_breakout:
+            # Verified bull breakout has momentum priority
+            pass
+        elif adv_dec < 0.5 and ml_probability > 0.65:
             veto_reason = f"Weak Market Breadth (Adv/Dec: {adv_dec}): Fake bullish divergence"
         elif close_price <= ema_200 and ml_probability > 0.65:
             veto_reason = "Price testing 200-Day EMA dynamic resistance; breakout unconfirmed"
     elif proposed_signal == "SELL":
-        if adv_dec > 2.0 and ml_probability > 0.65:
+        if is_bear_breakdown:
+            # Verified bear breakdown has momentum priority
+            pass
+        elif adv_dec > 2.0 and ml_probability > 0.65:
             veto_reason = f"Strong Market Breadth (Adv/Dec: {adv_dec}): Fake bearish breakdown"
         elif close_price >= ema_200 and ml_probability > 0.65:
             veto_reason = "Price above 200-Day EMA dynamic support; bearish breakdown unconfirmed"
@@ -2246,7 +2259,9 @@ def evaluate_option_signal_conviction(df: pd.DataFrame, ml_probability: float, p
         }
 
     # Otherwise, pass configuration forward
-    final_signal = "BUY" if ml_probability >= 0.65 else ("SELL" if ml_probability <= 0.35 else "HOLD")
+    final_signal = proposed_signal if proposed_signal in ["BUY", "SELL"] else (
+        "BUY" if ml_probability >= 0.65 else ("SELL" if ml_probability <= 0.35 else "HOLD")
+    )
     
     return {
         "signal": final_signal,
@@ -2355,17 +2370,34 @@ async def generate_signal(req: SignalRequest):
                 ml_class, ml_confidence, votes_detail = await MODEL_STORE.weighted_ensemble_predict(X_scaled, feature_dict=feature_dict)
                 model_breakdown_detail = votes_detail
 
-                # ML Influence on Score
+                # Detect verified breakout/breakdown conditions for Trend-Momentum Priority Gate
+                adx_val = float(latest.get('ADX_14', 20.0))
+                rsi_val = float(latest.get('RSI_14', 50.0))
+                vwap_val = float(latest.get('vwap', current_price) or current_price)
+                ema_20_val = float(latest.get('EMA_20', latest.get('EMA_50', current_price)) or current_price)
+
+                is_bull_breakout = (current_price > ema_20_val) and (rsi_val >= 56.0) and (adx_val >= 22.0) and (current_price >= vwap_val * 0.998)
+                is_bear_breakdown = (current_price < ema_20_val) and (rsi_val <= 44.0) and (adx_val >= 22.0) and (current_price <= vwap_val * 1.002)
+
+                # ML Influence on Score (Trend-Momentum Priority Gate)
                 if ml_class == 2:  # BUY
-                    score += 3
-                    reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} conf)")
-                    if ml_confidence > 0.65 and signal == "HOLD":
-                        signal = "BUY"
+                    if is_bear_breakdown:
+                        reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} conf) [SUPPRESSED by Bear Breakdown Priority Gate: ADX {adx_val:.1f}, RSI {rsi_val:.1f}]")
+                        logger.info(f"⚡ Bear Breakdown Priority Gate active on {symbol}: Suppressed counter-trend ML BUY penalty")
+                    else:
+                        score += 3
+                        reasons.append(f"ML Ensemble: BUY ({ml_confidence:.1%} conf)")
+                        if ml_confidence > 0.65 and signal == "HOLD":
+                            signal = "BUY"
                 elif ml_class == 0:  # SELL
-                    score -= 3
-                    reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} conf)")
-                    if ml_confidence > 0.65 and signal == "HOLD":
-                        signal = "SELL"
+                    if is_bull_breakout:
+                        reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} conf) [SUPPRESSED by Bull Breakout Priority Gate: ADX {adx_val:.1f}, RSI {rsi_val:.1f}]")
+                        logger.info(f"⚡ Bull Breakout Priority Gate active on {symbol}: Suppressed counter-trend ML SELL penalty")
+                    else:
+                        score -= 3
+                        reasons.append(f"ML Ensemble: SELL ({ml_confidence:.1%} conf)")
+                        if ml_confidence > 0.65 and signal == "HOLD":
+                            signal = "SELL"
                 else:
                     reasons.append(f"ML Ensemble: HOLD ({ml_confidence:.1%} conf)")
 
@@ -2373,8 +2405,21 @@ async def generate_signal(req: SignalRequest):
         except Exception as e:
             logger.warning(f"ML inference fallback for {symbol}: {e}")
 
-    # 3. Final Signal Determination (with ML adjustment)
-    if score >= 3:
+    # Fallback breakout check if ML was skipped/failed
+    if not ml_used:
+        adx_val = float(latest.get('ADX_14', 20.0))
+        rsi_val = float(latest.get('RSI_14', 50.0))
+        vwap_val = float(latest.get('vwap', current_price) or current_price)
+        ema_20_val = float(latest.get('EMA_20', latest.get('EMA_50', current_price)) or current_price)
+        is_bull_breakout = (current_price > ema_20_val) and (rsi_val >= 56.0) and (adx_val >= 22.0) and (current_price >= vwap_val * 0.998)
+        is_bear_breakdown = (current_price < ema_20_val) and (rsi_val <= 44.0) and (adx_val >= 22.0) and (current_price <= vwap_val * 1.002)
+
+    # 3. Final Signal Determination (with ML adjustment & Breakout Priority)
+    if is_bull_breakout and score >= 2:
+        signal = "BUY"
+    elif is_bear_breakdown and score <= -2:
+        signal = "SELL"
+    elif score >= 3:
         signal = "BUY"
     elif score <= -3:
         signal = "SELL"
@@ -2384,6 +2429,8 @@ async def generate_signal(req: SignalRequest):
         df_features,
         ml_confidence if ml_used else 0.70,
         proposed_signal=signal,
+        is_bull_breakout=is_bull_breakout,
+        is_bear_breakdown=is_bear_breakdown
     )
     if conviction["veto_triggered"] and signal != "HOLD":
         logger.info(f"🚫 VETO Applied for {symbol}: {conviction['reason']}")
@@ -2421,6 +2468,8 @@ async def generate_signal(req: SignalRequest):
         analysis={
             "rsi": round(latest.get('RSI_14', 0), 2),
             "adx": round(latest.get('ADX_14', 0), 2),
+            "vwap": round(float(latest.get('vwap', current_price)), 2),
+            "vwap_distance": round(((float(current_price) - float(latest.get('vwap', current_price))) / (float(latest.get('vwap', current_price)) or 1.0)) * 100.0, 4),
             "trend": "Bullish" if score > 0 else "Bearish" if score < 0 else "Neutral",
             "key_factors": reasons,
             "score": score,
@@ -2449,8 +2498,8 @@ async def generate_signal(req: SignalRequest):
 
 def _analyze_fno(latest, price, df):
     """
-    Indices (F&O) Strategy: Volatility & Mean Reversion
-    Focus: ADX (Trend Strength), Bollinger Bands (Volatility), VWAP (if avail)
+    Indices (F&O) Strategy: Volatility, Trend Following & Dynamic Breakout
+    Focus: ADX (Trend Strength), EMA Alignment, VWAP, RSI Momentum, MACD
     """
     score = 0
     reasons = []
@@ -2462,17 +2511,54 @@ def _analyze_fno(latest, price, df):
         reasons.append(f"Choppy Market (ADX < {adx_threshold:.1f}) - Avoiding Trades")
         return {"score": 0, "reasons": reasons, "signal": "HOLD"}
 
-    # Fast MA for Scalping nature
+    # Fast MA for Scalping / Trend structure
     ema_20 = latest.get('EMA_20', latest.get('EMA_50')) # Fallback to 50 if 20 missing
     if ema_20:
-        if price > ema_20: score += 1; reasons.append("Above Fast EMA")
-        else: score -= 1; reasons.append("Below Fast EMA")
+        if price > ema_20:
+            score += 1
+            reasons.append("Above Fast EMA")
+        else:
+            score -= 1
+            reasons.append("Below Fast EMA")
 
     # RSI - Sensitive settings for indices
     rsi = latest.get('RSI_14')
     if rsi:
-        if rsi > 60: score += 1; reasons.append("High Momentum")
-        elif rsi < 40: score -= 1; reasons.append("Low Momentum")
+        if rsi >= 60:
+            score += 1
+            reasons.append(f"High Momentum (RSI {rsi:.1f} >= 60)")
+        elif rsi <= 40:
+            score -= 1
+            reasons.append(f"Low Momentum (RSI {rsi:.1f} <= 40)")
+
+    # VWAP Positioning (Institutional benchmark)
+    vwap = latest.get('vwap')
+    if vwap and vwap > 0:
+        if price >= vwap:
+            score += 1
+            reasons.append("Above VWAP (Institutional Buy Side)")
+        else:
+            score -= 1
+            reasons.append("Below VWAP (Institutional Sell Side)")
+
+    # MACD Histogram Momentum
+    macd_hist = latest.get('MACDh_12_26_9')
+    if macd_hist is not None:
+        if macd_hist > 0:
+            score += 1
+            reasons.append("Bullish MACD Histogram")
+        elif macd_hist < 0:
+            score -= 1
+            reasons.append("Bearish MACD Histogram")
+
+    # Strong Trend Expansion Confirmation
+    if adx and adx >= 25.0:
+        if score > 0:
+            score += 1
+            reasons.append(f"Strong Bullish Trend Expansion (ADX {adx:.1f})")
+        elif score < 0:
+            score -= 1
+            reasons.append(f"Strong Bearish Trend Expansion (ADX {adx:.1f})")
 
     return {"score": score, "reasons": reasons, "signal": _score_to_signal(score)}
 

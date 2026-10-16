@@ -61,18 +61,41 @@ class EODSettlementService:
         spot_prices = {}
         if current_spot_prices:
             spot_prices.update(current_spot_prices)
-        elif self.db:
+        else:
+            # Query Engine C for live closing quotes across all supported underlyings
             try:
-                history = list(self.db.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
-                if history:
-                    last_doc = history[0].to_dict()
-                    if last_doc.get("data_source") != "DEGRADED_BROKER_FEED_UNAVAILABLE":
-                        spot_prices["NIFTY"] = last_doc.get("nifty_spot")
-                        spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
-                        spot_prices["SENSEX"] = last_doc.get("sensex_spot")
-                        spot_prices["INDIAVIX"] = last_doc.get("india_vix")
-            except Exception as e:
-                logger.warning(f"Failed to resolve closing spot prices from Firestore: {e}")
+                import requests
+                engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+                internal_token = os.getenv("INTERNAL_TOKEN") or os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+                r_quotes = requests.get(
+                    f"{engine_c_url}/api/dhan/market/quotes",
+                    params={"security_ids": "13,25,27,442,51", "exchange_segment": "IDX_I", "user_id": "raghu_primary"},
+                    headers={"X-Internal-Token": internal_token},
+                    timeout=10
+                )
+                if r_quotes.status_code == 200:
+                    raw_json = r_quotes.json()
+                    idx_dict = raw_json.get("data", {}).get("data", {}).get("data", {}).get("IDX_I", {})
+                    id_to_sym = {"13": "NIFTY", "25": "BANKNIFTY", "27": "FINNIFTY", "442": "MIDCPNIFTY", "51": "SENSEX"}
+                    for sec_id, info in idx_dict.items():
+                        s_name = id_to_sym.get(str(sec_id))
+                        if s_name:
+                            spot_prices[s_name] = float(info.get("last_price") or info.get("ltp") or info.get("ohlc", {}).get("close") or 0.0)
+            except Exception as quote_err:
+                logger.warning(f"Engine C closing quotes query notice: {quote_err}")
+
+            if not spot_prices and self.db:
+                try:
+                    history = list(self.db.collection("market_regime_heartbeats").order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
+                    if history:
+                        last_doc = history[0].to_dict()
+                        if last_doc.get("data_source") != "DEGRADED_BROKER_FEED_UNAVAILABLE":
+                            spot_prices["NIFTY"] = last_doc.get("nifty_spot")
+                            spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
+                            spot_prices["SENSEX"] = last_doc.get("sensex_spot")
+                            spot_prices["INDIAVIX"] = last_doc.get("india_vix")
+                except Exception as e:
+                    logger.warning(f"Failed to resolve closing spot prices from Firestore: {e}")
 
         if not spot_prices or not spot_prices.get("NIFTY"):
             logger.warning("🚨 EOD Settlement: Genuine closing quotes unavailable. Deferring settlement.")
@@ -83,46 +106,56 @@ class EODSettlementService:
                 "message": "Settlement deferred: genuine closing quotes required."
             }
 
+        def round_tick(p: float) -> float:
+            """Strictly snaps price to nearest NSE ₹0.05 tick increment"""
+            return round(round(p / 0.05) * 0.05, 2)
+
         for doc in open_signals_ref:
             data = doc.to_dict()
             sig_id = data.get("signal_id", doc.id)
             symbol = data.get("symbol", "NIFTY")
             decision = data.get("decision", "BUY_CALL")
             bracket = data.get("trade_bracket", {})
-            entry_prem = bracket.get("entry_premium", 100.0)
-            lot_sz = bracket.get("lot_size", 65)
+            entry_prem = float(bracket.get("entry_premium") or data.get("entry_premium") or 100.0)
+            lot_sz = int(bracket.get("lot_size") or data.get("lot_size") or 65)
+            total_lots = int(data.get("total_lots") or bracket.get("total_lots") or 1)
 
             # Grounded EOD settlement: compute actual underlying return from entry spot to closing spot
-            entry_spot = float(data.get("underlying_spot") or bracket.get("entry_spot") or 0.0)
+            entry_spot = float(data.get("spot_price") or data.get("underlying_spot") or bracket.get("entry_spot") or 0.0)
             closing_spot = float(spot_prices.get(symbol.upper()) or 0.0)
 
             if entry_spot > 0 and closing_spot > 0:
                 spot_ret = (closing_spot - entry_spot) / entry_spot
                 # Delta-scaled option return (~0.55 delta) minus 1-day theta decay (~3%)
                 opt_ret = (spot_ret * (0.55 if "CALL" in decision else -0.55)) - 0.03
-                exit_prem = max(round(entry_prem * (1.0 + opt_ret), 2), 0.50)
+                exit_prem = max(round_tick(entry_prem * (1.0 + opt_ret)), 0.50)
             else:
-                gain_factor = 1.05 if "CALL" in decision else 0.95
-                exit_prem = round(entry_prem * gain_factor, 2)
-            gross_pnl = round((exit_prem - entry_prem) * lot_sz, 2)
+                last_obs = float(data.get("highest_observed_premium") or data.get("current_mtm_premium") or entry_prem)
+                exit_prem = max(round_tick(last_obs), 0.50)
+
+            is_sell = "SELL" in decision.upper() or "SHORT" in decision.upper()
+            gross_pnl = round(((entry_prem - exit_prem) if is_sell else (exit_prem - entry_prem)) * lot_sz, 2)
 
             charges = calculate_options_roundtrip_charges(
                 premium=entry_prem,
-                lot_size=lot_sz,
-                lots=1,
+                lot_size=lot_sz // total_lots if total_lots > 0 else lot_sz,
+                lots=total_lots,
                 exchange="NSE"
             )
-            tax_cost = charges.get("grand_total_charges", 55.0)
+            tax_cost = charges.get("grand_total_charges", 55.0 * total_lots)
             net_pnl = round(gross_pnl - tax_cost, 2)
 
             outcome = "TARGET_HIT" if gross_pnl > 0 else "EOD_SQUAREOFF"
 
-            # Update Firestore Document
+            # Update Firestore Document with top-level and nested fields
             doc.reference.update({
+                "status": outcome,
                 "outcome_status": outcome,
                 "exit_premium": exit_prem,
                 "gross_pnl": gross_pnl,
                 "net_pnl": net_pnl,
+                "current_pnl_inr": gross_pnl,
+                "realized_pnl_inr": net_pnl,
                 "resolved_at": ist_time.strftime("%Y-%m-%d %H:%M:%S IST"),
                 "settlement_type": "EOD_1530_AUTORESOLUTION"
             })

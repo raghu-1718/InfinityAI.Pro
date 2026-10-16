@@ -35,6 +35,12 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+def round_to_tick(price: float, tick: float = 0.05) -> float:
+    """Strictly snaps price to the nearest NSE ₹0.05 tick size increment"""
+    if price is None:
+        return 0.0
+    return round(round(price / tick) * tick, 2)
+
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
 COLLECTION_NAME = "ai_signals_ledger"
 
@@ -236,11 +242,11 @@ class ShadowSignalLogger:
                     logger.warning(f"⚠️ Wide spread veto for {contract_name} ({spread_pct}% > 4%) — Skipping trade.")
                     return None
                 # Realistic Entry: Taker buys at Ask, Taker sells at Bid
-                est_premium = round(bid_p if is_sell else ask_p, 2)
+                est_premium = round_to_tick(bid_p if is_sell else ask_p)
                 pricing_source = "LIVE_MARKET_DEPTH_BID" if is_sell else "LIVE_MARKET_DEPTH_ASK"
             elif ltp_p > 0:
                 # Spread friction penalty: -1.0% for sell, +1.0% for buy
-                est_premium = round(ltp_p * (0.99 if is_sell else 1.01), 2)
+                est_premium = round_to_tick(ltp_p * (0.99 if is_sell else 1.01))
                 pricing_source = "LIVE_LTP_SPREAD_ADJUSTED"
             else:
                 est_premium = None
@@ -292,10 +298,10 @@ class ShadowSignalLogger:
                     bs_price = strike * math.exp(-r * dte_years) * norm.cdf(-d2) - spot_price * norm.cdf(-d1)
 
                 friction_mult = 0.99 if is_sell else 1.01
-                est_premium = max(round(float(bs_price) * friction_mult, 2), 5.0)
+                est_premium = max(round_to_tick(float(bs_price) * friction_mult), 5.0)
                 pricing_source = "THEORETICAL_BS_SPREAD_ADJUSTED"
             except Exception:
-                est_premium = round(spot_price * (0.0025 if is_sell else 0.004), 2)
+                est_premium = max(round_to_tick(spot_price * (0.0025 if is_sell else 0.004)), 5.0)
                 pricing_source = "ESTIMATED_RULE_OF_THUMB"
 
         # ── Task 3: Spot-Anchored Structural Stops Calculation ────────────────
@@ -310,15 +316,15 @@ class ShadowSignalLogger:
         )
         spot_structural_sl = struct_levels["structural_level"]
 
-        # Absolute Emergency Circuit Breaker: -25% option stop loss
+        # Absolute Emergency Circuit Breaker: -25% option stop loss (Strict ₹0.05 tick)
         if is_sell:
-            stop_loss_prem = round(est_premium * 1.25, 2)
-            target_prem = round(est_premium * 0.55, 2)  # Decay target
+            stop_loss_prem = round_to_tick(est_premium * 1.25)
+            target_prem = round_to_tick(est_premium * 0.55)  # Decay target
             stop_loss_pct = 0.25
             target_pct = 0.45
         else:
-            stop_loss_prem = round(est_premium * 0.75, 2)  # -25% emergency breaker
-            target_prem = round(est_premium * 1.15, 2)     # Tier 1 +15% target
+            stop_loss_prem = round_to_tick(est_premium * 0.75)  # -25% emergency breaker
+            target_prem = round_to_tick(est_premium * 1.15)     # Tier 1 +15% target
             stop_loss_pct = 0.25
             target_pct = 0.15
 
@@ -422,7 +428,13 @@ class ShadowSignalLogger:
             "current_mtm_net_pnl": 0.0,
             "current_mtm_roi_pct": 0.0,
             "execution_mode": "SHADOW_OBSERVATION",
+            "status": "OPEN",
             "outcome_status": "OPEN",
+            "entry_premium": est_premium,
+            "underlying_spot": spot_price,
+            "entry_spot": spot_price,
+            "current_pnl_inr": 0.0,
+            "realized_pnl_inr": 0.0,
             "estimated_tax_brokerage": tax_cost,
             "exit_premium": None,
             "gross_pnl": None,
@@ -561,14 +573,14 @@ class ShadowSignalLogger:
 
         # ── Realistic Premium Calculation ──────────────────────────────────────
         if current_option_premium is not None and current_option_premium > 0:
-            simulated_exit_prem = round(float(current_option_premium), 2)
+            simulated_exit_prem = round_to_tick(float(current_option_premium))
         else:
             spot_pct_move = (current_spot - initial_spot) / initial_spot if initial_spot > 0 else 0.0
             if "CALL" in decision:
                 simulated_exit_prem = entry_prem * (1.0 + (spot_pct_move * 20))
             else:
                 simulated_exit_prem = entry_prem * (1.0 - (spot_pct_move * 20))
-            simulated_exit_prem = max(0.50, simulated_exit_prem)
+            simulated_exit_prem = max(0.50, round_to_tick(simulated_exit_prem))
 
         highest_prev = data.get("highest_observed_premium", entry_prem)
         highest_now = max(highest_prev, simulated_exit_prem)
@@ -691,19 +703,22 @@ class ShadowSignalLogger:
 
         if outcome_status != "OPEN":
             updates = {
+                "status": outcome_status,
                 "outcome_status": outcome_status,
-                "exit_premium": round(simulated_exit_prem, 2),
-                "highest_observed_premium": round(highest_now, 2),
-                "lowest_observed_premium": round(lowest_now, 2),
+                "exit_premium": round_to_tick(simulated_exit_prem),
+                "highest_observed_premium": round_to_tick(highest_now),
+                "lowest_observed_premium": round_to_tick(lowest_now),
                 "highest_target_achieved_pct": peak_achieved_pct,
                 "active_profit_tier": active_tier,
-                "current_sl_premium": round(effective_sl, 2),
+                "current_sl_premium": round_to_tick(effective_sl),
                 "spot_structural_sl": spot_structural_sl,
                 "tier1_booked": tier1_booked,
                 "tier1_hit_timestamp": tier1_hit_timestamp,
                 "remaining_lots": remaining_lots,
                 "gross_pnl": round(gross_pnl, 2),
                 "net_pnl": round(net_pnl, 2),
+                "current_pnl_inr": round(gross_pnl, 2),
+                "realized_pnl_inr": round(net_pnl, 2),
                 "roi_pct": round(roi_pct, 2),
                 "resolved_at": timestamp_str
             }
@@ -739,13 +754,14 @@ class ShadowSignalLogger:
         else:
             # Update live Mark-to-Market (MTM)
             updates = {
+                "status": "OPEN",
                 "current_mtm_spot": round(current_spot, 2),
-                "current_mtm_premium": round(simulated_exit_prem, 2),
-                "highest_observed_premium": round(highest_now, 2),
-                "lowest_observed_premium": round(lowest_now, 2),
+                "current_mtm_premium": round_to_tick(simulated_exit_prem),
+                "highest_observed_premium": round_to_tick(highest_now),
+                "lowest_observed_premium": round_to_tick(lowest_now),
                 "highest_target_achieved_pct": peak_achieved_pct,
-                "current_sl_premium": round(effective_sl, 2),
-                "effective_trailing_stop_loss": round(effective_sl, 2),
+                "current_sl_premium": round_to_tick(effective_sl),
+                "effective_trailing_stop_loss": round_to_tick(effective_sl),
                 "spot_structural_sl": spot_structural_sl,
                 "tier1_booked": tier1_booked,
                 "tier1_hit_timestamp": tier1_hit_timestamp,
@@ -753,6 +769,7 @@ class ShadowSignalLogger:
                 "active_profit_tier": active_tier,
                 "current_mtm_gross_pnl": round(gross_pnl, 2),
                 "current_mtm_net_pnl": round(net_pnl, 2),
+                "current_pnl_inr": round(gross_pnl, 2),
                 "current_mtm_roi_pct": round(roi_pct, 2),
                 "last_mtm_updated_at": timestamp_str
             }

@@ -32,13 +32,21 @@ class MarketRegimeConfig:
     description: str
 
 
-def get_current_market_regime(dt: Optional[datetime] = None) -> MarketRegimeConfig:
+def get_current_market_regime(
+    dt: Optional[datetime] = None,
+    intraday_change_pct: Optional[float] = None,
+    trend_adx: Optional[float] = None
+) -> MarketRegimeConfig:
     """
     Evaluates the institutional market regime based on Indian Standard Time (IST).
+    Supports dynamic Mid-Day Trend Continuation override (Enhancement 3) when strong session
+    momentum is confirmed, preventing false theta decay dampers on breakout days.
     
     Args:
         dt: Optional datetime. If None, current UTC time is converted to Asia/Kolkata.
             Can be an aware or naive datetime; if naive, assumes UTC.
+        intraday_change_pct: Optional float. Session return percentage (e.g. +1.2%).
+        trend_adx: Optional float. Intraday ADX strength indicator.
     
     Returns:
         MarketRegimeConfig containing regime parameters.
@@ -76,8 +84,23 @@ def get_current_market_regime(dt: Optional[datetime] = None) -> MarketRegimeConf
             description="High opening momentum & volatility expansion. ADX threshold reduced to capture early institutional breakout trends."
         )
 
-    # REGIME 2: Mid-Day Lunch Chop Trap (11:30 – 13:30 IST)
+    # REGIME 2: Mid-Day Lunch Hours (11:30 – 13:30 IST)
     elif r2_start <= current_t < r2_end:
+        # Enhancement 3: Mid-Day Trend Continuation Override
+        is_strong_trend_continuation = (
+            (intraday_change_pct is not None and abs(intraday_change_pct) >= 0.8) or
+            (trend_adx is not None and trend_adx >= 25.0)
+        )
+        if is_strong_trend_continuation:
+            return MarketRegimeConfig(
+                regime_id="REGIME_2_TREND_CONTINUATION",
+                name="Mid-Day Trend Continuation",
+                adx_threshold=19.0,
+                ml_threshold=0.65,
+                theta_decay_damper=False,
+                ist_time=time_str,
+                description="High-velocity momentum continuation session overriding lunch chop. ADX relaxed to 19.0 and theta damper disarmed."
+            )
         return MarketRegimeConfig(
             regime_id="REGIME_2",
             name="Mid-Day Lunch Chop Trap",

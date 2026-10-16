@@ -588,7 +588,7 @@ async def get_option_chain_for_symbol(
         "NIFTY": {"sec_id": 13, "segment": "IDX_I"},
         "BANKNIFTY": {"sec_id": 25, "segment": "IDX_I"},
         "FINNIFTY": {"sec_id": 27, "segment": "IDX_I"},
-        "MIDCPNIFTY": {"sec_id": 28, "segment": "IDX_I"},
+        "MIDCPNIFTY": {"sec_id": 442, "segment": "IDX_I"},
         "SENSEX": {"sec_id": 51, "segment": "IDX_I"},
         "BANKEX": {"sec_id": 52, "segment": "IDX_I"},
     }
@@ -601,7 +601,7 @@ async def get_option_chain_for_symbol(
     elif "FINNIFTY" in sym_upper:
         sec_id, segment = 27, "IDX_I"
     elif "MIDCP" in sym_upper:
-        sec_id, segment = 28, "IDX_I"
+        sec_id, segment = 442, "IDX_I"
     elif "SENSEX" in sym_upper:
         sec_id, segment = 51, "IDX_I"
     elif "BANKEX" in sym_upper:
@@ -617,14 +617,15 @@ async def get_option_chain_for_symbol(
         try:
             exp_resp = client.expiry_list(under_security_id=sec_id, under_exchange_segment=segment)
             if isinstance(exp_resp, dict) and exp_resp.get("status") == "success":
-                exp_list = exp_resp.get("data", []) or []
-                if exp_list:
+                d_exp = exp_resp.get("data", [])
+                exp_list = d_exp.get("data", []) if isinstance(d_exp, dict) else d_exp
+                if exp_list and isinstance(exp_list, list):
                     target_expiry = exp_list[0]
         except Exception as exp_err:
             logger.warning(f"Notice fetching expiry list for {sym_upper}: {exp_err}")
 
         if not target_expiry:
-            target_expiry = (datetime.now() + timedelta(days=(3 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
+            target_expiry = (datetime.now() + timedelta(days=(1 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
 
         # 2. Fetch Option Chain from DhanHQ
         oc_resp = client.option_chain(
@@ -635,8 +636,9 @@ async def get_option_chain_for_symbol(
 
         oc_dict = {}
         if isinstance(oc_resp, dict) and oc_resp.get("status") == "success":
-            oc_data = oc_resp.get("data", {})
-            oc_dict = oc_data.get("oc", {}) or {}
+            d_oc = oc_resp.get("data", {})
+            inner_data = d_oc.get("data", d_oc) if isinstance(d_oc, dict) else {}
+            oc_dict = inner_data.get("oc", {}) or {}
 
         # 3. Locate exact strike match
         matched_leg = None
@@ -652,10 +654,19 @@ async def get_option_chain_for_symbol(
         if matched_leg:
             sec_identifier = str(matched_leg.get("security_id") or matched_leg.get("securityId") or matched_leg.get("sec_id") or "")
             trading_sym = matched_leg.get("trading_symbol") or matched_leg.get("tradingSymbol") or f"{sym_upper} {int(target_strike)} {opt_type}"
-            bid_p = float(matched_leg.get("bid_price") or matched_leg.get("best_bid") or matched_leg.get("top_bid") or 0.0)
-            ask_p = float(matched_leg.get("ask_price") or matched_leg.get("best_ask") or matched_leg.get("top_ask") or 0.0)
+            bid_p = float(matched_leg.get("top_bid_price") or matched_leg.get("bid_price") or matched_leg.get("best_bid") or 0.0)
+            ask_p = float(matched_leg.get("top_ask_price") or matched_leg.get("ask_price") or matched_leg.get("best_ask") or 0.0)
             last_p = float(matched_leg.get("last_price") or matched_leg.get("ltp") or 0.0)
-            oi_val = int(matched_leg.get("open_interest") or matched_leg.get("oi") or 0)
+            oi_val = int(matched_leg.get("oi") or matched_leg.get("open_interest") or 0)
+            vol_val = int(matched_leg.get("volume") or matched_leg.get("vol") or 0)
+
+            # Strict NSE tick rounding (₹0.05)
+            def round_tick(p: float) -> float:
+                return round(round(p / 0.05) * 0.05, 2)
+
+            bid_p = round_tick(bid_p) if bid_p > 0 else 0.0
+            ask_p = round_tick(ask_p) if ask_p > 0 else 0.0
+            last_p = round_tick(last_p) if last_p > 0 else 0.0
 
             if sec_identifier:
                 return {
@@ -669,7 +680,11 @@ async def get_option_chain_for_symbol(
                     "bid_price": bid_p,
                     "ask_price": ask_p,
                     "last_price": last_p,
+                    "ltp": last_p,
                     "open_interest": oi_val,
+                    "oi": oi_val,
+                    "volume": vol_val,
+                    "expiry": target_expiry,
                     "source": "DHAN_OPTION_CHAIN"
                 }
     except Exception as e:

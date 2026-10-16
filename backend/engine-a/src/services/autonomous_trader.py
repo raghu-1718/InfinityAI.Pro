@@ -401,7 +401,10 @@ class AutonomousTrader:
             except Exception:
                 signal_dt = None
 
-        regime = get_current_market_regime(signal_dt)
+        adx_val = float(signal.get("adx") or signal.get("analysis", {}).get("adx") or signal.get("adx_14") or 25.0)
+        change_pct = float(signal.get("change_pct") or signal.get("intraday_change_pct") or (float(signal.get("analysis", {}).get("return_15m_past", 0.0)) * 100) or 0.0)
+
+        regime = get_current_market_regime(signal_dt, intraday_change_pct=change_pct, trend_adx=adx_val)
         logger.info(
             f"🕒 Regime [{regime.name}] ({regime.regime_id}) @ {regime.ist_time} IST: "
             f"Dynamic ADX Threshold = {regime.adx_threshold:.1f}, ML Threshold = {regime.ml_threshold:.2f} | "
@@ -672,7 +675,8 @@ class AutonomousTrader:
             url = f"{ENGINE_C_URL}/api/dhan/option-chain/{symbol_upper}?strike={target_strike}&option_type={opt_type_code}"
             headers = {
                 "X-User-ID": str(self.config.get("user_id", "raghu_primary")),
-                "X-Engine-Source": "engine-a"
+                "X-Engine-Source": "engine-a",
+                "X-Internal-Token": os.getenv("INTERNAL_TOKEN", "inf-prod-internal-key-920-v1")
             }
             oidc_tok = _get_oidc_token(ENGINE_C_URL)
             if oidc_tok:
@@ -683,6 +687,13 @@ class AutonomousTrader:
                 data = chain_resp.json()
                 sec_id = str(data.get("securityId") or data.get("security_id") or "")
                 if sec_id and sec_id != "45123":
+                    def round_tick(p: float) -> float:
+                        return round(round(p / 0.05) * 0.05, 2)
+
+                    raw_bid = float(data.get("bid_price", 0.0) or data.get("best_bid", 0.0) or data.get("top_bid_price", 0.0))
+                    raw_ask = float(data.get("ask_price", 0.0) or data.get("best_ask", 0.0) or data.get("top_ask_price", 0.0))
+                    raw_ltp = float(data.get("last_price", 0.0) or data.get("ltp", 0.0))
+
                     return {
                         "security_id": sec_id,
                         "trading_symbol": data.get("tradingSymbol", trading_symbol),
@@ -694,8 +705,9 @@ class AutonomousTrader:
                         "theta_decay_per_day": theta_decay,
                         "gamma": gamma,
                         "vega": vega,
-                        "bid_price": float(data.get("bid_price", 0.0) or data.get("best_bid", 0.0)),
-                        "ask_price": float(data.get("ask_price", 0.0) or data.get("best_ask", 0.0)),
+                        "bid_price": round_tick(raw_bid) if raw_bid > 0 else 0.0,
+                        "ask_price": round_tick(raw_ask) if raw_ask > 0 else 0.0,
+                        "last_price": round_tick(raw_ltp) if raw_ltp > 0 else 0.0,
                         "open_interest": int(data.get("open_interest", 0) or data.get("oi", 0))
                     }
                 else:

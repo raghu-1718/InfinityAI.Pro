@@ -27,7 +27,7 @@ class OptionContractCache:
             "NIFTY": {"base": 24250, "step": 50, "range": 30, "lot": 65, "sec_prefix": "13"},
             "BANKNIFTY": {"base": 51200, "step": 100, "range": 30, "lot": 30, "sec_prefix": "25"},
             "FINNIFTY": {"base": 23400, "step": 50, "range": 20, "lot": 60, "sec_prefix": "27"},
-            "MIDCPNIFTY": {"base": 13000, "step": 25, "range": 30, "lot": 120, "sec_prefix": "28"},
+            "MIDCPNIFTY": {"base": 13700, "step": 25, "range": 30, "lot": 120, "sec_prefix": "442"},
             "SENSEX": {"base": 80100, "step": 100, "range": 30, "lot": 20, "sec_prefix": "51"},
             "BANKEX": {"base": 65000, "step": 100, "range": 20, "lot": 30, "sec_prefix": "52"},
             "CRUDEOIL": {"base": 6350, "step": 50, "range": 20, "lot": 100, "sec_prefix": "60"}
@@ -117,7 +117,7 @@ class OptionContractCache:
                 "NIFTY": "13",
                 "BANKNIFTY": "25",
                 "FINNIFTY": "27",
-                "MIDCPNIFTY": "44",
+                "MIDCPNIFTY": "442",
                 "SENSEX": "51",
                 "BANKEX": "52",
                 "CRUDEOIL": "61"

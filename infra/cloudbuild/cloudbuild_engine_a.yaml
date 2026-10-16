@@ -34,7 +34,7 @@ steps:
         "--image",
         "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-a:latest",
         "--set-env-vars",
-        "ENGINE_B_URL=https://engine-b-r2f5flt77q-el.a.run.app,ENGINE_C_URL=https://engine-c-r2f5flt77q-el.a.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary,SIMULATION_CAPITAL=30000.0",
+        "ENGINE_B_URL=https://engine-b-313407263327.asia-south1.run.app,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,ENVIRONMENT=production,PRIMARY_USER_ID=raghu_primary,SIMULATION_CAPITAL=30000.0,INTERNAL_TOKEN=inf-prod-internal-key-920-v1",
         "--set-secrets",
         "TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest,TELEGRAM_CHAT_ID=TELEGRAM_CHAT_ID:latest",
         "--region",
@@ -53,7 +53,7 @@ steps:
         "--timeout",
         "600s",
         "--memory",
-        "1Gi",
+        "2Gi",
         "--service-account",
         "sa-engine-a@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com",
       ]
