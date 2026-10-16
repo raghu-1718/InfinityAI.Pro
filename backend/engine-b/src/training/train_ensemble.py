@@ -160,7 +160,7 @@ def fetch_raw_ohlcv(symbol: str, days: int = 730) -> pd.DataFrame:
     """
     import requests
 
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
     INDEX_MAP    = {
         "NIFTY": ("13", "IDX_I"), "NIFTY50": ("13", "IDX_I"),
         "BANKNIFTY": ("25", "IDX_I"), "SENSEX": ("51", "IDX_I"),
@@ -172,11 +172,13 @@ def fetch_raw_ohlcv(symbol: str, days: int = 730) -> pd.DataFrame:
 
     # Primary: DhanHQ via Engine-C
     try:
+        headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
         r = requests.get(
             f"{engine_c_url}/api/dhan/market/historical",
             params={"security_id": sec_id, "exchange_segment": seg,
                     "instrument_type": "INDEX", "from_date": from_date,
                     "to_date": to_date, "interval": "daily", "user_id": "raghu_primary"},
+            headers=headers,
             timeout=20,
         )
         if r.status_code == 200:

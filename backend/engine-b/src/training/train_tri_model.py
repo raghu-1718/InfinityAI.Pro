@@ -259,7 +259,7 @@ def calculate_features(df_ohlcv: pd.DataFrame, df_options: Optional[pd.DataFrame
 def fetch_index_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.DataFrame:
     """Fetch institutional index data from DhanHQ via Engine-C proxy with Yahoo fallback"""
     import requests
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
 
     sec_id, exchange_seg = INDEX_MASTER_MAP.get(symbol.upper(), ("13", "IDX_I"))
     from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -269,6 +269,7 @@ def fetch_index_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.Data
 
     # Primary: DhanHQ via Engine-C Proxy
     try:
+        headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
         r = requests.get(
             f"{engine_c_url}/api/dhan/market/historical",
             params={
@@ -280,6 +281,7 @@ def fetch_index_training_data(symbol: str = "NIFTY", days: int = 730) -> pd.Data
                 "interval": "daily",
                 "user_id": "raghu_primary"
             },
+            headers=headers,
             timeout=20
         )
         if r.status_code == 200:

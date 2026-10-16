@@ -38,7 +38,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         -r requirements.txt
 
 # Download NLTK data directly during build (Pre-cached in image)
-RUN python -m nltk.downloader vader_lexicon punkt stopwords -d /usr/local/share/nltk_data
+RUN python -m nltk.downloader vader_lexicon punkt punkt_tab stopwords -d /usr/local/share/nltk_data
 
 # --------------------------------------------------
 # Shared library & Application source

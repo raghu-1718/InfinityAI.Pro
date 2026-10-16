@@ -1062,7 +1062,7 @@ class MarketDataEngine:
         self.dhan = None
         self.cache: Dict[str, tuple] = {}
         self.data_source_stats = {"dhan": 0, "yahoo": 0, "synthetic": 0, "engine_c": 0}
-        self.engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+        self.engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
         self.default_user_id = os.getenv("DEFAULT_USER_ID", "raghu_primary")
         self._init_dhan_client()
 
@@ -1126,9 +1126,11 @@ class MarketDataEngine:
         """Fetch live account data from Engine-C to keep real-time connection active"""
         try:
             import requests
+            headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
             response = requests.get(
                 f"{self.engine_c_url}/api/dhan/funds",
                 params={"user_id": self.default_user_id},
+                headers=headers,
                 timeout=10
             )
             if response.status_code == 200:
@@ -1237,6 +1239,7 @@ class MarketDataEngine:
             try:
                 import requests
                 logger.info(f"📡 Fetching DhanHQ historical data via Engine-C proxy for {symbol} (sec_id={sec_id})")
+                headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
                 c_resp = requests.get(
                     f"{self.engine_c_url}/api/dhan/market/historical",
                     params={
@@ -1248,6 +1251,7 @@ class MarketDataEngine:
                         "interval": "minute" if is_intraday else "daily",
                         "user_id": self.default_user_id
                     },
+                    headers=headers,
                     timeout=15
                 )
                 if c_resp.status_code == 200:
@@ -2085,7 +2089,7 @@ def fetch_market_breadth_and_gift() -> dict:
     NEUTRAL = {"advance_decline_ratio": 1.0, "gift_nifty_basis": 0.0, "crude_oil_trend": "NEUTRAL"}
 
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "project-841b7f97-5ee3-4fbe-920")
-    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
+    engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
 
     result = dict(NEUTRAL)
 
@@ -2140,14 +2144,17 @@ def fetch_market_breadth_and_gift() -> dict:
         # GIFT Nifty security_id on NSE_IDX: 13 (Nifty50 spot), GIFT Nifty futures differ by segment
         # We compare GIFT Nifty LTP (IDX_I segment, security 13 in GIFT exchange)
         # vs NSE Nifty spot to compute basis
+        _headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
         nifty_resp = _requests.get(
             f"{engine_c_url}/api/dhan/market/ltp",
             params={"security_id": "13", "exchange_segment": "IDX_I"},
+            headers=_headers,
             timeout=5
         )
         gift_resp = _requests.get(
             f"{engine_c_url}/api/dhan/market/ltp",
             params={"security_id": "13", "exchange_segment": "NSE_FNO"},
+            headers=_headers,
             timeout=5
         )
         if nifty_resp.status_code == 200 and gift_resp.status_code == 200:
