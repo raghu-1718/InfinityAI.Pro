@@ -3,6 +3,7 @@ google-cloud-bigquery
 google-cloud-storage
 lightgbm
 catboost
+xgboost
 joblib
 db-dtypes
 scikit-learn

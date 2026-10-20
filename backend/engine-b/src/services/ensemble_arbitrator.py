@@ -331,6 +331,8 @@ class EnsembleArbitrator:
         weights = self.compute_dynamic_weights(regime_tilt)
         ensemble_proba = self.weighted_ensemble_proba(model_probas, weights)
         proba_last = ensemble_proba[-1] if ensemble_proba.ndim == 2 else ensemble_proba
+        proba_last = np.clip(proba_last, 1e-6, None)
+        proba_last = proba_last / np.sum(proba_last)
 
         p_sell = float(proba_last[0])
         p_hold = float(proba_last[1])
@@ -346,10 +348,17 @@ class EnsembleArbitrator:
             signal = "HOLD"
             confidence = round(p_hold * 100, 2)
 
+        # Enforce exact 4-decimal sum to 1.0000 at serialization
+        probs_r = [round(p_sell, 4), round(p_hold, 4), round(p_buy, 4)]
+        diff = round(1.0 - sum(probs_r), 4)
+        max_idx = int(np.argmax(probs_r))
+        probs_r[max_idx] = round(probs_r[max_idx] + diff, 4)
+        p_sell_r, p_hold_r, p_buy_r = float(probs_r[0]), float(probs_r[1]), float(probs_r[2])
+
         return {
             "signal":         signal,
             "confidence":     confidence,
-            "signal_proba":   {"SELL": round(p_sell, 4), "HOLD": round(p_hold, 4), "BUY": round(p_buy, 4)},
+            "signal_proba":   {"SELL": p_sell_r, "HOLD": p_hold_r, "BUY": p_buy_r},
             "weights_used":   weights,
             "champion_model": self.tracker._champion,
             "challenger_model": self.tracker._challenger,

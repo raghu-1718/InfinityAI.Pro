@@ -33,6 +33,8 @@ try:
     from .structural_risk_manager import StructuralRiskManager
     from .asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
     from .tax_calculator import calculate_options_roundtrip_charges
+    from .market_data_validator import validate_index_spot, validate_or_raise, StaleMarketDataError, INDEX_SPOT_BOUNDS, calculate_atm_strike, get_strike_step
+    from .expiry_theta_damper import EXPIRY_THETA_DAMPER
 except (ImportError, ValueError):
     from src.services.shadow_signal_logger import ShadowSignalLogger
     from src.services.black_swan_circuit_breaker import BLACK_SWAN_BREAKER
@@ -43,6 +45,8 @@ except (ImportError, ValueError):
     from src.services.structural_risk_manager import StructuralRiskManager
     from src.services.asymmetric_trade_lifecycle import AsymmetricTradeLifecycle
     from src.services.tax_calculator import calculate_options_roundtrip_charges
+    from src.services.market_data_validator import validate_index_spot, validate_or_raise, StaleMarketDataError, INDEX_SPOT_BOUNDS, calculate_atm_strike, get_strike_step
+    from src.services.expiry_theta_damper import EXPIRY_THETA_DAMPER
 
 logger = logging.getLogger("InfinityAI.ContinuousShadowScanner")
 
@@ -92,10 +96,14 @@ class ContinuousShadowScanner:
 
     @staticmethod
     def is_market_hours() -> bool:
-        """Enforces Indian stock market operational hours (09:15–15:30 IST Mon-Fri)"""
+        """Enforces Indian stock market operational hours (09:15–15:30 IST Mon-Fri, excluding NSE/BSE holidays)"""
         now_utc = datetime.now(timezone.utc)
         ist = now_utc + timedelta(hours=5, minutes=30)
         if ist.weekday() >= 5:
+            return False
+        date_str = ist.strftime("%Y-%m-%d")
+        from src.services.expiry_theta_damper import DEFAULT_NSE_BSE_HOLIDAYS_2026
+        if date_str in DEFAULT_NSE_BSE_HOLIDAYS_2026:
             return False
         market_open = ist.replace(hour=9, minute=15, second=0, microsecond=0)
         market_close = ist.replace(hour=15, minute=30, second=0, microsecond=0)
@@ -188,9 +196,21 @@ class ContinuousShadowScanner:
                 if conf > 1.0:
                     conf = conf / 100.0  # normalize 50.0 -> 0.50
 
-                spot = spot_prices.get(sym, float(sig.get("current_price", 0.0)))
-                if spot <= 0:
-                    spot = float(sig.get("current_price", 1000.0))
+                # 1. Spot Price Resolution & Sanity-Bound Validation
+                spot = spot_prices.get(sym)
+                if not spot:
+                    candidate_spot = float(sig.get("current_price", 0.0))
+                    if candidate_spot > 0 and validate_index_spot(sym, candidate_spot):
+                        spot = candidate_spot
+
+                # Strict sanity-bound and freshness validation: Reject synthetic/corrupted/out-of-bounds spot immediately
+                if not spot or not validate_index_spot(sym, spot):
+                    logger.error(
+                        f"🚨 StaleMarketDataError: Invalid, stale, or out-of-bounds spot price {spot} for {sym}. "
+                        f"Permitted bounds: {INDEX_SPOT_BOUNDS.get(sym)}. Vetoing trade execution."
+                    )
+                    self.last_signals_cache[sym] = {"time": now_utc, "spot": 0.0, "decision": "VETOED_STALE_MARKET_DATA"}
+                    continue
 
                 models = sig.get("analysis", {})
                 adx = float(models.get("adx", 25.0))
@@ -210,10 +230,22 @@ class ContinuousShadowScanner:
                 is_trending = adx >= regime.adx_threshold
                 is_low_vol_chop = (adx < 20.0) and (float(spot_prices.get("INDIAVIX", 13.5)) < 16.5)
 
+                ist_now = now_utc + timedelta(hours=5, minutes=30)
+                is_true_expiry = EXPIRY_THETA_DAMPER.is_expiry_day(sym, ist_now)
+
                 if veto_active or signal_dir in ["HOLD", "NEUTRAL", "NO_TRADE", ""]:
                     decision = "NO_TRADE"
                     logger.info(f"⏸️ Signal for {sym} is {signal_dir} (ADX: {adx:.1f}, Veto: {veto_active} [{regime.name}]). No trade executed.")
                 elif ("BUY" in signal_dir or "CALL" in signal_dir) and conf >= regime.ml_threshold:
+                    # Expiry Day Theta Guard: Do NOT buy naked options on true expiry day unless ADX >= 25.0
+                    if is_true_expiry and adx < 25.0:
+                        logger.warning(
+                            f"🛡️ Expiry Day Theta Guard: Suppressing {sym} BUY_CALL (ADX {adx:.1f} < 25.0 "
+                            f"on true expiry day {ist_now.strftime('%Y-%m-%d')}). Capital protected."
+                        )
+                        self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "EXPIRY_THETA_GUARD_VETO"}
+                        continue
+
                     if is_trending:
                         decision = "BUY_CALL"
                         logger.info(f"🚀 Trending Breakout detected on {sym} (ADX: {adx:.1f}) -> Directional BUY_CALL")
@@ -223,6 +255,14 @@ class ContinuousShadowScanner:
                     else:
                         decision = "BUY_CALL"
                 elif ("SELL" in signal_dir or "PUT" in signal_dir) and conf >= regime.ml_threshold:
+                    # Expiry Day Theta Guard: Do NOT buy naked puts on true expiry day unless ADX >= 25.0
+                    if is_true_expiry and adx < 25.0 and is_trending:
+                        logger.warning(
+                            f"🛡️ Expiry Day Theta Guard: Suppressing {sym} BUY_PUT (ADX {adx:.1f} < 25.0 "
+                            f"on true expiry day {ist_now.strftime('%Y-%m-%d')}). Capital protected."
+                        )
+                        self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "EXPIRY_THETA_GUARD_VETO"}
+                        continue
                     # ---------------------------------------------------------
                     # SHORT-MOMENTUM TRAP GATE: STRICT VWAP & MACRO BIAS FILTER
                     # ---------------------------------------------------------
@@ -328,10 +368,19 @@ class ContinuousShadowScanner:
                 if not moe_res["approved"] and moe_res.get("execution_route") != "PULLBACK_LIMIT_ONLY":
                     logger.info(
                         f"⏸️ Regime-Adaptive MoE Gate: {sym} {decision} filtered out. "
-                        f"Regime: {moe_res.get('regime')} | MoE Score: {moe_res.get('moe_score', 0):.1%} | "
+                        f"Regime: {moe_res.get('regime')} | Route: {moe_res.get('execution_route')} | "
+                        f"MoE Score: {moe_res.get('moe_score', 0):.1%} | "
                         f"Reason: {moe_res.get('reason')}"
                     )
-                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "REGIME_ADAPTIVE_MOE_FILTERED"}
+                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": moe_res.get("execution_route", "REGIME_ADAPTIVE_MOE_FILTERED")}
+                    continue
+
+                if moe_res.get("execution_route") == "BLOCKED_LOW_PROBABILITY":
+                    logger.warning(
+                        f"⛔ Trade permanently blocked by Low-Conviction Hard Veto: {sym} {decision}. "
+                        f"Reason: {moe_res.get('reason')}"
+                    )
+                    self.last_signals_cache[sym] = {"time": now_utc, "spot": spot, "decision": "BLOCKED_LOW_PROBABILITY"}
                     continue
 
                 # Dynamically resolve real Macro Sentiment from Vertex AI / Ingestor
@@ -460,7 +509,7 @@ class ContinuousShadowScanner:
                 "timeframe": os.getenv("SHADOW_SIGNAL_TIMEFRAME", "5m"),
                 "user_id": "shadow_telemetry_scanner"
             }
-            internal_token = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+            internal_token = os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
             resp = await self.http_client.post(
                 f"{ENGINE_B_URL}/api/v1/signals/batch",
                 json=payload,
@@ -490,11 +539,10 @@ class ContinuousShadowScanner:
                 self.http_client = httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=3.0))
 
             sym_u = symbol.upper()
-            strike_step = 100 if "BANKNIFTY" in sym_u or "SENSEX" in sym_u else (25 if "MIDCP" in sym_u else 50)
-            strike = round(spot / strike_step) * strike_step
+            strike = calculate_atm_strike(sym_u, spot)
             opt_type = "CE" if "CALL" in decision.upper() else "PE"
 
-            internal_token = os.getenv("INTERNAL_TOKEN") or os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+            internal_token = os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
             headers = {"X-Internal-Token": internal_token}
 
             resp = await self.http_client.get(
@@ -852,6 +900,9 @@ class ContinuousShadowScanner:
                 elif lifecycle["lifecycle_status"] in ["RUNNER_EXITED_ON_TREND_REVERSAL", "RUNNER_STOPPED_AT_BREAKEVEN", "STOP_LOSS_HIT"]:
                     should_close = True
                     close_reason = lifecycle["lifecycle_status"]
+                elif (t_ist.hour > 15) or (t_ist.hour == 15 and t_ist.minute >= 25):
+                    should_close = True
+                    close_reason = "EOD_SQUAREOFF"
                 elif idx == len(df_ticks) - 1:
                     should_close = True
                     close_reason = "EOD_SQUAREOFF"

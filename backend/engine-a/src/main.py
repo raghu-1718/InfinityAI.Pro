@@ -700,7 +700,7 @@ async def proxy_trade_signal(req: Dict[str, Any]):
     if not ENGINE_B_URL:
         raise HTTPException(500, "ENGINE_B_URL not configured")
     try:
-        internal_token = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+        internal_token = os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
         res = await http_client.post(
             f"{ENGINE_B_URL}/api/v1/signal",
             json=req,
@@ -1915,18 +1915,39 @@ async def reconcile_shadow_outcomes(req: Optional[Dict[str, Any]] = None):
 @app.post("/api/v1/eod-settlement")
 async def trigger_eod_settlement(req: Optional[Dict[str, Any]] = None):
     """
-    Automated 15:45 IST EOD Settlement & Retraining trigger (invoked by Cloud Scheduler).
+    Automated 15:25 IST Pre-Close Square-Off and EOD Settlement trigger (invoked by Cloud Scheduler).
     """
     try:
         from src.services.eod_settlement_service import EODSettlementService
         eod_svc = EODSettlementService()
-        spot_prices = (req or {}).get("spot_prices")
-        result = eod_svc.run_eod_reconciliation(current_spot_prices=spot_prices)
+        emergency_retry = bool((req or {}).get("emergency_retry", False))
+        preclose = bool((req or {}).get("preclose", True))
+        
+        if preclose:
+            result = eod_svc.execute_preclose_squareoff(emergency_retry=emergency_retry)
+        else:
+            spot_prices = (req or {}).get("spot_prices")
+            result = eod_svc.run_eod_reconciliation(current_spot_prices=spot_prices, trigger_journal=False)
+            
         retrain_res = eod_svc.trigger_nightly_retraining()
         result["retraining_trigger"] = retrain_res
         return result
     except Exception as e:
         logger.error(f"EOD Settlement API Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/eod-squareoff")
+async def trigger_eod_squareoff(emergency_retry: bool = False):
+    """
+    Dedicated endpoint for 15:25:00 IST Pre-Close Square-Off and 15:27:00 IST Emergency Retry.
+    """
+    try:
+        from src.services.eod_settlement_service import EODSettlementService
+        eod_svc = EODSettlementService()
+        return eod_svc.execute_preclose_squareoff(emergency_retry=emergency_retry)
+    except Exception as e:
+        logger.error(f"Pre-close squareoff failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

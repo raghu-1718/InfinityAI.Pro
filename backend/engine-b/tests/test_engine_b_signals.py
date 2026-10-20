@@ -1,7 +1,13 @@
 import os
+import sys
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+engine_b_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if engine_b_dir not in sys.path:
+    sys.path.insert(0, engine_b_dir)
+
 import pytest
 from unittest.mock import MagicMock, patch
 import pandas as pd
@@ -11,9 +17,9 @@ from src.main import evaluate_option_signal_conviction, clean_floats
 
 
 def test_evaluate_option_signal_conviction_adx_veto():
-    """Verify that ADX < 25 properly triggers veto_triggered=True and signal=HOLD."""
+    """Verify that ADX < 15.0 properly triggers veto_triggered=True and signal=HOLD."""
     df_dummy = pd.DataFrame({
-        "ADX_14": [18.5],
+        "ADX_14": [13.5],
         "RSI_14": [55.0],
         "close": [24500.0],
         "EMA_200": [24000.0]

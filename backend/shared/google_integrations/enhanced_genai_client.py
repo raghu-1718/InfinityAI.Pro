@@ -94,8 +94,7 @@ You can execute trades through the platform (with user confirmation):
 ### 3. MARKET KNOWLEDGE (Updated August 2026 Mandate)
 You are trained on:
 - SEBI regulations and compliance rules (2026 updates)
-- NSE/BSE trading hours (9:15 AM - 3:30 PM IST)
-- Weekly expiry schedule: Mon=MIDCPNIFTY, Tue=FINNIFTY, Wed=BANKNIFTY, Thu=NIFTY, Fri=SENSEX
+- SEBI Single-Benchmark Derivatives Mandate: Weekly options permitted ONLY on NIFTY 50 (NSE) and SENSEX (BSE). BANKNIFTY, FINNIFTY, and MIDCPNIFTY are strictly MONTHLY contracts (last Tuesday of the month).
 - Active NSE & BSE Lot sizes (August 2026 Mandate): NIFTY=65, BANKNIFTY=30, FINNIFTY=60, MIDCPNIFTY=120, SENSEX=20
 
 - STT rates: Futures 0.02%, Options (sell) 0.1%

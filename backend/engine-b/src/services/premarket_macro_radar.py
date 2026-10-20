@@ -30,18 +30,18 @@ class MacroRadarReport:
     report_date: str
     macro_bias: str            # "BULLISH", "BEARISH", "NEUTRAL"
     macro_score: float         # -1.0 (extreme bearish) to +1.0 (extreme bullish)
-    gift_nifty_points: float   # e.g. +75.0 points
-    expected_gap: str          # "GAP_UP", "GAP_DOWN", "FLAT"
-    crude_oil_pct: float       # e.g. -1.2%
-    crude_oil_status: str      # "BENIGN", "HEADWIND", "NEUTRAL"
-    us_10y_yield: float        # e.g. 4.25%
-    dxy_index: float           # e.g. 103.8
-    fii_net_crores: float      # e.g. +1450.0 Cr
-    dii_net_crores: float      # e.g. +850.0 Cr
-    institutional_flow_bias: str # "NET_INFLOW", "NET_OUTFLOW", "BALANCED"
-    gemini_macro_synthesis: str
-    recommended_opening_bias: str
-    risk_regime: str           # "LOW_VOLATILITY", "HIGH_VOLATILITY", "EVENT_RISK"
+    gift_nifty_points: Optional[float] = None   # e.g. +75.0 points or None if unavailable
+    expected_gap: Optional[str] = "UNAVAILABLE" # "GAP_UP", "GAP_DOWN", "FLAT", "UNAVAILABLE"
+    crude_oil_pct: Optional[float] = None
+    crude_oil_status: Optional[str] = "UNAVAILABLE"
+    us_10y_yield: Optional[float] = None
+    dxy_index: Optional[float] = None
+    fii_net_crores: Optional[float] = None
+    dii_net_crores: Optional[float] = None
+    institutional_flow_bias: str = "BALANCED" # "NET_INFLOW", "NET_OUTFLOW", "BALANCED"
+    gemini_macro_synthesis: str = ""
+    recommended_opening_bias: str = "RANGEBOUND / SHORT_STRADDLES_IRON_CONDORS"
+    risk_regime: str = "LOW_VOLATILITY"       # "LOW_VOLATILITY", "HIGH_VOLATILITY", "EVENT_RISK"
 
 
 # ==============================================================================
@@ -90,16 +90,20 @@ class PreMarketMacroRadar:
             import re
             from google.genai import types
             prompt = (
+                "You are an institutional quantitative macro research analyst for Indian capital markets (NSE/BSE).\n"
+                "CRITICAL SYSTEM INSTRUCTION: Never invent or estimate spot prices from training memory if a feed returns only percentage change; print SPOT_UNAVAILABLE instead.\n\n"
                 "Search real-time live Indian and global financial market data for today across verified sources "
-                "(Moneycontrol, The Economic Times, Livemint, Reuters, Bloomberg, NSE India, BSE India, and RBI):\n"
-                "1. GIFT NIFTY live futures points and estimated market opening gap for NIFTY 50.\n"
-                "2. Brent Crude Oil percentage change and price.\n"
+                "(Moneycontrol, The Economic Times, Livemint, Reuters, Bloomberg, NSE India, BSE India, and RBI) and extract BOTH raw spot values and percentage changes:\n"
+                "1. GIFT NIFTY live futures spot price (or SPOT_UNAVAILABLE), live points change, and estimated market opening gap for NIFTY 50.\n"
+                "2. Brent Crude Oil live spot price in USD (or SPOT_UNAVAILABLE) and percentage change.\n"
                 "3. FII and DII cash market net flow from the latest session in INR Crores.\n"
-                "4. US 10-Year Treasury Yield and US Dollar Index (DXY).\n"
+                "4. US 10-Year Treasury Yield raw yield and US Dollar Index (DXY) spot value.\n"
                 "5. Top breaking domestic/global market catalysts, corporate earnings surprises, or central bank news.\n\n"
                 "Output ONLY a raw valid JSON object (enclosed in ```json ... ```) with exact keys:\n"
                 "{\n"
+                '  "gift_nifty_spot": float | "SPOT_UNAVAILABLE",\n'
                 '  "gift_nifty_points": float,\n'
+                '  "brent_crude_spot": float | "SPOT_UNAVAILABLE",\n'
                 '  "brent_crude_pct": float,\n'
                 '  "fii_net_crores": float,\n'
                 '  "dii_net_crores": float,\n'
@@ -158,26 +162,29 @@ class PreMarketMacroRadar:
         if gift_nifty_gap is None or crude_oil_pct is None or fii_net_crores is None:
             live_data = self.fetch_live_search_telemetry()
 
-        gift_nifty_gap = gift_nifty_gap if gift_nifty_gap is not None else float(live_data.get("gift_nifty_points", 45.0))
-        crude_oil_pct = crude_oil_pct if crude_oil_pct is not None else float(live_data.get("brent_crude_pct", -0.85))
-        us_10y_yield = us_10y_yield if us_10y_yield is not None else float(live_data.get("us_10y_yield", 4.28))
-        dxy_index = dxy_index if dxy_index is not None else float(live_data.get("dxy_index", 103.5))
-        fii_net_crores = fii_net_crores if fii_net_crores is not None else float(live_data.get("fii_net_crores", 1250.0))
-        dii_net_crores = dii_net_crores if dii_net_crores is not None else float(live_data.get("dii_net_crores", 950.0))
+        gift_nifty_gap = gift_nifty_gap if gift_nifty_gap is not None else (float(live_data["gift_nifty_points"]) if "gift_nifty_points" in live_data else None)
+        crude_oil_pct = crude_oil_pct if crude_oil_pct is not None else (float(live_data["brent_crude_pct"]) if "brent_crude_pct" in live_data else None)
+        us_10y_yield = us_10y_yield if us_10y_yield is not None else (float(live_data["us_10y_yield"]) if "us_10y_yield" in live_data else None)
+        dxy_index = dxy_index if dxy_index is not None else (float(live_data["dxy_index"]) if "dxy_index" in live_data else None)
+        fii_net_crores = fii_net_crores if fii_net_crores is not None else (float(live_data["fii_net_crores"]) if "fii_net_crores" in live_data else None)
+        dii_net_crores = dii_net_crores if dii_net_crores is not None else (float(live_data["dii_net_crores"]) if "dii_net_crores" in live_data else None)
 
         # 1. Quantitative Factor Scoring
-        # GIFT NIFTY Weight: 35%
-        gift_score = max(-1.0, min(1.0, gift_nifty_gap / 100.0))
-        
-        # Crude Oil Weight: 20% (Lower crude is bullish for India)
-        crude_score = max(-1.0, min(1.0, -crude_oil_pct / 2.5))
+        gift_score = max(-1.0, min(1.0, gift_nifty_gap / 100.0)) if gift_nifty_gap is not None else 0.0
+        crude_score = max(-1.0, min(1.0, -crude_oil_pct / 2.5)) if crude_oil_pct is not None else 0.0
 
-        # FII / DII Net Flow Weight: 25%
-        net_inst_flow = fii_net_crores + (dii_net_crores * 0.7)
-        flow_score = max(-1.0, min(1.0, net_inst_flow / 2500.0))
+        if fii_net_crores is not None and dii_net_crores is not None:
+            net_inst_flow = fii_net_crores + (dii_net_crores * 0.7)
+            flow_score = max(-1.0, min(1.0, net_inst_flow / 2500.0))
+            flow_status = "NET_INFLOW" if (fii_net_crores + dii_net_crores) > 500.0 else ("NET_OUTFLOW" if (fii_net_crores + dii_net_crores) < -500.0 else "BALANCED")
+        else:
+            flow_score = 0.0
+            flow_status = "BALANCED"
 
-        # DXY & US Yields: 20% (Lower yields & DXY are bullish for EMs)
-        dxy_score = -0.3 if dxy_index > 104.5 else (+0.3 if dxy_index < 103.0 else 0.0)
+        if dxy_index is not None:
+            dxy_score = -0.3 if dxy_index > 104.5 else (+0.3 if dxy_index < 103.0 else 0.0)
+        else:
+            dxy_score = 0.0
 
         # Composite Macro Score (-1.0 to +1.0)
         composite_score = round(
@@ -195,19 +202,25 @@ class PreMarketMacroRadar:
             bias = "NEUTRAL"
             open_bias = "RANGEBOUND / SHORT_STRADDLES_IRON_CONDORS"
 
-        expected_gap = "GAP_UP" if gift_nifty_gap > 35.0 else ("GAP_DOWN" if gift_nifty_gap < -35.0 else "FLAT")
-        crude_status = "BENIGN" if crude_oil_pct < 0 else ("HEADWIND" if crude_oil_pct > 1.5 else "NEUTRAL")
-        flow_status = "NET_INFLOW" if (fii_net_crores + dii_net_crores) > 500.0 else ("NET_OUTFLOW" if (fii_net_crores + dii_net_crores) < -500.0 else "BALANCED")
-        risk_regime = "HIGH_VOLATILITY" if abs(gift_nifty_gap) > 120.0 or abs(crude_oil_pct) > 3.0 else "LOW_VOLATILITY"
+        expected_gap = ("GAP_UP" if gift_nifty_gap > 35.0 else ("GAP_DOWN" if gift_nifty_gap < -35.0 else "FLAT")) if gift_nifty_gap is not None else "UNAVAILABLE"
+        crude_status = ("BENIGN" if crude_oil_pct < 0 else ("HEADWIND" if crude_oil_pct > 1.5 else "NEUTRAL")) if crude_oil_pct is not None else "UNAVAILABLE"
+        risk_regime = "HIGH_VOLATILITY" if ((gift_nifty_gap and abs(gift_nifty_gap) > 120.0) or (crude_oil_pct and abs(crude_oil_pct) > 3.0)) else "LOW_VOLATILITY"
 
         # 2. Vertex AI Gemini 2.5 Synthesis
         gemini_text = ""
+        gap_desc = f"{gift_nifty_gap:+.1f} pts" if gift_nifty_gap is not None else "N/A"
+        crude_desc = f"{crude_oil_pct:+.2f}%" if crude_oil_pct is not None else "N/A"
+        fii_desc = f"₹{fii_net_crores:+.1f} Cr" if fii_net_crores is not None else "N/A"
+        dii_desc = f"₹{dii_net_crores:+.1f} Cr" if dii_net_crores is not None else "N/A"
+        yield_desc = f"{us_10y_yield:.2f}%" if us_10y_yield is not None else "N/A"
+        dxy_desc = f"{dxy_index:.1f}" if dxy_index is not None else "N/A"
+
         if self.vertex_available and self.genai_client:
             prompt = (
                 f"Analyze Indian pre-market conditions for {report_date}: "
-                f"GIFT NIFTY gap: {gift_nifty_gap:+.1f} pts, Crude Oil (Brent): {crude_oil_pct:+.2f}%, "
-                f"US 10Y Yield: {us_10y_yield:.2f}%, DXY: {dxy_index:.1f}, "
-                f"FII Net: ₹{fii_net_crores:+.1f} Cr, DII Net: ₹{dii_net_crores:+.1f} Cr. "
+                f"GIFT NIFTY gap: {gap_desc}, Crude Oil (Brent): {crude_desc}, "
+                f"US 10Y Yield: {yield_desc}, DXY: {dxy_desc}, "
+                f"FII Net: {fii_desc}, DII Net: {dii_desc}. "
                 f"Provide a 3-sentence institutional macro summary for NIFTY/BANKNIFTY F&O opening bias."
             )
             for attempt in range(2):
@@ -226,16 +239,14 @@ class PreMarketMacroRadar:
                         continue
                     logger.warning(f"Vertex AI Gemini generation fallback: {e}")
                     gemini_text = (
-                        f"GIFT Nifty indicates a {expected_gap.lower()} opening (+{gift_nifty_gap:.1f} pts). "
-                        f"Institutional liquidity is supportive with FIIs registering net flows of ₹{fii_net_crores:+,.0f} Cr. "
-                        f"Crude oil remains {crude_status.lower()} for Indian macro stability."
+                        f"Macro regime stands {bias} with institutional liquidity rated {flow_status}. "
+                        f"Opening structure indicates {expected_gap.lower()} setup with {crude_status.lower()} crude oil environment."
                     )
                     break
         else:
             gemini_text = (
-                f"GIFT Nifty signals a {expected_gap.lower()} opening with a +{gift_nifty_gap:.1f} pt lead. "
-                f"Crude oil at {crude_oil_pct:+.2f}% presents {crude_status.lower()} input pricing, while combined FII/DII "
-                f"inflows totaling ₹{fii_net_crores + dii_net_crores:+,.0f} Cr support opening breadth."
+                f"Macro regime indicates {bias} opening conditions with institutional liquidity rated {flow_status}. "
+                f"Underlying market breadth supports {open_bias.lower()} positioning."
             )
 
         report = MacroRadarReport(

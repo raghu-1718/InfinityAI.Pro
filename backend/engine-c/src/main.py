@@ -2289,8 +2289,29 @@ async def place_order(order: OrderRequest, request: Request):
         # Apply UUIDv4 Idempotency Key (truncated to 30 chars for DhanHQ API limit)
         order_kwargs["tag"] = uuid.uuid4().hex[:30]
 
-        async with dhan_rate_limiter:
-            response = dhan_client.place_order(**order_kwargs)
+        is_dry_run = (
+            os.getenv("DRY_RUN", "").lower() in ["true", "1", "yes"] or
+            ENGINE_C_MODE.lower() in ["paper", "dry_run", "simulation"] or
+            bool(getattr(order, "dry_run", False))
+        )
+
+        if is_dry_run:
+            sim_order_id = f"DRY_{uuid.uuid4().hex[:12]}"
+            fill_price = float(order.price or 100.0)
+            logger.info(f"🧪 [DRY-RUN DECOUPLED] Simulated order placement for {order.security_id} {order.transaction_type} {order.quantity} qty @ ₹{fill_price:.2f}. Dhan API decoupled.")
+            response = {
+                "status": "success",
+                "data": {
+                    "orderId": sim_order_id,
+                    "orderStatus": "TRADED",
+                    "price": fill_price,
+                    "quantity": order.quantity,
+                    "dry_run": True
+                }
+            }
+        else:
+            async with dhan_rate_limiter:
+                response = dhan_client.place_order(**order_kwargs)
 
         # Check response status
         if isinstance(response, dict):

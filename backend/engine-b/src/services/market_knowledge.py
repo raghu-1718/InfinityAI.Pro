@@ -186,13 +186,13 @@ class SEBIRegulations:
         "20%": "Trading halted for day"
     }
 
+    # Current SEBI Mandate: Weekly options permitted ONLY on single benchmark indices (NIFTY & SENSEX).
+    # BANKNIFTY, FINNIFTY, MIDCPNIFTY have NO weekly contracts; they expire monthly on the last Tuesday.
     WEEKLY_EXPIRY = {
-        0: "MIDCPNIFTY",
-        1: "FINNIFTY",
-        2: "BANKNIFTY",
-        3: "NIFTY",
-        4: "SENSEX/BANKEX"
+        1: "NIFTY",           # Tuesday (NSE Benchmark)
+        3: "SENSEX"           # Thursday (BSE Benchmark)
     }
+    MONTHLY_EXPIRY_LAST_TUESDAY = ["BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"]
 
     @classmethod
     def get_current_lot_size(cls, symbol: str) -> int:

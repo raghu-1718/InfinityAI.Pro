@@ -566,6 +566,47 @@ async def get_option_chain(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def compute_sebi_next_expiry(symbol: str) -> str:
+    """Computes the next authentic SEBI expiry date with 2026 holiday backward-shifting."""
+    import calendar
+    today = datetime.now()
+    sym = symbol.upper()
+    holidays = {
+        "2026-01-26", "2026-03-03", "2026-03-26", "2026-03-31", "2026-04-03",
+        "2026-04-14", "2026-05-01", "2026-05-28", "2026-06-26", "2026-09-14",
+        "2026-10-02", "2026-10-20", "2026-11-10", "2026-11-24", "2026-12-25"
+    }
+    def _shift(d):
+        while d.strftime("%Y-%m-%d") in holidays or d.weekday() >= 5:
+            d -= timedelta(days=1)
+        return d
+
+    # Monthly-only for non-benchmarks (SEBI Mandate)
+    if any(k in sym for k in ["BANKNIFTY", "FINNIFTY", "MIDCP", "BANKEX", "CRUDE"]):
+        target_wd = 3 if "BANKEX" in sym else (4 if "CRUDE" in sym else 1)
+        year, month = today.year, today.month
+        last_day = calendar.monthrange(year, month)[1]
+        cand = datetime(year, month, last_day).date()
+        cand -= timedelta(days=(cand.weekday() - target_wd) % 7)
+        cand_shifted = _shift(cand)
+        if today.date() > cand_shifted:
+            nm = 1 if month == 12 else month + 1
+            ny = year + 1 if month == 12 else year
+            ld = calendar.monthrange(ny, nm)[1]
+            cand = datetime(ny, nm, ld).date()
+            cand -= timedelta(days=(cand.weekday() - target_wd) % 7)
+            cand_shifted = _shift(cand)
+        return cand_shifted.strftime("%Y-%m-%d")
+
+    # Weekly for single benchmarks (NIFTY 50=1 Tue, SENSEX=3 Thu)
+    target_wd = 3 if "SENSEX" in sym else 1
+    days_ahead = (target_wd - today.weekday()) % 7
+    if days_ahead == 0 and today.hour >= 15:
+        days_ahead = 7
+    sched = (today + timedelta(days=days_ahead)).date()
+    return _shift(sched).strftime("%Y-%m-%d")
+
+
 @data_router.get("/api/dhan/option-chain/{symbol}")
 async def get_option_chain_for_symbol(
     symbol: str,
@@ -625,7 +666,7 @@ async def get_option_chain_for_symbol(
             logger.warning(f"Notice fetching expiry list for {sym_upper}: {exp_err}")
 
         if not target_expiry:
-            target_expiry = (datetime.now() + timedelta(days=(1 - datetime.now().weekday()) % 7)).strftime("%Y-%m-%d")
+            target_expiry = compute_sebi_next_expiry(sym_upper)
 
         # 2. Fetch Option Chain from DhanHQ
         oc_resp = client.option_chain(

@@ -45,17 +45,21 @@ class MarketRegimeHeartbeatService:
         spot_prices: Dict[str, Optional[float]] = {
             "NIFTY": None,
             "BANKNIFTY": None,
+            "FINNIFTY": None,
+            "MIDCPNIFTY": None,
             "SENSEX": None,
             "INDIAVIX": None,
             "data_source": "live_broker_feed"
         }
         
         target_urls = [
-            os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app"),
-            "https://engine-c-r2f5flt77q-el.a.run.app"
+            os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app"),
+            "https://engine-c-313407263327.asia-south1.run.app"
         ]
         # Deduplicate while preserving order
         urls_to_try = list(dict.fromkeys(u for u in target_urls if u))
+        
+        from .market_data_validator import validate_index_spot
         
         fetched = False
         async with httpx.AsyncClient(timeout=8.0) as client:
@@ -63,7 +67,7 @@ class MarketRegimeHeartbeatService:
                 try:
                     resp = await client.get(
                         f"{base_url}/api/dhan/market/quotes",
-                        params={"security_ids": "13,25,51,21,27,28", "exchange_segment": "IDX_I"}
+                        params={"security_ids": "13,25,51,21,27,442", "exchange_segment": "IDX_I"}
                     )
                     if resp.status_code == 200:
                         raw_data = resp.json()
@@ -78,15 +82,14 @@ class MarketRegimeHeartbeatService:
                             # Try case-insensitive lookup
                             idx_data = d.get("idx_i", {})
                         
-                        # Security ID mapping dictionary:
-                        # 13: NIFTY 50, 25: BANKNIFTY, 51: SENSEX, 21: INDIA VIX, 27: FINNIFTY, 28: MIDCPNIFTY
+                        # 13: NIFTY 50, 25: BANKNIFTY, 51: SENSEX, 21: INDIA VIX, 27: FINNIFTY, 442: MIDCPNIFTY
                         id_map = {
                             "13": "NIFTY",
                             "25": "BANKNIFTY",
                             "51": "SENSEX",
                             "21": "INDIAVIX",
                             "27": "FINNIFTY",
-                            "28": "MIDCPNIFTY"
+                            "442": "MIDCPNIFTY"
                         }
                         
                         for sec_id, key in id_map.items():
@@ -96,13 +99,19 @@ class MarketRegimeHeartbeatService:
                                 if not p and "ohlc" in sec_node:
                                     p = sec_node["ohlc"].get("close") or sec_node["ohlc"].get("open")
                                 if p and float(p) > 0:
-                                    spot_prices[key] = round(float(p), 2)
+                                    p_float = round(float(p), 2)
+                                    # Enforce sanity bounds before accepting spot quote
+                                    if validate_index_spot(key, p_float):
+                                        spot_prices[key] = p_float
+                                    else:
+                                        logger.error(f"🚨 Sanity Bound Violation: Rejecting {key} quote {p_float} from {base_url}")
                         
                         if spot_prices["NIFTY"] and spot_prices["BANKNIFTY"]:
                             fetched = True
                             logger.info(
                                 f"✓ Successfully resolved live market quotes from Engine C ({base_url}): "
                                 f"NIFTY={spot_prices['NIFTY']}, BANKNIFTY={spot_prices['BANKNIFTY']}, "
+                                f"MIDCPNIFTY={spot_prices['MIDCPNIFTY']}, FINNIFTY={spot_prices['FINNIFTY']}, "
                                 f"SENSEX={spot_prices['SENSEX']}, INDIAVIX={spot_prices['INDIAVIX']}"
                             )
                             break
@@ -116,12 +125,16 @@ class MarketRegimeHeartbeatService:
                 history = list(self.db.collection(COLLECTION_NAME).order_by("timestamp_utc", direction=firestore.Query.DESCENDING).limit(1).stream())
                 if history:
                     last_doc = history[0].to_dict()
-                    spot_prices["NIFTY"] = last_doc.get("nifty_spot")
-                    spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
-                    spot_prices["SENSEX"] = last_doc.get("sensex_spot")
-                    spot_prices["INDIAVIX"] = last_doc.get("india_vix")
-                    spot_prices["FINNIFTY"] = last_doc.get("finnifty_spot")
-                    spot_prices["MIDCPNIFTY"] = last_doc.get("midcpnifty_spot")
+                    for k_sym, f_field in [("NIFTY", "nifty_spot"), ("BANKNIFTY", "banknifty_spot"),
+                                           ("FINNIFTY", "finnifty_spot"), ("MIDCPNIFTY", "midcpnifty_spot"),
+                                           ("SENSEX", "sensex_spot"), ("INDIAVIX", "india_vix")]:
+                        v = last_doc.get(f_field)
+                        if v and float(v) > 0:
+                            v_float = round(float(v), 2)
+                            if validate_index_spot(k_sym, v_float):
+                                spot_prices[k_sym] = v_float
+                            else:
+                                logger.error(f"🚨 Sanity Bound Violation in Firestore cache: {k_sym}={v_float} rejected.")
                     spot_prices["data_source"] = f"verified_cache_{last_doc.get('heartbeat_id', 'unknown')}"
                     
                     ts_val = last_doc.get("timestamp_utc") or last_doc.get("timestamp")
@@ -138,7 +151,7 @@ class MarketRegimeHeartbeatService:
                     if freshness_age is not None and freshness_age > 900:
                         spot_prices["is_degraded"] = True
                         spot_prices["degraded_reason"] = f"FIRESTORE_CACHE_STALE_{freshness_age}s"
-                    logger.info(f"Retrieved verified baseline from previous heartbeat: {spot_prices['NIFTY']} (age: {freshness_age}s)")
+                    logger.info(f"Retrieved verified baseline from previous heartbeat: NIFTY={spot_prices['NIFTY']}, MIDCPNIFTY={spot_prices['MIDCPNIFTY']} (age: {freshness_age}s)")
             except Exception as fe:
                 logger.error(f"Firestore fallback lookup failed: {fe}")
         
@@ -260,6 +273,8 @@ class MarketRegimeHeartbeatService:
             "status_badge": badge,
             "nifty_spot": nifty,
             "banknifty_spot": banknifty,
+            "finnifty_spot": quotes.get("FINNIFTY"),
+            "midcpnifty_spot": quotes.get("MIDCPNIFTY"),
             "sensex_spot": sensex,
             "india_vix": vix,
             "adx_avg": adx_avg,

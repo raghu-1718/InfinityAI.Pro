@@ -34,7 +34,7 @@ steps:
         "--image",
         "asia-south1-docker.pkg.dev/project-841b7f97-5ee3-4fbe-920/cloud-run-source-deploy/engine-b:latest",
         "--set-env-vars",
-        "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,GCP_PROJECT_ID=project-841b7f97-5ee3-4fbe-920,GCS_MODELS_BUCKET=infinity-ai-models-vault,ENVIRONMENT=production,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,INTERNAL_AUTH_TOKEN=inf-prod-internal-key-920-v1",
+        "GOOGLE_CLOUD_PROJECT=project-841b7f97-5ee3-4fbe-920,GCP_PROJECT_ID=project-841b7f97-5ee3-4fbe-920,GCS_MODELS_BUCKET=infinity-ai-models-vault,ENVIRONMENT=production,ENGINE_C_URL=https://engine-c-313407263327.asia-south1.run.app,ENGINE_A_URL=https://engine-a-313407263327.asia-south1.run.app,INTERNAL_AUTH_TOKEN=1X13e7abPj9k9kf06Lv6abyda8rchXW5l5YwKj03cUU,INTERNAL_TOKEN=1X13e7abPj9k9kf06Lv6abyda8rchXW5l5YwKj03cUU",
         "--set-secrets",
         "GEMINI_API_KEY=GEMINI_API_KEY:latest",
         "--region",

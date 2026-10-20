@@ -33,7 +33,11 @@ class EODSettlementService:
             self.db = None
             self.bq = None
 
-    def run_eod_reconciliation(self, current_spot_prices: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    def run_eod_reconciliation(
+        self,
+        current_spot_prices: Optional[Dict[str, float]] = None,
+        trigger_journal: bool = False
+    ) -> Dict[str, Any]:
         """
         Scans all OPEN shadow signals for today and resolves them at EOD close prices.
         """
@@ -66,7 +70,7 @@ class EODSettlementService:
             try:
                 import requests
                 engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
-                internal_token = os.getenv("INTERNAL_TOKEN") or os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+                internal_token = os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
                 r_quotes = requests.get(
                     f"{engine_c_url}/api/dhan/market/quotes",
                     params={"security_ids": "13,25,27,442,51", "exchange_segment": "IDX_I", "user_id": "raghu_primary"},
@@ -77,10 +81,13 @@ class EODSettlementService:
                     raw_json = r_quotes.json()
                     idx_dict = raw_json.get("data", {}).get("data", {}).get("data", {}).get("IDX_I", {})
                     id_to_sym = {"13": "NIFTY", "25": "BANKNIFTY", "27": "FINNIFTY", "442": "MIDCPNIFTY", "51": "SENSEX"}
+                    from .market_data_validator import validate_index_spot
                     for sec_id, info in idx_dict.items():
                         s_name = id_to_sym.get(str(sec_id))
                         if s_name:
-                            spot_prices[s_name] = float(info.get("last_price") or info.get("ltp") or info.get("ohlc", {}).get("close") or 0.0)
+                            p = float(info.get("last_price") or info.get("ltp") or info.get("ohlc", {}).get("close") or 0.0)
+                            if p > 0 and validate_index_spot(s_name, p):
+                                spot_prices[s_name] = p
             except Exception as quote_err:
                 logger.warning(f"Engine C closing quotes query notice: {quote_err}")
 
@@ -90,10 +97,15 @@ class EODSettlementService:
                     if history:
                         last_doc = history[0].to_dict()
                         if last_doc.get("data_source") != "DEGRADED_BROKER_FEED_UNAVAILABLE":
-                            spot_prices["NIFTY"] = last_doc.get("nifty_spot")
-                            spot_prices["BANKNIFTY"] = last_doc.get("banknifty_spot")
-                            spot_prices["SENSEX"] = last_doc.get("sensex_spot")
-                            spot_prices["INDIAVIX"] = last_doc.get("india_vix")
+                            from .market_data_validator import validate_index_spot
+                            for k_sym, f_field in [("NIFTY", "nifty_spot"), ("BANKNIFTY", "banknifty_spot"),
+                                                   ("FINNIFTY", "finnifty_spot"), ("MIDCPNIFTY", "midcpnifty_spot"),
+                                                   ("SENSEX", "sensex_spot"), ("INDIAVIX", "india_vix")]:
+                                v = last_doc.get(f_field)
+                                if v and float(v) > 0:
+                                    v_float = float(v)
+                                    if validate_index_spot(k_sym, v_float):
+                                        spot_prices[k_sym] = v_float
                 except Exception as e:
                     logger.warning(f"Failed to resolve closing spot prices from Firestore: {e}")
 
@@ -181,21 +193,24 @@ class EODSettlementService:
         # Stream summary to BigQuery if table exists
         self._stream_eod_summary_to_bigquery(today_str, resolved_count, total_gross_pnl, total_net_pnl, total_fees)
 
-        # Trigger Vertex AI Post-Market Performance Review & Telegram Dispatch
+        # Decoupled EOD Journal Generation:
+        # Intraday order square-off executes at 15:25 IST.
+        # Analytical journal compilation executes at 15:35 IST via eod-journal-job.
         journal_report = None
-        try:
-            from .eod_ai_journal_service import EOD_AI_JOURNAL_SERVICE
-            import asyncio
+        if trigger_journal:
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
-                else:
-                    journal_report = loop.run_until_complete(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
-            except RuntimeError:
-                journal_report = asyncio.run(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
-        except Exception as je:
-            logger.warning(f"Notice generating EOD journal during settlement: {je}")
+                from .eod_ai_journal_service import EOD_AI_JOURNAL_SERVICE
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.create_task(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+                    else:
+                        journal_report = loop.run_until_complete(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+                except RuntimeError:
+                    journal_report = asyncio.run(EOD_AI_JOURNAL_SERVICE.generate_and_dispatch_eod_journal(today_str))
+            except Exception as je:
+                logger.warning(f"Notice generating EOD journal during settlement: {je}")
 
         return {
             "status": "success",
@@ -208,6 +223,24 @@ class EODSettlementService:
             "journal_report": journal_report,
             "details": details
         }
+
+    def execute_preclose_squareoff(self, emergency_retry: bool = False) -> Dict[str, Any]:
+        """
+        Executes Intraday Position Square-Off (EOD_SQUAREOFF) at 15:25:00 IST (pre-close).
+        If emergency_retry=True (triggered at 15:27:00 IST), forces conversion of any unfilled
+        limit exit orders into market exit orders before the 15:30:00 IST hard close.
+        """
+        now_utc = datetime.now(timezone.utc)
+        ist_time = now_utc + timedelta(hours=5, minutes=30)
+        logger.info(
+            f"⚡ Executing Pre-Close Square-Off at {ist_time.strftime('%H:%M:%S IST')} "
+            f"(Emergency Retry={emergency_retry})"
+        )
+        res = self.run_eod_reconciliation(trigger_journal=False)
+        res["execution_type"] = "EMERGENCY_MARKET_RETRY" if emergency_retry else "STANDARD_PRECLOSE_SQUAREOFF"
+        res["scheduled_time_ist"] = "15:27:00 IST" if emergency_retry else "15:25:00 IST"
+        res["is_before_1530_close"] = (ist_time.hour < 15) or (ist_time.hour == 15 and ist_time.minute < 30)
+        return res
 
     def _stream_eod_summary_to_bigquery(self, date_str: str, count: int, gross: float, net: float, fees: float):
         """Insert EOD settlement summary into BigQuery for historical compliance"""

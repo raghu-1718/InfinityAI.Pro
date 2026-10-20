@@ -184,8 +184,28 @@ class SmartOrderRouter:
         fill_status: str = "FILLED"
         routing_resolution: str = "STAGE_1_TOUCH_FILL"
 
+        # Programmatic Dry-Run Decoupling Check
+        is_dry_run = (
+            os.getenv("DRY_RUN", "").lower() in ["true", "1", "yes"] or
+            os.getenv("ENGINE_C_MODE", "").lower() in ["paper", "dry_run", "simulation"]
+        )
+
+        if is_dry_run:
+            order_id = f"DRY_{uuid.uuid4().hex[:12]}"
+            stages_log.append({
+                "stage": 1,
+                "action": "DRY_RUN_SIMULATED_TOUCH_FILL",
+                "order_id": order_id,
+                "price": target_limit_price,
+                "timestamp_ms": round((time.time() - t0) * 1000, 2),
+                "simulated": True
+            })
+            routing_resolution = "STAGE_1_DRY_RUN_TOUCH_FILL"
+            fill_status = "FILLED"
+            executed_price = target_limit_price
+            logger.info(f"🧪 [DRY-RUN] Simulated limit-at-touch fill for {security_id} {transaction_type} @ ₹{executed_price:.2f} (Dhan Order Placement Decoupled)")
         # Check if live dhan_client is present
-        if dhan_client and hasattr(dhan_client, "place_order"):
+        elif dhan_client and hasattr(dhan_client, "place_order"):
             try:
                 order_kwargs = {
                     "transaction_type": transaction_type.upper(),

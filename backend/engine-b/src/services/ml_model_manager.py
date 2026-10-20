@@ -406,7 +406,10 @@ class MLModelManager:
                             p_buy = 1.0 / (1.0 + np.exp(-np.clip(flat, -10.0, 10.0)))
                             p_sell = 1.0 - p_buy
                             p_hold = np.abs(p_buy - 0.5) * 0.4
-                            probas[name] = np.column_stack([p_sell * 0.8, p_hold, p_buy * 0.8]).astype(np.float32)
+                            raw_mat = np.column_stack([p_sell * 0.8, p_hold, p_buy * 0.8])
+                            raw_mat = np.clip(raw_mat, 1e-6, None)
+                            raw_mat = raw_mat / raw_mat.sum(axis=1, keepdims=True)
+                            probas[name] = raw_mat.astype(np.float32)
                             continue
                 except Exception as e:
                     logger.warning(f"ONNX inference failed for {name} - falling back to native model: {e}")
@@ -416,8 +419,16 @@ class MLModelManager:
             if model is None:
                 continue
             try:
-                # Handle feature dimension mismatch (e.g. 18 vs 20)
-                n_feats = getattr(model, 'n_features_', getattr(model, 'n_features_in_', X_scaled.shape[1]))
+                # Handle feature dimension mismatch (e.g. 18 vs 20) with CatBoost safe detection
+                if hasattr(model, 'feature_names_') and model.feature_names_:
+                    n_feats = len(model.feature_names_)
+                elif getattr(model, 'n_features_in_', 0) and getattr(model, 'n_features_in_', 0) > 0:
+                    n_feats = int(model.n_features_in_)
+                elif getattr(model, 'n_features_', 0) and getattr(model, 'n_features_', 0) > 0:
+                    n_feats = int(model.n_features_)
+                else:
+                    n_feats = X_scaled.shape[1]
+
                 if X_scaled.shape[1] > n_feats:
                     X_input = X_scaled[:, :n_feats]
                 elif X_scaled.shape[1] < n_feats:
@@ -448,6 +459,14 @@ class MLModelManager:
         # Regime/statistical models — produce directional probability
         if close_series is not None:
             probas.update(self._predict_regime_models(close_series, len(X_scaled)))
+
+        # Enforce strict L1 normalization on all returned models
+        for m_name in list(probas.keys()):
+            p_mat = probas[m_name]
+            if isinstance(p_mat, np.ndarray) and p_mat.ndim == 2 and p_mat.shape[1] == 3:
+                p_mat = np.clip(p_mat, 1e-6, None)
+                p_mat = p_mat / p_mat.sum(axis=1, keepdims=True)
+                probas[m_name] = p_mat.astype(np.float32)
 
         return probas
 

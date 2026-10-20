@@ -811,45 +811,61 @@ def _get_market_status() -> Dict[str, Any]:
 
 
 def _get_next_expiry(symbol: str) -> str:
-    """Get next expiry date for given symbol."""
+    """
+    Get next expiry date for given symbol following SEBI single-benchmark mandate:
+    - Weekly Index Options: Allowed only on NIFTY (NSE) and SENSEX (BSE).
+    - Monthly-Only Index Options: BANKNIFTY, FINNIFTY, MIDCPNIFTY (last Tuesday of the month).
+    Holiday shift: If expiry falls on a holiday or weekend, shifts backward to preceding trading day.
+    """
     today = datetime.now()
-
-    # Weekly & Monthly expiry days (2026 Mandate: NSE=Tuesday, BSE=Thursday)
-    expiry_days = {
-        "NIFTY": 1,      # Tuesday (NSE Benchmark Weekly & Monthly)
-        "SENSEX": 3,     # Thursday (BSE Benchmark Weekly & Monthly)
-        "BANKNIFTY": 1,  # Tuesday (NSE Monthly)
-        "FINNIFTY": 1,   # Tuesday (NSE Monthly)
-        "MIDCPNIFTY": 1, # Tuesday (NSE Monthly)
-        "BANKEX": 3      # Thursday (BSE Monthly)
-    }
-
     symbol_upper = symbol.upper()
     if symbol_upper in ["NIFTY", "NIFTY50"]:
         symbol_upper = "NIFTY"
     elif symbol_upper in ["BANKNIFTY", "NIFTYBANK"]:
         symbol_upper = "BANKNIFTY"
 
-    target_day = expiry_days.get(symbol_upper, 1)
-
-    days_ahead = target_day - today.weekday()
-    if days_ahead < 0:
-        days_ahead += 7
-
-    scheduled_expiry = (today + timedelta(days=days_ahead)).date()
-
-    # 2026 Official Holiday Set
     holidays_2026 = {
         "2026-01-26", "2026-03-03", "2026-03-26", "2026-03-31", "2026-04-03",
         "2026-04-14", "2026-05-01", "2026-05-28", "2026-06-26", "2026-09-14",
         "2026-10-02", "2026-10-20", "2026-11-10", "2026-11-24", "2026-12-25"
     }
 
-    # Backward shift for market holidays
-    while scheduled_expiry.strftime("%Y-%m-%d") in holidays_2026 or scheduled_expiry.weekday() >= 5:
-        scheduled_expiry -= timedelta(days=1)
+    def _shift_for_holidays(exp_date):
+        while exp_date.strftime("%Y-%m-%d") in holidays_2026 or exp_date.weekday() >= 5:
+            exp_date -= timedelta(days=1)
+        return exp_date
 
-    return scheduled_expiry.strftime("%Y-%m-%d")
+    # 1. Weekly contracts: Only NIFTY (Tuesday) and SENSEX (Thursday)
+    if symbol_upper in ["NIFTY", "SENSEX"]:
+        target_weekday = 1 if symbol_upper == "NIFTY" else 3  # 1=Tue, 3=Thu
+        days_ahead = target_weekday - today.weekday()
+        if days_ahead < 0:
+            days_ahead += 7
+        scheduled_expiry = (today + timedelta(days=days_ahead)).date()
+        return _shift_for_holidays(scheduled_expiry).strftime("%Y-%m-%d")
+
+    # 2. Monthly-only contracts: BANKNIFTY, FINNIFTY, MIDCPNIFTY (Last Tuesday) / BANKEX (Last Thursday)
+    import calendar
+    target_weekday = 3 if symbol_upper == "BANKEX" else 1  # Tuesday for NSE indices
+    year, month = today.year, today.month
+
+    def _get_last_weekday(y, m, wd):
+        last_day = calendar.monthrange(y, m)[1]
+        d = datetime(y, m, last_day).date()
+        while d.weekday() != wd:
+            d -= timedelta(days=1)
+        return d
+
+    candidate = _get_last_weekday(year, month, target_weekday)
+    candidate_shifted = _shift_for_holidays(candidate)
+
+    if today.date() > candidate_shifted:
+        next_month = 1 if month == 12 else month + 1
+        next_year = year + 1 if month == 12 else year
+        candidate = _get_last_weekday(next_year, next_month, target_weekday)
+        candidate_shifted = _shift_for_holidays(candidate)
+
+    return candidate_shifted.strftime("%Y-%m-%d")
 
 
 # =====================================================================

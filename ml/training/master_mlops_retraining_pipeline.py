@@ -72,8 +72,131 @@ class MasterMLOpsRetrainingPipeline:
         self.db = firestore.Client(project=project_id)
         self.bucket = self.storage_client.bucket(BUCKET_NAME)
 
+    def fetch_dhan_realtime_data(self) -> List[Dict[str, Any]]:
+        """Pulls real-time Indian Index historical candles from DhanHQ API v2 via Engine C proxy"""
+        import requests
+        engine_c_url = os.getenv("ENGINE_C_URL", "https://engine-c-313407263327.asia-south1.run.app")
+        print(f"\n📡 [1b/6] Ingesting Real-Time Index Data from DhanHQ API v2 ({engine_c_url})...")
+        dhan_rows = []
+        indices = [
+            ("51", "IDX_I", "SENSEX"),
+            ("13", "IDX_I", "NIFTY"),
+            ("25", "IDX_I", "BANKNIFTY")
+        ]
+        headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")}
+
+        for sec_id, seg, symbol in indices:
+            try:
+                resp = requests.get(
+                    f"{engine_c_url}/api/dhan/market/historical",
+                    params={
+                        "security_id": sec_id,
+                        "exchange_segment": seg,
+                        "instrument_type": "INDEX",
+                        "from_date": (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d"),
+                        "to_date": datetime.now().strftime("%Y-%m-%d"),
+                        "interval": "minute",
+                        "user_id": "raghu_primary"
+                    },
+                    headers=headers,
+                    timeout=15
+                )
+                if resp.status_code == 200:
+                    c_json = resp.json()
+                    raw_d = c_json.get("data", {})
+                    data_obj = raw_d.get("data", raw_d) if isinstance(raw_d, dict) else raw_d
+                    if isinstance(data_obj, dict) and "close" in data_obj and len(data_obj["close"]) > 15:
+                        closes = data_obj["close"]
+                        timestamps = data_obj.get("start_Time", data_obj.get("timestamp", []))
+                        for i in range(15, len(closes)):
+                            window = [c for c in closes[i-14:i+1] if c is not None and c > 0]
+                            if len(window) < 15:
+                                continue
+                            diffs = np.diff(window)
+                            gains = float(diffs[diffs > 0].sum() / 14.0) if len(diffs[diffs > 0]) > 0 else 0.0
+                            losses = float(-diffs[diffs < 0].sum() / 14.0) if len(diffs[diffs < 0]) > 0 else 1e-6
+                            rs = gains / max(losses, 1e-6)
+                            rsi = float(100.0 - (100.0 / (1.0 + rs)))
+                            vwap = float(np.mean(window))
+                            vwap_dist = float((window[-1] - vwap) / vwap * 100.0)
+                            macd_cross = 1 if rsi > 54.0 else (-1 if rsi < 46.0 else 0)
+                            atr_vol = float(np.std(window))
+
+                            # 3-Class Multiclass Target (0=SELL, 1=HOLD, 2=BUY)
+                            if i + 5 < len(closes) and closes[i+5] is not None and closes[i] > 0:
+                                fwd_ret = float((closes[i+5] - closes[i]) / closes[i])
+                                outcome = 2 if fwd_ret >= 0.0035 else (0 if fwd_ret <= -0.0035 else 1)
+                            else:
+                                outcome = 1
+
+                            ts_val = timestamps[i] if i < len(timestamps) else datetime.now(timezone.utc).isoformat()
+                            dhan_rows.append({
+                                "timestamp": ts_val,
+                                "rsi_14": rsi,
+                                "macd_crossover": macd_cross,
+                                "vwap_distance": vwap_dist,
+                                "atr_volatility": atr_vol,
+                                "signal_outcome": outcome
+                            })
+                        print(f"   • DhanHQ v2: Successfully extracted {len(closes)} candles for {symbol}")
+            except Exception as e:
+                print(f"   • DhanHQ fetch notice for {symbol}: {e}")
+
+        print(f"   • DhanHQ Total Real-Time Ingested Records: {len(dhan_rows):,}")
+        return dhan_rows
+
+    def fetch_vertex_google_grounding_macro(self) -> Dict[str, Any]:
+        """Fetches real-time macroeconomic synthesis using Vertex AI Gemini 2.5 Flash Google Search Grounding"""
+        print("\n🌐 [1c/6] Querying Vertex AI Gemini 2.5 Flash with Google Search Grounding...")
+        macro_info = {
+            "model": "gemini-2.5-flash",
+            "grounding_source": "google_search",
+            "macro_bias_score": 0.0,
+            "sentiment": "NEUTRAL",
+            "catalysts": [],
+            "grounded_summary": ""
+        }
+        try:
+            import vertexai
+            from vertexai.generative_models import GenerativeModel, Tool
+            vertexai.init(project=self.project_id, location="us-central1")
+            tool = Tool.from_dict({"google_search": {}})
+            model = GenerativeModel("gemini-2.5-flash", tools=[tool])
+            prompt = (
+                "You are an institutional macro quantitative analyst. Conduct real-time Google search grounding for "
+                "NSE Nifty 50, Bank Nifty, RBI monetary policy stance, and India VIX. "
+                "Output a concise 2-sentence institutional summary including: "
+                "1) Market bias (-1.0 to +1.0 numeric scalar), "
+                "2) Stance (BULLISH, BEARISH, or CHOPPY/NEUTRAL), "
+                "3) Key primary catalyst."
+            )
+            response = model.generate_content(prompt)
+            summary_text = response.text.strip()
+            macro_info["grounded_summary"] = summary_text
+            
+            # Simple sentiment parse
+            st_upper = summary_text.upper()
+            if "BULLISH" in st_upper:
+                macro_info["sentiment"] = "BULLISH"
+                macro_info["macro_bias_score"] = 0.55
+            elif "BEARISH" in st_upper:
+                macro_info["sentiment"] = "BEARISH"
+                macro_info["macro_bias_score"] = -0.55
+            else:
+                macro_info["sentiment"] = "CHOPPY/NEUTRAL"
+                macro_info["macro_bias_score"] = 0.0
+
+            print(f"   • Vertex AI Gemini Grounding Synthesis: {summary_text[:160]}...")
+            print(f"   • Grounded Bias Score: {macro_info['macro_bias_score']:+.2f} ({macro_info['sentiment']})")
+        except Exception as e:
+            print(f"   • Vertex AI Gemini Grounding notice: {e}")
+            macro_info["grounded_summary"] = "Macro grounding fallback: Neutral policy baseline."
+
+        self.latest_macro_info = macro_info
+        return macro_info
+
     def ingest_full_dataset(self) -> pd.DataFrame:
-        """Pulls BigQuery historical records + live intraday session ticks"""
+        """Pulls BigQuery historical records + DhanHQ real-time ticks + live market feeds"""
         print("\n📥 [1/6] Ingesting Golden Dataset from BigQuery...")
         query = f"""
         SELECT 
@@ -89,62 +212,19 @@ class MasterMLOpsRetrainingPipeline:
         df_bq = self.bq_client.query(query).to_dataframe()
         print(f"   • BigQuery Golden Dataset: {len(df_bq):,} records loaded.")
 
-        # Real-time live intraday additions
-        import urllib.request
-        live_rows = []
-        try:
-            url = "https://query1.finance.yahoo.com/v8/finance/chart/^NSEI?interval=1m&range=1d"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                res_block = data["chart"]["result"][0]
-                timestamps = res_block.get("timestamp", [])
-                indicators = res_block["indicators"]["quote"][0]
-                closes = indicators.get("close", [])
+        # Real-time live DhanHQ additions
+        dhan_rows = self.fetch_dhan_realtime_data()
 
-                for i in range(15, len(closes)):
-                    if closes[i] is None or closes[i-14] is None:
-                        continue
-                    window = [c for c in closes[i-14:i+1] if c is not None]
-                    if len(window) < 15:
-                        continue
-                    diffs = np.diff(window)
-                    gains = float(diffs[diffs > 0].sum() / 14.0) if len(diffs[diffs > 0]) > 0 else 0.0
-                    losses = float(-diffs[diffs < 0].sum() / 14.0) if len(diffs[diffs < 0]) > 0 else 1e-6
-                    rs = gains / max(losses, 1e-6)
-                    rsi = float(100.0 - (100.0 / (1.0 + rs)))
-                    vwap = float(np.mean(window))
-                    vwap_dist = float((window[-1] - vwap) / vwap * 100.0)
-                    macd_cross = 1 if rsi > 54.0 else (-1 if rsi < 46.0 else 0)
-                    atr_vol = float(np.std(window))
-                    # 3-Class Multiclass Target Generation (0=SELL, 1=HOLD, 2=BUY)
-                    # Forward 5-candle return threshold: +/- 0.35% (+/- 0.0035)
-                    if i + 5 < len(closes) and closes[i+5] is not None and closes[i] is not None and closes[i] > 0:
-                        fwd_ret = float((closes[i+5] - closes[i]) / closes[i])
-                        if fwd_ret >= 0.0035:
-                            outcome = 2   # BUY
-                        elif fwd_ret <= -0.0035:
-                            outcome = 0   # SELL
-                        else:
-                            outcome = 1   # HOLD
-                    else:
-                        outcome = 1       # Default HOLD
+        # Vertex AI Gemini 2.5 Flash Grounding
+        self.fetch_vertex_google_grounding_macro()
 
-                    ts_dt = datetime.fromtimestamp(timestamps[i], tz=timezone.utc)
-                    live_rows.append({
-                        "timestamp": ts_dt,
-                        "rsi_14": rsi,
-                        "macd_crossover": macd_cross,
-                        "vwap_distance": vwap_dist,
-                        "atr_volatility": atr_vol,
-                        "signal_outcome": outcome
-                    })
-        except Exception as e:
-            print(f"   • Intraday addition notice: {e}")
+        # Combine datasets
+        dfs_to_combine = [df_bq]
+        if dhan_rows:
+            dfs_to_combine.append(pd.DataFrame(dhan_rows))
 
-        df_live = pd.DataFrame(live_rows)
-        df_full = pd.concat([df_bq, df_live], ignore_index=True)
-        print(f"   • Total Enriched Training Dataset: {len(df_full):,} rows.")
+        df_full = pd.concat(dfs_to_combine, ignore_index=True)
+        print(f"   • Total Enriched Training Dataset: {len(df_full):,} rows (BigQuery + DhanHQ).")
         return df_full
 
     def engineer_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
@@ -396,7 +476,14 @@ class MasterMLOpsRetrainingPipeline:
         self.bucket.blob("model_manifest.json").upload_from_filename(manifest_path)
         uploaded_blobs.append(blob_manifest.name)
 
-        print(f"   • Uploaded {len(uploaded_blobs)} artifacts + model_manifest.json to gs://{BUCKET_NAME}/ (Date: {date_str} + Latest)")
+        # Also upload to canary/ for Champion-Challenger validation
+        for fname in ["lightgbm_model.pkl", "catboost_model.cbm", "xgboost_model.json", "scaler.pkl", "feature_cols.json", "model_manifest.json"]:
+            fpath = os.path.join(tmp_dir, fname)
+            if os.path.exists(fpath):
+                self.bucket.blob(f"canary/{fname}").upload_from_filename(fpath)
+                uploaded_blobs.append(f"canary/{fname}")
+
+        print(f"   • Uploaded {len(uploaded_blobs)} artifacts (Date: {date_str}, Canary, Latest) + model_manifest.json to gs://{BUCKET_NAME}/")
         return uploaded_blobs
 
     def record_audit_and_notify(self, pipeline_output: Dict[str, Any], uploaded_blobs: List[str]):
@@ -413,7 +500,13 @@ class MasterMLOpsRetrainingPipeline:
             "uploaded_artifacts": uploaded_blobs,
             "metrics": pipeline_output["metrics"],
             "feature_ranking": [f"{f}: {s:.4f}" for f, s in pipeline_output["feature_ranking"]],
-            "tri_model_weights": {"catboost": 0.35, "lightgbm": 0.35, "xgboost": 0.20, "extratrees": 0.10}
+            "tri_model_weights": {"catboost": 0.35, "lightgbm": 0.35, "xgboost": 0.20, "extratrees": 0.10},
+            "data_sources": [
+                "BigQuery infinity_dataset.market_ticks_history",
+                "DhanHQ API v2 Real-Time Data (Engine-C)",
+                "Vertex AI Gemini 2.5 Flash Google Search Grounding"
+            ],
+            "google_grounding_macro": getattr(self, "latest_macro_info", {})
         }
 
         # 1. Firestore Persistence

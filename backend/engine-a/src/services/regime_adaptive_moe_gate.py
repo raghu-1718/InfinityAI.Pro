@@ -12,6 +12,7 @@ Replaces the rigid 3-model 100% unanimity lock with dynamic regime-adaptive weig
 - In EQUILIBRIUM_BASELINE: Dynamic majority consensus (2 out of 3 models >= 0.55 with MoE score >= 0.55).
 """
 
+import os
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -37,7 +38,7 @@ def classify_regime_heuristics(
         return "STRONG_TREND", False
     elif adx_14 < 23.0 and atr_ratio >= 0.012:
         return "MEAN_REVERTING_OSCILLATION", False
-    elif adx_14 < 19.0:
+    elif adx_14 < 15.0:
         return "CHOPPY_SIDEWAYS", True
     else:
         return "EQUILIBRIUM_BASELINE", False
@@ -61,7 +62,7 @@ def evaluate_regime_moe_consensus(
     symbol: str,
     decision_or_signal_type: str,
     analysis_data: Dict[str, Any],
-    overall_confidence: float = 0.60
+    overall_confidence: float = 0.50
 ) -> Dict[str, Any]:
     """
     Evaluates signal against Regime-Adaptive Dynamic MoE Consensus.
@@ -106,6 +107,29 @@ def evaluate_regime_moe_consensus(
         p_cb, p_lgb, p_xgb = cb_p, lgb_p, xgb_p
         p_rf = rf_p if has_rf else None
 
+    # Hard Veto 0: Unanimous Low Conviction Guard (All models < 0.35)
+    # Strictly sits at the very top before regime / chop routing so low-conviction signals
+    # are rejected with BLOCKED_LOW_PROBABILITY even during strong trending regimes.
+    max_model_prob = max(p_cb, p_lgb, p_xgb)
+    if max_model_prob < 0.35:
+        logger.warning(
+            f"⛔ Unanimous Model Rejection: Max ensemble conviction ({max_model_prob:.4f}) < 0.35 threshold. "
+            f"Trade permanently blocked from market and pullback execution."
+        )
+        return {
+            "approved": False,
+            "regime": "UNANIMOUS_ENSEMBLE_REJECTION",
+            "moe_score": round(float(max_model_prob), 4),
+            "agreeing_models": [],
+            "agreement_count": 0,
+            "chop_veto_active": True,
+            "weights": get_regime_weights("CHOPPY_SIDEWAYS"),
+            "ml_consensus_min": round(float(min(p_cb, p_lgb, p_xgb)), 4),
+            "ml_consensus_max": round(float(max_model_prob), 4),
+            "execution_route": "BLOCKED_LOW_PROBABILITY",
+            "reason": f"UNANIMOUS_LOW_CONVICTION: Maximum ensemble conviction ({max_model_prob:.4f}) < 0.35 threshold. Trade blocked permanently."
+        }
+
     # 3. Extract or Classify Regime
     model_breakdown = analysis_data.get("model_breakdown", {})
     regime_moe = model_breakdown.get("regime_moe") or analysis_data.get("regime_moe") or {}
@@ -126,7 +150,8 @@ def evaluate_regime_moe_consensus(
         weights = get_regime_weights(regime)
 
     # 4. Check Chop Veto Gate
-    if chop_veto or (regime == "CHOPPY_SIDEWAYS" and adx_val < 19.0):
+    adx_chop_limit = float(os.getenv("ADX_MIN_THRESHOLD", "15.0"))
+    if chop_veto or (regime == "CHOPPY_SIDEWAYS" and adx_val < adx_chop_limit):
         return {
             "approved": False,
             "regime": regime,
@@ -137,7 +162,7 @@ def evaluate_regime_moe_consensus(
             "weights": weights,
             "ml_consensus_min": round(float(min(p_cb, p_lgb, p_xgb)), 4),
             "execution_route": "BLOCKED_CHOP_VETO",
-            "reason": f"CHOP_VETO_ACTIVE: Market is ranging/consolidating (ADX {adx_val:.1f} < 19.0; Theta decay risk)"
+            "reason": f"CHOP_VETO_ACTIVE: Market is ranging/consolidating (ADX {adx_val:.1f} < {adx_chop_limit:.1f}; Theta decay risk)"
         }
 
     # 4b. Multi-Model Consensus & Discordance Gate (Task 1 Specification)
@@ -150,6 +175,27 @@ def evaluate_regime_moe_consensus(
         adx=adx_val
     )
     min_model_prob = consensus_eval["ml_consensus_min"]
+    max_model_prob = consensus_eval.get("ml_consensus_max", round(float(max(p_cb, p_lgb, p_xgb)), 4))
+
+    # Unanimous Low-Conviction Hard Veto: If NO models display directional conviction (max < 0.35), block completely
+    if max_model_prob < 0.35 or consensus_eval.get("execution_route") == "BLOCKED_LOW_PROBABILITY":
+        logger.warning(
+            f"⛔ Unanimous Model Rejection: Max ensemble conviction ({max_model_prob:.4f}) < 0.35. "
+            f"Trade permanently blocked from market and pullback execution."
+        )
+        return {
+            "approved": False,
+            "regime": "UNANIMOUS_ENSEMBLE_REJECTION",
+            "moe_score": max_model_prob,
+            "agreeing_models": [],
+            "agreement_count": 0,
+            "chop_veto_active": True,
+            "weights": weights,
+            "ml_consensus_min": min_model_prob,
+            "ml_consensus_max": max_model_prob,
+            "execution_route": "BLOCKED_LOW_PROBABILITY",
+            "reason": f"UNANIMOUS_LOW_CONVICTION: Max model prob {max_model_prob:.4f} < 0.35"
+        }
 
     # If any single model output falls below < 0.40 (e.g. XGBoost at 33%), flag market state as REGIME_CHOP_CONSOLIDATION
     if consensus_eval["is_discordant"]:

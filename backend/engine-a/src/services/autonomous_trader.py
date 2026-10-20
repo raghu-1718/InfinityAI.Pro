@@ -676,7 +676,7 @@ class AutonomousTrader:
             headers = {
                 "X-User-ID": str(self.config.get("user_id", "raghu_primary")),
                 "X-Engine-Source": "engine-a",
-                "X-Internal-Token": os.getenv("INTERNAL_TOKEN", "inf-prod-internal-key-920-v1")
+                "X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
             }
             oidc_tok = _get_oidc_token(ENGINE_C_URL)
             if oidc_tok:
@@ -738,10 +738,13 @@ class AutonomousTrader:
                 import pytz
                 ist_now = datetime.now(pytz.timezone('Asia/Kolkata'))
                 is_weekend = ist_now.weekday() >= 5
+                date_str = ist_now.strftime("%Y-%m-%d")
+                from src.services.expiry_theta_damper import DEFAULT_NSE_BSE_HOLIDAYS_2026
+                is_holiday = date_str in DEFAULT_NSE_BSE_HOLIDAYS_2026
                 market_open = ist_now.replace(hour=9, minute=15, second=0, microsecond=0)
                 market_close = ist_now.replace(hour=15, minute=30, second=0, microsecond=0)
-                if is_weekend or not (market_open <= ist_now <= market_close):
-                    logger.info(f"ℹ️ Market CLOSED (09:15–15:30 IST Mon-Fri). Trade execution suppressed for {symbol_upper} at {ist_now.strftime('%H:%M:%S')} IST.")
+                if is_weekend or is_holiday or not (market_open <= ist_now <= market_close):
+                    logger.info(f"ℹ️ Market CLOSED (09:15–15:30 IST Mon-Fri, excluding holidays). Trade execution suppressed for {symbol_upper} at {ist_now.strftime('%H:%M:%S')} IST.")
                     return
                 if ist_now.hour == 9 and ist_now.minute < 20:
                     logger.info(f"⏳ Opening volatility cooldown active (09:15-09:20 IST) - Skipping trade entry for {symbol_upper}")

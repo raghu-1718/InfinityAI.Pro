@@ -39,7 +39,7 @@ PROJECT_ID = os.getenv("GCP_PROJECT_ID", "project-841b7f97-5ee3-4fbe-920")
 ENGINE_A_URL = os.getenv("ENGINE_A_URL", "https://engine-a-r2f5flt77q-el.a.run.app")
 ENGINE_B_URL = os.getenv("ENGINE_B_URL", "https://engine-b-r2f5flt77q-el.a.run.app")
 ENGINE_C_URL = os.getenv("ENGINE_C_URL", "https://engine-c-r2f5flt77q-el.a.run.app")
-INTERNAL_AUTH_TOKEN = os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")
+INTERNAL_AUTH_TOKEN = os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")
 
 class PreflightHealthService:
     """Automated Pre-Market Operational Readiness & Self-Healing Service"""

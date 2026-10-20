@@ -12,6 +12,7 @@ __pycache__/
 venv/
 .venv/
 env/
+ml/training/tmp_models/
 /Lib/
 /Scripts/
 /Include/

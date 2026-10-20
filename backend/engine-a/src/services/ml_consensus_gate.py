@@ -91,6 +91,18 @@ class MultiModelConsensusGate:
             )
             logger.info(f"✅ {reason}")
 
+        # Condition 0: Unanimous Low-Conviction Rejection (max < 0.35)
+        elif max_prob < 0.35:
+            market_state = "UNANIMOUS_ENSEMBLE_REJECTION"
+            is_discordant = False
+            consensus_passed = False
+            execution_route = "BLOCKED_LOW_PROBABILITY"
+            reason = (
+                f"UNANIMOUS_LOW_CONVICTION: Maximum model conviction ({max_prob:.4f}) < 0.35 "
+                f"(CB={p_cb:.4f}, LGB={p_lgb:.4f}, XGB={p_xgb:.4f}). Trade blocked permanently."
+            )
+            logger.warning(f"⛔ {reason}")
+
         # Condition 1: Divergence Filter (< 0.40)
         elif min_prob < cls.DIVERGENCE_THRESHOLD:
             market_state = "REGIME_CHOP_CONSOLIDATION"

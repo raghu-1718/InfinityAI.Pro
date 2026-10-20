@@ -84,10 +84,11 @@ class ShadowSignalLogger:
             logger.warning("Firestore client not initialized. Skipping signal log.")
             return None
 
-        # Strict filter: only execute on explicit directional decisions with sufficient confidence (>= 0.60)
+        # Calibrated filter: execute on explicit directional decisions with calibrated confidence (>= 0.50)
+        min_conf_limit = float(os.getenv("ML_CONFIDENCE_THRESHOLD", "0.50"))
         valid_trade_decisions = ["BUY_CALL", "BUY_PUT", "SELL_CALL", "SELL_PUT", "LONG_CALL", "LONG_PUT", "SHORT_CALL", "SHORT_PUT"]
-        if decision not in valid_trade_decisions or confidence_score < 0.60:
-            logger.info(f"Signal for {symbol} is {decision} (conf: {confidence_score:.3f}). Skipping trade ledger commit.")
+        if decision not in valid_trade_decisions or confidence_score < min_conf_limit:
+            logger.info(f"Signal for {symbol} is {decision} (conf: {confidence_score:.3f} < {min_conf_limit:.2f}). Skipping trade ledger commit.")
             return None
 
         # SENSEX Derivative Restriction Gate (Eliminates -₹52k liquidity/spread drag)

@@ -85,15 +85,18 @@ class PreMarketBriefingService:
             return self._get_fallback_telemetry()
 
         prompt = (
-            "You are an institutional quantitative macro research analyst for Indian capital markets (NSE/BSE). "
-            "Perform a real-time live search for today's pre-market conditions:\n"
-            "1. GIFT NIFTY live points change and expected NIFTY 50 opening gap.\n"
-            "2. Brent Crude Oil price and 24h percentage change.\n"
+            "You are an institutional quantitative macro research analyst for Indian capital markets (NSE/BSE).\n"
+            "CRITICAL SYSTEM INSTRUCTION: Never invent or estimate spot prices from training memory if a feed returns only percentage change; print SPOT_UNAVAILABLE instead.\n\n"
+            "Perform a real-time live search for today's pre-market conditions and extract BOTH raw spot values and percentage changes:\n"
+            "1. GIFT NIFTY live spot price (or SPOT_UNAVAILABLE), live points change, and expected NIFTY 50 opening gap.\n"
+            "2. Brent Crude Oil live spot price in USD (or SPOT_UNAVAILABLE) and 24h percentage change.\n"
             "3. NSE/BSE institutional FII & DII cash market net activity in INR Crores from the previous trading session.\n"
-            "4. US 10-Year Treasury Yield and US Dollar Index (DXY).\n\n"
+            "4. US 10-Year Treasury Yield raw yield percentage and US Dollar Index (DXY) spot value.\n\n"
             "Output ONLY a raw valid JSON object (enclosed in ```json ... ```) with these exact keys:\n"
             "{\n"
+            '  "gift_nifty_spot": float | "SPOT_UNAVAILABLE",\n'
             '  "gift_nifty_points": float,\n'
+            '  "brent_crude_spot": float | "SPOT_UNAVAILABLE",\n'
             '  "brent_crude_pct": float,\n'
             '  "fii_net_crores": float,\n'
             '  "dii_net_crores": float,\n'
@@ -125,7 +128,9 @@ class PreMarketBriefingService:
 
     def _get_fallback_telemetry(self) -> Dict[str, Any]:
         return {
+            "gift_nifty_spot": "SPOT_UNAVAILABLE",
             "gift_nifty_points": 0.0,
+            "brent_crude_spot": "SPOT_UNAVAILABLE",
             "brent_crude_pct": 0.0,
             "fii_net_crores": 0.0,
             "dii_net_crores": 0.0,
@@ -204,8 +209,10 @@ class PreMarketBriefingService:
             "timestamp_utc": now_utc.isoformat(),
             "macro_bias": macro_bias,
             "macro_score": composite_score,
+            "gift_nifty_spot": live_telemetry.get("gift_nifty_spot", "SPOT_UNAVAILABLE"),
             "gift_nifty_points": gift_points,
             "expected_gap": expected_gap,
+            "brent_crude_spot": live_telemetry.get("brent_crude_spot", "SPOT_UNAVAILABLE"),
             "crude_oil_pct": crude_pct,
             "crude_oil_status": crude_status,
             "us_10y_yield": us_10y,

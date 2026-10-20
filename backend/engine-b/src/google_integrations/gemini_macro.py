@@ -440,15 +440,19 @@ class GeminiMacroIntelligence:
 
         # Try Vertex AI with Google Search grounding
         try:
-            from vertexai.generative_models import Tool, grounding as va_grounding
-            search_tool = Tool.from_google_search_retrieval(
-                grounding_source=va_grounding.GoogleSearchRetrieval(
-                    dynamic_retrieval_config=va_grounding.DynamicRetrievalConfig(
-                        mode=va_grounding.DynamicRetrievalConfig.Mode.MODE_DYNAMIC,
-                        dynamic_threshold=0.7,  # only ground when confident
+            from vertexai.generative_models import Tool
+            try:
+                search_tool = Tool.from_dict({"google_search": {}})
+            except Exception:
+                from vertexai.generative_models import grounding as va_grounding
+                search_tool = Tool.from_google_search_retrieval(
+                    grounding_source=va_grounding.GoogleSearchRetrieval(
+                        dynamic_retrieval_config=va_grounding.DynamicRetrievalConfig(
+                            mode=va_grounding.DynamicRetrievalConfig.Mode.MODE_DYNAMIC,
+                            dynamic_threshold=0.7,
+                        )
                     )
                 )
-            )
             response = self._client.generate_content(
                 prompt,
                 tools=[search_tool],

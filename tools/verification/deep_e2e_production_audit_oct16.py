@@ -21,7 +21,9 @@ ENGINE_A_URL = "https://engine-a-313407263327.asia-south1.run.app"
 ENGINE_B_URL = "https://engine-b-313407263327.asia-south1.run.app"
 ENGINE_C_URL = "https://engine-c-313407263327.asia-south1.run.app"
 FRONTEND_URL = "https://project-841b7f97-5ee3-4fbe-920.web.app"
-INTERNAL_TOKEN = "inf-prod-internal-key-920-v1"
+INTERNAL_TOKEN = os.environ.get("INTERNAL_AUTH_TOKEN") or os.environ.get("INTERNAL_TOKEN", "")
+if not INTERNAL_TOKEN:
+    raise ValueError("INTERNAL_AUTH_TOKEN environment variable must be set")
 
 HEADERS_AUTH = {
     "User-Agent": "InfinityAI-DeepAudit/2.0",
@@ -123,11 +125,11 @@ def run_deep_audit():
     # --------------------------------------------------------------------------
     print("\n[SECTION 2: SYMBOL MAPPING & DHANHQ SPOT MARKET QUOTES]")
     symbols_to_test = [
-        {"symbol": "NIFTY", "sec_id": "13", "seg": "IDX_I", "lot": 65, "step": 50},
-        {"symbol": "BANKNIFTY", "sec_id": "25", "seg": "IDX_I", "lot": 15, "step": 100},
-        {"symbol": "FINNIFTY", "sec_id": "27", "seg": "IDX_I", "lot": 60, "step": 50},
-        {"symbol": "MIDCPNIFTY", "sec_id": "442", "seg": "IDX_I", "lot": 120, "step": 25},
-        {"symbol": "SENSEX", "sec_id": "51", "seg": "IDX_I", "lot": 10, "step": 100},
+        {"symbol": "NIFTY", "sec_id": "13", "seg": "IDX_I", "lot": 65, "step": 50, "cycle": "Weekly (NSE Benchmark)", "next_expiry": "2026-10-19"},
+        {"symbol": "BANKNIFTY", "sec_id": "25", "seg": "IDX_I", "lot": 30, "step": 100, "cycle": "Monthly Only (SEBI Discontinued Weekly)", "next_expiry": "2026-10-27"},
+        {"symbol": "FINNIFTY", "sec_id": "27", "seg": "IDX_I", "lot": 60, "step": 50, "cycle": "Monthly Only (SEBI Discontinued Weekly)", "next_expiry": "2026-10-27"},
+        {"symbol": "MIDCPNIFTY", "sec_id": "442", "seg": "IDX_I", "lot": 120, "step": 25, "cycle": "Monthly Only (SEBI Discontinued Weekly)", "next_expiry": "2026-10-27"},
+        {"symbol": "SENSEX", "sec_id": "51", "seg": "IDX_I", "lot": 20, "step": 100, "cycle": "Weekly (BSE Benchmark)", "next_expiry": "2026-10-22"},
     ]
     
     # Primary: batch quotes endpoint
@@ -245,9 +247,10 @@ def run_deep_audit():
             conf = data.get("confidence")
             veto = data.get("veto_applied") or data.get("veto")
             reason = data.get("veto_reason") or data.get("reason", "")
-            probs = data.get("probabilities") or data.get("model_probabilities")
-            print(f"    - {sym:<10}: Signal={direction:<8} | Conf={conf} | Veto={veto} | Latency={lat:5.1f} ms | Reason={reason}")
-            signals_tested.append({"symbol": sym, "signal": direction, "confidence": conf, "veto": veto, "reason": reason, "probs": probs})
+            probs = data.get("signal_proba") or data.get("probabilities")
+            driver = data.get("dominant_driver", "N/A")
+            print(f"    - {sym:<10}: Signal={direction:<8} | Conf={conf} | Driver: {driver} | Proba={probs} | Latency={lat:5.1f} ms")
+            signals_tested.append({"symbol": sym, "signal": direction, "confidence": conf, "veto": veto, "reason": reason, "probs": probs, "driver": driver})
         else:
             print(f"    - {sym:<10}: HTTP {st} | {err}")
             signals_tested.append({"symbol": sym, "status": f"❌ HTTP {st}"})

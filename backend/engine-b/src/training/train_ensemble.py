@@ -172,7 +172,7 @@ def fetch_raw_ohlcv(symbol: str, days: int = 730) -> pd.DataFrame:
 
     # Primary: DhanHQ via Engine-C
     try:
-        headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN", "inf-prod-internal-key-920-v1")}
+        headers = {"X-Internal-Token": os.getenv("INTERNAL_AUTH_TOKEN") or os.getenv("INTERNAL_TOKEN", "")}
         r = requests.get(
             f"{engine_c_url}/api/dhan/market/historical",
             params={"security_id": sec_id, "exchange_segment": seg,

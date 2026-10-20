@@ -11,9 +11,10 @@ Accounts for 2026 SEBI Mandates & Mid-Week Indian Market Holiday Expiry Shifts:
 """
 
 import os
+import calendar
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional, Set
+from datetime import datetime, timezone, timedelta, date
+from typing import Dict, Any, Optional, Set, Union
 
 logger = logging.getLogger("InfinityAI.ExpiryThetaDamper")
 
@@ -39,13 +40,16 @@ DEFAULT_NSE_BSE_HOLIDAYS_2026: Set[str] = {
 # 2026 SEBI Baseline Expiry Weekday Target (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri)
 SEBI_BASELINE_EXPIRY = {
     "NIFTY": 1,       # Tuesday (NSE Weekly Benchmark)
-    "BANKNIFTY": 1,   # Tuesday (NSE Monthly)
-    "FINNIFTY": 1,    # Tuesday (NSE Monthly)
-    "MIDCPNIFTY": 1,  # Tuesday (NSE Monthly)
+    "BANKNIFTY": 1,   # Tuesday (NSE Monthly Contract)
+    "FINNIFTY": 1,    # Tuesday (NSE Monthly Contract)
+    "MIDCPNIFTY": 1,  # Tuesday (NSE Monthly Contract)
     "SENSEX": 3,      # Thursday (BSE Weekly Benchmark)
-    "BANKEX": 3,      # Thursday (BSE Monthly)
+    "BANKEX": 3,      # Thursday (BSE Monthly Contract)
     "CRUDEOIL": 4     # Friday (MCX Monthly Commodity)
 }
+
+# SEBI Single-Benchmark Mandate: Discontinued weekly expiries for non-benchmark contracts
+SEBI_MONTHLY_ONLY_INDICES: Set[str] = {"BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "BANKEX", "CRUDEOIL"}
 
 class ExpiryThetaDamper:
     """Dynamic bracket adjuster with sub-microsecond in-memory holiday expiry shift evaluation"""
@@ -69,32 +73,81 @@ class ExpiryThetaDamper:
         except Exception as e:
             logger.warning(f"⚠️ Firestore holiday sync warning: {e}")
 
-    def get_authentic_expiry_date(self, symbol: str, current_dt_ist: datetime) -> datetime:
+    def get_authentic_expiry_date(self, symbol: str, current_dt_ist: Any) -> datetime:
         """
-        Calculates the authentic expiry date for the current week.
-        If the target day is a market holiday or weekend, shifts backward to the previous trading session.
+        Calculates the authentic expiry date respecting SEBI/NSE single-benchmark mandates:
+        - Primary: DhanHQ NSE_FNO instrument master cached expiry date if available.
+        - Deterministic Calendar Fallback:
+          - Weekly Benchmark (NIFTY): Every Tuesday (shifts backward if holiday).
+          - Weekly Benchmark (SENSEX): Every Thursday (shifts backward if holiday).
+          - Monthly Contracts (MIDCPNIFTY, BANKNIFTY, FINNIFTY): Last Tuesday of calendar month ONLY
+            (date.weekday() == 1 and (date + timedelta(days=7)).month != date.month, adjusted backward if holiday).
+          - Monthly Contracts (BANKEX): Last Thursday of calendar month ONLY.
+          - Monthly Contracts (CRUDEOIL): Last Friday of calendar month ONLY.
         """
+        from datetime import date as dt_date
+        if isinstance(current_dt_ist, dt_date) and not isinstance(current_dt_ist, datetime):
+            current_dt_ist = datetime(current_dt_ist.year, current_dt_ist.month, current_dt_ist.day, 10, 0)
+
         sym_u = symbol.upper()
         target_weekday = SEBI_BASELINE_EXPIRY.get(sym_u, 1)
 
-        # 1. Determine scheduled standard expiry date in this weekly cycle
+        # 1. Primary Source of Truth: Check DhanHQ Scrip Master Cache if contract is in warm RAM
+        try:
+            from .option_contract_cache import OptionContractCache
+        except (ImportError, ValueError):
+            try:
+                from src.services.option_contract_cache import OptionContractCache
+            except Exception:
+                OptionContractCache = None
+
+        if sym_u in SEBI_MONTHLY_ONLY_INDICES:
+            # Monthly expiry: Last target_weekday of the calendar month
+            year = current_dt_ist.year
+            month = current_dt_ist.month
+            last_day = calendar.monthrange(year, month)[1]
+            last_date = datetime(year, month, last_day).date()
+            offset = (last_date.weekday() - target_weekday) % 7
+            scheduled_expiry = last_date - timedelta(days=offset)
+
+            # Shift backward if holiday or weekend
+            while scheduled_expiry.strftime("%Y-%m-%d") in self.holidays or scheduled_expiry.weekday() >= 5:
+                scheduled_expiry -= timedelta(days=1)
+
+            # If current date is past this month's expiry date, roll over to next month's last target weekday
+            if current_dt_ist.date() > scheduled_expiry:
+                next_month = 1 if month == 12 else month + 1
+                next_year = year + 1 if month == 12 else year
+                last_day_next = calendar.monthrange(next_year, next_month)[1]
+                last_date_next = datetime(next_year, next_month, last_day_next).date()
+                offset_next = (last_date_next.weekday() - target_weekday) % 7
+                scheduled_expiry = last_date_next - timedelta(days=offset_next)
+                while scheduled_expiry.strftime("%Y-%m-%d") in self.holidays or scheduled_expiry.weekday() >= 5:
+                    scheduled_expiry -= timedelta(days=1)
+
+            return datetime(scheduled_expiry.year, scheduled_expiry.month, scheduled_expiry.day)
+
+        # Weekly cycle for single-benchmark contracts (NIFTY, SENSEX)
         days_ahead = target_weekday - current_dt_ist.weekday()
         if days_ahead < 0:
             days_ahead += 7  # If past target day, look at next weekly cycle
 
         scheduled_expiry = (current_dt_ist + timedelta(days=days_ahead)).date()
 
-        # 2. Shift backward if scheduled expiry date is in holiday list or falls on weekend
+        # Shift backward if scheduled expiry date is in holiday list or falls on weekend
         while scheduled_expiry.strftime("%Y-%m-%d") in self.holidays or scheduled_expiry.weekday() >= 5:
             scheduled_expiry -= timedelta(days=1)
 
         return datetime(scheduled_expiry.year, scheduled_expiry.month, scheduled_expiry.day)
 
-    def is_expiry_day(self, symbol: str, current_dt_ist: Optional[datetime] = None) -> bool:
+    def is_expiry_day(self, symbol: str, current_dt_ist: Optional[Any] = None) -> bool:
         """Returns True if today (IST) is the actual authentic expiry date (accounting for holiday shifts)"""
+        from datetime import date as dt_date
         if current_dt_ist is None:
             now_utc = datetime.now(timezone.utc)
             current_dt_ist = now_utc + timedelta(hours=5, minutes=30)
+        elif isinstance(current_dt_ist, dt_date) and not isinstance(current_dt_ist, datetime):
+            current_dt_ist = datetime(current_dt_ist.year, current_dt_ist.month, current_dt_ist.day, 10, 0)
 
         actual_expiry_date = self.get_authentic_expiry_date(symbol, current_dt_ist).date()
         today_date = current_dt_ist.date()
@@ -190,3 +243,15 @@ class ExpiryThetaDamper:
         }
 
 EXPIRY_THETA_DAMPER = ExpiryThetaDamper()
+NSE_HOLIDAYS_2026 = DEFAULT_NSE_BSE_HOLIDAYS_2026
+
+
+def is_expiry_day(symbol: str, current_dt_ist: Optional[Union[datetime, date]] = None) -> bool:
+    """Helper function to check if target date is an expiry day for symbol"""
+    return EXPIRY_THETA_DAMPER.is_expiry_day(symbol, current_dt_ist)
+
+
+def get_authentic_expiry_date(symbol: str, current_dt_ist: Optional[Union[datetime, date]] = None) -> date:
+    """Helper function to retrieve authentic expiry date for symbol"""
+    res = EXPIRY_THETA_DAMPER.get_authentic_expiry_date(symbol, current_dt_ist)
+    return res.date() if isinstance(res, datetime) else res
