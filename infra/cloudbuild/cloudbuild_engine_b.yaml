@@ -55,11 +55,9 @@ steps:
         "--cpu",
         "2",
         "--memory",
-        "8Gi",
+        "4Gi",
         "--min-instances",
         "1",
-        "--cpu-throttling",
-        "--cpu-boost",
         "--service-account",
         "sa-engine-b@project-841b7f97-5ee3-4fbe-920.iam.gserviceaccount.com",
       ]
